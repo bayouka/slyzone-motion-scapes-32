@@ -1,4 +1,6 @@
 
+import { getRandomBlueColor } from './colorUtils';
+
 export interface Particle {
   x: number;
   y: number;
