@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MoreHorizontal } from 'lucide-react';
@@ -9,8 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Message } from '@/types/dashboard';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
-// Message bubble component
 const MessageBubble: React.FC<{ 
   message: Message; 
   isSentByCurrentUser: boolean;
@@ -38,8 +37,8 @@ const ChatConversationPage = () => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Query to get other user's info
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
   const { data: otherUserInfo } = useQuery({
     queryKey: ['chat-user', chatId, user?.id],
     queryFn: async () => {
@@ -61,8 +60,7 @@ const ChatConversationPage = () => {
     },
     enabled: !!chatId && !!user,
   });
-  
-  // Fetch messages
+
   useEffect(() => {
     const fetchMessages = async () => {
       if (!chatId) return;
@@ -91,13 +89,46 @@ const ChatConversationPage = () => {
     
     fetchMessages();
   }, [chatId, toast]);
-  
-  // Scroll to bottom when messages change
+
+  useEffect(() => {
+    if (!chatId || !user) return;
+
+    const channel = supabase
+      .channel(`chat_messages_${chatId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `connection_id=eq.${chatId}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          if (newMessage.sender_id === user.id) return;
+          
+          setMessages(prevMessages => {
+            if (prevMessages.some(msg => msg.id === newMessage.id)) return prevMessages;
+            return [...prevMessages, newMessage];
+          });
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [chatId, user]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
-  // Send message function
+
   const handleSendMessage = async () => {
     if (!message.trim() || !user || !chatId) return;
     
@@ -107,7 +138,6 @@ const ChatConversationPage = () => {
       sender_id: user.id,
     };
     
-    // Optimistic update
     const tempId = Date.now().toString();
     setMessages(prev => [...prev, {
       ...newMessage,
@@ -115,7 +145,7 @@ const ChatConversationPage = () => {
       created_at: new Date().toISOString(),
     } as Message]);
     
-    setMessage(''); // Clear input
+    setMessage('');
     
     try {
       const { error } = await supabase
@@ -133,12 +163,10 @@ const ChatConversationPage = () => {
         variant: "destructive",
       });
       
-      // Remove the optimistic message on error
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
     }
   };
-  
-  // Handle Enter key press
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -148,7 +176,6 @@ const ChatConversationPage = () => {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* Chat Header - Fixed at top */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-700">
@@ -163,7 +190,6 @@ const ChatConversationPage = () => {
         </button>
       </div>
       
-      {/* Messages Container - Scrollable */}
       <ScrollArea className="flex-1 p-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-500">
@@ -183,7 +209,6 @@ const ChatConversationPage = () => {
         )}
       </ScrollArea>
       
-      {/* Message Input - Fixed at bottom */}
       <div className="border-t border-gray-200 bg-white/80 backdrop-blur-sm p-4">
         <div className="flex gap-2">
           <input 
