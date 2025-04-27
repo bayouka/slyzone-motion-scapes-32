@@ -13,43 +13,30 @@ interface SearchResult {
 const SearchPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [requestStatus, setRequestStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
-  const handleDebouncedSearchChange = (value: string) => {
-    setDebouncedSearchTerm(value);
-    if (!value.trim()) {
-      setSearchResult(null);
-      return;
-    }
-    performSearch(value);
-  };
-
-  const performSearch = async (value: string) => {
+  const performSearch = async (searchTerm: string) => {
     setIsLoadingSearch(true);
+    setSearchResult(null);
 
     try {
       const { data: results, error: rpcError } = await supabase
-        .rpc('search_profiles_by_pseudo', { search_term: value });
+        .rpc('search_profiles_by_pseudo', { search_term: searchTerm });
 
       if (rpcError) throw rpcError;
 
       if (results && results.length > 0) {
         setSearchResult(results[0]);
       } else {
-        setSearchResult(null);
-        if (value === debouncedSearchTerm) {
-          toast({
-            title: "Aucun utilisateur trouvé",
-            description: "Vérifiez l'orthographe du pseudo et réessayez.",
-          });
-        }
+        toast({
+          title: "Aucun utilisateur trouvé",
+          description: "Vérifiez l'orthographe du pseudo et réessayez.",
+        });
       }
     } catch (error) {
       console.error('Search error:', error);
-      setSearchResult(null);
       toast({
         title: "Erreur lors de la recherche",
         description: "Une erreur est survenue. Veuillez réessayer.",
@@ -143,7 +130,7 @@ const SearchPage = () => {
       
       <div className="w-full max-w-md">
         <SearchForm 
-          onDebouncedSearchChange={handleDebouncedSearchChange}
+          onSearch={performSearch}
           isLoading={isLoadingSearch}
         />
 
@@ -156,7 +143,7 @@ const SearchPage = () => {
           />
         )}
         
-        {!searchResult && !isLoadingSearch && debouncedSearchTerm && (
+        {!searchResult && !isLoadingSearch && (
           <div className="mt-8 text-center text-gray-500">
             Entrez un pseudo pour trouver un utilisateur et envoyer une demande de connexion.
           </div>
