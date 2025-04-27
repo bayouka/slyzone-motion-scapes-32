@@ -121,7 +121,7 @@ const Signup = () => {
           className="w-full"
           disabled={isLoading}
         >
-          {isLoading ? 'Inscription...' : 'S\'inscrire'}
+          {isLoading ? 'Inscription...' : "S\'inscrire"}
         </Button>
 
         <p className="text-center text-gray-600 mt-4">
