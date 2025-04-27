@@ -52,7 +52,10 @@ const DashboardPage = () => {
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
-      setPendingRequests(requests as RequestData[] || []);
+      
+      // Filtre pour éliminer les requêtes avec requester null
+      const validRequests = requests?.filter(req => req.requester !== null) || [];
+      setPendingRequests(validRequests as RequestData[]);
     } catch (err) {
       console.error('Error fetching requests:', err);
       setError('Failed to load connection requests');
@@ -203,7 +206,7 @@ const DashboardPage = () => {
       <RequestItem
         key={request.id}
         requestId={request.id}
-        pseudo={request.requester.pseudo}
+        pseudo={request.requester?.pseudo || "Utilisateur inconnu"}
         avatarUrl={null}
         onAccept={handleAccept}
         onRefuse={handleRefuse}
