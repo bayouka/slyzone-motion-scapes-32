@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Bell, MessageSquare } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,102 +13,99 @@ import type { RequestData, ChatData } from '@/types/dashboard';
 const DashboardPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Request states
   const [pendingRequests, setPendingRequests] = useState<RequestData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Chat states
   const [acceptedChats, setAcceptedChats] = useState<ChatData[]>([]);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [errorChats, setErrorChats] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPendingRequests = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+  const loadDashboardData = async () => {
+    if (!user) {
+      setIsLoading(false);
+      setIsLoadingChats(false);
+      return;
+    }
 
-      try {
-        const { data: requests, error: fetchError } = await supabase
-          .from('connections')
-          .select(`
+    // Load pending requests
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data: requests, error: fetchError } = await supabase
+        .from('connections')
+        .select(`
+          id,
+          created_at,
+          status,
+          requester:profiles!requester_id (
             id,
-            created_at,
-            status,
-            requester:profiles!requester_id (
-              id,
-              pseudo
-            )
-          `)
-          .eq('receiver_id', user.id)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false });
+            pseudo
+          )
+        `)
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-        if (fetchError) throw fetchError;
+      if (fetchError) throw fetchError;
+      setPendingRequests(requests as RequestData[] || []);
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+      setError('Failed to load connection requests');
+      toast({
+        title: "Error",
+        description: "Failed to load connection requests",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
 
-        setPendingRequests(requests as RequestData[] || []);
-      } catch (err) {
-        console.error('Error fetching requests:', err);
-        setError('Failed to load connection requests');
-        toast({
-          title: "Error",
-          description: "Failed to load connection requests",
-          variant: "destructive",
+    // Load accepted chats
+    try {
+      setIsLoadingChats(true);
+      setErrorChats(null);
+
+      const { data: chats, error: rpcError } = await supabase
+        .rpc('get_accepted_chats', { 
+          current_user_id: user.id 
         });
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    fetchPendingRequests();
-  }, [user, toast]);
+      if (rpcError) throw rpcError;
+
+      const formattedChats: ChatData[] = chats.map(chat => ({
+        id: chat.connection_id,
+        otherUser: {
+          pseudo: chat.other_user_pseudo,
+          avatar_url: null
+        },
+        isUnread: false,
+        lastMessage: {
+          content: "Démarrer la conversation...",
+          created_at: chat.last_updated_at
+        }
+      }));
+
+      setAcceptedChats(formattedChats);
+    } catch (err) {
+      console.error("Error fetching accepted chats:", err);
+      setErrorChats("Impossible de charger vos conversations");
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger vos conversations",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingChats(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAcceptedChats = async () => {
-      if (!user) {
-        setIsLoadingChats(false);
-        return;
-      }
-
-      try {
-        setIsLoadingChats(true);
-        setErrorChats(null);
-
-        const { data: chats, error: rpcError } = await supabase
-          .rpc('get_accepted_chats', { 
-            current_user_id: user.id 
-          });
-
-        if (rpcError) throw rpcError;
-
-        const formattedChats: ChatData[] = chats.map(chat => ({
-          id: chat.connection_id,
-          otherUser: {
-            pseudo: chat.other_user_pseudo,
-            avatar_url: null
-          },
-          isUnread: false,
-          lastMessage: {
-            content: "Démarrer la conversation...",
-            created_at: chat.last_updated_at
-          }
-        }));
-
-        setAcceptedChats(formattedChats);
-      } catch (err) {
-        console.error("Error fetching accepted chats:", err);
-        setErrorChats("Impossible de charger vos conversations");
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger vos conversations",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingChats(false);
-      }
-    };
-
-    fetchAcceptedChats();
+    loadDashboardData();
   }, [user, toast]);
 
   const handleAccept = async (requestId: string) => {
@@ -123,7 +121,12 @@ const DashboardPage = () => {
 
       if (error) throw error;
 
+      // Update UI optimistically
       setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+      
+      // Refresh dashboard data to update the Messages tab
+      await loadDashboardData();
+
       toast({
         title: "Request accepted",
         description: "You can now chat with this user",
