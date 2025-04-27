@@ -9,39 +9,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { RequestData, ChatData } from '@/types/dashboard';
 
-const mockChats: ChatData[] = [
-  { 
-    id: 'chat1', 
-    otherUser: { 
-      pseudo: 'Charlie_Conv', 
-      avatar_url: null 
-    }, 
-    isUnread: true,
-    lastMessage: {
-      content: 'Salut, comment ça va ?',
-      created_at: new Date().toISOString()
-    }
-  },
-  { 
-    id: 'chat2', 
-    otherUser: { 
-      pseudo: 'Diana_Msg', 
-      avatar_url: null 
-    }, 
-    isUnread: false,
-    lastMessage: {
-      content: 'On se voit demain ?',
-      created_at: new Date().toISOString()
-    }
-  },
-];
-
 const DashboardPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [pendingRequests, setPendingRequests] = useState<RequestData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [acceptedChats, setAcceptedChats] = useState<ChatData[]>([]);
+  const [isLoadingChats, setIsLoadingChats] = useState(true);
+  const [errorChats, setErrorChats] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPendingRequests = async () => {
@@ -83,6 +60,54 @@ const DashboardPage = () => {
     };
 
     fetchPendingRequests();
+  }, [user, toast]);
+
+  useEffect(() => {
+    const fetchAcceptedChats = async () => {
+      if (!user) {
+        setIsLoadingChats(false);
+        return;
+      }
+
+      try {
+        setIsLoadingChats(true);
+        setErrorChats(null);
+
+        const { data: chats, error: rpcError } = await supabase
+          .rpc('get_accepted_chats', { 
+            current_user_id: user.id 
+          });
+
+        if (rpcError) throw rpcError;
+
+        const formattedChats: ChatData[] = chats.map(chat => ({
+          id: chat.connection_id,
+          otherUser: {
+            pseudo: chat.other_user_pseudo,
+            avatar_url: null
+          },
+          isUnread: false,
+          lastMessage: {
+            content: "Démarrer la conversation...",
+            created_at: chat.last_updated_at
+          }
+        }));
+
+        setAcceptedChats(formattedChats);
+      } catch (err) {
+        console.error("Error fetching accepted chats:", err);
+        setErrorChats("Impossible de charger vos conversations");
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger vos conversations",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingChats(false);
+      }
+    };
+
+    fetchAcceptedChats();
   }, [user, toast]);
 
   const handleAccept = async (requestId: string) => {
@@ -183,6 +208,49 @@ const DashboardPage = () => {
     ));
   };
 
+  const renderChatsContent = () => {
+    if (isLoadingChats) {
+      return Array(3).fill(0).map((_, i) => (
+        <div key={i} className="p-4 space-y-3">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[100px]" />
+            </div>
+          </div>
+        </div>
+      ));
+    }
+
+    if (errorChats) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          {errorChats}
+        </div>
+      );
+    }
+
+    if (acceptedChats.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          Vos conversations apparaîtront ici.
+        </div>
+      );
+    }
+
+    return acceptedChats.map((chat) => (
+      <ChatItem
+        key={chat.id}
+        chatId={chat.id}
+        pseudo={chat.otherUser.pseudo}
+        avatarUrl={chat.otherUser.avatar_url}
+        isUnread={chat.isUnread}
+        lastMessage={chat.lastMessage}
+      />
+    ));
+  };
+
   return (
     <div className="flex flex-col max-w-2xl mx-auto p-4 space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Tableau de bord</h1>
@@ -204,16 +272,7 @@ const DashboardPage = () => {
         </TabsContent>
 
         <TabsContent value="messages" className="mt-6 space-y-4">
-          {mockChats.map((chat) => (
-            <ChatItem
-              key={chat.id}
-              chatId={chat.id}
-              pseudo={chat.otherUser.pseudo}
-              avatarUrl={chat.otherUser.avatar_url}
-              isUnread={chat.isUnread}
-              lastMessage={chat.lastMessage}
-            />
-          ))}
+          {renderChatsContent()}
         </TabsContent>
       </Tabs>
     </div>
