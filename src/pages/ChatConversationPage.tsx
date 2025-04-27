@@ -1,53 +1,187 @@
 
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { Message } from '@/types/dashboard';
+
+// Message bubble component
+const MessageBubble: React.FC<{ 
+  message: Message; 
+  isSentByCurrentUser: boolean;
+}> = ({ message, isSentByCurrentUser }) => {
+  return (
+    <div className={`flex ${isSentByCurrentUser ? 'justify-end' : 'justify-start'} mb-3`}>
+      <div 
+        className={`max-w-[75%] rounded-lg p-3 ${
+          isSentByCurrentUser 
+            ? 'bg-cyan-500 text-white ml-auto' 
+            : 'bg-gray-100 text-gray-800'
+        }`}
+      >
+        <p className="break-words">{message.content}</p>
+      </div>
+    </div>
+  );
+};
 
 const ChatConversationPage = () => {
   const { chatId } = useParams<{ chatId: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // TODO: Fetch otherUser data from Supabase
-  // const { data: otherUser } = useQuery({
-  //   queryKey: ['chat-user', chatId],
-  //   queryFn: () => supabase.from('profiles').select('pseudo').eq('id', chatId).single()
-  // });
+  // Query to get other user's info
+  const { data: otherUserInfo } = useQuery({
+    queryKey: ['chat-user', chatId, user?.id],
+    queryFn: async () => {
+      if (!chatId || !user) return null;
+      
+      const { data, error } = await supabase.rpc('get_accepted_chats', {
+        current_user_id: user.id
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      const connection = data.find(chat => chat.connection_id === chatId);
+      return connection ? {
+        id: connection.other_user_id,
+        pseudo: connection.other_user_pseudo
+      } : null;
+    },
+    enabled: !!chatId && !!user,
+  });
   
-  const otherUserPseudo = "Utilisateur"; // Placeholder until we fetch real data
-  
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  // Fetch messages
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!chatId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('connection_id', chatId)
+          .order('created_at', { ascending: true });
+          
+        if (error) {
+          throw error;
+        }
+        
+        setMessages(data || []);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les messages",
+          variant: "destructive",
+        });
+      }
+    };
     
-    // TODO: Implement send message to Supabase
-    // await supabase.from('messages').insert({
-    //   chat_id: chatId,
-    //   content: message,
-    //   sender_id: currentUser.id
-    // });
+    fetchMessages();
+  }, [chatId, toast]);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+  
+  // Send message function
+  const handleSendMessage = async () => {
+    if (!message.trim() || !user || !chatId) return;
     
-    setMessage('');
+    const newMessage = {
+      connection_id: chatId,
+      content: message.trim(),
+      sender_id: user.id,
+    };
+    
+    // Optimistic update
+    const tempId = Date.now().toString();
+    setMessages(prev => [...prev, {
+      ...newMessage,
+      id: tempId,
+      created_at: new Date().toISOString(),
+    }]);
+    
+    setMessage(''); // Clear input
+    
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert([newMessage]);
+        
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'envoyer le message",
+        variant: "destructive",
+      });
+      
+      // Remove the optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+    }
+  };
+  
+  // Handle Enter key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Chat Header - Fixed at top */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-        <Link to="/chat" className="text-gray-500 hover:text-gray-700">
-          <ArrowLeft size={24} />
-        </Link>
-        <h1 className="text-lg font-semibold">Conversation avec {otherUserPseudo}</h1>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-700">
+            <ArrowLeft size={24} />
+          </button>
+          <h1 className="text-lg font-semibold truncate">
+            {otherUserInfo?.pseudo || 'Chargement...'}
+          </h1>
+        </div>
+        <button className="text-gray-500 hover:text-gray-700 p-1">
+          <MoreHorizontal size={24} />
+        </button>
       </div>
       
       {/* Messages Container - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="self-start max-w-[70%] bg-gray-100 rounded-lg p-3">
-          <p>Salut ! Comment ça va ?</p>
-        </div>
-        <div className="self-end max-w-[70%] bg-cyan-500 text-white rounded-lg p-3 ml-auto">
-          <p>Très bien et toi ?</p>
-        </div>
-      </div>
+      <ScrollArea className="flex-1 p-4">
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Envoyez le premier message !
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {messages.map((msg) => (
+              <MessageBubble 
+                key={msg.id} 
+                message={msg} 
+                isSentByCurrentUser={msg.sender_id === user?.id}
+              />
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </ScrollArea>
       
       {/* Message Input - Fixed at bottom */}
       <div className="border-t border-gray-200 bg-white/80 backdrop-blur-sm p-4">
@@ -56,12 +190,14 @@ const ChatConversationPage = () => {
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyPress}
             placeholder="Écrire un message..."
-            className="flex-1 p-2 border border-gray-300 rounded-md"
+            className="flex-1 p-3 border border-gray-300 rounded-md"
           />
           <Button 
             onClick={handleSendMessage}
             className="bg-cyan-500 hover:bg-cyan-600 text-white"
+            disabled={!message.trim()}
           >
             Envoyer
           </Button>
