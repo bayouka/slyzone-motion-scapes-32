@@ -1,15 +1,16 @@
 
 import React, { useEffect, useRef } from 'react';
-import { createParticles, updateParticle, type Particle } from '../utils/particleUtils';
-import { createHexagons, updateHexagon, type Hexagon } from '../utils/hexagonUtils';
-import { createGradientBackground, drawGlow, drawHexagon } from '../utils/canvasUtils';
+import { createDustParticles, updateDustParticle, type DustParticle } from '../utils/dustParticleUtils';
+import { createFluidLayers, updateFluidLayer, type FluidLayer } from '../utils/fluidLayerUtils';
+import { createGradientBackground, drawGlow, drawFluidShape } from '../utils/canvasUtils';
 
 const AnimatedBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const particlesRef = useRef<Particle[]>([]);
-  const hexagonsRef = useRef<Hexagon[]>([]);
+  const dustParticlesRef = useRef<DustParticle[]>([]);
+  const fluidLayersRef = useRef<FluidLayer[]>([]);
   const requestIdRef = useRef<number | null>(null);
+  const timeRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,12 +22,14 @@ const AnimatedBackground = () => {
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      particlesRef.current = createParticles(canvas.width, canvas.height);
-      hexagonsRef.current = createHexagons(canvas.width, canvas.height);
+      dustParticlesRef.current = createDustParticles(canvas.width, canvas.height);
+      fluidLayersRef.current = createFluidLayers(canvas.width, canvas.height);
     };
 
-    const animate = () => {
+    const animate = (timestamp: number) => {
       if (!canvas || !ctx) return;
+      
+      timeRef.current = timestamp;
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       createGradientBackground(ctx, canvas.width, canvas.height);
@@ -34,30 +37,45 @@ const AnimatedBackground = () => {
       const mouseX = mouseRef.current.x;
       const mouseY = mouseRef.current.y;
 
-      if (mouseX !== 0 && mouseY !== 0) {
-        drawGlow(ctx, mouseX, mouseY, 200, 'rgba(0, 210, 255, 0.03)');
-      }
-
-      hexagonsRef.current.forEach(hexagon => {
-        updateHexagon(hexagon, mouseX, mouseY, canvas);
-        drawHexagon(
+      // Draw fluid layers (behind dust particles)
+      fluidLayersRef.current.forEach(layer => {
+        updateFluidLayer(layer, mouseX, mouseY, canvas, timestamp);
+        ctx.globalAlpha = layer.alpha;
+        drawFluidShape(
           ctx,
-          hexagon.x,
-          hexagon.y,
-          hexagon.size,
-          hexagon.rotation,
-          hexagon.color.replace(/[\d.]+\)$/, `${hexagon.alpha})`)
+          layer.x,
+          layer.y,
+          layer.size,
+          layer.rotation,
+          layer.gradientColors
         );
       });
-
-      particlesRef.current.forEach(particle => {
-        updateParticle(particle, mouseX, mouseY, canvas);
+      
+      // Reset global alpha for dust particles
+      ctx.globalAlpha = 1;
+      
+      // Draw dust particles with subtle glow
+      dustParticlesRef.current.forEach(particle => {
+        updateDustParticle(particle, mouseX, mouseY, canvas, timestamp);
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
         ctx.fillStyle = particle.color.replace(/[\d.]+\)$/, `${particle.alpha})`);
         ctx.fill();
-        drawGlow(ctx, particle.x, particle.y, particle.size * 2, particle.color.replace(/[\d.]+\)$/, `${particle.alpha * 0.5})`));
+        
+        // Add subtle glow to particles
+        drawGlow(
+          ctx, 
+          particle.x, 
+          particle.y, 
+          particle.size * 6, 
+          particle.color.replace(/[\d.]+\)$/, `${particle.alpha * 0.2})`)
+        );
       });
+      
+      // Gentle mouse glow effect when moving
+      if (mouseX !== 0 && mouseY !== 0) {
+        drawGlow(ctx, mouseX, mouseY, 150, 'rgba(230, 230, 255, 0.02)');
+      }
 
       requestIdRef.current = requestAnimationFrame(animate);
     };
@@ -72,7 +90,7 @@ const AnimatedBackground = () => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('mousemove', handleMouseMove);
-    animate();
+    requestIdRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
@@ -87,4 +105,3 @@ const AnimatedBackground = () => {
 };
 
 export default AnimatedBackground;
-

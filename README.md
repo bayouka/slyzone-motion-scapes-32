@@ -34,42 +34,39 @@ slyzone/
 
 ### Vue d'ensemble
 
-Le fond d'écran animé est implémenté dans le composant `AnimatedBackground.tsx` qui utilise l'élément HTML Canvas pour créer une ambiance futuriste et interactive avec des particules et des hexagones qui réagissent aux mouvements de la souris.
+Le fond d'écran animé est implémenté dans le composant `AnimatedBackground.tsx` qui utilise l'élément HTML Canvas pour créer une ambiance douce, éthérée et immersive avec des formes fluides et des particules "poussière" qui réagissent subtilement aux mouvements de la souris.
 
 ### Caractéristiques techniques
 
 #### Éléments visuels
-- **Particules**: Points lumineux qui flottent et réagissent au mouvement de la souris
-- **Hexagones**: Formes géométriques plus grandes qui tournent lentement et réagissent également au mouvement de la souris
-- **Effets de lueur (glow)**: Effets lumineux qui donnent de la profondeur et de l'atmosphère
+- **Couches fluides**: Formes organiques aux contours flous qui dérivent lentement, comme des voiles translucides ou de l'encre diffusée dans l'eau
+- **Particules "poussière"**: Minuscules points lumineux qui flottent doucement, émettant une lueur subtile
+- **Effets de lueur (glow)**: Effets lumineux délicats qui donnent de la profondeur et de l'atmosphère
 
 #### Interactivité
-- Les éléments réagissent à la position du curseur
-- Les particules s'éloignent légèrement du curseur lorsqu'il s'approche
-- Les hexagones augmentent leur opacité à proximité du curseur
-- Un effet de lueur (glow) apparaît autour du curseur
+- Les éléments réagissent subtilement à la position du curseur (effet de parallaxe)
+- Les couches fluides ondulent lentement, créant un sentiment de profondeur
+- Les particules dérivent doucement vers le haut, comme de la poussière dans un rayon de lumière
+- Un effet de lueur (glow) très subtil apparaît autour du curseur lors du mouvement
 
 #### Palette de couleurs
-- Fonds dégradés bleu foncé à bleu moyen (`hsl(194, 100%, 5%)` à `hsl(194, 100%, 15%)`)
-- Particules en teintes de bleu clair (`rgba(0, 210, 255, 0.8)`, `rgba(0, 180, 255, 0.8)`, etc.)
-- Hexagones semi-transparents en teintes de bleu
-- Variables CSS personnalisées pour les couleurs de thème:
-  - `--slyzone-blue-dark`: `hsl(194 100% 10%)`
-  - `--slyzone-blue-medium`: `hsl(189 100% 30%)`
-  - `--slyzone-blue-bright`: `hsl(184 100% 50%)`
+- Fonds dégradés bleu-gris foncé à violet sombre (`hsl(220, 30%, 10%)` à `hsl(250, 25%, 12%)` à `hsl(200, 30%, 15%)`)
+- Couches fluides en teintes pastel translucides: lavande pâle, rose poudré, vert menthe, bleu glacé
+- Particules en teintes pastel plus lumineuses avec une lueur subtile
+- Variables CSS personnalisées pour les couleurs de thème
 
 ### Implémentation technique
 
 Le composant utilise plusieurs hooks et techniques React:
-- `useRef` pour stocker les références au canvas, au contexte, aux particules, et aux hexagones
+- `useRef` pour stocker les références au canvas, au contexte, aux particules, et aux couches fluides
 - `useEffect` pour configurer le canvas et l'animation
 - `requestAnimationFrame` pour créer une boucle d'animation fluide
 
 #### Processus d'animation:
-1. Configuration initiale du canvas et création des particules et hexagones
+1. Configuration initiale du canvas et création des particules et des couches fluides
 2. Suivi du mouvement de la souris avec les event listeners
-3. Mise à jour de la position et des propriétés des éléments à chaque frame
-4. Rendu des éléments avec des effets visuels (lueur, dégradés)
+3. Mise à jour de la position et des propriétés des éléments à chaque frame, avec des mouvements lents et ondulants
+4. Rendu des éléments avec des effets visuels (lueur, dégradés, formes organiques)
 5. Nettoyage des event listeners lors du démontage du composant
 
 ### Personnalisation
@@ -77,13 +74,13 @@ Le composant utilise plusieurs hooks et techniques React:
 Pour modifier le fond animé, voici les principales sections à ajuster:
 
 #### Couleurs
-Modifiez les fonctions comme `getRandomBlueColor()` ou les variables dans `drawBackground()`.
+Modifiez les fonctions comme `getRandomPastelColor()` dans `dustParticleUtils.ts` ou les variables dans `createGradientBackground()` dans `canvasUtils.ts`.
 
 #### Densité des éléments
-Ajustez `particleCount` et `hexagonCount` dans les fonctions `createParticles()` et `createHexagons()`.
+Ajustez `particleCount` et `layerCount` dans les fonctions `createDustParticles()` et `createFluidLayers()`.
 
 #### Comportement des animations
-Modifiez les valeurs comme `maxDistance`, les facteurs de vitesse, ou les calculs de déplacement.
+Modifiez les valeurs de vitesse, d'amplitude ou les fonctions de mouvement dans les méthodes `updateFluidLayer()` et `updateDustParticle()`.
 
 ## Technologies utilisées
 
