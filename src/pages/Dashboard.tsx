@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import AnimatedBackground from '../components/AnimatedBackground';
+import ShaderBackground from '../components/ShaderBackground';
 
 const Dashboard = () => {
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      <AnimatedBackground />
+      <ShaderBackground />
       
       <div className="content">
         <h1 className="slyzone-title">Dashboard</h1>
