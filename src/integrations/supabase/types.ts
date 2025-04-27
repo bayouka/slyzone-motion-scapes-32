@@ -125,6 +125,13 @@ export type Database = {
           last_updated_at: string
         }[]
       }
+      search_profiles_by_pseudo: {
+        Args: { search_term: string }
+        Returns: {
+          profile_id: string
+          profile_pseudo: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
