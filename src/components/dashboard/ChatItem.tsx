@@ -7,19 +7,34 @@ interface ChatItemProps {
   chatId: string;
   pseudo: string;
   avatarUrl: string | null;
-  lastMessageSnippet?: string;
-  timestamp?: string;
   isUnread: boolean;
+  lastMessage?: {
+    content: string;
+    created_at: string;
+  };
 }
 
 export const ChatItem = ({
   chatId,
   pseudo,
   avatarUrl,
-  lastMessageSnippet = "Démarrer la conversation...",
-  timestamp = "À l'instant",
-  isUnread
+  isUnread,
+  lastMessage
 }: ChatItemProps) => {
+  // Format the timestamp or use a default
+  const formatTimestamp = (timestamp?: string) => {
+    if (!timestamp) return "À l'instant";
+    
+    // Here you could implement proper date formatting
+    // For now we'll just return a simple format
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Get message content or default
+  const messageContent = lastMessage?.content || "Démarrer la conversation...";
+  const timestamp = lastMessage ? formatTimestamp(lastMessage.created_at) : "À l'instant";
+
   return (
     <Link
       to={`/chat/${chatId}`}
@@ -39,7 +54,7 @@ export const ChatItem = ({
           <span className="font-medium">{pseudo}</span>
           <span className="text-sm text-gray-500">{timestamp}</span>
         </div>
-        <p className="text-sm text-gray-600 truncate">{lastMessageSnippet}</p>
+        <p className="text-sm text-gray-600 truncate">{messageContent}</p>
       </div>
     </Link>
   );
