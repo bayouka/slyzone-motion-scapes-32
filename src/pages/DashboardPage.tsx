@@ -41,7 +41,7 @@ const DashboardPage = () => {
           id,
           created_at,
           status,
-          requester:profiles!requester_id (
+          requester:requester_id (
             id,
             pseudo
           )
