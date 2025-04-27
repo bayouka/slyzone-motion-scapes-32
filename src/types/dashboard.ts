@@ -1,3 +1,4 @@
+
 export interface RequestData {
   id: string;
   requester: {
@@ -26,6 +27,6 @@ export interface Message {
   id: string;
   content: string;
   sender_id: string;
-  chat_id: string;
+  connection_id: string;  // Changed from chat_id to connection_id to match database
   created_at: string;
 }

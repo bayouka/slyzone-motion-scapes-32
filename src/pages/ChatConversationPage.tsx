@@ -78,7 +78,7 @@ const ChatConversationPage = () => {
           throw error;
         }
         
-        setMessages(data || []);
+        setMessages(data as Message[]);
       } catch (error) {
         console.error('Error fetching messages:', error);
         toast({
@@ -113,7 +113,7 @@ const ChatConversationPage = () => {
       ...newMessage,
       id: tempId,
       created_at: new Date().toISOString(),
-    }]);
+    } as Message]);
     
     setMessage(''); // Clear input
     
