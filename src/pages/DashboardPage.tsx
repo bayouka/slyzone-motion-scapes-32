@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Bell, MessageSquare } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -119,7 +120,7 @@ const DashboardPage = () => {
           status: 'accepted', 
           updated_at: new Date().toISOString() 
         })
-        .match({ id: requestId, receiver_id: user.id, status: 'pending' });
+        .eq('id', requestId);
 
       if (error) throw error;
 
