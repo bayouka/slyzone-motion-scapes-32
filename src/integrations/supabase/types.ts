@@ -77,7 +77,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_accepted_chats: {
+        Args: { current_user_id: string }
+        Returns: {
+          connection_id: string
+          other_user_id: string
+          other_user_pseudo: string
+          last_updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
