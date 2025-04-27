@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, MessageSquare, Search, Link2, UserCircle } from 'lucide-react';
 
@@ -11,6 +11,31 @@ const navItems = [
 ];
 
 const BottomTabBar = () => {
+  // Move the useEffect inside the component function
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      document.querySelectorAll('.active [data-active-label]').forEach((el) => {
+        if (el instanceof HTMLElement) {
+          el.style.display = 'block';
+        }
+      });
+      
+      document.querySelectorAll(':not(.active) [data-active-label]').forEach((el) => {
+        if (el instanceof HTMLElement) {
+          el.style.display = 'none';
+        }
+      });
+    });
+    
+    observer.observe(document.body, { 
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-lg border-t border-gray-200/50 flex justify-around items-center z-20">
       {navItems.slice(0, 2).map((item) => (
@@ -56,30 +81,5 @@ const NavTab = ({ icon: Icon, label, path }: NavTabProps) => {
     </NavLink>
   );
 };
-
-// Add a CSS effect to show the label when the link is active
-React.useEffect(() => {
-  const observer = new MutationObserver(() => {
-    document.querySelectorAll('.active [data-active-label]').forEach((el) => {
-      if (el instanceof HTMLElement) {
-        el.style.display = 'block';
-      }
-    });
-    
-    document.querySelectorAll(':not(.active) [data-active-label]').forEach((el) => {
-      if (el instanceof HTMLElement) {
-        el.style.display = 'none';
-      }
-    });
-  });
-  
-  observer.observe(document.body, { 
-    attributes: true,
-    subtree: true,
-    attributeFilter: ['class']
-  });
-  
-  return () => observer.disconnect();
-}, []);
 
 export default BottomTabBar;
