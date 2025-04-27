@@ -14,7 +14,7 @@ interface RequestItemProps {
 
 export const RequestItem = ({ requestId, pseudo, avatarUrl, onAccept, onRefuse }: RequestItemProps) => {
   return (
-    <div className="flex items-center justify-between p-4 bg-white/60 backdrop-blur-sm rounded-lg shadow-sm hover:bg-white/70 transition-colors">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/60 backdrop-blur-sm rounded-lg shadow-sm hover:bg-white/70 transition-colors gap-4">
       <div className="flex items-center gap-3">
         <Avatar>
           <AvatarImage src={avatarUrl || undefined} />
@@ -22,11 +22,11 @@ export const RequestItem = ({ requestId, pseudo, avatarUrl, onAccept, onRefuse }
         </Avatar>
         <span className="font-medium">{pseudo}</span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 w-full sm:w-auto">
         <Button
           onClick={() => onAccept(requestId)}
           variant="default"
-          className="bg-cyan-500 hover:bg-cyan-600"
+          className="flex-1 sm:flex-initial bg-cyan-500 hover:bg-cyan-600"
           size="sm"
         >
           <Check className="w-4 h-4 mr-1" />
@@ -36,6 +36,7 @@ export const RequestItem = ({ requestId, pseudo, avatarUrl, onAccept, onRefuse }
           onClick={() => onRefuse(requestId)}
           variant="outline"
           size="sm"
+          className="flex-1 sm:flex-initial"
         >
           <X className="w-4 h-4 mr-1" />
           Refuser
