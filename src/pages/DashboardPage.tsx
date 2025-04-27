@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Bell, MessageSquare } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -8,13 +7,51 @@ import type { RequestData, ChatData } from '@/types/dashboard';
 
 // Données mockées (à remplacer par les données Supabase)
 const mockRequests: RequestData[] = [
-  { id: 'req1', requester: { pseudo: 'Alice_Test', avatar_url: null } },
-  { id: 'req2', requester: { pseudo: 'Bob_Demo', avatar_url: null } },
+  { 
+    id: 'req1', 
+    requester: { 
+      pseudo: 'Alice_Test', 
+      avatar_url: null 
+    },
+    status: 'pending',
+    created_at: new Date().toISOString()
+  },
+  { 
+    id: 'req2', 
+    requester: { 
+      pseudo: 'Bob_Demo', 
+      avatar_url: null 
+    },
+    status: 'pending',
+    created_at: new Date().toISOString()
+  },
 ];
 
 const mockChats: ChatData[] = [
-  { id: 'chat1', otherUser: { pseudo: 'Charlie_Conv', avatar_url: null }, isUnread: true },
-  { id: 'chat2', otherUser: { pseudo: 'Diana_Msg', avatar_url: null }, isUnread: false },
+  { 
+    id: 'chat1', 
+    otherUser: { 
+      pseudo: 'Charlie_Conv', 
+      avatar_url: null 
+    }, 
+    isUnread: true,
+    lastMessage: {
+      content: 'Salut, comment ça va ?',
+      created_at: new Date().toISOString()
+    }
+  },
+  { 
+    id: 'chat2', 
+    otherUser: { 
+      pseudo: 'Diana_Msg', 
+      avatar_url: null 
+    }, 
+    isUnread: false,
+    lastMessage: {
+      content: 'On se voit demain ?',
+      created_at: new Date().toISOString()
+    }
+  },
 ];
 
 const DashboardPage = () => {
@@ -73,6 +110,7 @@ const DashboardPage = () => {
                 pseudo={chat.otherUser.pseudo}
                 avatarUrl={chat.otherUser.avatar_url}
                 isUnread={chat.isUnread}
+                lastMessage={chat.lastMessage}
               />
             ))
           ) : (
