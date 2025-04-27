@@ -1,9 +1,9 @@
-
 export interface RequestData {
   id: string;
   requester: {
+    id: string;
     pseudo: string;
-    avatar_url: string | null;
+    avatar_url?: string | null;
   };
   status: 'pending' | 'accepted' | 'refused' | 'blocked';
   created_at: string;
