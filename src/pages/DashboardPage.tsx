@@ -41,7 +41,7 @@ const DashboardPage = () => {
           id,
           created_at,
           status,
-          requester:requester_id (
+          requester:profiles!connections_requester_id_fkey (
             id,
             pseudo
           )
