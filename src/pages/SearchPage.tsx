@@ -18,14 +18,30 @@ const SearchPage = () => {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [requestStatus, setRequestStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-
-  const handleSearch = async (value: string) => {
+  
+  // Fonction de recherche avec un délai de 500ms
+  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  
+  const handleSearch = (value: string) => {
     setSearchTerm(value);
     if (!value.trim()) {
       setSearchResult(null);
       return;
     }
 
+    // Nettoyer le timeout précédent s'il existe
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    // Créer un nouveau timeout pour déclencher la recherche
+    searchTimeout.current = setTimeout(() => {
+      performSearch(value);
+    }, 500); // 500ms de délai
+  };
+
+  // La fonction qui effectue réellement la recherche
+  const performSearch = async (value: string) => {
     setIsLoadingSearch(true);
     setSearchResult(null);
 
@@ -58,9 +74,47 @@ const SearchPage = () => {
   const handleSendRequest = async (receiverProfile: SearchResult) => {
     if (!user) return;
     
+    // Vérification #1: L'utilisateur essaie de s'envoyer une demande à lui-même
+    if (user.id === receiverProfile.profile_id) {
+      toast({
+        title: "Action impossible",
+        description: "Vous ne pouvez pas vous envoyer de demande à vous-même.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setRequestStatus('sending');
     
     try {
+      // Vérification #2: Une connexion existe déjà (dans un sens ou dans l'autre)
+      const { data: existingConnections, error: checkError } = await supabase
+        .from('connections')
+        .select('id, status')
+        .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .or(`requester_id.eq.${receiverProfile.profile_id},receiver_id.eq.${receiverProfile.profile_id}`)
+        .limit(1);
+      
+      if (checkError) throw checkError;
+      
+      if (existingConnections && existingConnections.length > 0) {
+        const status = existingConnections[0].status;
+        let message = "Une connexion avec cet utilisateur existe déjà.";
+        
+        if (status === 'pending') {
+          message = "Une demande de connexion est déjà en attente.";
+        }
+        
+        toast({
+          title: "Connexion existante",
+          description: message,
+        });
+        
+        setRequestStatus('idle');
+        return;
+      }
+      
+      // Insertion de la nouvelle demande
       const { error: insertError } = await supabase
         .from('connections')
         .insert([{
@@ -90,7 +144,7 @@ const SearchPage = () => {
       console.error('Request error:', error);
       toast({
         title: "Erreur lors de l'envoi",
-        description: "Une erreur est survenue. Veuillez réessayer.",
+        description: "Impossible d'envoyer la demande pour le moment.",
         variant: "destructive",
       });
       setRequestStatus('error');

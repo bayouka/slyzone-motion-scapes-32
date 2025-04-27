@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Bell, MessageSquare } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -53,9 +52,9 @@ const DashboardPage = () => {
 
       if (fetchError) throw fetchError;
       
-      // Filtre pour éliminer les requêtes avec requester null
-      const validRequests = requests?.filter(req => req.requester !== null) || [];
-      setPendingRequests(validRequests as RequestData[]);
+      // Nous conservons toutes les requêtes, même celles avec requester null
+      // La gestion de ces cas particuliers est faite dans le composant RequestItem
+      setPendingRequests(requests as RequestData[] || []);
     } catch (err) {
       console.error('Error fetching requests:', err);
       setError('Failed to load connection requests');
