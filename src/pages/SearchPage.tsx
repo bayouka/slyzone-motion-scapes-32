@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +18,6 @@ const SearchPage = () => {
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [requestStatus, setRequestStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   
-  // Fonction de recherche avec un délai de 500ms
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
   
   const handleSearch = (value: string) => {
@@ -29,21 +27,17 @@ const SearchPage = () => {
       return;
     }
 
-    // Nettoyer le timeout précédent s'il existe
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current);
     }
 
-    // Créer un nouveau timeout pour déclencher la recherche
     searchTimeout.current = setTimeout(() => {
       performSearch(value);
-    }, 500); // 500ms de délai
+    }, 500);
   };
 
-  // La fonction qui effectue réellement la recherche
   const performSearch = async (value: string) => {
     setIsLoadingSearch(true);
-    setSearchResult(null);
 
     try {
       const { data: results, error: rpcError } = await supabase
@@ -54,13 +48,17 @@ const SearchPage = () => {
       if (results && results.length > 0) {
         setSearchResult(results[0]);
       } else {
-        toast({
-          title: "Aucun utilisateur trouvé",
-          description: "Vérifiez l'orthographe du pseudo et réessayez.",
-        });
+        setSearchResult(null);
+        if (value === searchTerm) {
+          toast({
+            title: "Aucun utilisateur trouvé",
+            description: "Vérifiez l'orthographe du pseudo et réessayez.",
+          });
+        }
       }
     } catch (error) {
       console.error('Search error:', error);
+      setSearchResult(null);
       toast({
         title: "Erreur lors de la recherche",
         description: "Une erreur est survenue. Veuillez réessayer.",
@@ -74,7 +72,6 @@ const SearchPage = () => {
   const handleSendRequest = async (receiverProfile: SearchResult) => {
     if (!user) return;
     
-    // Vérification #1: L'utilisateur essaie de s'envoyer une demande à lui-même
     if (user.id === receiverProfile.profile_id) {
       toast({
         title: "Action impossible",
@@ -87,7 +84,6 @@ const SearchPage = () => {
     setRequestStatus('sending');
     
     try {
-      // Vérification #2: Une connexion existe déjà (dans un sens ou dans l'autre)
       const { data: existingConnections, error: checkError } = await supabase
         .from('connections')
         .select('id, status')
@@ -114,7 +110,6 @@ const SearchPage = () => {
         return;
       }
       
-      // Insertion de la nouvelle demande
       const { error: insertError } = await supabase
         .from('connections')
         .insert([{
@@ -123,7 +118,7 @@ const SearchPage = () => {
         }]);
 
       if (insertError) {
-        if (insertError.code === '23505') { // Unique violation
+        if (insertError.code === '23505') {
           toast({
             title: "Demande déjà envoyée",
             description: "Vous avez déjà envoyé une demande à cet utilisateur.",
