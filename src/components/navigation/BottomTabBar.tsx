@@ -50,11 +50,36 @@ const NavTab = ({ icon: Icon, label, path }: NavTabProps) => {
       }
     >
       <Icon size={24} />
-      {({ isActive }) => (
-        isActive && <span className="text-xs mt-0.5">{label}</span>
-      )}
+      <span className="text-xs mt-0.5" style={{ display: 'none' }} data-active-label>
+        {label}
+      </span>
     </NavLink>
   );
 };
+
+// Add a CSS effect to show the label when the link is active
+React.useEffect(() => {
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.active [data-active-label]').forEach((el) => {
+      if (el instanceof HTMLElement) {
+        el.style.display = 'block';
+      }
+    });
+    
+    document.querySelectorAll(':not(.active) [data-active-label]').forEach((el) => {
+      if (el instanceof HTMLElement) {
+        el.style.display = 'none';
+      }
+    });
+  });
+  
+  observer.observe(document.body, { 
+    attributes: true,
+    subtree: true,
+    attributeFilter: ['class']
+  });
+  
+  return () => observer.disconnect();
+}, []);
 
 export default BottomTabBar;
