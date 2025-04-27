@@ -1,15 +1,14 @@
-
 export const createGradientBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  // Create a soft, dark gradient base
+  // Créer une base douce et sombre avec un dégradé
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, 'hsl(220, 30%, 10%)'); // Dark blue-gray
-  gradient.addColorStop(0.5, 'hsl(250, 25%, 12%)'); // Dark muted purple
-  gradient.addColorStop(1, 'hsl(200, 30%, 15%)'); // Deep teal
+  gradient.addColorStop(0, 'hsl(220, 30%, 10%)'); // Bleu-gris foncé
+  gradient.addColorStop(0.5, 'hsl(250, 25%, 12%)'); // Violet foncé atténué
+  gradient.addColorStop(1, 'hsl(200, 30%, 15%)'); // Bleu-vert profond
   
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  // Add a subtle vignette effect
+  // Ajouter un effet de vignette subtil
   const radialGradient = ctx.createRadialGradient(
     width / 2, height / 2, 0,
     width / 2, height / 2, Math.max(width, height) / 1.5
@@ -42,7 +41,7 @@ export const drawFluidShape = (
   ctx.translate(x, y);
   ctx.rotate(rotation);
   
-  // Create a soft, fluid blob shape using Bezier curves
+  // Créer une forme fluide et amorphe avec des courbes de Bézier
   const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
   gradient.addColorStop(0, gradientColors[0]);
   gradient.addColorStop(1, gradientColors[1]);
@@ -50,22 +49,22 @@ export const drawFluidShape = (
   ctx.fillStyle = gradient;
   ctx.beginPath();
   
-  // Draw an organic, fluid shape with Bezier curves
-  // This creates a soft, amorphous shape
+  // Dessiner une forme fluide avec des courbes de Bézier
+  // Cela crée une forme amorphe et douce
   const points = 8;
   const angleStep = (Math.PI * 2) / points;
   
-  // First point
+  // Première point
   const startX = Math.cos(0) * size;
   const startY = Math.sin(0) * size;
   ctx.moveTo(startX, startY);
   
-  // Draw rounded curves between points
+  // Dessiner des courbes arrondies entre les points
   for (let i = 1; i <= points; i++) {
     const angle = i * angleStep;
     const prevAngle = (i - 1) * angleStep;
     
-    // Add some randomness to the radius for organic feel
+    // Ajouter une variété de rayon pour un effet naturel
     const radiusVariation = size * 0.2;
     const radius = size + Math.sin(rotation * 2 + i) * radiusVariation;
     
@@ -84,7 +83,7 @@ export const drawFluidShape = (
   ctx.closePath();
   ctx.fill();
   
-  // Add a very soft blur effect
+  // Ajouter un effet de flou très doux
   ctx.shadowColor = gradientColors[0];
   ctx.shadowBlur = 30;
   ctx.fill();
