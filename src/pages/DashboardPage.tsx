@@ -111,25 +111,34 @@ const DashboardPage = () => {
     loadDashboardData();
   }, [user, toast]);
 
-  const handleAccept = async (requestId: string) => {
+ const handleAccept = async (requestId: string) => {
     if (!user) return;
     try {
+      // Ajout d'un log pour voir l'ID utilisateur avant l'appel
+      console.log(`Utilisateur ${user.id} tente d'accepter la demande ${requestId}`);
+
       const { error } = await supabase
         .from('connections')
-        .update({ 
-          status: 'accepted', 
-          updated_at: new Date().toISOString() 
+        .update({
+          status: 'accepted',
         })
-        .eq('id', requestId);
+        .eq('id', requestId) // Cible la bonne connexion
+        .eq('receiver_id', user.id) // Vérifie que c'est le destinataire << CORRIGÉ ICI
+        .eq('status', 'pending');    // Vérifie que le statut est 'pending' << CORRIGÉ ICI
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur Supabase lors de l'acceptation:", error);
+        throw error; // Important pour aller dans le bloc catch
+      }
 
-      // Update UI optimistically
-      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-      
-      // Refresh dashboard data to update the Messages tab
+      // Succès ! Log et rafraîchissement
+      console.log(`Demande ${requestId} acceptée avec succès dans Supabase.`);
+
+      // // Supprimons la mise à jour optimiste pour plus de sûreté
+      // setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+
+      // Recharge TOUTES les données (demandes ET chats) pour refléter le changement
       await loadDashboardData();
-
       toast({
         title: "Request accepted",
         description: "You can now chat with this user",
