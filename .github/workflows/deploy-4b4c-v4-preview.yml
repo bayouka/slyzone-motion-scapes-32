@@ -105,9 +105,9 @@ jobs:
             path="$1"; needle="$2"; nav="${3:-0}"
             for i in $(seq 1 15); do
               if [ "$nav" = "1" ]; then
-                code=$(curl -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+                code=$(curl -L -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
               else
-                code=$(curl -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+                code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
               fi
               echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
               if [ "$code" = "200" ] && grep -q "$needle" /tmp/probe.out; then
