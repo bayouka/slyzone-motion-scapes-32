@@ -138,15 +138,15 @@ jobs:
           test -n "$URL"
           probe() {
             path="$1"; needle="$2"; nav="${3:-0}"
-            for i in $(seq 1 15); do
+            for i in $(seq 1 8); do
               if [ "$nav" = "1" ]; then
                 code=$(curl -L -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
               else
                 code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
               fi
               echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
-              if [ "$code" = "200" ] && grep -q "$needle" /tmp/probe.out; then return 0; fi
-              sleep 4
+              if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
+              sleep 3
             done
             return 1
           }
@@ -156,7 +156,7 @@ jobs:
           probe /assets/live.js 'mobile-drawer-scroll'
           probe /assets/live.css '2b2c V4.2.1 — brand, shell lock & responsive finish'
           probe /assets/favicon.svg '#38c5ff'
-          probe /assets/boot.js 'assets/live.js'
+          probe /assets/boot.js "import('./live.js')"
           probe /health 'prepilot-v4.2.1'
           echo "PREVIEW_URL=$URL" | tee /tmp/2b2c-v421-fixed-url.txt
 
