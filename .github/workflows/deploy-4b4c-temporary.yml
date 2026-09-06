@@ -22,13 +22,15 @@ jobs:
           test -f site/runtime-config.js
           test -f site/assets/live-loader.js
           test -f site/assets/supabase-client.js
+          test -f src/worker.js
           for i in 00 01 02 03 04 05 06 07 08 09 10 11; do test -f "site/assets/live-part-$i.txt"; done
           cat site/assets/live-part-*.txt > /tmp/live-source.js
           sed "s#import { SupabaseBrowserClient, ApiError } from './supabase-client.js';#const { SupabaseBrowserClient, ApiError } = await import('https://example.invalid/supabase-client.js');#" /tmp/live-source.js > /tmp/live-source.mjs
           node --check /tmp/live-source.mjs
           node --check site/assets/supabase-client.js
           node --check site/assets/live-loader.js
-          ! grep -RInE 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET' site
+          node --check src/worker.js
+          ! grep -RInE 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET' site src
       - name: Deploy temporary Cloudflare Worker
         run: npx --yes wrangler@latest deploy --temporary 2>&1 | tee /tmp/wrangler-output.txt
       - name: Verify deployed site over HTTP
@@ -36,15 +38,30 @@ jobs:
           LIVE_URL="$(grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' /tmp/wrangler-output.txt | tail -1)"
           test -n "$LIVE_URL"
           echo "Live URL: $LIVE_URL"
-          curl -fLsS --retry 3 -H 'Sec-Fetch-Mode: navigate' "$LIVE_URL/" -o /tmp/4b4c-index.html
-          grep -Fq '4b4c — Espace projet partagé' /tmp/4b4c-index.html
-          curl -fLsS --retry 3 "$LIVE_URL/runtime-config.js" -o /tmp/4b4c-runtime.js
-          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' /tmp/4b4c-runtime.js
-          curl -fLsS --retry 3 "$LIVE_URL/assets/live-loader.js" -o /tmp/4b4c-loader.js
-          grep -Fq 'live-part-11.txt' /tmp/4b4c-loader.js
-          curl -fLsS --retry 3 "$LIVE_URL/assets/live-part-00.txt" -o /tmp/4b4c-part-00.txt
-          grep -Fq 'SupabaseBrowserClient' /tmp/4b4c-part-00.txt
           printf '%s\n' "$LIVE_URL" > /tmp/live-url.txt
+
+          # Temporary workers.dev hostnames can take a few seconds to become reachable.
+          ROOT_STATUS="000"
+          INDEX_STATUS="000"
+          for attempt in $(seq 1 15); do
+            INDEX_STATUS="$(curl -sS -o /tmp/4b4c-direct-index.html -w '%{http_code}' "$LIVE_URL/index.html" || true)"
+            ROOT_STATUS="$(curl -sS -o /tmp/4b4c-index.html -w '%{http_code}' -H 'Accept: text/html' -H 'Sec-Fetch-Mode: navigate' "$LIVE_URL/" || true)"
+            echo "HTTP attempt $attempt: /index.html=$INDEX_STATUS /=$ROOT_STATUS"
+            if [ "$INDEX_STATUS" = "200" ] && [ "$ROOT_STATUS" = "200" ]; then break; fi
+            sleep 2
+          done
+
+          test "$INDEX_STATUS" = "200"
+          test "$ROOT_STATUS" = "200"
+          grep -Fq '4b4c — Espace projet partagé' /tmp/4b4c-direct-index.html
+          grep -Fq '4b4c — Espace projet partagé' /tmp/4b4c-index.html
+
+          curl -fLsS --retry 3 --retry-all-errors "$LIVE_URL/runtime-config.js" -o /tmp/4b4c-runtime.js
+          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' /tmp/4b4c-runtime.js
+          curl -fLsS --retry 3 --retry-all-errors "$LIVE_URL/assets/live-loader.js" -o /tmp/4b4c-loader.js
+          grep -Fq 'live-part-11.txt' /tmp/4b4c-loader.js
+          curl -fLsS --retry 3 --retry-all-errors "$LIVE_URL/assets/live-part-00.txt" -o /tmp/4b4c-part-00.txt
+          grep -Fq 'SupabaseBrowserClient' /tmp/4b4c-part-00.txt
       - name: Save deployment details
         if: always()
         run: |
