@@ -94,7 +94,7 @@ jobs:
           grep -Fq 'mobile-drawer-close' site/assets/live.js
           grep -Fq 'Accès sur invitation' site/assets/live.js
           grep -Fq '2b2c V4.2.2 — expressive brand system, glass/clay surfaces, robust mobile' site/assets/live.css
-          grep -Fq './assets/brand-icon.svg' site/index.html
+          grep -Fq 'assets/brand-icon.svg' site/index.html
           grep -Fq 'prepilot-v4.2.2' src/worker.js
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then echo 'Secret-like material found' >&2; exit 1; fi
 
