@@ -1,0 +1,62 @@
+tones.length?`<div class="stack">${milestones.slice(0,4).map(m=>roadmapMiniRow(m,actions)).join('')}</div>`:empty('Roadmap à construire','Ajoutez les phases qui structurent le projet de bout en bout.')}</div></div>
+    <div class="grid cols-2" style="margin-top:16px"><div class="card"><div class="card-head"><h2>Dernières décisions</h2><a class="btn small" href="#/projects/${project.id}/decisions">Voir tout</a></div>${decisions.length?`<div class="stack">${decisions.map(d=>`<div class="list-row"><div class="list-main"><strong>${esc(d.title)}</strong><small>${esc(d.rationale||'')} · ${formatDateTime(d.created_at)}</small></div></div>`).join('')}</div>`:empty('Aucune décision','Les décisions importantes apparaîtront ici.')}</div><div class="card"><div class="card-head"><h2>Prochaines réunions</h2><a class="btn small" href="#/projects/${project.id}/meetings">Voir tout</a></div>${meetings.length?`<div class="stack">${meetings.map(meetingRow).join('')}</div>`:empty('Aucune réunion','Planifiez un point si nécessaire.')}</div></div>`;
+}
+
+
+function projectRoadmap(project, actions, milestones) {
+  const orphan = actions.filter(a=>!a.milestone_id);
+  const phases = [...milestones].sort((a,b)=>(a.position||0)-(b.position||0));
+  const phaseHtml = phases.map((m,index)=>{
+    const phaseActions=actions.filter(a=>a.milestone_id===m.id);
+    const done=phaseActions.filter(a=>a.status==='done').length;
+    const blocked=phaseActions.filter(a=>a.status==='blocked').length;
+    const progress=phaseActions.length?Math.round(done/phaseActions.length*100):(m.status==='done'?100:0);
+    const owner=m.owner_id?displayName(m.owner_id):'Non assigné';
+    return `<article class="roadmap-phase">
+      <div class="roadmap-index">${String(index+1).padStart(2,'0')}</div>
+      <div class="roadmap-body">
+        <div class="roadmap-head">
+          <div><div class="roadmap-title-line"><span class="pill ${m.status==='done'?'good':m.status==='active'?'blue':''}">${milestoneLabel(m.status)}</span><h3>${esc(m.title)}</h3></div>
+          <p>${esc(m.description||'')}</p></div>
+          <button class="btn small" data-action="edit-milestone" data-project="${project.id}" data-milestone="${m.id}">Modifier</button>
+        </div>
+        <div class="roadmap-meta"><span>${esc(owner)}</span><span>${m.start_date?formatDate(m.start_date):'Début à définir'} → ${m.due_date?formatDate(m.due_date):'fin à définir'}</span><span>${phaseActions.length} action${phaseActions.length>1?'s':''}${blocked?` · ${blocked} bloquée${blocked>1?'s':''}`:''}</span></div>
+        <div class="progress"><span style="width:${progress}%"></span></div>
+        <div class="roadmap-actions">${phaseActions.length?phaseActions.map(a=>actionRow(a,true,phases)).join(''):empty('Aucune action dans cette phase','Ajoutez les actions concrètes nécessaires pour franchir cette étape.')}</div>
+        <div class="roadmap-footer"><button class="btn small primary" data-action="new-action" data-project="${project.id}" data-milestone="${m.id}">＋ Action dans cette phase</button></div>
+      </div>
+    </article>`;
+  }).join('');
+  return `<div class="roadmap-toolbar"><div><h2>Roadmap opérationnelle</h2><p>Phases, actions, responsables, dates et blocages dans une seule lecture.</p></div><button class="btn primary" data-action="new-milestone" data-project="${project.id}">＋ Nouvelle phase</button></div>
+    <div class="roadmap">${phaseHtml || empty('Roadmap vide','Commencez par 3 à 7 phases qui décrivent le parcours du projet jusqu’à sa clôture.')}</div>
+    ${orphan.length?`<div class="card" style="margin-top:16px"><div class="card-head"><h2>Actions hors roadmap</h2></div><div class="stack">${orphan.map(a=>actionRow(a,true,phases)).join('')}</div></div>`:''}`;
+}
+
+function roadmapMiniRow(m,actions){
+  const phaseActions=actions.filter(a=>a.milestone_id===m.id);
+  const done=phaseActions.filter(a=>a.status==='done').length;
+  const progress=phaseActions.length?Math.round(done/phaseActions.length*100):(m.status==='done'?100:0);
+  return `<div class="list-row"><span class="pill ${m.status==='done'?'good':m.status==='active'?'blue':''}">${milestoneLabel(m.status)}</span><div class="list-main"><strong>${esc(m.title)}</strong><small>${progress}% · ${m.due_date?`cible ${formatDate(m.due_date)}`:'sans date'}</small></div></div>`;
+}
+
+function projectWork(project, actions, milestones) {
+  return `<div class="card"><div class="card-head"><div><h2>Travail du projet</h2><div class="metric-label">Les statuts sont enregistrés immédiatement dans la base partagée.</div></div><button class="btn primary" data-action="new-action" data-project="${project.id}">＋ Action</button></div>${actions.length?`<div class="stack">${actions.map(a=>actionRow(a,true,milestones)).join('')}</div>`:empty('Aucune action','Ajoutez la première action du projet.')}</div>`;
+}
+
+function projectMessages(project) {
+  const conversations = state.conversations.filter(c=>c.project_id===project.id);
+  const conversation = conversations[0];
+  if (!conversation) return `<div class="card">${empty('Conversation en préparation','Rechargez le projet ou créez une nouvelle conversation.')}</div>`;
+  if (!state.messages.has(conversation.id)) loadMessages(conversation.id);
+  const messages = state.messages.get(conversation.id) || [];
+  return `<div class="card chat"><div class="chat-log">${messages.length?messages.map(messageBubble).join(''):empty('Aucun message','Écrivez le premier message lié à ce projet.')}</div><form class="chat-form" data-form="message"><input type="hidden" name="conversationId" value="${conversation.id}"><input type="hidden" name="workspaceId" value="${project.workspace_id}"><textarea name="body" required maxlength="20000" placeholder="Écrire dans ${esc(conversation.title)}…"></textarea><button class="btn primary" type="submit">Envoyer</button></form></div>`;
+}
+
+function projectDecisions(project) {
+  const decisions = state.projectCache.get(project.id)?.decisions || [];
+  return `<div class="card"><div class="card-head"><div><h2>Décisions</h2><div class="metric-label">Une mémoire explicite des choix qui structurent le projet.</div></div><button class="btn primary" data-action="new-decision" data-project="${project.id}">＋ Décision</button></div>${decisions.length?`<div class="stack">${decisions.map(d=>`<div class="list-row"><span class="pill ${d.status==='decided'?'good':'blue'}">${decisionLabel(d.status)}</span><div class="list-main"><strong>${esc(d.title)}</strong><small>${esc(d.rationale||'Sans justification')} · ${formatDateTime(d.decided_at||d.created_at)}</small></div></div>`).join('')}</div>`:empty('Aucune décision enregistrée','Consignez les choix importants au moment où ils sont pris.')}</div>`;
+}
+
+function projectMeetings(project) {
+  const meetings = state.meetings.filter(m=>m.project_id===project.id);
+  return `<div class="card"><div class="card-head"><div><h2>Réunions</h2><div class="metric-label">Préparation, calendrier et historique liés au 
