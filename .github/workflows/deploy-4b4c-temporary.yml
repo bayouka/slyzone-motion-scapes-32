@@ -36,7 +36,7 @@ jobs:
           LIVE_URL="$(grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' /tmp/wrangler-output.txt | tail -1)"
           test -n "$LIVE_URL"
           echo "Live URL: $LIVE_URL"
-          curl -fLsS --retry 3 "$LIVE_URL/" -o /tmp/4b4c-index.html
+          curl -fLsS --retry 3 -H 'Sec-Fetch-Mode: navigate' "$LIVE_URL/" -o /tmp/4b4c-index.html
           grep -Fq '4b4c — Espace projet partagé' /tmp/4b4c-index.html
           curl -fLsS --retry 3 "$LIVE_URL/runtime-config.js" -o /tmp/4b4c-runtime.js
           grep -Fq 'wexfzhegiewhldkugtow.supabase.co' /tmp/4b4c-runtime.js
