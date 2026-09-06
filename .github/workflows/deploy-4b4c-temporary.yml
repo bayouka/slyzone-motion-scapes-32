@@ -31,11 +31,26 @@ jobs:
           ! grep -RInE 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET' site
       - name: Deploy temporary Cloudflare Worker
         run: npx --yes wrangler@latest deploy --temporary 2>&1 | tee /tmp/wrangler-output.txt
+      - name: Verify deployed site over HTTP
+        run: |
+          LIVE_URL="$(grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' /tmp/wrangler-output.txt | tail -1)"
+          test -n "$LIVE_URL"
+          echo "Live URL: $LIVE_URL"
+          curl -fLsS --retry 3 "$LIVE_URL/" -o /tmp/4b4c-index.html
+          grep -Fq '4b4c — Espace projet partagé' /tmp/4b4c-index.html
+          curl -fLsS --retry 3 "$LIVE_URL/runtime-config.js" -o /tmp/4b4c-runtime.js
+          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' /tmp/4b4c-runtime.js
+          curl -fLsS --retry 3 "$LIVE_URL/assets/live-loader.js" -o /tmp/4b4c-loader.js
+          grep -Fq 'live-part-11.txt' /tmp/4b4c-loader.js
+          curl -fLsS --retry 3 "$LIVE_URL/assets/live-part-00.txt" -o /tmp/4b4c-part-00.txt
+          grep -Fq 'SupabaseBrowserClient' /tmp/4b4c-part-00.txt
+          printf '%s\n' "$LIVE_URL" > /tmp/live-url.txt
       - name: Save deployment details
         if: always()
         run: |
           mkdir -p deployment-result
           cp /tmp/wrangler-output.txt deployment-result/wrangler-output.txt 2>/dev/null || true
+          cp /tmp/live-url.txt deployment-result/live-url.txt 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
