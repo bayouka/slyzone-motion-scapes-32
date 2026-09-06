@@ -1,0 +1,140 @@
+import { SupabaseBrowserClient, ApiError } from './supabase-client.js';
+
+const config = window.__4B4C_CONFIG__;
+const api = new SupabaseBrowserClient({ url: config.supabaseUrl, publishableKey: config.supabasePublishableKey });
+const app = document.getElementById('app');
+const WORKSPACE_KEY = config.workspaceStorageKey || '4b4c.live.workspace.v1';
+
+const state = {
+  authMode: 'signin', user: null, profile: null, memberships: [], workspace: null, workspaceRole: null,
+  projects: [], archivedProjects: [], members: [], profiles: [], notifications: [], requests: [], approvals: [], meetings: [],
+  actions: [], assignees: [], conversations: [], projectCache: new Map(), messages: new Map(),
+  modal: null, toast: [], notificationOpen: false, loading: true, busy: false, lastSync: null
+};
+
+const ICONS = {
+  dashboard:'⌂', projects:'◫', work:'✓', messages:'◌', calendar:'□', library:'▣', team:'♙', settings:'⚙', bell:'●'
+};
+
+boot();
+
+async function boot() {
+  window.addEventListener('hashchange', () => render());
+  document.addEventListener('click', handleClick);
+  document.addEventListener('submit', handleSubmit);
+  document.addEventListener('change', handleChange);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user && !state.modal) refreshWorkspace({ quiet: true }); });
+
+  const session = api.getSession();
+  if (session) {
+    try {
+      state.user = normalizeUser(await api.getUser());
+      await afterAuthenticated();
+    } catch (error) {
+      await api.signOut();
+      state.user = null;
+      showToast(humanError(error), true);
+    }
+  }
+  state.loading = false;
+  render();
+
+  setInterval(() => {
+    if (state.user && state.workspace && !state.modal && !document.hidden) refreshWorkspace({ quiet: true });
+  }, Math.max(10000, Number(config.pollIntervalMs || 15000)));
+}
+
+async function afterAuthenticated() {
+  state.profile = first(await api.select('profiles', `select=id,display_name,avatar_url&id=eq.${state.user.id}`));
+  state.memberships = await api.select('workspace_members', `select=workspace_id,role,status,joined_at&user_id=eq.${state.user.id}&status=eq.active&order=joined_at.asc`);
+
+  const inviteToken = new URLSearchParams(location.search).get('invite');
+  if (inviteToken) {
+    try {
+      const preview = first(await api.rpc('workspace_invite_preview', { p_token: inviteToken }));
+      if (preview?.invite_status === 'pending') {
+        state.modal = { type: 'accept-invite', token: inviteToken, preview };
+      }
+    } catch (error) {
+      showToast(`Invitation : ${humanError(error)}`, true);
+    }
+  }
+
+  if (state.memberships.length) {
+    let workspaceId = localStorage.getItem(WORKSPACE_KEY);
+    if (!state.memberships.some(m => m.workspace_id === workspaceId)) workspaceId = state.memberships[0].workspace_id;
+    await selectWorkspace(workspaceId, { preserveModal: true });
+  }
+}
+
+async function selectWorkspace(workspaceId, { preserveModal = false } = {}) {
+  const membership = state.memberships.find(m => m.workspace_id === workspaceId);
+  if (!membership) throw new Error('Espace inaccessible');
+  localStorage.setItem(WORKSPACE_KEY, workspaceId);
+  state.workspaceRole = membership.role;
+  state.workspace = first(await api.select('workspaces', `select=*&id=eq.${workspaceId}`));
+  if (!preserveModal) state.modal = null;
+  state.projectCache.clear(); state.messages.clear();
+  await refreshWorkspace({ quiet: true });
+}
+
+async function refreshWorkspace({ quiet = false } = {}) {
+  if (!state.workspace) return;
+  const wid = state.workspace.id;
+  if (!quiet) state.loading = true;
+  try {
+    const [projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, actions, assignees, conversations] = await Promise.all([
+      api.select('projects', `select=*&workspace_id=eq.${wid}&status=neq.archived&order=updated_at.desc`),
+      api.select('projects', `select=*&workspace_id=eq.${wid}&status=eq.archived&order=updated_at.desc`),
+      api.select('workspace_members', `select=*&workspace_id=eq.${wid}&status=eq.active&order=joined_at.asc`),
+      api.select('profiles', 'select=id,display_name,avatar_url&order=display_name.asc'),
+      api.select('notifications', `select=*&workspace_id=eq.${wid}&user_id=eq.${state.user.id}&order=created_at.desc&limit=50`),
+      api.select('requests', `select=*&workspace_id=eq.${wid}&order=created_at.desc&limit=100`),
+      api.select('approvals', `select=*&workspace_id=eq.${wid}&order=created_at.desc&limit=100`),
+      api.select('meetings', `select=*&workspace_id=eq.${wid}&order=starts_at.asc.nullslast&limit=100`),
+      api.select('actions', `select=*&workspace_id=eq.${wid}&order=created_at.desc&limit=250`),
+      api.select('action_assignees', 'select=*'),
+      api.select('conversations', `select=*&workspace_id=eq.${wid}&order=created_at.desc&limit=100`)
+    ]);
+    Object.assign(state, { projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, actions, assignees, conversations });
+    state.lastSync = new Date();
+  } catch (error) {
+    if (!quiet) showToast(humanError(error), true);
+  } finally {
+    state.loading = false;
+    if (!state.modal || quiet) render();
+  }
+}
+
+function render() {
+  if (state.loading && !state.user) { app.innerHTML = loadingScreen(); return; }
+  if (!state.user) { renderAuth(); return; }
+  if (!state.memberships.length || !state.workspace) { renderOnboarding(); return; }
+
+  const route = parseRoute();
+  const content = route.name === 'dashboard' ? renderDashboard()
+    : route.name === 'projects' ? renderProjects()
+    : route.name === 'project' ? renderProject(route.id, route.tab)
+    : route.name === 'work' ? renderMyWork()
+    : route.name === 'messages' ? renderMessages(route.id)
+    : route.name === 'calendar' ? renderCalendar()
+    : route.name === 'library' ? renderLibrary()
+    : route.name === 'team' ? renderTeam()
+    : route.name === 'settings' ? renderSettings()
+    : renderDashboard();
+
+  app.innerHTML = shell(content, route);
+  if (state.modal) app.insertAdjacentHTML('beforeend', renderModal(state.modal));
+  renderToasts();
+}
+
+function shell(content, route) {
+  const unread = state.notifications.filter(n => !n.read_at).length;
+  const nav = [
+    ['dashboard','Tableau de bord',ICONS.dashboard,'#/dashboard'], ['projects','Projets',ICONS.projects,'#/projects'],
+    ['work','À traiter',ICONS.work,'#/work'], ['messages','Messages',ICONS.messages,'#/messages'],
+    ['calendar','Calendrier',ICONS.calendar,'#/calendar'], ['library','Ressources',ICONS.library,'#/library'],
+    ['team','Équipe',ICONS.team,'#/team'], ['settings','Paramètres',ICONS.settings,'#/settings']
+  ];
+  const navHtml = nav.map(([key,label,icon,href]) => `<a href="${href}" class="${route.name===key || (route.name==='project'&&key==='projects')?'active':''}"><span class="nav-icon">${icon}</span>${esc(label)}</a>`).join('');
+  const mobile = nav.slice(0,5).map(([key,label,icon,href]) => `<a h
