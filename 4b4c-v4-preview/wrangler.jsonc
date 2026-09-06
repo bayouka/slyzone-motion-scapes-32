@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "4b4c-v4-preview",
+  "name": "2b2c-pilot-preview",
   "main": "src/worker.js",
   "compatibility_date": "2026-09-06",
   "assets": {
