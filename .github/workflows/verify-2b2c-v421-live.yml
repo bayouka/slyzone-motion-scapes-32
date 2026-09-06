@@ -1,0 +1,46 @@
+name: Verify 2b2c V4.2.1 live preview
+
+on:
+  push:
+    branches: [4b4c-v4-preview]
+    paths:
+      - '.github/workflows/verify-2b2c-v421-live.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify deployed V4.2.1 over public HTTP
+        run: |
+          set -euo pipefail
+          URL='https://2b2c-pilot-preview.foremost-gazelle.workers.dev'
+          probe() {
+            path="$1"; needle="$2"; nav="${3:-0}"
+            for i in $(seq 1 10); do
+              if [ "$nav" = "1" ]; then
+                code=$(curl -L -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              else
+                code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              fi
+              echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
+              if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
+              sleep 3
+            done
+            echo "FAILED $path needle=$needle" >&2
+            cat /tmp/probe.out >&2 || true
+            return 1
+          }
+          probe / '2b2c — Projets qui avancent ensemble' 1
+          probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
+          probe /assets/live.js "const BRAND_NAME = '2b2c'"
+          probe /assets/live.js 'mobile-drawer-scroll'
+          probe /assets/live.css '2b2c V4.2.1 — brand, shell lock & responsive finish'
+          probe /assets/favicon.svg '#38c5ff'
+          probe /assets/boot.js "import('./live.js')"
+          probe /health 'prepilot-v4.2.1'
+          echo "VERIFIED_URL=$URL"
