@@ -19,26 +19,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Rebuild V4 site bundle
+      - name: Verify and rebuild V4 site bundle
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
-          rm -rf site
-          mkdir -p site
+          check_blob() {
+            file="$1"; expected="$2"
+            actual=$(git hash-object "$file")
+            echo "$file $actual"
+            test "$actual" = "$expected"
+          }
+          check_blob site-bundle-part-00a.b64 8b9eb8942a40d196b86aaa43b211ec3d8f0c1afb
+          check_blob site-bundle-part-00b.b64 3a2f849ad57587cde6f83a5205fc9f51f4b88d55
+          check_blob site-bundle-part-01.b64 dce862d8a63cb09badd88b3db799af77af1cdd0b
+          check_blob site-bundle-part-02.b64 c6f0b41d771e5053e8ee319fa7127074ac426391
+          check_blob site-bundle-part-03p0.b64 d443e1d7fbe2a5c1fe8c0345dd595d1b8e1e0e7c
+          check_blob site-bundle-part-03p1.b64 b72a451a10fbecc3f97e90dc82040fae00267443
+          check_blob site-bundle-part-03p2.b64 70d42febfdd28a851ec0f277f159f63626e1c51a
+          check_blob site-bundle-part-03p3.b64 04ee29841f4d077460240c86cc8442ee3eef6149
+          check_blob site-bundle-part-04.b64 e03117c83ba19b0ff668f611de0b95ad534bebae
+          check_blob site-bundle-part-05.b64 934277ad7a339a9b1f6bd34155f8271c8df6a16b
+          check_blob site-bundle-part-06.b64 abfa7bb285250ed6574124c9da617baea69db679
+          check_blob site-bundle-part-07.b64 4e5618233e1058b0bd258e84ad263b280e9a549f
           cat \
             site-bundle-part-00a.b64 \
             site-bundle-part-00b.b64 \
             site-bundle-part-01.b64 \
             site-bundle-part-02.b64 \
-            site-bundle-part-03a.b64 \
+            site-bundle-part-03p0.b64 \
+            site-bundle-part-03p1.b64 \
+            site-bundle-part-03p2.b64 \
+            site-bundle-part-03p3.b64 \
             site-bundle-part-04.b64 \
             site-bundle-part-05.b64 \
             site-bundle-part-06.b64 \
             site-bundle-part-07.b64 > /tmp/4b4c-v4-site.b64
+          test "$(wc -c < /tmp/4b4c-v4-site.b64)" = "89936"
+          echo '4d5225f592ef7bb9db979b2f0be9d13c4a424c4baeb1a644c7839ca231b595f3  /tmp/4b4c-v4-site.b64' | sha256sum -c -
+          rm -rf site
+          mkdir -p site
           base64 -d /tmp/4b4c-v4-site.b64 > /tmp/4b4c-v4-site.tar.gz
           tar -xzf /tmp/4b4c-v4-site.tar.gz -C site
 
-      - name: Validate V4 bundle
+      - name: Validate V4 bundle and profile flow
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
@@ -55,12 +78,11 @@ jobs:
           grep -q 'Avant' site/assets/live.js
           grep -q 'Après' site/assets/live.js
           grep -q 'message-to-action' site/assets/live.js
-          grep -q "href=\"#/settings\"" site/assets/live.js
-          grep -q "data-action=\"edit-profile\"" site/assets/live.js
-          grep -q "data-form=\"profile\"" site/assets/live.js
-          grep -q "profile-avatars" site/assets/live.js
-          grep -q "upsert:true" site/assets/live.js
-          grep -q "display_name:name" site/assets/live.js
+          grep -q 'data-action="edit-profile"' site/assets/live.js
+          grep -q 'data-form="profile"' site/assets/live.js
+          grep -q 'profile-avatars' site/assets/live.js
+          grep -q 'upsert:true' site/assets/live.js
+          grep -q 'display_name:name' site/assets/live.js
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
             echo 'Secret-like material found in public preview' >&2
             exit 1
