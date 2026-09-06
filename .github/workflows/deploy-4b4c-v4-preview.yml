@@ -1,4 +1,4 @@
-name: Deploy 4b4c V4.2 preview
+name: Deploy 2b2c V4.2.1 preview
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Rebuild V4 baseline and apply V4.1 + V4.2 deltas
+      - name: Rebuild verified baseline and apply V4.1 + V4.2 + V4.2.1 deltas
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
@@ -62,7 +62,24 @@ jobs:
           patch -d site -p1 --fuzz=0 < /tmp/v42-livejs.patch
           patch -d site -p1 --fuzz=0 < /tmp/v42-livecss.patch
 
-      - name: Validate V4.2 shell, design and profile flow
+          cat v421-livejs-p0.b64 v421-livejs-p1.b64 v421-livejs-p2.b64 > /tmp/v421-livejs.patch.gz.b64
+          echo '42b1a3f25562209ccd70e1a0117bf4b437b244a0160f3f99386282408360b6cd  /tmp/v421-livejs.patch.gz.b64' | sha256sum -c -
+          echo '1806b95cfb3524f62e3dc38d7b1c0560ba2d2a654977e818904243ec5a137a85  v421-livecss.b64' | sha256sum -c -
+          echo 'eb86477fce464c749ec10b778c53260dce368e6d2d5f291816a51c535dedb79e  v421-boot.b64' | sha256sum -c -
+          echo '5cd9ff43ca949ee2bc5a0a3a0d91b0fbcdf589c4c217ba828306815fbb7835a9  v421-index.b64' | sha256sum -c -
+          echo '452a571c10ec162472651bc5de1c4a153f1a36052834ccd83e853a8470ed1f79  v421-favicon.b64' | sha256sum -c -
+          base64 -d /tmp/v421-livejs.patch.gz.b64 | gzip -dc > /tmp/v421-livejs.patch
+          base64 -d v421-livecss.b64 | gzip -dc > /tmp/v421-livecss.patch
+          base64 -d v421-boot.b64 | gzip -dc > /tmp/v421-boot.patch
+          base64 -d v421-index.b64 | gzip -dc > /tmp/v421-index.patch
+          base64 -d v421-favicon.b64 | gzip -dc > /tmp/v421-favicon.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v421-livejs.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v421-livecss.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v421-boot.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v421-index.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v421-favicon.patch
+
+      - name: Validate 2b2c V4.2.1 branding, shell, responsive and profile flow
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
@@ -73,40 +90,41 @@ jobs:
           test -s site/index.html
           test -s site/assets/styles.css
           test -s site/assets/live.css
+          test -s site/assets/favicon.svg
           grep -q 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
-          grep -q 'v42-shell' site/assets/live.js
-          grep -q 'sidebar-scroll-area' site/assets/live.js
-          grep -q 'mobile-drawer' site/assets/live.js
-          grep -q 'toggle-mobile-menu' site/assets/live.js
-          grep -q 'À traiter maintenant' site/assets/live.js
-          grep -q 'Ce qui a changé' site/assets/live.js
-          grep -q 'Échéances proches' site/assets/live.js
-          grep -q 'En attente de l’équipe' site/assets/live.js
-          grep -q 'Modifier le nom ou la photo' site/assets/live.js
+          grep -q "const BRAND_NAME = '2b2c'" site/assets/live.js
+          grep -q 'v421-shell' site/assets/live.js
+          grep -q 'v421-sidebar' site/assets/live.css
+          grep -q 'brand-logo-icon' site/assets/live.js
+          grep -q 'brand-logo-icon' site/assets/live.css
+          grep -q 'mobile-drawer-scroll' site/assets/live.js
+          grep -q 'mobile-drawer-scroll' site/assets/live.css
+          grep -q 'overflow-x:clip' site/assets/live.css
+          grep -q '2b2c V4.2.1 — brand, shell lock & responsive finish' site/assets/live.css
+          grep -q '<title>2b2c — Projets qui avancent ensemble</title>' site/index.html
           grep -q 'data-action="signout"' site/assets/live.js
           grep -q 'data-action="remove-avatar"' site/assets/live.js
-          grep -q '4b4c V4.2 — global premium system' site/assets/live.css
-          grep -q 'v42-sidebar' site/assets/live.css
-          grep -q 'mobile-menu-backdrop' site/assets/live.css
-          grep -q 'backdrop-filter:blur(18px)' site/assets/live.css
-          if grep -q '<nav class="mobile-nav">' site/assets/live.js; then echo 'Legacy mobile bottom nav still rendered' >&2; exit 1; fi
-          if grep -q 'Mémoire active' site/assets/live.js; then echo 'Ambiguous memory badge still present' >&2; exit 1; fi
-          if grep -q 'État du pilote' site/assets/live.js; then echo 'Technical pilot copy still visible' >&2; exit 1; fi
+          grep -q 'profile-avatars' site/assets/live.js
+          grep -q 'upsert:true' site/assets/live.js
+          grep -q 'removeObject' site/assets/supabase-client.js
+          grep -q '#38c5ff' site/assets/favicon.svg
+          if grep -q "params.get('demo')" site/assets/boot.js; then echo 'Public demo bypass still enabled' >&2; exit 1; fi
+          if grep -q '>4b4c<' site/assets/live.js; then echo 'Legacy visible 4b4c branding remains' >&2; exit 1; fi
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
             echo 'Secret-like material found in public preview' >&2
             exit 1
           fi
 
-      - name: Deploy temporary Cloudflare Worker
+      - name: Deploy temporary 2b2c Cloudflare Worker
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
-          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-v42-preview.txt
+          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/2b2c-v421-preview.txt
 
-      - name: Smoke V4.2 preview URL
+      - name: Smoke 2b2c V4.2.1 preview URL
         run: |
           set -euo pipefail
-          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-v42-preview.txt | tail -1)
+          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/2b2c-v421-preview.txt | tail -1)
           test -n "$URL"
           probe() {
             path="$1"; needle="$2"; nav="${3:-0}"
@@ -122,21 +140,23 @@ jobs:
             done
             return 1
           }
-          probe / '4b4c — Espace projet partagé' 1
+          probe / '2b2c — Projets qui avancent ensemble' 1
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
-          probe /assets/live.js 'mobile-drawer'
-          probe /assets/live.js 'Échéances proches'
-          probe /assets/live.css '4b4c V4.2 — global premium system'
-          probe /health 'prepilot-v4.2'
-          echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-v42-url.txt
+          probe /assets/live.js "const BRAND_NAME = '2b2c'"
+          probe /assets/live.js 'mobile-drawer-scroll'
+          probe /assets/live.css '2b2c V4.2.1 — brand, shell lock & responsive finish'
+          probe /assets/favicon.svg '#38c5ff'
+          probe /assets/boot.js 'assets/live.js'
+          probe /health 'prepilot-v4.2.1'
+          echo "PREVIEW_URL=$URL" | tee /tmp/2b2c-v421-url.txt
 
       - name: Preserve deployment result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: 4b4c-v42-preview-result
+          name: 2b2c-v421-preview-result
           path: |
-            /tmp/4b4c-v42-preview.txt
-            /tmp/4b4c-v42-url.txt
+            /tmp/2b2c-v421-preview.txt
+            /tmp/2b2c-v421-url.txt
           if-no-files-found: warn
           retention-days: 1
