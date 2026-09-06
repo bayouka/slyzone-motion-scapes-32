@@ -1,0 +1,90 @@
+'signup'; render(); }
+    else if (action==='signout') { await api.signOut(); resetState(); history.replaceState({},'',location.pathname); render(); }
+    else if (action==='refresh') await refreshWorkspace();
+    else if (action==='quick-add') openModal({type:'quick-add'});
+    else if (action==='close-modal'||action==='backdrop') { state.modal=null; render(); }
+    else if (action==='new-project') openModal({type:'project'});
+    else if (action==='new-action') openModal({type:'action',projectId:target.dataset.project||currentProjectId()});
+    else if (action==='new-request') openModal({type:'request',projectId:target.dataset.project||currentProjectId()});
+    else if (action==='new-decision') openModal({type:'decision',projectId:target.dataset.project});
+    else if (action==='new-milestone') openModal({type:'milestone',projectId:target.dataset.project});
+    else if (action==='new-meeting') openModal({type:'meeting',projectId:target.dataset.project||currentProjectId()});
+    else if (action==='upload-file') openModal({type:'upload',projectId:target.dataset.project});
+    else if (action==='invite-member') openModal({type:'invite'});
+    else if (action==='seed-pilot') openModal({type:'seed'});
+    else if (action==='confirm-seed') await seedPilot();
+    else if (action==='toggle-notifications') { state.notificationOpen=!state.notificationOpen; render(); }
+    else if (action==='read-all-notifications') await markAllNotificationsRead();
+    else if (action==='open-notification') await openNotification(target.dataset.id,target.dataset.route);
+    else if (action==='open-file') await openFile(target.dataset.path);
+    else if (action==='copy-invite') await copyText(document.getElementById('invite-link-value')?.value||'');
+    else if (action==='accept-invite') await acceptInvite(target.dataset.token);
+    else if (action==='accept-invite-direct') await acceptInvite(new URLSearchParams(location.search).get('invite'));
+    else if (action==='load-invites') await loadInvites(target);
+  } catch (error) { showToast(humanError(error), true); }
+}
+
+async function handleSubmit(event) {
+  const form = event.target.closest('form[data-form]'); if (!form) return;
+  event.preventDefault(); if (state.busy) return;
+  state.busy = true; const data = Object.fromEntries(new FormData(form).entries());
+  try {
+    if (form.dataset.form==='auth') await submitAuth(data);
+    else if (form.dataset.form==='workspace') await submitWorkspace(data);
+    else if (form.dataset.form==='project') await submitProject(data);
+    else if (form.dataset.form==='action') await submitAction(data);
+    else if (form.dataset.form==='request') await submitRequest(data);
+    else if (form.dataset.form==='decision') await submitDecision(data);
+    else if (form.dataset.form==='milestone') await submitMilestone(data);
+    else if (form.dataset.form==='meeting') await submitMeeting(data);
+    else if (form.dataset.form==='message') await submitMessage(data);
+    else if (form.dataset.form==='upload') await submitUpload(form,data);
+    else if (form.dataset.form==='invite') await submitInvite(data);
+  } catch (error) { showToast(humanError(error), true); }
+  finally { state.busy=false; render(); }
+}
+
+async function handleChange(event) {
+  const el = event.target;
+  if (el.matches('[data-status-action]')) {
+    try {
+      await api.update('actions', `id=eq.${el.dataset.statusAction}`, { status: el.value, completed_at: el.value==='done'?new Date().toISOString():null });
+      showToast('Statut mis à jour'); await refreshWorkspace({quiet:true});
+    } catch (error) { showToast(humanError(error),true); }
+  }
+}
+
+async function submitAuth(data) {
+  if (state.authMode==='signup') {
+    const result = await api.signUp({email:String(data.email).trim(),password:String(data.password),displayName:String(data.displayName).trim()});
+    if (!result?.access_token) {
+      showToast('Compte créé. La confirmation email Supabase est encore active : désactivez-la pour le pilote ou confirmez l’adresse avant connexion.');
+      state.authMode='signin'; return;
+    }
+    state.user=normalizeUser(result.user); await afterAuthenticated(); showToast('Compte créé');
+  } else {
+    const result=await api.signIn({email:String(data.email).trim(),password:String(data.password)});
+    state.user=normalizeUser(result.user); await afterAuthenticated(); showToast('Connexion réussie');
+  }
+}
+
+async function submitWorkspace(data) {
+  const id = await api.rpc('create_workspace',{p_name:String(data.name).trim(),p_slug:String(data.slug).trim().toLowerCase()});
+  state.memberships = await api.select('workspace_members',`select=workspace_id,role,status,joined_at&user_id=eq.${state.user.id}&status=eq.active`);
+  await selectWorkspace(id); location.hash='#/dashboard'; showToast('Espace créé');
+}
+
+async function submitProject(data) {
+  const result=await api.rpc('create_project',{p_workspace_id:state.workspace.id,p_name:String(data.name).trim(),p_objective:String(data.objective||'').trim(),p_target_date:data.targetDate||null});
+  state.modal=null; await refreshWorkspace({quiet:true}); location.hash=`#/projects/${result.project_id}/overview`; showToast('Projet créé');
+}
+
+async function submitAction(data) {
+  const project=state.projects.find(p=>p.id===data.projectId); if(!project) throw new Error('Projet requis');
+  const rows=await api.insert('actions',[{workspace_id:state.workspace.id,project_id:project.id,title:String(data.title).trim(),description:String(data.description||'').trim(),status:'todo',priority:data.priority||'normal',due_at:localDateTimeToIso(data.dueAt),created_by:state.user.id}]);
+  if(data.assignee) await api.insert('action_assignees',[{action_id:rows[0].id,user_id:data.assignee}],{returnRepresentation:false});
+  state.modal=null; await refreshWorkspace({quiet:true}); showToast('Action créée');
+}
+
+async function submitRequest(data) {
+  await api.insert('requests',[{workspace_id:state.workspace.id,project_id:data.projectId||null,title:String(

@@ -1,0 +1,44 @@
+name: Deploy 4b4c temporary
+on:
+  push:
+    branches: [4b4c-pilot-deploy]
+    paths:
+      - '4b4c-deploy/**'
+      - '.github/workflows/deploy-4b4c-temporary.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 4b4c-deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify public bundle
+        run: |
+          test -f site/index.html
+          test -f site/runtime-config.js
+          test -f site/assets/live-loader.js
+          test -f site/assets/supabase-client.js
+          for i in 00 01 02 03 04 05 06 07 08 09 10 11; do test -f "site/assets/live-part-$i.txt"; done
+          cat site/assets/live-part-*.txt > /tmp/live-source.js
+          sed "s#import { SupabaseBrowserClient, ApiError } from './supabase-client.js';#const { SupabaseBrowserClient, ApiError } = await import('https://example.invalid/supabase-client.js');#" /tmp/live-source.js > /tmp/live-source.mjs
+          node --check /tmp/live-source.mjs
+          node --check site/assets/supabase-client.js
+          node --check site/assets/live-loader.js
+          ! grep -RInE 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET' site
+      - name: Deploy temporary Cloudflare Worker
+        run: npx --yes wrangler@latest deploy --temporary 2>&1 | tee /tmp/wrangler-output.txt
+      - name: Save deployment details
+        if: always()
+        run: |
+          mkdir -p deployment-result
+          cp /tmp/wrangler-output.txt deployment-result/wrangler-output.txt 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: 4b4c-cloudflare-result
+          path: 4b4c-deploy/deployment-result/
+          if-no-files-found: ignore

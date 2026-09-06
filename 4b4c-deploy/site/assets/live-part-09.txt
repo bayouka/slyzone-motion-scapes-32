@@ -1,0 +1,63 @@
+lestone_id:milestones[4].id,title:'Valider Homepage V3',description:'Relire desktop et mobile avant développement.',status:'in_progress',priority:'high',due_at:'2026-09-09T15:00:00Z',created_by:state.user.id}
+    ]);
+    await api.insert('decisions',[
+      {workspace_id:state.workspace.id,project_id:hf,title:'Direction B retenue',rationale:'Compréhension plus rapide pendant les essais internes.',status:'decided',decided_by:state.user.id,decided_at:new Date().toISOString(),created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orbit,title:'Priorité à la reconnexion',rationale:'Le test multijoueur ne doit pas démarrer avec ce risque ouvert.',status:'decided',decided_by:state.user.id,decided_at:new Date().toISOString(),created_by:state.user.id}
+    ]);
+    await api.insert('requests',[{workspace_id:state.workspace.id,project_id:hf,title:'Accès sandbox partenaire',body:'Récupérer les identifiants nécessaires pour terminer le test d’intégration.',requester_id:state.user.id,recipient_id:state.user.id,status:'open',due_at:'2026-09-08T10:00:00Z'}]);
+    await api.insert('meetings',[
+      {workspace_id:state.workspace.id,project_id:hf,title:'Test utilisateurs V4',status:'planned',starts_at:'2026-09-12T13:00:00Z',ends_at:'2026-09-12T14:00:00Z',video_room:'hfconcept-test-v4',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orbit,title:'Point blocage réseau',status:'planned',starts_at:'2026-09-09T09:00:00Z',ends_at:'2026-09-09T09:30:00Z',video_room:'orbit-network',created_by:state.user.id}
+    ]);
+    state.modal=null; await refreshWorkspace({quiet:true}); showToast('Espace pilote prêt : données réelles créées');
+  } finally { state.busy=false; render(); }
+}
+
+async function loadProject(projectId, force=false) {
+  if(!force && state.projectCache.has(projectId)) return;
+  try {
+    const [milestones,decisions,deliverables]=await Promise.all([
+      api.select('milestones',`select=*&project_id=eq.${projectId}&order=position.asc`),
+      api.select('decisions',`select=*&project_id=eq.${projectId}&order=created_at.desc`),
+      api.select('deliverables',`select=*&project_id=eq.${projectId}&order=created_at.desc`)
+    ]);
+    let versions=[];
+    if(deliverables.length){const ids=deliverables.map(d=>d.id).join(',');versions=await api.select('deliverable_versions',`select=*&deliverable_id=in.(${ids})&order=version_number.desc`);}
+    state.projectCache.set(projectId,{milestones,decisions,deliverables,versions}); render();
+  } catch(error){showToast(humanError(error),true);}
+}
+
+async function loadMessages(conversationId, force=false) {
+  if(!force && state.messages.has(conversationId)) return;
+  try { state.messages.set(conversationId,await api.select('messages',`select=*&conversation_id=eq.${conversationId}&order=created_at.asc&limit=300`)); render(); }
+  catch(error){showToast(humanError(error),true);}
+}
+
+async function acceptInvite(token) {
+  if(!token) throw new Error('Invitation invalide');
+  const workspaceId=await api.rpc('accept_workspace_invite',{p_token:token});
+  state.memberships=await api.select('workspace_members',`select=workspace_id,role,status,joined_at&user_id=eq.${state.user.id}&status=eq.active`);
+  history.replaceState({},'',location.pathname+location.hash); state.modal=null; await selectWorkspace(workspaceId); location.hash='#/dashboard'; showToast('Vous avez rejoint l’espace');
+}
+
+async function markAllNotificationsRead() {
+  const unread=state.notifications.filter(n=>!n.read_at); if(!unread.length)return;
+  await api.update('notifications',`user_id=eq.${state.user.id}&read_at=is.null`,{read_at:new Date().toISOString()},{returnRepresentation:false});
+  state.notifications.forEach(n=>n.read_at ||= new Date().toISOString()); state.notificationOpen=false; render();
+}
+
+async function openNotification(id,route) {
+  const n=state.notifications.find(n=>String(n.id)===String(id));
+  if(n&&!n.read_at){await api.update('notifications',`id=eq.${id}`,{read_at:new Date().toISOString()},{returnRepresentation:false});n.read_at=new Date().toISOString();}
+  state.notificationOpen=false; location.hash=(route||'#/dashboard').replace(/^#/,''); render();
+}
+
+async function openFile(path) { const url=await api.signedUrl('workspace-files',path,900); window.open(url,'_blank','noopener,noreferrer'); }
+async function loadInvites(button) {
+  const rows=await api.select('workspace_invites',`select=*&workspace_id=eq.${state.workspace.id}&order=created_at.desc&limit=30`);
+  const parent=button.closest('#invite-list')||document.getElementById('invite-list'); if(!parent)return;
+  parent.innerHTML=rows.length?`<div class="stack">${rows.map(i=>`<div class="list-row"><div class="list-main"><strong>${esc(i.email)}</strong><small>${workspaceRoleLabel(i.role)} · ${inviteStatus(i.status)} · expire ${formatDate(i.expires_at)}</small></div><span class="pill ${i.status==='pending'?'blue':i.status==='accepted'?'good':''}">${inviteStatus(i.status)}</span></div>`).join('')}</div>`:empty('Aucune invitation','Utilisez Inviter pour créer un accès.');
+}
+
+function projectCard(p){const actions=state.actions.filter(a=>a.project_id===p.id),done=actions.filter(a=>a.status==='done').length,progress=actions.length?Math.round(done/actions.length*100):0;return `<div class="card project-card clickable" data-nav="#/projects/${p.id}/overview"><span class="pill ${healthTone(p.health)}">${healthLabel(p.health)}</span><h3>${esc(p.name)}</h3><p>${esc(p.objective||'')}</p><div class="progress" style="margin-bottom:10px"><span style="width:${progress}%"></span></div><div class="project-meta"><span>${progress}%</span><span>${p.target_date?formatDate(p.target_date):'Sans date'}</span></div></div>`}
+function actionRow(a,editable=false,milestones=[]){const assigned=state.assignees.filter(x=>x.action_id===a.id).map(x=>displayName(x.user_id)).join(', ');const milestone=milestones.find(m=>m.id===a.milestone_id);return `<div class="list-row"><span class="pill ${statusTone(a.status)}">

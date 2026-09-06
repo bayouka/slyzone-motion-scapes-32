@@ -1,0 +1,71 @@
+data.title).trim(),body:String(data.body||'').trim(),requester_id:state.user.id,recipient_id:data.recipient,status:'open',due_at:localDateTimeToIso(data.dueAt)}]);
+  state.modal=null; await refreshWorkspace({quiet:true}); showToast('Demande créée');
+}
+
+async function submitDecision(data) {
+  await api.insert('decisions',[{workspace_id:state.workspace.id,project_id:data.projectId,title:String(data.title).trim(),rationale:String(data.rationale||'').trim(),status:'decided',decided_by:state.user.id,decided_at:new Date().toISOString(),created_by:state.user.id}]);
+  state.modal=null; await loadProject(data.projectId,true); showToast('Décision enregistrée');
+}
+
+async function submitMilestone(data) {
+  const current=state.projectCache.get(data.projectId)?.milestones||[];
+  await api.insert('milestones',[{workspace_id:state.workspace.id,project_id:data.projectId,title:String(data.title).trim(),position:current.length+1,status:'todo',due_date:data.dueDate||null}]);
+  state.modal=null; await loadProject(data.projectId,true); showToast('Jalon créé');
+}
+
+async function submitMeeting(data) {
+  const starts=localDateTimeToIso(data.startsAt); const ends=localDateTimeToIso(data.endsAt);
+  const rows=await api.insert('meetings',[{workspace_id:state.workspace.id,project_id:data.projectId||null,title:String(data.title).trim(),status:'planned',starts_at:starts,ends_at:ends,video_room:String(data.videoRoom||'').trim()||null,created_by:state.user.id}]);
+  await api.insert('meeting_attendees',[{meeting_id:rows[0].id,user_id:state.user.id,response:'accepted'}],{returnRepresentation:false});
+  state.modal=null; await refreshWorkspace({quiet:true}); showToast('Réunion planifiée');
+}
+
+async function submitMessage(data) {
+  const body=String(data.body||'').trim(); if(!body)return;
+  await api.insert('messages',[{workspace_id:data.workspaceId,conversation_id:data.conversationId,author_id:state.user.id,body}]);
+  await loadMessages(data.conversationId,true); showToast('Message envoyé');
+}
+
+async function submitUpload(form,data) {
+  const file=form.querySelector('input[type=file]').files?.[0]; if(!file) throw new Error('Fichier requis');
+  if(file.size>50*1024*1024) throw new Error('Le fichier dépasse 50 Mo');
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'')||'fichier';
+  const path=`${state.workspace.id}/${data.projectId}/${crypto.randomUUID()}-${safeName}`;
+  const deliverables=await api.insert('deliverables',[{workspace_id:state.workspace.id,project_id:data.projectId,title:String(data.title).trim(),description:'',visibility:data.visibility||'internal',status:'draft',created_by:state.user.id}]);
+  try {
+    await api.upload('workspace-files',path,file);
+    await api.insert('deliverable_versions',[{workspace_id:state.workspace.id,deliverable_id:deliverables[0].id,version_number:1,storage_path:path,file_name:file.name,mime_type:file.type||null,size_bytes:file.size,created_by:state.user.id}]);
+  } catch(error) { try{await api.remove('deliverables',`id=eq.${deliverables[0].id}`);}catch{} throw error; }
+  state.modal=null; await loadProject(data.projectId,true); showToast('Ressource ajoutée');
+}
+
+async function submitInvite(data) {
+  const rows=await api.insert('workspace_invites',[{workspace_id:state.workspace.id,email:String(data.email).trim().toLowerCase(),role:data.role||'member',status:'pending',invited_by:state.user.id}]);
+  const url=new URL(location.href); url.search=''; url.hash=''; url.searchParams.set('invite',rows[0].token);
+  state.modal={type:'invite-link',url:url.toString()}; render();
+}
+
+async function seedPilot() {
+  if(state.projects.length) throw new Error('L’espace contient déjà des projets');
+  state.busy=true; render();
+  try {
+    const defs=[
+      ['HFConcept','Finaliser un prototype testable et organiser un test utilisateurs réaliste.','2026-09-30'],
+      ['Orbit','Stabiliser le prototype multijoueur et valider la synchronisation réseau.','2026-10-12'],
+      ['Orsid Website','Valider le design puis préparer le passage au développement.','2026-10-18']
+    ];
+    const created=[];
+    for(const [name,objective,target] of defs) created.push(await api.rpc('create_project',{p_workspace_id:state.workspace.id,p_name:name,p_objective:objective,p_target_date:target}));
+    const [hf,orbit,orsid]=created.map(x=>x.project_id);
+    const milestones=await api.insert('milestones',[
+      {workspace_id:state.workspace.id,project_id:hf,title:'Concept',position:1,status:'done'},
+      {workspace_id:state.workspace.id,project_id:hf,title:'Prototype V4',position:2,status:'active',due_date:'2026-09-10'},
+      {workspace_id:state.workspace.id,project_id:hf,title:'Tests utilisateurs',position:3,status:'todo',due_date:'2026-09-20'},
+      {workspace_id:state.workspace.id,project_id:orbit,title:'Stabilisation réseau',position:1,status:'active',due_date:'2026-09-18'},
+      {workspace_id:state.workspace.id,project_id:orsid,title:'Design approuvé',position:1,status:'active',due_date:'2026-09-15'}
+    ]);
+    await api.insert('actions',[
+      {workspace_id:state.workspace.id,project_id:hf,milestone_id:milestones[1].id,title:'Valider Prototype V4',description:'Vérifier la cohérence du prototype avant la session.',status:'in_progress',priority:'urgent',due_at:'2026-09-08T14:00:00Z',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:hf,milestone_id:milestones[2].id,title:'Préparer session 6 joueurs',description:'Protocole, matériel et grille de retours.',status:'todo',priority:'high',due_at:'2026-09-12T13:00:00Z',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orbit,milestone_id:milestones[3].id,title:'Corriger désynchronisation à la reconnexion',description:'Reproduire puis documenter le cas avant correction.',status:'blocked',priority:'high',blocked_reason:'Scénario reproductible incomplet',due_at:'2026-09-11T16:00:00Z',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orsid,mi

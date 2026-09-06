@@ -1,0 +1,20 @@
+&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function escAttr(value){return esc(value)}
+function nl2br(value){return String(value).replace(/\n/g,'<br>')}
+function formatDate(v){if(!v)return'—';const d=new Date(v.length===10?`${v}T12:00:00`:v);return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',year:d.getFullYear()!==new Date().getFullYear()?'numeric':undefined}).format(d)}
+function formatDateTime(v){if(!v)return'—';return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v))}
+function formatDay(v){return new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric'}).format(new Date(v))}
+function relativeDate(d){const diff=Math.round((d-Date.now())/1000);const abs=Math.abs(diff);if(abs<60)return diff<0?'à l’instant':'dans un instant';const rtf=new Intl.RelativeTimeFormat('fr',{numeric:'auto'});if(abs<3600)return rtf.format(Math.round(diff/60),'minute');if(abs<86400)return rtf.format(Math.round(diff/3600),'hour');return rtf.format(Math.round(diff/86400),'day')}
+function localDateTimeToIso(v){if(!v)return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d.toISOString()}
+function bytes(n){n=Number(n||0);if(n<1024)return`${n} o`;if(n<1048576)return`${(n/1024).toFixed(1)} Ko`;return`${(n/1048576).toFixed(1)} Mo`}
+function statusLabel(s){return({todo:'À faire',in_progress:'En cours',blocked:'Bloqué',done:'Terminé',cancelled:'Annulé'})[s]||s}
+function statusTone(s){return s==='done'?'good':s==='blocked'?'danger':s==='in_progress'?'blue':''}
+function healthLabel(s){return({on_track:'En bonne voie',at_risk:'À surveiller',off_track:'En difficulté'})[s]||s}
+function healthTone(s){return s==='on_track'?'good':s==='at_risk'?'warn':'danger'}
+function milestoneLabel(s){return({todo:'À venir',active:'En cours',done:'Terminé',cancelled:'Annulé'})[s]||s}
+function decisionLabel(s){return({proposed:'Proposée',decided:'Décidée',superseded:'Remplacée',cancelled:'Annulée'})[s]||s}
+function requestStatus(s){return({open:'En attente',answered:'Répondue',satisfied:'Satisfaite',cancelled:'Annulée'})[s]||s}
+function workspaceRoleLabel(s){return({owner:'Propriétaire',admin:'Administrateur',member:'Membre',guest:'Invité'})[s]||s||'Membre'}
+function notificationKind(s){return({assignment:'Affectation',request:'Demande',approval:'Validation',message:'Message',meeting:'Réunion'})[s]||'Activité'}
+function inviteStatus(s){return({pending:'En attente',accepted:'Acceptée',revoked:'Révoquée',expired:'Expirée'})[s]||s}
+async function copyText(text){try{await navigator.clipboard.writeText(text);showToast('Lien copié')}catch{prompt('Copiez ce lien :',text)}}

@@ -1,0 +1,30 @@
+g = actions.filter(a=>a.status==='blocked');
+  const pending = actions.filter(a=>!['done','cancelled'].includes(a.status)).slice(0,5);
+  const decisions = (state.projectCache.get(project.id)?.decisions || []).slice(0,4);
+  const meetings = state.meetings.filter(m=>m.project_id===project.id && m.starts_at && new Date(m.starts_at)>new Date()).slice(0,3);
+  return `<div class="grid cols-4" style="margin-bottom:18px"><div class="card"><span class="eyebrow">Avancement</span><div class="metric">${progress}%</div><div class="progress"><span style="width:${progress}%"></span></div></div><div class="card"><span class="eyebrow">Actions ouvertes</span><div class="metric">${actions.filter(a=>!['done','cancelled'].includes(a.status)).length}</div><div class="metric-label">${blocking.length} blocage${blocking.length>1?'s':''}</div></div><div class="card"><span class="eyebrow">Cible</span><div class="metric" style="font-size:20px">${project.target_date?formatDate(project.target_date):'—'}</div><div class="metric-label">date du projet</div></div><div class="card"><span class="eyebrow">Jalons</span><div class="metric">${milestones.length}</div><div class="metric-label">${milestones.filter(m=>m.status==='done').length} terminés</div></div></div>
+    <div class="grid cols-2"><div class="card"><div class="card-head"><h2>Maintenant</h2><button class="btn small primary" data-action="new-action" data-project="${project.id}">＋ Action</button></div>${pending.length?`<div class="stack">${pending.map(actionRow).join('')}</div>`:empty('Tout est à jour','Aucune action ouverte sur ce projet.')}</div><div class="card"><div class="card-head"><h2>Jalons</h2><button class="btn small" data-action="new-milestone" data-project="${project.id}">＋ Jalon</button></div>${milestones.length?`<div class="stack">${milestones.map(m=>`<div class="list-row"><span class="pill ${m.status==='done'?'good':m.status==='active'?'blue':''}">${milestoneLabel(m.status)}</span><div class="list-main"><strong>${esc(m.title)}</strong><small>${m.due_date?`Cible ${formatDate(m.due_date)}`:'Sans date'}</small></div></div>`).join('')}</div>`:empty('Pas encore de jalon','Structurez le projet en quelques étapes clés.')}</div></div>
+    <div class="grid cols-2" style="margin-top:16px"><div class="card"><div class="card-head"><h2>Dernières décisions</h2><a class="btn small" href="#/projects/${project.id}/decisions">Voir tout</a></div>${decisions.length?`<div class="stack">${decisions.map(d=>`<div class="list-row"><div class="list-main"><strong>${esc(d.title)}</strong><small>${esc(d.rationale||'')} · ${formatDateTime(d.created_at)}</small></div></div>`).join('')}</div>`:empty('Aucune décision','Les décisions importantes apparaîtront ici.')}</div><div class="card"><div class="card-head"><h2>Prochaines réunions</h2><a class="btn small" href="#/projects/${project.id}/meetings">Voir tout</a></div>${meetings.length?`<div class="stack">${meetings.map(meetingRow).join('')}</div>`:empty('Aucune réunion','Planifiez un point si nécessaire.')}</div></div>`;
+}
+
+function projectWork(project, actions, milestones) {
+  return `<div class="card"><div class="card-head"><div><h2>Travail du projet</h2><div class="metric-label">Les statuts sont enregistrés immédiatement dans la base partagée.</div></div><button class="btn primary" data-action="new-action" data-project="${project.id}">＋ Action</button></div>${actions.length?`<div class="stack">${actions.map(a=>actionRow(a,true,milestones)).join('')}</div>`:empty('Aucune action','Ajoutez la première action du projet.')}</div>`;
+}
+
+function projectMessages(project) {
+  const conversations = state.conversations.filter(c=>c.project_id===project.id);
+  const conversation = conversations[0];
+  if (!conversation) return `<div class="card">${empty('Conversation en préparation','Rechargez le projet ou créez une nouvelle conversation.')}</div>`;
+  if (!state.messages.has(conversation.id)) loadMessages(conversation.id);
+  const messages = state.messages.get(conversation.id) || [];
+  return `<div class="card chat"><div class="chat-log">${messages.length?messages.map(messageBubble).join(''):empty('Aucun message','Écrivez le premier message lié à ce projet.')}</div><form class="chat-form" data-form="message"><input type="hidden" name="conversationId" value="${conversation.id}"><input type="hidden" name="workspaceId" value="${project.workspace_id}"><textarea name="body" required maxlength="20000" placeholder="Écrire dans ${esc(conversation.title)}…"></textarea><button class="btn primary" type="submit">Envoyer</button></form></div>`;
+}
+
+function projectDecisions(project) {
+  const decisions = state.projectCache.get(project.id)?.decisions || [];
+  return `<div class="card"><div class="card-head"><div><h2>Décisions</h2><div class="metric-label">Une mémoire explicite des choix qui structurent le projet.</div></div><button class="btn primary" data-action="new-decision" data-project="${project.id}">＋ Décision</button></div>${decisions.length?`<div class="stack">${decisions.map(d=>`<div class="list-row"><span class="pill ${d.status==='decided'?'good':'blue'}">${decisionLabel(d.status)}</span><div class="list-main"><strong>${esc(d.title)}</strong><small>${esc(d.rationale||'Sans justification')} · ${formatDateTime(d.decided_at||d.created_at)}</small></div></div>`).join('')}</div>`:empty('Aucune décision enregistrée','Consignez les choix importants au moment où ils sont pris.')}</div>`;
+}
+
+function projectMeetings(project) {
+  const meetings = state.meetings.filter(m=>m.project_id===project.id);
+  return `<div class="card"><div class="card-head"><div><h2>Réunions</h2><div class="metric-label">Préparation, calendrier et historique liés au projet.</div></div><button class="btn primary" data-action="new-meeting" data-project="${project.id}">＋ Réunion</button></div>${meetings.length?`<div class="stack">${meetings.map(meetingRow).join('')}</div>`:empty('Aucune réunion','Planifiez le prochain point projet.')}</d

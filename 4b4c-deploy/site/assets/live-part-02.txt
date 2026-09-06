@@ -1,0 +1,46 @@
+n><button class="btn" type="button" data-action="signout">Changer de compte</button></div></form>`}
+    </div></div>`;
+  if (state.modal) app.insertAdjacentHTML('beforeend', renderModal(state.modal));
+  renderToasts();
+}
+
+function renderDashboard() {
+  const mine = myActions().filter(a => !['done','cancelled'].includes(a.status));
+  const overdue = mine.filter(a => a.due_at && new Date(a.due_at) < new Date());
+  const pendingRequests = state.requests.filter(r => r.recipient_id === state.user.id && r.status === 'open');
+  const pendingApprovals = state.approvals.filter(a => a.validator_id === state.user.id && a.status === 'pending');
+  const upcomingMeetings = state.meetings.filter(m => m.starts_at && new Date(m.starts_at) > new Date()).slice(0,5);
+  const attention = [...overdue.map(a => ({kind:'Action en retard', title:a.title, meta:projectName(a.project_id), tone:'danger', route:`#/projects/${a.project_id}/work`})), ...pendingRequests.map(r => ({kind:'Demande', title:r.title, meta:projectName(r.project_id), tone:'warn', route:r.project_id?`#/projects/${r.project_id}/overview`:'#/work'})), ...pendingApprovals.map(a => ({kind:'Validation',title:'Validation attendue',meta:projectName(a.project_id),tone:'blue',route:`#/projects/${a.project_id}/resources`}))].slice(0,8);
+  return `<section class="section-head"><div><span class="eyebrow">Maintenant</span><h2>Bonjour ${esc(firstName(displayName(state.user.id)))}</h2><p>Voici ce qui mérite votre attention dans ${esc(state.workspace.name)}.</p></div>${!state.projects.length?`<button class="btn primary" data-action="seed-pilot">Préparer l’espace pilote</button>`:''}</section>
+    <div class="grid cols-4" style="margin-bottom:18px"><div class="card"><span class="eyebrow">À faire</span><div class="metric">${mine.length}</div><div class="metric-label">actions qui vous concernent</div></div><div class="card"><span class="eyebrow">En attente</span><div class="metric">${pendingRequests.length+pendingApprovals.length}</div><div class="metric-label">demandes et validations</div></div><div class="card"><span class="eyebrow">Projets actifs</span><div class="metric">${state.projects.filter(p=>p.status==='active').length}</div><div class="metric-label">dans l’espace</div></div><div class="card"><span class="eyebrow">Non lues</span><div class="metric">${state.notifications.filter(n=>!n.read_at).length}</div><div class="metric-label">notifications</div></div></div>
+    <div class="grid cols-2"><div class="card"><div class="card-head"><h2>Votre attention</h2><a class="btn small" href="#/work">Voir mon travail</a></div>${attention.length?`<div class="stack">${attention.map(item=>`<div class="list-row clickable" data-nav="${item.route}"><span class="pill ${item.tone}">${esc(item.kind)}</span><div class="list-main"><strong>${esc(item.title)}</strong><small>${esc(item.meta||'')}</small></div><span>›</span></div>`).join('')}</div>`:empty('Rien de critique','Aucune demande, validation ou échéance urgente pour vous.')}</div>
+      <div class="card"><div class="card-head"><h2>Prochaines réunions</h2><a class="btn small" href="#/calendar">Calendrier</a></div>${upcomingMeetings.length?`<div class="stack">${upcomingMeetings.map(m=>meetingRow(m)).join('')}</div>`:empty('Aucune réunion planifiée','Créez une réunion depuis un projet ou le calendrier.')}</div></div>
+    <section style="margin-top:20px"><div class="card-head"><h2>Reprendre un projet</h2><a class="btn small" href="#/projects">Tous les projets</a></div>${state.projects.length?`<div class="grid cols-3">${state.projects.slice(0,6).map(projectCard).join('')}</div>`:empty('Votre espace est prêt','Créez un premier projet ou utilisez les données pilote pour la présentation.')}</section>`;
+}
+
+function renderProjects() {
+  return `<div class="section-head"><div><span class="eyebrow">Portefeuille</span><h2>Projets</h2><p>${state.projects.length} projet${state.projects.length>1?'s':''} visible${state.projects.length>1?'s':''} dans cet espace.</p></div><button class="btn primary" data-action="new-project">＋ Nouveau projet</button></div>${state.projects.length?`<div class="grid cols-3">${state.projects.map(projectCard).join('')}</div>`:empty('Aucun projet','Créez votre premier projet pour commencer à travailler en équipe.')}`;
+}
+
+function renderProject(id, tab='overview') {
+  const project = state.projects.find(p => p.id === id);
+  if (!project) return empty('Projet introuvable','Vous n’avez peut-être plus accès à ce projet.');
+  const actions = state.actions.filter(a=>a.project_id===id);
+  const milestones = state.projectCache.get(id)?.milestones || [];
+  if (!state.projectCache.has(id)) loadProject(id);
+  const done = actions.filter(a=>a.status==='done').length;
+  const progress = actions.length ? Math.round(done/actions.length*100) : 0;
+  const tabs = [['overview','Vue d’ensemble'],['work','Travail'],['messages','Messages'],['decisions','Décisions'],['meetings','Réunions'],['resources','Ressources']];
+  const href = (t)=>`#/projects/${id}/${t}`;
+  const tabHtml = `<div class="tabs">${tabs.map(([key,label])=>`<a href="${href(key)}" class="${tab===key?'active':''}">${label}</a>`).join('')}</div>`;
+  const head = `<div class="section-head"><div><span class="eyebrow">Projet</span><h2>${esc(project.name)}</h2><p>${esc(project.objective || 'Aucun objectif renseigné.')}</p></div><span class="pill ${healthTone(project.health)}"><span class="dot"></span>${healthLabel(project.health)}</span></div>${tabHtml}`;
+  if (tab==='work') return head + projectWork(project, actions, milestones);
+  if (tab==='messages') return head + projectMessages(project);
+  if (tab==='decisions') return head + projectDecisions(project);
+  if (tab==='meetings') return head + projectMeetings(project);
+  if (tab==='resources') return head + projectResources(project);
+  return head + projectOverview(project, actions, milestones, progress);
+}
+
+function projectOverview(project, actions, milestones, progress) {
+  const blockin
