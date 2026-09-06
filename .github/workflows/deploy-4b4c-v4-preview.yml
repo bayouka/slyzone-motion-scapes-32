@@ -1,0 +1,85 @@
+name: Deploy 4b4c V4 preview
+
+on:
+  push:
+    branches: [4b4c-v4-preview]
+    paths:
+      - '4b4c-v4-preview/**'
+      - '.github/workflows/deploy-4b4c-v4-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Rebuild V4 site bundle
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site
+          base64 -d site-bundle.b64 > /tmp/4b4c-v4-site.tar.gz
+          tar -xzf /tmp/4b4c-v4-site.tar.gz -C site
+
+      - name: Validate V4 bundle
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          node --check site/assets/live.js
+          node --check site/assets/supabase-client.js
+          node --check site/assets/boot.js
+          node --check src/worker.js
+          test -s site/index.html
+          test -s site/assets/styles.css
+          test -s site/assets/live.css
+          grep -q 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
+          grep -q 'Situation actuelle' site/assets/live.js
+          grep -q 'Roadmap' site/assets/live.js
+          grep -q 'Avant' site/assets/live.js
+          grep -q 'Après' site/assets/live.js
+          grep -q 'message-to-action' site/assets/live.js
+          if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
+            echo 'Secret-like material found in public preview' >&2
+            exit 1
+          fi
+
+      - name: Deploy temporary Cloudflare Worker
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-v4-preview.txt
+
+      - name: Smoke preview URL
+        run: |
+          set -euo pipefail
+          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-v4-preview.txt | tail -1)
+          test -n "$URL"
+          for i in 1 2 3 4 5 6; do
+            CODE=$(curl -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/home.html -w '%{http_code}' "$URL/" || true)
+            [ "$CODE" = "200" ] && grep -q '4b4c — Espace projet partagé' /tmp/home.html && break
+            sleep 2
+          done
+          test "$CODE" = "200"
+          grep -q '4b4c — Espace projet partagé' /tmp/home.html
+          curl -fsS "$URL/runtime-config.js" | grep -q 'wexfzhegiewhldkugtow.supabase.co'
+          curl -fsS "$URL/assets/live.js" | grep -q 'Situation actuelle'
+          curl -fsS "$URL/health" | grep -q 'prepilot-v4'
+          echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-v4-url.txt
+
+      - name: Preserve deployment result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 4b4c-v4-preview-result
+          path: |
+            /tmp/4b4c-v4-preview.txt
+            /tmp/4b4c-v4-url.txt
+          if-no-files-found: warn
+          retention-days: 1
