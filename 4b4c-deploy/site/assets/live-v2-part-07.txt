@@ -1,0 +1,67 @@
+grid"><div class="field"><label>Email</label><input name="email" type="email" required autofocus></div><div class="field"><label>Rôle d’espace</label><select name="role"><option value="member">Membre</option><option value="admin">Administrateur</option><option value="guest">Invité</option></select></div></div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Créer le lien</button></div></form>`);
+  if (modal.type==='invite-link') return modalFrame('Lien d’invitation créé','Transmettez ce lien à la personne invitée. Il ne fonctionne qu’avec l’email prévu.',`<div class="field"><label>Lien</label><input id="invite-link-value" readonly value="${escAttr(modal.url)}"></div><div class="modal-actions"><button class="btn" data-action="copy-invite">Copier</button><button class="btn primary" data-action="close-modal">Terminer</button></div>`);
+  if (modal.type==='accept-invite') return modalFrame('Invitation à rejoindre 4b4c',`Vous êtes invité à rejoindre ${modal.preview?.workspace_name||'un espace'}.`,`<div class="notice"><strong>${esc(modal.preview?.workspace_name||'Espace')}</strong><br>Rôle : ${workspaceRoleLabel(modal.preview?.invite_role)}<br>Invitation pour : ${esc(modal.preview?.invited_email||'')}</div><div class="modal-actions"><button class="btn" data-action="close-modal">Plus tard</button><button class="btn primary" data-action="accept-invite" data-token="${escAttr(modal.token)}">Rejoindre l’espace</button></div>`);
+  if (modal.type==='seed') return modalFrame('Préparer l’espace pilote','Cette opération crée trois projets réalistes et des objets de travail persistants. Vous pourrez tout modifier ensuite.',`<div class="notice">HFConcept, Orbit et Orsid Website seront créés avec jalons, actions, décisions, demandes et réunions. Aucun faux membre ne sera créé : vos associés rejoindront avec leurs propres comptes.</div><div class="modal-actions"><button class="btn" data-action="close-modal">Annuler</button><button class="btn primary" data-action="confirm-seed">Créer les données pilote</button></div>`);
+  return '';
+}
+
+function modalFrame(title, subtitle, body) { return `<div class="modal-backdrop" data-action="backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="card-head"><div><h2>${esc(title)}</h2><p style="margin:4px 0 0;color:var(--live-muted)">${esc(subtitle||'')}</p></div><button class="icon-button" data-action="close-modal" style="color:#667085">✕</button></div>${body}</div></div>`; }
+
+async function handleClick(event) {
+  const target = event.target.closest('[data-action],[data-nav]');
+  if (!target) return;
+  if (target.dataset.nav) { location.hash = target.dataset.nav.replace(/^#/,''); return; }
+  const action = target.dataset.action;
+  if (action==='backdrop' && event.target!==target) return;
+  try {
+    if (action==='auth-switch') { state.authMode=state.authMode==='signup'?'signin':'signup'; render(); }
+    else if (action==='signout') { await api.signOut(); resetState(); history.replaceState({},'',location.pathname); render(); }
+    else if (action==='refresh') await refreshWorkspace();
+    else if (action==='quick-add') openModal({type:'quick-add'});
+    else if (action==='close-modal'||action==='backdrop') { state.modal=null; render(); }
+    else if (action==='new-project') openModal({type:'project'});
+    else if (action==='edit-project') openModal({type:'project-edit',projectId:target.dataset.project});
+    else if (action==='manage-project') openModal({type:'project-manage',projectId:target.dataset.project});
+    else if (action==='archive-project') await archiveProject(target.dataset.project);
+    else if (action==='restore-project') await restoreProject(target.dataset.project);
+    else if (action==='delete-project') await deleteProject(target.dataset.project);
+    else if (action==='edit-profile') openModal({type:'profile'});
+    else if (action==='new-action') openModal({type:'action',projectId:target.dataset.project||currentProjectId(),milestoneId:target.dataset.milestone||''});
+    else if (action==='new-request') openModal({type:'request',projectId:target.dataset.project||currentProjectId()});
+    else if (action==='new-decision') openModal({type:'decision',projectId:target.dataset.project});
+    else if (action==='new-milestone') openModal({type:'milestone',projectId:target.dataset.project});
+    else if (action==='edit-milestone') openModal({type:'milestone-edit',projectId:target.dataset.project,milestoneId:target.dataset.milestone});
+    else if (action==='new-meeting') openModal({type:'meeting',projectId:target.dataset.project||currentProjectId()});
+    else if (action==='upload-file') openModal({type:'upload',projectId:target.dataset.project});
+    else if (action==='invite-member') openModal({type:'invite'});
+    else if (action==='seed-pilot') openModal({type:'seed'});
+    else if (action==='confirm-seed') await seedPilot();
+    else if (action==='toggle-notifications') { state.notificationOpen=!state.notificationOpen; render(); }
+    else if (action==='read-all-notifications') await markAllNotificationsRead();
+    else if (action==='open-notification') await openNotification(target.dataset.id,target.dataset.route);
+    else if (action==='open-file') await openFile(target.dataset.path);
+    else if (action==='copy-invite') await copyText(document.getElementById('invite-link-value')?.value||'');
+    else if (action==='accept-invite') await acceptInvite(target.dataset.token);
+    else if (action==='accept-invite-direct') await acceptInvite(new URLSearchParams(location.search).get('invite'));
+    else if (action==='load-invites') await loadInvites(target);
+  } catch (error) { showToast(humanError(error), true); }
+}
+
+async function handleSubmit(event) {
+  const form = event.target.closest('form[data-form]'); if (!form) return;
+  event.preventDefault(); if (state.busy) return;
+  state.busy = true; const data = Object.fromEntries(new FormData(form).entries());
+  try {
+    if (form.dataset.form==='auth') await submitAuth(data);
+    else if (form.dataset.form==='workspace') await submitWorkspace(data);
+    else if (form.dataset.form==='project') await submitProject(data);
+    else if (form.dataset.form==='project-edit') await submitProjectEdit(data);
+    else if (form.dataset.form==='profile') await submitProfile(form,data);
+    else if (form.dataset.form==='action') await submitAction(data);
+    else if (form.dataset.form==='request') await submitRequest(data);
+    else if (form.dataset.form==='decision') await submitDecision(data);
+    else if (form.dataset.form==='milestone') await submitMilestone(data);
+    else if (form.dataset.form==='milestone-edit') await submitMilestoneEdit(data);
+    else if (form.dataset.form==='meeting') await submitMeeting(data);
+    else if (form.dataset.form==='message') await submitMessage(data);
+    else if (form.dataset.form==='upload') await submitUpload(f
