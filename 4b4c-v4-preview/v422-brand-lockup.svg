@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 104" role="img" aria-labelledby="title">
+  <title id="title">2b2c</title>
+  <defs>
+    <linearGradient id="bg" x1="8" y1="6" x2="94" y2="98" gradientUnits="userSpaceOnUse"><stop stop-color="#06B6FF"/><stop offset=".48" stop-color="#2563EB"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <linearGradient id="word" x1="126" y1="16" x2="342" y2="86" gradientUnits="userSpaceOnUse"><stop stop-color="#06B6FF"/><stop offset=".44" stop-color="#2563EB"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+  </defs>
+  <rect x="4" y="4" width="96" height="96" rx="26" fill="url(#bg)"/>
+  <circle cx="36" cy="31" r="7.5" fill="#fff"/><circle cx="68" cy="31" r="7.5" fill="#fff"/>
+  <path d="M22 50c7-10 14-14 22-11 4 2 8 6 12 10l13 13c5 5 11 5 16-1" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M82 50c-7-10-14-14-22-11-4 2-8 6-12 10L35 62c-5 5-11 5-16-1" fill="none" stroke="#F5EEFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="124" y="72" fill="url(#word)" font-family="Inter, Arial, sans-serif" font-size="68" font-weight="800" letter-spacing="-4">2b2c</text>
+</svg>
