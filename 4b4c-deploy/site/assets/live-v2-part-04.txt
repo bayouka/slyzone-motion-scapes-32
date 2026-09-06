@@ -1,0 +1,39 @@
+projet.</div></div><button class="btn primary" data-action="new-meeting" data-project="${project.id}">＋ Réunion</button></div>${meetings.length?`<div class="stack">${meetings.map(meetingRow).join('')}</div>`:empty('Aucune réunion','Planifiez le prochain point projet.')}</div>`;
+}
+
+function projectResources(project) {
+  const cache = state.projectCache.get(project.id) || {};
+  const deliverables = cache.deliverables || [];
+  const versions = cache.versions || [];
+  return `<div class="card"><div class="card-head"><div><h2>Ressources & livrables</h2><div class="metric-label">Les fichiers sont stockés dans un bucket privé et ouverts via URL signée.</div></div><button class="btn primary" data-action="upload-file" data-project="${project.id}">↑ Ajouter</button></div>${deliverables.length?`<div class="stack">${deliverables.map(d=>{const latest=versions.filter(v=>v.deliverable_id===d.id).sort((a,b)=>b.version_number-a.version_number)[0];return `<div class="list-row"><span class="pill ${d.visibility==='shared'?'blue':''}">${d.visibility==='shared'?'Partagé':'Interne'}</span><div class="list-main"><strong>${esc(d.title)}</strong><small>${latest?`${esc(latest.file_name)} · ${bytes(latest.size_bytes)} · v${latest.version_number}`:'Aucun fichier'}</small></div>${latest?`<button class="btn small" data-action="open-file" data-path="${escAttr(latest.storage_path)}">Ouvrir</button>`:''}</div>`}).join('')}</div>`:empty('Aucune ressource','Ajoutez un document, une image ou un livrable.')}</div>`;
+}
+
+function renderMyWork() {
+  const actions = myActions();
+  const requests = state.requests.filter(r=>r.recipient_id===state.user.id || r.requester_id===state.user.id);
+  return `<div class="section-head"><div><span class="eyebrow">Priorités personnelles</span><h2>À traiter</h2><p>Actions, demandes, validations et échéances qui nécessitent votre attention.</p></div><button class="btn primary" data-action="new-action">＋ Action</button></div><div class="grid cols-2"><div class="card"><div class="card-head"><h2>Actions (${actions.length})</h2></div>${actions.length?`<div class="stack">${actions.map(a=>actionRow(a,true)).join('')}</div>`:empty('Aucune action assignée','Les actions qui vous sont attribuées apparaîtront ici.')}</div><div class="card"><div class="card-head"><h2>Demandes (${requests.length})</h2><button class="btn small" data-action="new-request">＋ Demande</button></div>${requests.length?`<div class="stack">${requests.map(requestRow).join('')}</div>`:empty('Aucune demande','Créez une demande ciblée plutôt qu’un message perdu dans un fil.')}</div></div>`;
+}
+
+function renderMessages(conversationId) {
+  const conversation = conversationId ? state.conversations.find(c=>c.id===conversationId) : state.conversations[0];
+  if (conversation && !state.messages.has(conversation.id)) loadMessages(conversation.id);
+  const messages = conversation ? (state.messages.get(conversation.id)||[]) : [];
+  return `<div class="section-head"><div><span class="eyebrow">Communication</span><h2>Messages</h2><p>Conversations conservées dans le contexte de leur projet.</p></div></div><div class="grid" style="grid-template-columns:minmax(240px,340px) minmax(0,1fr)"><div class="card"><div class="card-head"><h2>Conversations</h2></div>${state.conversations.length?`<div class="stack">${state.conversations.map(c=>`<div class="list-row clickable" data-nav="#/messages/${c.id}"><div class="list-main"><strong>${esc(c.title)}</strong><small>${esc(projectName(c.project_id)||'Conversation')}</small></div></div>`).join('')}</div>`:empty('Aucune conversation','Les projets créent automatiquement une conversation générale.')}</div><div class="card chat">${conversation?`<div class="chat-log"><div class="card-head"><h2>${esc(conversation.title)}</h2><span class="pill">${esc(projectName(conversation.project_id)||'')}</span></div>${messages.length?messages.map(messageBubble).join(''):empty('Aucun message','Commencez la conversation.')}</div><form class="chat-form" data-form="message"><input type="hidden" name="conversationId" value="${conversation.id}"><input type="hidden" name="workspaceId" value="${conversation.workspace_id}"><textarea name="body" required placeholder="Écrire un message…"></textarea><button class="btn primary" type="submit">Envoyer</button></form>`:empty('Sélectionnez une conversation','Choisissez un fil à gauche.')}</div></div>`;
+}
+
+function renderCalendar() {
+  const meetings = [...state.meetings].sort((a,b)=>new Date(a.starts_at||0)-new Date(b.starts_at||0));
+  return `<div class="section-head"><div><span class="eyebrow">Temps partagé</span><h2>Calendrier</h2><p>Réunions de tous les projets visibles dans l’espace.</p></div><button class="btn primary" data-action="new-meeting">＋ Réunion</button></div><div class="card">${meetings.length?`<div class="stack">${meetings.map(meetingRow).join('')}</div>`:empty('Calendrier vide','Planifiez une réunion depuis ici ou depuis un projet.')}</div>`;
+}
+
+function renderLibrary() {
+  const loaded = [...state.projectCache.values()].flatMap(v=>v.deliverables||[]);
+  return `<div class="section-head"><div><span class="eyebrow">Mémoire</span><h2>Ressources</h2><p>Les ressources sont organisées par projet et protégées par les droits d’accès.</p></div></div>${state.projects.length?`<div class="grid cols-3">${state.projects.map(p=>{const items=(state.projectCache.get(p.id)?.deliverables||[]).length; if(!state.projectCache.has(p.id)) loadProject(p.id); return `<div class="card project-card"><span class="eyebrow">${items} ressource${items>1?'s':''}</span><h3>${esc(p.name)}</h3><p>${esc(p.objective||'')}</p><a class="btn small" href="#/projects/${p.id}/resources">Ouvrir les ressources</a></div>`}).join('')}</div>`:empty('Aucun projet','Les ressources apparaissent une fois un projet créé.')}`;
+}
+
+function renderTeam() {
+  const canManage = ['owner','admin'].includes(state.workspaceRole);
+  return `<div class="section-head"><div><span class="eyebrow">Accès & responsabilités</span><h2>Équipe</h2><p>${state.members.length} membre${state.members.length>1?'s':''} actif${state.members.length>1?'s':''}. Les rôles d’espace gèrent les droits ; les rôles projet décrivent la responsabilité.</p></div>${canManage?`<button class="btn primary" data-action="invite-member">＋ Inviter</button>`:''}</div><div class="card"><div class="stack">${state.members.map(m=>`<div class="list-row">${avatarHtml(m.user_id)}<div class="list-main"><strong>${esc(displayName(m.user_id))}${m.user_id===state.user.id?' (vous)':''}</strong><small>${workspaceRoleLabel(m.role)} · membre depuis ${formatDate(m.joined_at)}</small></div><span class="pill ${m.role==='owner'?'blue':''}">${workspaceRoleLabel(m.role)}</span></div>`).join('')}</div></div>${canManage?`<div class="card" style="margin-top:16px"><div class="card-head"><h2>Invitations</h2></div><div id="invite-list"><button class="btn small" data-action="load-invites">Afficher les invitations en cours</button></div></div>`:''}`;
+}
+
+f
