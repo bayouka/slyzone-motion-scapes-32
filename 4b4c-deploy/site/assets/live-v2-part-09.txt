@@ -1,0 +1,75 @@
+ast('Phase ajoutée à la roadmap');
+}
+
+async function submitMilestoneEdit(data) {
+  await api.update('milestones',`id=eq.${data.milestoneId}`,{title:String(data.title).trim(),description:String(data.description||'').trim(),status:data.status,start_date:data.startDate||null,due_date:data.dueDate||null,owner_id:data.ownerId||null},{returnRepresentation:false});
+  state.modal=null; await loadProject(data.projectId,true); showToast('Roadmap mise à jour');
+}
+
+async function submitMeeting(data) {
+  const starts=localDateTimeToIso(data.startsAt); const ends=localDateTimeToIso(data.endsAt);
+  const rows=await api.insert('meetings',[{workspace_id:state.workspace.id,project_id:data.projectId||null,title:String(data.title).trim(),status:'planned',starts_at:starts,ends_at:ends,video_room:String(data.videoRoom||'').trim()||null,created_by:state.user.id}]);
+  await api.insert('meeting_attendees',[{meeting_id:rows[0].id,user_id:state.user.id,response:'accepted'}],{returnRepresentation:false});
+  state.modal=null; await refreshWorkspace({quiet:true}); showToast('Réunion planifiée');
+}
+
+async function submitMessage(data) {
+  const body=String(data.body||'').trim(); if(!body)return;
+  await api.insert('messages',[{workspace_id:data.workspaceId,conversation_id:data.conversationId,author_id:state.user.id,body}]);
+  await loadMessages(data.conversationId,true); showToast('Message envoyé');
+}
+
+async function submitUpload(form,data) {
+  const file=form.querySelector('input[type=file]').files?.[0]; if(!file) throw new Error('Fichier requis');
+  if(file.size>50*1024*1024) throw new Error('Le fichier dépasse 50 Mo');
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'')||'fichier';
+  const path=`${state.workspace.id}/${data.projectId}/${crypto.randomUUID()}-${safeName}`;
+  const deliverables=await api.insert('deliverables',[{workspace_id:state.workspace.id,project_id:data.projectId,title:String(data.title).trim(),description:'',visibility:data.visibility||'internal',status:'draft',created_by:state.user.id}]);
+  try {
+    await api.upload('workspace-files',path,file);
+    await api.insert('deliverable_versions',[{workspace_id:state.workspace.id,deliverable_id:deliverables[0].id,version_number:1,storage_path:path,file_name:file.name,mime_type:file.type||null,size_bytes:file.size,created_by:state.user.id}]);
+  } catch(error) { try{await api.remove('deliverables',`id=eq.${deliverables[0].id}`);}catch{} throw error; }
+  state.modal=null; await loadProject(data.projectId,true); showToast('Ressource ajoutée');
+}
+
+async function submitInvite(data) {
+  const rows=await api.insert('workspace_invites',[{workspace_id:state.workspace.id,email:String(data.email).trim().toLowerCase(),role:data.role||'member',status:'pending',invited_by:state.user.id}]);
+  const url=new URL(location.href); url.search=''; url.hash=''; url.searchParams.set('invite',rows[0].token);
+  state.modal={type:'invite-link',url:url.toString()}; render();
+}
+
+async function seedPilot() {
+  if(state.projects.length) throw new Error('L’espace contient déjà des projets');
+  state.busy=true; render();
+  try {
+    const defs=[
+      ['HFConcept','Finaliser un prototype testable et organiser un test utilisateurs réaliste.','2026-09-30'],
+      ['Orbit','Stabiliser le prototype multijoueur et valider la synchronisation réseau.','2026-10-12'],
+      ['Orsid Website','Valider le design puis préparer le passage au développement.','2026-10-18']
+    ];
+    const created=[];
+    for(const [name,objective,target] of defs) created.push(await api.rpc('create_project',{p_workspace_id:state.workspace.id,p_name:name,p_objective:objective,p_target_date:target}));
+    const [hf,orbit,orsid]=created.map(x=>x.project_id);
+    const milestones=await api.insert('milestones',[
+      {workspace_id:state.workspace.id,project_id:hf,title:'Concept',position:1,status:'done'},
+      {workspace_id:state.workspace.id,project_id:hf,title:'Prototype V4',position:2,status:'active',due_date:'2026-09-10'},
+      {workspace_id:state.workspace.id,project_id:hf,title:'Tests utilisateurs',position:3,status:'todo',due_date:'2026-09-20'},
+      {workspace_id:state.workspace.id,project_id:orbit,title:'Stabilisation réseau',position:1,status:'active',due_date:'2026-09-18'},
+      {workspace_id:state.workspace.id,project_id:orsid,title:'Design approuvé',position:1,status:'active',due_date:'2026-09-15'}
+    ]);
+    await api.insert('actions',[
+      {workspace_id:state.workspace.id,project_id:hf,milestone_id:milestones[1].id,title:'Valider Prototype V4',description:'Vérifier la cohérence du prototype avant la session.',status:'in_progress',priority:'urgent',due_at:'2026-09-08T14:00:00Z',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:hf,milestone_id:milestones[2].id,title:'Préparer session 6 joueurs',description:'Protocole, matériel et grille de retours.',status:'todo',priority:'high',due_at:'2026-09-12T13:00:00Z',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orbit,milestone_id:milestones[3].id,title:'Corriger désynchronisation à la reconnexion',description:'Reproduire puis documenter le cas avant correction.',status:'blocked',priority:'high',blocked_reason:'Scénario reproductible incomplet',due_at:'2026-09-11T16:00:00Z',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orsid,milestone_id:milestones[4].id,title:'Valider Homepage V3',description:'Relire desktop et mobile avant développement.',status:'in_progress',priority:'high',due_at:'2026-09-09T15:00:00Z',created_by:state.user.id}
+    ]);
+    await api.insert('decisions',[
+      {workspace_id:state.workspace.id,project_id:hf,title:'Direction B retenue',rationale:'Compréhension plus rapide pendant les essais internes.',status:'decided',decided_by:state.user.id,decided_at:new Date().toISOString(),created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orbit,title:'Priorité à la reconnexion',rationale:'Le test multijoueur ne doit pas démarrer avec ce risque ouvert.',status:'decided',decided_by:state.user.id,decided_at:new Date().toISOString(),created_by:state.user.id}
+    ]);
+    await api.insert('requests',[{workspace_id:state.workspace.id,project_id:hf,title:'Accès sandbox partenaire',body:'Récupérer les identifiants nécessaires pour terminer le test d’intégration.',requester_id:state.user.id,recipient_id:state.user.id,status:'open',due_at:'2026-09-08T10:00:00Z'}]);
+    await api.insert('meetings',[
+      {workspace_id:state.workspace.id,project_id:hf,title:'Test utilisateurs V4',status:'planned',starts_at:'2026-09-12T13:00:00Z',ends_at:'2026-09-12T14:00:00Z',video_room:'hfconcept-test-v4',created_by:state.user.id},
+      {workspace_id:state.workspace.id,project_id:orbit,title:'Point blocage réseau',status:'planned',starts_at:'2026-09-09T09:00:00Z',ends_at:'2026-09-09T09:30:00Z',video_room:'orbit-network',created_by:state.user.id}
+    ]);
+    state.modal=null;
