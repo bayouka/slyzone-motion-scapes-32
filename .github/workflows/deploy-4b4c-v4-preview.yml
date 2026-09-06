@@ -14,7 +14,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -94,22 +94,38 @@ jobs:
           set -euo pipefail
           npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-v4-preview.txt
 
-      - name: Smoke preview URL
+      - name: Smoke preview URL after propagation
         run: |
           set -euo pipefail
           URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-v4-preview.txt | tail -1)
           test -n "$URL"
-          for i in 1 2 3 4 5 6; do
-            CODE=$(curl -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/home.html -w '%{http_code}' "$URL/" || true)
-            [ "$CODE" = "200" ] && grep -q '4b4c — Espace projet partagé' /tmp/home.html && break
-            sleep 2
-          done
-          test "$CODE" = "200"
-          grep -q '4b4c — Espace projet partagé' /tmp/home.html
-          curl -fsS "$URL/runtime-config.js" | grep -q 'wexfzhegiewhldkugtow.supabase.co'
-          curl -fsS "$URL/assets/live.js" | grep -q 'Situation actuelle'
-          curl -fsS "$URL/assets/live.js" | grep -q 'profile-avatars'
-          curl -fsS "$URL/health" | grep -q 'prepilot-v4'
+          echo "Testing $URL"
+
+          probe() {
+            path="$1"; needle="$2"; nav="${3:-0}"
+            for i in $(seq 1 15); do
+              if [ "$nav" = "1" ]; then
+                code=$(curl -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              else
+                code=$(curl -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              fi
+              echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
+              if [ "$code" = "200" ] && grep -q "$needle" /tmp/probe.out; then
+                return 0
+              fi
+              sleep 4
+            done
+            echo "FAILED $path"
+            head -c 500 /tmp/probe.out || true
+            return 1
+          }
+
+          probe / '4b4c — Espace projet partagé' 1
+          probe /index.html '4b4c — Espace projet partagé'
+          probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
+          probe /assets/live.js 'Situation actuelle'
+          probe /assets/live.js 'profile-avatars'
+          probe /health 'prepilot-v4'
           echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-v4-url.txt
 
       - name: Preserve deployment result
