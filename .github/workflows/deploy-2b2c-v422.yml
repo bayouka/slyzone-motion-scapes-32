@@ -1,0 +1,145 @@
+name: Deploy 2b2c V4.2.2 preview
+
+on:
+  push:
+    branches: [4b4c-v4-preview]
+    paths:
+      - '.github/workflows/deploy-2b2c-v422.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Rebuild verified V4.2.1 baseline
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          cat site-bundle-part-00a.b64 site-bundle-part-00b.b64 site-bundle-part-01.b64 site-bundle-part-02.b64 site-bundle-part-03p0.b64 site-bundle-part-03p1.b64 site-bundle-part-03p2.b64 site-bundle-part-03p3.b64 site-bundle-part-04.b64 site-bundle-part-05.b64 site-bundle-part-06.b64 site-bundle-part-07.b64 > /tmp/base.b64
+          test "$(wc -c < /tmp/base.b64)" = "89936"
+          echo '4d5225f592ef7bb9db979b2f0be9d13c4a424c4baeb1a644c7839ca231b595f3  /tmp/base.b64' | sha256sum -c -
+          rm -rf site && mkdir -p site
+          base64 -d /tmp/base.b64 | tar -xzf - -C site
+
+          cat v41-livejs-p0.b64 v41-livejs-p1.b64 v41-livejs-p2.b64 v41-livejs-p3.b64 > /tmp/v41-js.b64
+          echo 'adcf5a43e916b0c84b349f922a0f66a85ce050b73f7a48c9d34d106f5d93a59d  /tmp/v41-js.b64' | sha256sum -c -
+          echo 'e50aea4bdff3b908092c7ac8db29c205439e3678dd1836cf71a4f3b88f1a517c  v41-livecss.patch.gz.b64' | sha256sum -c -
+          echo 'eca1cd180ba1dd77afe96f8392ec3167cbd6a7c8e624784d25e8bff1f7d35ef4  v41-supa.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/v41-js.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v41-livecss.patch.gz.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v41-supa.patch.gz.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+
+          cat v42-livejs-p0.b64 v42-livejs-p1.b64 > /tmp/v42-js.b64
+          echo '2199bf5ebd27ac5892e2db6076336cc18203d5f1bb5cdaf489d0f3eaafe29b7b  /tmp/v42-js.b64' | sha256sum -c -
+          echo '203d11d39b691a391162d77a95b684a945a5da359a033f7228c3bb6d841cc4b9  v42-livecss.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/v42-js.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v42-livecss.patch.gz.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          echo '3e9bb2f8209a3ab6f0596a02a06d3fb12a24cf78460e4591e3118835b63bd22d  site/assets/live.js' | sha256sum -c -
+
+          cat v421-livejs-fixed-p00.b64 v421-livejs-fixed-p01.b64 v421-livejs-fixed-p02.b64 v421-livejs-fixed-p03.b64 v421-livejs-fixed-p04.b64 v421-livejs-fixed-p05.b64 v421-livejs-fixed-p06.b64 v421-livejs-fixed-p07.b64 > /tmp/v421-js.b64
+          test "$(wc -c < /tmp/v421-js.b64)" = "14552"
+          echo 'cfd523ed72e0929adefc0f2e6aea45d8d0512285a006a5e1c4fbe14609eb0d26  /tmp/v421-js.b64' | sha256sum -c -
+          echo '1806b95cfb3524f62e3dc38d7b1c0560ba2d2a654977e818904243ec5a137a85  v421-livecss.b64' | sha256sum -c -
+          echo 'eb86477fce464c749ec10b778c53260dce368e6d2d5f291816a51c535dedb79e  v421-boot.b64' | sha256sum -c -
+          echo '5cd9ff43ca949ee2bc5a0a3a0d91b0fbcdf589c4c217ba828306815fbb7835a9  v421-index.b64' | sha256sum -c -
+          echo '452a571c10ec162472651bc5de1c4a153f1a36052834ccd83e853a8470ed1f79  v421-favicon.b64' | sha256sum -c -
+          base64 -d /tmp/v421-js.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v421-livecss.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v421-boot.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v421-index.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v421-favicon.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          echo '3863089904eba58301b21383c8c018b331421d8f49b37c28a6b2758dfe4f2d31  site/assets/live.js' | sha256sum -c -
+          echo 'e81657d0cb86826c3f5d051f6c59f6361083736eada21c71dcb3f118fae65a04  site/assets/live.css' | sha256sum -c -
+
+      - name: Apply V4.2.2 product and brand system
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          echo 'bfe3f5911c6836fc395c6ba3b8efcfef794de501d81c549081eefa278f170ca1  v422-livejs.patch.gz.b64' | sha256sum -c -
+          echo '0a193e70312dcd0a8e5a94cde3d497a47fe76f5af244e685f3f261c09a345ae6  v422-livecss.patch.gz.b64' | sha256sum -c -
+          echo '1a0d2f4948edc4ad9718ab2e74fe9e107f8a479edcd9044b7d7626115d629272  v422-index.patch.gz.b64' | sha256sum -c -
+          base64 -d v422-livejs.patch.gz.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v422-livecss.patch.gz.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d v422-index.patch.gz.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          cp v422-brand-icon.svg site/assets/brand-icon.svg
+          cp v422-brand-icon-mono-dark.svg site/assets/brand-icon-mono-dark.svg
+          cp v422-brand-icon-mono-light.svg site/assets/brand-icon-mono-light.svg
+          cp v422-brand-lockup.svg site/assets/brand-lockup.svg
+
+      - name: Validate V4.2.2 exact output
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          node --check site/assets/live.js
+          node --check site/assets/supabase-client.js
+          node --check site/assets/boot.js
+          node --check src/worker.js
+          echo 'b4de25fc4290f263f79e624e959f6c205678cb5ed103fea31d353957db743e9e  site/assets/live.js' | sha256sum -c -
+          echo 'd3cf80e1f10ff4599e341ce73a7fd5dcc66f7a662b285f2b72eec3f363f5911d  site/assets/live.css' | sha256sum -c -
+          echo '5d15120c9efa2dac43e7b83c54105811f4eb47be79c63107220865a465e4e60a  site/index.html' | sha256sum -c -
+          echo 'b25805b442359175810290fb79bd883eb6d79e10717ae5dbb982b7eb3efbdfaf  site/assets/brand-icon.svg' | sha256sum -c -
+          echo '95a322715e35afcf3b4fab42f760861cccf5bb659530b8330eb3d5539554be6f  site/assets/brand-icon-mono-dark.svg' | sha256sum -c -
+          echo 'c39cd6804c4e5834cad56d68965dbf5109c6fb37f2bb1d3425be40c579e9c0ca  site/assets/brand-icon-mono-light.svg' | sha256sum -c -
+          echo 'cdf54f8a811f11a9072d1b19be82084d9dfae0b184b8399ec012c02205ce8b46  site/assets/brand-lockup.svg' | sha256sum -c -
+          grep -Fq "const BRAND_NAME = '2b2c'" site/assets/live.js
+          grep -Fq 'v422-home-grid' site/assets/live.js
+          grep -Fq 'mobile-nav-label' site/assets/live.js
+          grep -Fq 'mobile-drawer-close' site/assets/live.js
+          grep -Fq 'Accès sur invitation' site/assets/live.js
+          grep -Fq '2b2c V4.2.2 — expressive brand system, glass/clay surfaces, robust mobile' site/assets/live.css
+          grep -Fq './assets/brand-icon.svg' site/index.html
+          grep -Fq 'prepilot-v4.2.2' src/worker.js
+          if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then echo 'Secret-like material found' >&2; exit 1; fi
+
+      - name: Deploy temporary 2b2c Cloudflare Worker
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/2b2c-v422-preview.txt
+
+      - name: Smoke deployed 2b2c V4.2.2
+        run: |
+          set -euo pipefail
+          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/2b2c-v422-preview.txt | tail -1)
+          test -n "$URL"
+          probe() {
+            path="$1"; needle="$2"; nav="${3:-0}"
+            for i in $(seq 1 10); do
+              if [ "$nav" = "1" ]; then
+                code=$(curl -L -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              else
+                code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              fi
+              echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
+              if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
+              sleep 3
+            done
+            return 1
+          }
+          probe / '2b2c — Projets qui avancent ensemble' 1
+          probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
+          probe /assets/live.js 'v422-home-grid'
+          probe /assets/live.js 'mobile-drawer-close'
+          probe /assets/live.css '2b2c V4.2.2 — expressive brand system, glass/clay surfaces, robust mobile'
+          probe /assets/brand-icon.svg '#06B6FF'
+          probe /assets/boot.js "import('./live.js')"
+          probe /health 'prepilot-v4.2.2'
+          echo "PREVIEW_URL=$URL" | tee /tmp/2b2c-v422-url.txt
+
+      - name: Preserve deployment result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2b2c-v422-preview-result
+          path: |
+            /tmp/2b2c-v422-preview.txt
+            /tmp/2b2c-v422-url.txt
+          if-no-files-found: warn
+          retention-days: 1
