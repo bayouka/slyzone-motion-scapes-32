@@ -1,0 +1,45 @@
+name: Diagnose 2b2c V4.2.1 transport
+
+on:
+  push:
+    branches: [4b4c-v4-preview]
+    paths:
+      - '4b4c-v4-preview/v421-*.b64'
+      - '.github/workflows/diagnose-v421.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Inspect V4.2.1 transport integrity
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -u
+          echo '--- individual files ---'
+          wc -c v421-livejs-p0.b64 v421-livejs-p1.b64 v421-livejs-p2.b64
+          sha256sum v421-livejs-p0.b64 v421-livejs-p1.b64 v421-livejs-p2.b64
+
+          cat v421-livejs-p0a.b64 v421-livejs-p0b00.b64 v421-livejs-p0b01.b64 v421-livejs-p0b1.b64 v421-livejs-p0c.b64 > /tmp/p0-rebuilt.b64
+          echo '--- p0 rebuilt from exact small fragments ---'
+          wc -c /tmp/p0-rebuilt.b64
+          sha256sum /tmp/p0-rebuilt.b64
+          if cmp -s v421-livejs-p0.b64 /tmp/p0-rebuilt.b64; then echo 'P0_MATCH=yes'; else echo 'P0_MATCH=no'; fi
+
+          cat v421-livejs-p0.b64 v421-livejs-p1.b64 v421-livejs-p2.b64 > /tmp/current.b64
+          cat /tmp/p0-rebuilt.b64 v421-livejs-p1.b64 v421-livejs-p2.b64 > /tmp/rebuilt.b64
+          echo '--- combined current ---'
+          wc -c /tmp/current.b64
+          sha256sum /tmp/current.b64
+          echo '--- combined rebuilt ---'
+          wc -c /tmp/rebuilt.b64
+          sha256sum /tmp/rebuilt.b64
+          echo 'EXPECTED=42b1a3f25562209ccd70e1a0117bf4b437b244a0160f3f99386282408360b6cd'
+
+          echo '--- gzip validity ---'
+          if base64 -d /tmp/current.b64 | gzip -t; then echo 'CURRENT_GZIP=ok'; else echo 'CURRENT_GZIP=bad'; fi
+          if base64 -d /tmp/rebuilt.b64 | gzip -t; then echo 'REBUILT_GZIP=ok'; else echo 'REBUILT_GZIP=bad'; fi
