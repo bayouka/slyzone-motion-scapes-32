@@ -1,0 +1,40 @@
+ass="metric-label">actions qui vous concernent</div></div><div class="card"><span class="eyebrow">En attente</span><div class="metric">${pendingRequests.length+pendingApprovals.length}</div><div class="metric-label">demandes et validations</div></div><div class="card"><span class="eyebrow">Projets actifs</span><div class="metric">${state.projects.filter(p=>p.status==='active').length}</div><div class="metric-label">dans l’espace</div></div><div class="card"><span class="eyebrow">Non lues</span><div class="metric">${state.notifications.filter(n=>!n.read_at).length}</div><div class="metric-label">notifications</div></div></div>
+    <div class="grid cols-2"><div class="card"><div class="card-head"><h2>Votre attention</h2><a class="btn small" href="#/work">Voir mon travail</a></div>${attention.length?`<div class="stack">${attention.map(item=>`<div class="list-row clickable" data-nav="${item.route}"><span class="pill ${item.tone}">${esc(item.kind)}</span><div class="list-main"><strong>${esc(item.title)}</strong><small>${esc(item.meta||'')}</small></div><span>›</span></div>`).join('')}</div>`:empty('Rien de critique','Aucune demande, validation ou échéance urgente pour vous.')}</div>
+      <div class="card"><div class="card-head"><h2>Prochaines réunions</h2><a class="btn small" href="#/calendar">Calendrier</a></div>${upcomingMeetings.length?`<div class="stack">${upcomingMeetings.map(m=>meetingRow(m)).join('')}</div>`:empty('Aucune réunion planifiée','Créez une réunion depuis un projet ou le calendrier.')}</div></div>
+    <section style="margin-top:20px"><div class="card-head"><h2>Reprendre un projet</h2><a class="btn small" href="#/projects">Tous les projets</a></div>${state.projects.length?`<div class="grid cols-3">${state.projects.slice(0,6).map(projectCard).join('')}</div>`:empty('Votre espace est prêt','Créez un premier projet ou utilisez les données pilote pour la présentation.')}</section>`;
+}
+
+function renderProjects() {
+  const archives=state.archivedProjects||[];
+  return `<div class="section-head"><div><span class="eyebrow">Portefeuille</span><h2>Projets</h2><p>${state.projects.length} projet${state.projects.length>1?'s':''} actif${state.projects.length>1?'s':''} dans cet espace.</p></div><button class="btn primary" data-action="new-project">＋ Nouveau projet</button></div>${state.projects.length?`<div class="grid cols-3">${state.projects.map(projectCard).join('')}</div>`:empty('Aucun projet actif','Créez un projet ou restaurez-en un depuis les archives.')}${archives.length?`<section class="archive-section"><div class="card-head"><div><h2>Archives</h2><div class="metric-label">${archives.length} projet${archives.length>1?'s':''} conservé${archives.length>1?'s':''}</div></div></div><div class="stack">${archives.map(p=>`<div class="list-row"><div class="list-main"><strong>${esc(p.name)}</strong><small>${esc(p.objective||'')} · archivé ${relativeDate(new Date(p.updated_at))}</small></div><button class="btn small" data-action="restore-project" data-project="${p.id}">Restaurer</button></div>`).join('')}</div></section>`:''}`;
+}
+
+function renderProject(id, tab='overview') {
+  const project = state.projects.find(p => p.id === id);
+  if (!project) return empty('Projet introuvable','Vous n’avez peut-être plus accès à ce projet.');
+  const actions = state.actions.filter(a=>a.project_id===id);
+  const milestones = state.projectCache.get(id)?.milestones || [];
+  if (!state.projectCache.has(id)) loadProject(id);
+  const done = actions.filter(a=>a.status==='done').length;
+  const progress = actions.length ? Math.round(done/actions.length*100) : 0;
+  const tabs = [['overview','Vue d’ensemble'],['roadmap','Roadmap'],['work','Travail'],['messages','Messages'],['decisions','Décisions'],['meetings','Réunions'],['resources','Ressources']];
+  const href = (t)=>`#/projects/${id}/${t}`;
+  const tabHtml = `<div class="tabs">${tabs.map(([key,label])=>`<a href="${href(key)}" class="${tab===key?'active':''}">${label}</a>`).join('')}</div>`;
+  const canManageProject = ['owner','admin'].includes(state.workspaceRole);
+  const head = `<div class="section-head"><div><span class="eyebrow">Projet</span><h2>${esc(project.name)}</h2><p>${esc(project.objective || 'Aucun objectif renseigné.')}</p></div><div class="head-actions"><span class="pill ${healthTone(project.health)}"><span class="dot"></span>${healthLabel(project.health)}</span><button class="btn small" data-action="edit-project" data-project="${project.id}">Modifier</button>${canManageProject?`<button class="btn small" data-action="manage-project" data-project="${project.id}">Gérer</button>`:''}</div></div>${tabHtml}`;
+  if (tab==='roadmap') return head + projectRoadmap(project, actions, milestones);
+  if (tab==='work') return head + projectWork(project, actions, milestones);
+  if (tab==='messages') return head + projectMessages(project);
+  if (tab==='decisions') return head + projectDecisions(project);
+  if (tab==='meetings') return head + projectMeetings(project);
+  if (tab==='resources') return head + projectResources(project);
+  return head + projectOverview(project, actions, milestones, progress);
+}
+
+function projectOverview(project, actions, milestones, progress) {
+  const blocking = actions.filter(a=>a.status==='blocked');
+  const pending = actions.filter(a=>!['done','cancelled'].includes(a.status)).slice(0,5);
+  const decisions = (state.projectCache.get(project.id)?.decisions || []).slice(0,4);
+  const meetings = state.meetings.filter(m=>m.project_id===project.id && m.starts_at && new Date(m.starts_at)>new Date()).slice(0,3);
+  return `<div class="grid cols-4" style="margin-bottom:18px"><div class="card"><span class="eyebrow">Avancement</span><div class="metric">${progress}%</div><div class="progress"><span style="width:${progress}%"></span></div></div><div class="card"><span class="eyebrow">Actions ouvertes</span><div class="metric">${actions.filter(a=>!['done','cancelled'].includes(a.status)).length}</div><div class="metric-label">${blocking.length} blocage${blocking.length>1?'s':''}</div></div><div class="card"><span class="eyebrow">Cible</span><div class="metric" style="font-size:20px">${project.target_date?formatDate(project.target_date):'—'}</div><div class="metric-label">date du projet</div></div><div class="card"><span class="eyebrow">Jalons</span><div class="metric">${milestones.length}</div><div class="metric-label">${milestones.filter(m=>m.status==='done').length} terminés</div></div></div>
+    <div class="grid cols-2"><div class="card"><div class="card-head"><h2>Maintenant</h2><button class="btn small primary" data-action="new-action" data-project="${project.id}">＋ Action</button></div>${pending.length?`<div class="stack">${pending.map(actionRow).join('')}</div>`:empty('Tout est à jour','Aucune action ouverte sur ce projet.')}</div><div class="card"><div class="card-head"><h2>Roadmap</h2><a class="btn small" href="#/projects/${project.id}/roadmap">Voir la roadmap</a></div>${miles
