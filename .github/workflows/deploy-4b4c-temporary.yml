@@ -20,18 +20,24 @@ jobs:
         run: |
           test -f site/index.html
           test -f site/runtime-config.js
-          test -f site/assets/live-loader.js
+          test -f site/assets/live-v2-loader.js
+          test -f site/assets/live-v2-overrides.css
           test -f site/assets/supabase-client.js
           test -f src/worker.js
-          for i in 00 01 02 03 04 05 06 07 08 09 10 11; do test -f "site/assets/live-part-$i.txt"; done
-          cat site/assets/live-part-*.txt > /tmp/live-source.js
-          sed "s#import { SupabaseBrowserClient, ApiError } from './supabase-client.js';#const { SupabaseBrowserClient, ApiError } = await import('https://example.invalid/supabase-client.js');#" /tmp/live-source.js > /tmp/live-source.mjs
-          node --check /tmp/live-source.mjs
+          for i in 00 01 02 03 04 05 06 07 08 09 10 11; do test -f "site/assets/live-v2-part-$i.txt"; done
+          cat site/assets/live-v2-part-*.txt > /tmp/live-v2-source.js
+          sed "s#import { SupabaseBrowserClient, ApiError } from './supabase-client.js';#const { SupabaseBrowserClient, ApiError } = await import('https://example.invalid/supabase-client.js');#" /tmp/live-v2-source.js > /tmp/live-v2-source.mjs
+          node --check /tmp/live-v2-source.mjs
           node --check site/assets/supabase-client.js
-          node --check site/assets/live-loader.js
+          node --check site/assets/live-v2-loader.js
           node --check src/worker.js
+          grep -Fq 'assets/live-v2-loader.js' site/index.html
+          grep -Fq 'assets/live-v2-overrides.css' site/index.html
+          grep -Fq 'Roadmap opérationnelle' /tmp/live-v2-source.js
+          grep -Fq 'Modifier mon profil' /tmp/live-v2-source.js
+          grep -Fq 'Supprimer définitivement' /tmp/live-v2-source.js
           ! grep -RInE 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET' site src
       - name: Note deployment state
         run: |
           echo 'The active 4b4c Worker has been claimed into the Cloudflare account.'
-          echo 'Temporary wrangler deploys are intentionally disabled to avoid creating new preview accounts.'
+          echo 'UX v2 is staged and validated here; automatic temporary redeploys remain intentionally disabled.'
