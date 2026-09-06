@@ -1,4 +1,4 @@
-name: Deploy 4b4c V4.1 preview
+name: Deploy 4b4c V4.2 preview
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Rebuild V4 baseline and apply V4.1 delta
+      - name: Rebuild V4 baseline and apply V4.1 + V4.2 deltas
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
@@ -43,21 +43,26 @@ jobs:
           base64 -d /tmp/4b4c-v4-site.b64 > /tmp/4b4c-v4-site.tar.gz
           tar -xzf /tmp/4b4c-v4-site.tar.gz -C site
 
-          cat v41-livejs-p0.b64 v41-livejs-p1.b64 v41-livejs-p2.b64 v41-livejs-p3.b64 > /tmp/livejs.patch.gz.b64
-          echo 'adcf5a43e916b0c84b349f922a0f66a85ce050b73f7a48c9d34d106f5d93a59d  /tmp/livejs.patch.gz.b64' | sha256sum -c -
-          base64 -d /tmp/livejs.patch.gz.b64 | gzip -dc > /tmp/livejs.patch
-
+          cat v41-livejs-p0.b64 v41-livejs-p1.b64 v41-livejs-p2.b64 v41-livejs-p3.b64 > /tmp/v41-livejs.patch.gz.b64
+          echo 'adcf5a43e916b0c84b349f922a0f66a85ce050b73f7a48c9d34d106f5d93a59d  /tmp/v41-livejs.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/v41-livejs.patch.gz.b64 | gzip -dc > /tmp/v41-livejs.patch
           echo 'e50aea4bdff3b908092c7ac8db29c205439e3678dd1836cf71a4f3b88f1a517c  v41-livecss.patch.gz.b64' | sha256sum -c -
-          base64 -d v41-livecss.patch.gz.b64 | gzip -dc > /tmp/livecss.patch
-
+          base64 -d v41-livecss.patch.gz.b64 | gzip -dc > /tmp/v41-livecss.patch
           echo 'eca1cd180ba1dd77afe96f8392ec3167cbd6a7c8e624784d25e8bff1f7d35ef4  v41-supa.patch.gz.b64' | sha256sum -c -
-          base64 -d v41-supa.patch.gz.b64 | gzip -dc > /tmp/supa.patch
+          base64 -d v41-supa.patch.gz.b64 | gzip -dc > /tmp/v41-supa.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v41-livejs.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v41-livecss.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v41-supa.patch
 
-          patch -d site -p1 --fuzz=0 < /tmp/livejs.patch
-          patch -d site -p1 --fuzz=0 < /tmp/livecss.patch
-          patch -d site -p1 --fuzz=0 < /tmp/supa.patch
+          cat v42-livejs-p0.b64 v42-livejs-p1.b64 > /tmp/v42-livejs.patch.gz.b64
+          echo '2199bf5ebd27ac5892e2db6076336cc18203d5f1bb5cdaf489d0f3eaafe29b7b  /tmp/v42-livejs.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/v42-livejs.patch.gz.b64 | gzip -dc > /tmp/v42-livejs.patch
+          echo '203d11d39b691a391162d77a95b684a945a5da359a033f7228c3bb6d841cc4b9  v42-livecss.patch.gz.b64' | sha256sum -c -
+          base64 -d v42-livecss.patch.gz.b64 | gzip -dc > /tmp/v42-livecss.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v42-livejs.patch
+          patch -d site -p1 --fuzz=0 < /tmp/v42-livecss.patch
 
-      - name: Validate V4.1 UX and profile flow
+      - name: Validate V4.2 shell, design and profile flow
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
@@ -69,19 +74,22 @@ jobs:
           test -s site/assets/styles.css
           test -s site/assets/live.css
           grep -q 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
+          grep -q 'v42-shell' site/assets/live.js
+          grep -q 'sidebar-scroll-area' site/assets/live.js
+          grep -q 'mobile-drawer' site/assets/live.js
+          grep -q 'toggle-mobile-menu' site/assets/live.js
           grep -q 'À traiter maintenant' site/assets/live.js
           grep -q 'Ce qui a changé' site/assets/live.js
-          grep -q 'PROJETS RÉCENTS' site/assets/live.js
-          grep -q 'mark_workspace_seen' site/assets/live.js
+          grep -q 'Échéances proches' site/assets/live.js
+          grep -q 'En attente de l’équipe' site/assets/live.js
+          grep -q 'Modifier le nom ou la photo' site/assets/live.js
           grep -q 'data-action="signout"' site/assets/live.js
-          grep -q 'data-action="edit-profile"' site/assets/live.js
           grep -q 'data-action="remove-avatar"' site/assets/live.js
-          grep -q 'profile-avatars' site/assets/live.js
-          grep -q 'upsert:true' site/assets/live.js
-          grep -q 'removeObject' site/assets/supabase-client.js
-          grep -q 'v41-sidebar' site/assets/live.css
-          grep -q 'user-menu-panel' site/assets/live.css
-          grep -q 'v41-project-card' site/assets/live.css
+          grep -q '4b4c V4.2 — global premium system' site/assets/live.css
+          grep -q 'v42-sidebar' site/assets/live.css
+          grep -q 'mobile-menu-backdrop' site/assets/live.css
+          grep -q 'backdrop-filter:blur(18px)' site/assets/live.css
+          if grep -q '<nav class="mobile-nav">' site/assets/live.js; then echo 'Legacy mobile bottom nav still rendered' >&2; exit 1; fi
           if grep -q 'Mémoire active' site/assets/live.js; then echo 'Ambiguous memory badge still present' >&2; exit 1; fi
           if grep -q 'État du pilote' site/assets/live.js; then echo 'Technical pilot copy still visible' >&2; exit 1; fi
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
@@ -93,12 +101,12 @@ jobs:
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
-          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-v41-preview.txt
+          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-v42-preview.txt
 
-      - name: Smoke V4.1 preview URL
+      - name: Smoke V4.2 preview URL
         run: |
           set -euo pipefail
-          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-v41-preview.txt | tail -1)
+          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-v42-preview.txt | tail -1)
           test -n "$URL"
           probe() {
             path="$1"; needle="$2"; nav="${3:-0}"
@@ -116,19 +124,19 @@ jobs:
           }
           probe / '4b4c — Espace projet partagé' 1
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
-          probe /assets/live.js 'À traiter maintenant'
-          probe /assets/live.js 'remove-avatar'
-          probe /assets/live.css 'v41-sidebar'
-          probe /health 'prepilot-v4.1'
-          echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-v41-url.txt
+          probe /assets/live.js 'mobile-drawer'
+          probe /assets/live.js 'Échéances proches'
+          probe /assets/live.css '4b4c V4.2 — global premium system'
+          probe /health 'prepilot-v4.2'
+          echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-v42-url.txt
 
       - name: Preserve deployment result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: 4b4c-v41-preview-result
+          name: 4b4c-v42-preview-result
           path: |
-            /tmp/4b4c-v41-preview.txt
-            /tmp/4b4c-v41-url.txt
+            /tmp/4b4c-v42-preview.txt
+            /tmp/4b4c-v42-url.txt
           if-no-files-found: warn
           retention-days: 1
