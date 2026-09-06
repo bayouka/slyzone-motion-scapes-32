@@ -3,7 +3,7 @@ export default {
     const url = new URL(request.url);
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method Not Allowed', { status: 405 });
     if (url.pathname === '/health') {
-      return Response.json({ ok: true, app: '4b4c-v4-preview', backend: 'supabase', version: 'prepilot-v4.1' }, { headers: { 'cache-control': 'no-store' } });
+      return Response.json({ ok: true, app: '4b4c-v4-preview', backend: 'supabase', version: 'prepilot-v4.2' }, { headers: { 'cache-control': 'no-store' } });
     }
     const assetRequest = new Request(new URL(url.pathname === '/' ? '/index.html' : url.pathname, url.origin), request);
     let response = await env.ASSETS.fetch(assetRequest);
