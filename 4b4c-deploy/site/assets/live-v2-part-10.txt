@@ -1,0 +1,60 @@
+ await refreshWorkspace({quiet:true}); showToast('Espace pilote prêt : données réelles créées');
+  } finally { state.busy=false; render(); }
+}
+
+async function loadProject(projectId, force=false) {
+  if(!force && state.projectCache.has(projectId)) return;
+  try {
+    const [milestones,decisions,deliverables]=await Promise.all([
+      api.select('milestones',`select=*&project_id=eq.${projectId}&order=position.asc`),
+      api.select('decisions',`select=*&project_id=eq.${projectId}&order=created_at.desc`),
+      api.select('deliverables',`select=*&project_id=eq.${projectId}&order=created_at.desc`)
+    ]);
+    let versions=[];
+    if(deliverables.length){const ids=deliverables.map(d=>d.id).join(',');versions=await api.select('deliverable_versions',`select=*&deliverable_id=in.(${ids})&order=version_number.desc`);}
+    state.projectCache.set(projectId,{milestones,decisions,deliverables,versions}); render();
+  } catch(error){showToast(humanError(error),true);}
+}
+
+async function loadMessages(conversationId, force=false) {
+  if(!force && state.messages.has(conversationId)) return;
+  try { state.messages.set(conversationId,await api.select('messages',`select=*&conversation_id=eq.${conversationId}&order=created_at.asc&limit=300`)); render(); }
+  catch(error){showToast(humanError(error),true);}
+}
+
+async function acceptInvite(token) {
+  if(!token) throw new Error('Invitation invalide');
+  const workspaceId=await api.rpc('accept_workspace_invite',{p_token:token});
+  state.memberships=await api.select('workspace_members',`select=workspace_id,role,status,joined_at&user_id=eq.${state.user.id}&status=eq.active`);
+  history.replaceState({},'',location.pathname+location.hash); state.modal=null; await selectWorkspace(workspaceId); location.hash='#/dashboard'; showToast('Vous avez rejoint l’espace');
+}
+
+async function markAllNotificationsRead() {
+  const unread=state.notifications.filter(n=>!n.read_at); if(!unread.length)return;
+  await api.update('notifications',`user_id=eq.${state.user.id}&read_at=is.null`,{read_at:new Date().toISOString()},{returnRepresentation:false});
+  state.notifications.forEach(n=>n.read_at ||= new Date().toISOString()); state.notificationOpen=false; render();
+}
+
+async function openNotification(id,route) {
+  const n=state.notifications.find(n=>String(n.id)===String(id));
+  if(n&&!n.read_at){await api.update('notifications',`id=eq.${id}`,{read_at:new Date().toISOString()},{returnRepresentation:false});n.read_at=new Date().toISOString();}
+  state.notificationOpen=false; location.hash=(route||'#/dashboard').replace(/^#/,''); render();
+}
+
+async function openFile(path) { const url=await api.signedUrl('workspace-files',path,900); window.open(url,'_blank','noopener,noreferrer'); }
+async function loadInvites(button) {
+  const rows=await api.select('workspace_invites',`select=*&workspace_id=eq.${state.workspace.id}&order=created_at.desc&limit=30`);
+  const parent=button.closest('#invite-list')||document.getElementById('invite-list'); if(!parent)return;
+  parent.innerHTML=rows.length?`<div class="stack">${rows.map(i=>`<div class="list-row"><div class="list-main"><strong>${esc(i.email)}</strong><small>${workspaceRoleLabel(i.role)} · ${inviteStatus(i.status)} · expire ${formatDate(i.expires_at)}</small></div><span class="pill ${i.status==='pending'?'blue':i.status==='accepted'?'good':''}">${inviteStatus(i.status)}</span></div>`).join('')}</div>`:empty('Aucune invitation','Utilisez Inviter pour créer un accès.');
+}
+
+function projectCard(p){const actions=state.actions.filter(a=>a.project_id===p.id),done=actions.filter(a=>a.status==='done').length,progress=actions.length?Math.round(done/actions.length*100):0;return `<div class="card project-card clickable" data-nav="#/projects/${p.id}/overview"><span class="pill ${healthTone(p.health)}">${healthLabel(p.health)}</span><h3>${esc(p.name)}</h3><p>${esc(p.objective||'')}</p><div class="progress" style="margin-bottom:10px"><span style="width:${progress}%"></span></div><div class="project-meta"><span>${progress}%</span><span>${p.target_date?formatDate(p.target_date):'Sans date'}</span></div></div>`}
+function actionRow(a,editable=false,milestones=[]){const assigned=state.assignees.filter(x=>x.action_id===a.id).map(x=>displayName(x.user_id)).join(', ');const milestone=milestones.find(m=>m.id===a.milestone_id);return `<div class="list-row"><span class="pill ${statusTone(a.status)}">${statusLabel(a.status)}</span><div class="list-main"><strong>${esc(a.title)}</strong><small>${esc(projectName(a.project_id))}${milestone?` · ${esc(milestone.title)}`:''}${assigned?` · ${esc(assigned)}`:''}${a.due_at?` · ${formatDateTime(a.due_at)}`:''}${a.blocked_reason?` · ${esc(a.blocked_reason)}`:''}</small></div>${editable?`<select class="status-select" data-status-action="${a.id}">${['todo','in_progress','blocked','done','cancelled'].map(s=>`<option value="${s}" ${a.status===s?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`:''}</div>`}
+function requestRow(r){return `<div class="list-row"><span class="pill ${r.status==='open'?'warn':'good'}">${requestStatus(r.status)}</span><div class="list-main"><strong>${esc(r.title)}</strong><small>${esc(projectName(r.project_id)||'Sans projet')} · ${r.recipient_id===state.user.id?'Reçue':'Envoyée'}${r.due_at?` · ${formatDateTime(r.due_at)}`:''}</small></div></div>`}
+function meetingRow(m){return `<div class="list-row"><span class="pill blue">${m.starts_at?formatDay(m.starts_at):'À planifier'}</span><div class="list-main"><strong>${esc(m.title)}</strong><small>${esc(projectName(m.project_id)||'Espace')} · ${m.starts_at?formatDateTime(m.starts_at):'Date à définir'}${m.video_room?' · visio prévue':''}</small></div></div>`}
+function messageBubble(m){const mine=m.author_id===state.user.id;return `<div class="message"><span class="avatar">${initials(displayName(m.author_id))}</span><div class="message-body ${mine?'mine':''}"><div class="message-meta">${esc(displayName(m.author_id))} · ${relativeDate(new Date(m.created_at))}</div><div>${nl2br(esc(m.body))}</div></div></div>`}
+
+function myActions(){const ids=new Set(state.assignees.filter(a=>a.user_id===state.user.id).map(a=>a.action_id));return state.actions.filter(a=>ids.has(a.id)||a.created_by===state.user.id).sort((a,b)=>new Date(a.due_at||'2999')-new Date(b.due_at||'2999'));}
+function projectOptions(selected='',required=true){if(required&&!state.projects.length)return '<option value="">Aucun projet disponible</option>';return state.projects.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${esc(p.name)}</option>`).join('')}
+function memberOptions(exclude=''){return state.members.filter(m=>m.user_id!==exclude&&m.role!=='guest').map(m=>`<option value="${m.user_id}">${esc(displayName(m.user_id))}</option>`).join('')}
+function memberOptionsSelected(selected=''){return state.members.filter(m=>m.role!=='guest').map(m=>`<option value="${m.user_id}" ${m.user_id===selected?'selected':''}>${esc(displayName(m
