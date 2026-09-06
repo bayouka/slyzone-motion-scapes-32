@@ -1,0 +1,53 @@
+ref="${href}" class="${route.name===key || (route.name==='project'&&key==='projects')?'active':''}"><span>${icon}</span><span>${esc(label.split(' ')[0])}</span></a>`).join('');
+  const title = routeTitle(route);
+  return `<div class="live-app live-shell">
+    <aside class="live-sidebar">
+      <div class="live-brand"><span class="live-brand-mark">4</span><span>4b4c</span></div>
+      <div class="live-workspace"><small>Espace actif</small><strong>${esc(state.workspace.name)}</strong></div>
+      <nav class="live-nav">${navHtml}</nav>
+      <div class="live-sidebar-foot"><div class="live-user">${avatarHtml(state.user.id,true)}<div class="live-user-meta"><strong>${esc(displayName(state.user.id))}</strong><small>${esc(state.user.email || '')}</small></div><button class="icon-button" data-action="signout" title="Se déconnecter">↪</button></div></div>
+    </aside>
+    <main class="live-main">
+      <header class="live-topbar"><div class="live-title"><h1>${esc(title)}</h1><span>${state.lastSync ? `Synchronisé ${relativeDate(state.lastSync)}` : 'Connexion sécurisée'}</span></div>
+        <div class="live-actions">
+          <button class="btn icon-only" data-action="refresh" title="Actualiser" aria-label="Actualiser">↻</button>
+          <button class="btn primary" data-action="quick-add">＋ Créer</button>
+          <button class="btn notification-button icon-only" data-action="toggle-notifications" aria-label="Notifications" title="Notifications">🔔${unread?`<span class="badge">${unread>99?'99+':unread}</span>`:''}</button>
+        </div>
+        ${state.notificationOpen ? renderNotificationPanel() : ''}
+      </header>
+      <div class="live-content">${content}</div>
+    </main>
+    <nav class="mobile-nav">${mobile}</nav>
+  </div>`;
+}
+
+function renderAuth() {
+  const signup = state.authMode === 'signup';
+  app.innerHTML = `<div class="live-app auth-page">
+    <section class="auth-visual"><div class="live-brand"><span class="live-brand-mark">4</span><span>4b4c</span></div><h1>Un projet.<br>Une mémoire.<br>Une équipe alignée.</h1><p>4b4c rassemble le travail, les échanges, les décisions, les validations et les réunions dans le contexte où ils ont du sens.</p><div class="auth-bullets"><div class="auth-bullet"><strong>Moins de dispersion</strong><br><small>Travail et conversations restent liés.</small></div><div class="auth-bullet"><strong>Plus de traçabilité</strong><br><small>Décisions, demandes et validations ne se perdent plus.</small></div><div class="auth-bullet"><strong>Pilotage clair</strong><br><small>Chacun voit ce qui nécessite réellement son attention.</small></div><div class="auth-bullet"><strong>Conçu pour l’équipe</strong><br><small>Desktop et mobile, sans outil annexe obligatoire.</small></div></div></section>
+    <section class="auth-panel"><div class="auth-card"><span class="eyebrow">Pilote privé</span><h2>${signup?'Créer votre compte':'Connexion'}</h2><p>${signup?'Rejoignez votre espace 4b4c ou créez-en un.':'Accédez à votre espace de travail.'}</p>
+      <form data-form="auth"><div class="stack">${signup?`<div class="field"><label>Nom affiché</label><input name="displayName" required autocomplete="name" placeholder="Fred Benon"></div>`:''}<div class="field"><label>Email</label><input name="email" type="email" required autocomplete="email" placeholder="vous@entreprise.fr"></div><div class="field"><label>Mot de passe</label><input name="password" type="password" required minlength="8" autocomplete="${signup?'new-password':'current-password'}"></div><button class="btn primary" type="submit" ${state.busy?'disabled':''}>${state.busy?'Connexion…':signup?'Créer le compte':'Se connecter'}</button></div></form>
+      <div class="auth-switch">${signup?'Déjà un compte ?':'Pas encore de compte ?'} <button data-action="auth-switch">${signup?'Se connecter':'Créer un compte'}</button></div>
+    </div></section></div>`;
+  renderToasts();
+}
+
+function renderOnboarding() {
+  const inviteToken = new URLSearchParams(location.search).get('invite');
+  app.innerHTML = `<div class="live-app onboarding"><div class="onboarding-card"><div class="live-brand" style="color:#172033"><span class="live-brand-mark">4</span><span>4b4c</span></div><span class="eyebrow">Première configuration</span><h1>${inviteToken?'Rejoindre votre équipe':'Créer votre espace de travail'}</h1><p>${inviteToken?'Votre compte est prêt. Acceptez l’invitation reçue pour accéder à l’espace partagé.':'Un espace contient vos projets, membres, conversations, décisions, ressources et réunions.'}</p>
+    ${inviteToken ? `<div class="notice">Une invitation est présente dans cette URL. <button class="btn small primary" data-action="accept-invite-direct">Accepter l’invitation</button></div>` : `<form data-form="workspace"><div class="form-grid"><div class="field"><label>Nom de l’espace</label><input name="name" required value="4b4c — Équipe associés"></div><div class="field"><label>Identifiant URL</label><input name="slug" required pattern="[a-z0-9-]{3,64}" value="equipe-associes"></div></div><div class="modal-actions" style="justify-content:flex-start"><button class="btn primary" type="submit">Créer l’espace</button><button class="btn" type="button" data-action="signout">Changer de compte</button></div></form>`}
+    </div></div>`;
+  if (state.modal) app.insertAdjacentHTML('beforeend', renderModal(state.modal));
+  renderToasts();
+}
+
+function renderDashboard() {
+  const mine = myActions().filter(a => !['done','cancelled'].includes(a.status));
+  const overdue = mine.filter(a => a.due_at && new Date(a.due_at) < new Date());
+  const pendingRequests = state.requests.filter(r => r.recipient_id === state.user.id && r.status === 'open');
+  const pendingApprovals = state.approvals.filter(a => a.validator_id === state.user.id && a.status === 'pending');
+  const upcomingMeetings = state.meetings.filter(m => m.starts_at && new Date(m.starts_at) > new Date()).slice(0,5);
+  const attention = [...overdue.map(a => ({kind:'Action en retard', title:a.title, meta:projectName(a.project_id), tone:'danger', route:`#/projects/${a.project_id}/work`})), ...pendingRequests.map(r => ({kind:'Demande', title:r.title, meta:projectName(r.project_id), tone:'warn', route:r.project_id?`#/projects/${r.project_id}/overview`:'#/work'})), ...pendingApprovals.map(a => ({kind:'Validation',title:'Validation attendue',meta:projectName(a.project_id),tone:'blue',route:`#/projects/${a.project_id}/resources`}))].slice(0,8);
+  return `<section class="section-head"><div><span class="eyebrow">Maintenant</span><h2>Bonjour ${esc(firstName(displayName(state.user.id)))}</h2><p>Voici ce qui mérite votre attention dans ${esc(state.workspace.name)}.</p></div>${!state.projects.length?`<button class="btn primary" data-action="seed-pilot">Préparer l’espace pilote</button>`:''}</section>
+    <div class="grid cols-4" style="margin-bottom:18px"><div class="card"><span class="eyebrow">À faire</span><div class="metric">${mine.length}</div><div cl
