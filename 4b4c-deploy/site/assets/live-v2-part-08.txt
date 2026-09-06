@@ -1,0 +1,106 @@
+orm,data);
+    else if (form.dataset.form==='invite') await submitInvite(data);
+  } catch (error) { showToast(humanError(error), true); }
+  finally { state.busy=false; render(); }
+}
+
+async function handleChange(event) {
+  const el = event.target;
+  if (el.matches('[data-status-action]')) {
+    try {
+      await api.update('actions', `id=eq.${el.dataset.statusAction}`, { status: el.value, completed_at: el.value==='done'?new Date().toISOString():null });
+      showToast('Statut mis à jour'); await refreshWorkspace({quiet:true});
+    } catch (error) { showToast(humanError(error),true); }
+  }
+}
+
+async function submitAuth(data) {
+  if (state.authMode==='signup') {
+    const result = await api.signUp({email:String(data.email).trim(),password:String(data.password),displayName:String(data.displayName).trim()});
+    if (!result?.access_token) {
+      showToast('Compte créé. La confirmation email Supabase est encore active : désactivez-la pour le pilote ou confirmez l’adresse avant connexion.');
+      state.authMode='signin'; return;
+    }
+    state.user=normalizeUser(result.user); await afterAuthenticated(); showToast('Compte créé');
+  } else {
+    const result=await api.signIn({email:String(data.email).trim(),password:String(data.password)});
+    state.user=normalizeUser(result.user); await afterAuthenticated(); showToast('Connexion réussie');
+  }
+}
+
+async function submitWorkspace(data) {
+  const id = await api.rpc('create_workspace',{p_name:String(data.name).trim(),p_slug:String(data.slug).trim().toLowerCase()});
+  state.memberships = await api.select('workspace_members',`select=workspace_id,role,status,joined_at&user_id=eq.${state.user.id}&status=eq.active`);
+  await selectWorkspace(id); location.hash='#/dashboard'; showToast('Espace créé');
+}
+
+async function submitProject(data) {
+  const result=await api.rpc('create_project',{p_workspace_id:state.workspace.id,p_name:String(data.name).trim(),p_objective:String(data.objective||'').trim(),p_target_date:data.targetDate||null});
+  state.modal=null; await refreshWorkspace({quiet:true}); location.hash=`#/projects/${result.project_id}/overview`; showToast('Projet créé');
+}
+
+
+async function submitProjectEdit(data) {
+  const patch={name:String(data.name).trim(),objective:String(data.objective||'').trim(),status:data.status||'active',health:data.health||'on_track',target_date:data.targetDate||null};
+  await api.update('projects',`id=eq.${data.projectId}`,patch,{returnRepresentation:false});
+  state.modal=null; await refreshWorkspace({quiet:true}); location.hash=`#/projects/${data.projectId}/overview`; showToast('Projet modifié');
+}
+
+async function archiveProject(projectId) {
+  await api.update('projects',`id=eq.${projectId}`,{status:'archived'},{returnRepresentation:false});
+  state.modal=null; await refreshWorkspace({quiet:true}); location.hash='#/projects'; showToast('Projet archivé');
+}
+
+async function restoreProject(projectId) {
+  await api.update('projects',`id=eq.${projectId}`,{status:'active'},{returnRepresentation:false});
+  await refreshWorkspace({quiet:true}); showToast('Projet restauré');
+}
+
+async function deleteProject(projectId) {
+  if(!['owner','admin'].includes(state.workspaceRole)) throw new Error('Seuls le propriétaire et les administrateurs peuvent supprimer un projet.');
+  const files=await api.select('deliverables',`select=id&project_id=eq.${projectId}&limit=1`);
+  if(files.length) throw new Error('Ce projet contient des ressources. Archivez-le pour conserver les fichiers ; la suppression complète avec purge Storage sera ajoutée avant production.');
+  await api.remove('projects',`id=eq.${projectId}`);
+  state.modal=null; await refreshWorkspace({quiet:true}); location.hash='#/projects'; showToast('Projet supprimé');
+}
+
+async function submitProfile(form,data) {
+  const name=String(data.displayName||'').trim();
+  if(!name) throw new Error('Nom affiché requis');
+  let avatarUrl=state.profile?.avatar_url||null;
+  const file=form.querySelector('input[name=avatar]')?.files?.[0];
+  if(file){
+    if(file.size>5*1024*1024) throw new Error('L’avatar dépasse 5 Mo');
+    if(!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type)) throw new Error('Format avatar non pris en charge');
+    const path=`${state.user.id}/avatar`;
+    await api.upload('profile-avatars',path,file,{upsert:true});
+    avatarUrl=`${config.supabaseUrl.replace(/\/$/,'')}/storage/v1/object/public/profile-avatars/${state.user.id}/avatar?v=${Date.now()}`;
+  }
+  await api.update('profiles',`id=eq.${state.user.id}`,{display_name:name,avatar_url:avatarUrl},{returnRepresentation:false});
+  state.profile={...(state.profile||{}),id:state.user.id,display_name:name,avatar_url:avatarUrl};
+  const idx=state.profiles.findIndex(p=>p.id===state.user.id);
+  if(idx>=0) state.profiles[idx]={...state.profiles[idx],display_name:name,avatar_url:avatarUrl}; else state.profiles.push(state.profile);
+  state.modal=null; render(); showToast('Profil mis à jour');
+}
+
+async function submitAction(data) {
+  const project=state.projects.find(p=>p.id===data.projectId); if(!project) throw new Error('Projet requis');
+  const rows=await api.insert('actions',[{workspace_id:state.workspace.id,project_id:project.id,title:String(data.title).trim(),description:String(data.description||'').trim(),status:'todo',priority:data.priority||'normal',due_at:localDateTimeToIso(data.dueAt),milestone_id:data.milestoneId||null,created_by:state.user.id}]);
+  if(data.assignee) await api.insert('action_assignees',[{action_id:rows[0].id,user_id:data.assignee}],{returnRepresentation:false});
+  state.modal=null; await refreshWorkspace({quiet:true}); showToast('Action créée');
+}
+
+async function submitRequest(data) {
+  await api.insert('requests',[{workspace_id:state.workspace.id,project_id:data.projectId||null,title:String(data.title).trim(),body:String(data.body||'').trim(),requester_id:state.user.id,recipient_id:data.recipient,status:'open',due_at:localDateTimeToIso(data.dueAt)}]);
+  state.modal=null; await refreshWorkspace({quiet:true}); showToast('Demande créée');
+}
+
+async function submitDecision(data) {
+  await api.insert('decisions',[{workspace_id:state.workspace.id,project_id:data.projectId,title:String(data.title).trim(),rationale:String(data.rationale||'').trim(),status:'decided',decided_by:state.user.id,decided_at:new Date().toISOString(),created_by:state.user.id}]);
+  state.modal=null; await loadProject(data.projectId,true); showToast('Décision enregistrée');
+}
+
+async function submitMilestone(data) {
+  const current=state.projectCache.get(data.projectId)?.milestones||[];
+  await api.insert('milestones',[{workspace_id:state.workspace.id,project_id:data.projectId,title:String(data.title).trim(),description:String(data.description||'').trim(),position:current.length+1,status:data.status||'todo',start_date:data.startDate||null,due_date:data.dueDate||null,owner_id:data.ownerId||null}]);
+  state.modal=null; await loadProject(data.projectId,true); showTo
