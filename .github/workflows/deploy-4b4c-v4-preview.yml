@@ -1,4 +1,4 @@
-name: Deploy 4b4c V4 preview
+name: Deploy 4b4c V4.1 preview
 
 on:
   push:
@@ -19,49 +19,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Verify and rebuild V4 site bundle
+      - name: Rebuild exact V4.1 site bundle
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
-          check_blob() {
-            file="$1"; expected="$2"
-            actual=$(git hash-object "$file")
-            echo "$file $actual"
-            test "$actual" = "$expected"
-          }
-          check_blob site-bundle-part-00a.b64 8b9eb8942a40d196b86aaa43b211ec3d8f0c1afb
-          check_blob site-bundle-part-00b.b64 3a2f849ad57587cde6f83a5205fc9f51f4b88d55
-          check_blob site-bundle-part-01.b64 dce862d8a63cb09badd88b3db799af77af1cdd0b
-          check_blob site-bundle-part-02.b64 c6f0b41d771e5053e8ee319fa7127074ac426391
-          check_blob site-bundle-part-03p0.b64 d443e1d7fbe2a5c1fe8c0345dd595d1b8e1e0e7c
-          check_blob site-bundle-part-03p1.b64 b72a451a10fbecc3f97e90dc82040fae00267443
-          check_blob site-bundle-part-03p2.b64 70d42febfdd28a851ec0f277f159f63626e1c51a
-          check_blob site-bundle-part-03p3.b64 04ee29841f4d077460240c86cc8442ee3eef6149
-          check_blob site-bundle-part-04.b64 e03117c83ba19b0ff668f611de0b95ad534bebae
-          check_blob site-bundle-part-05.b64 934277ad7a339a9b1f6bd34155f8271c8df6a16b
-          check_blob site-bundle-part-06.b64 abfa7bb285250ed6574124c9da617baea69db679
-          check_blob site-bundle-part-07.b64 4e5618233e1058b0bd258e84ad263b280e9a549f
-          cat \
-            site-bundle-part-00a.b64 \
-            site-bundle-part-00b.b64 \
-            site-bundle-part-01.b64 \
-            site-bundle-part-02.b64 \
-            site-bundle-part-03p0.b64 \
-            site-bundle-part-03p1.b64 \
-            site-bundle-part-03p2.b64 \
-            site-bundle-part-03p3.b64 \
-            site-bundle-part-04.b64 \
-            site-bundle-part-05.b64 \
-            site-bundle-part-06.b64 \
-            site-bundle-part-07.b64 > /tmp/4b4c-v4-site.b64
-          test "$(wc -c < /tmp/4b4c-v4-site.b64)" = "89936"
-          echo '4d5225f592ef7bb9db979b2f0be9d13c4a424c4baeb1a644c7839ca231b595f3  /tmp/4b4c-v4-site.b64' | sha256sum -c -
+          test "$(wc -c < site-v41.tar.gz.b64)" = "149936"
+          echo '48c4513d61b5411e7c65f222c74cae3f6ca202b888105df1a4e4f0659ea3a631  site-v41.tar.gz.b64' | sha256sum -c -
           rm -rf site
           mkdir -p site
-          base64 -d /tmp/4b4c-v4-site.b64 > /tmp/4b4c-v4-site.tar.gz
-          tar -xzf /tmp/4b4c-v4-site.tar.gz -C site
+          base64 -d site-v41.tar.gz.b64 > /tmp/4b4c-v41-site.tar.gz
+          echo '646f272309c7fa3e80dc304deb2d600c3d404823ffc1f95059dddabac260fccc  /tmp/4b4c-v41-site.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/4b4c-v41-site.tar.gz -C site
 
-      - name: Validate V4 bundle and profile flow
+      - name: Validate V4.1 UX and profile flow
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
@@ -73,16 +43,21 @@ jobs:
           test -s site/assets/styles.css
           test -s site/assets/live.css
           grep -q 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
-          grep -q 'Situation actuelle' site/assets/live.js
-          grep -q 'Roadmap' site/assets/live.js
-          grep -q 'Avant' site/assets/live.js
-          grep -q 'Après' site/assets/live.js
-          grep -q 'message-to-action' site/assets/live.js
+          grep -q 'À traiter maintenant' site/assets/live.js
+          grep -q 'Ce qui a changé' site/assets/live.js
+          grep -q 'PROJETS RÉCENTS' site/assets/live.js
+          grep -q 'mark_workspace_seen' site/assets/live.js
+          grep -q 'data-action="signout"' site/assets/live.js
           grep -q 'data-action="edit-profile"' site/assets/live.js
-          grep -q 'data-form="profile"' site/assets/live.js
+          grep -q 'data-action="remove-avatar"' site/assets/live.js
           grep -q 'profile-avatars' site/assets/live.js
           grep -q 'upsert:true' site/assets/live.js
-          grep -q 'display_name:name' site/assets/live.js
+          grep -q 'removeObject' site/assets/supabase-client.js
+          grep -q 'v41-sidebar' site/assets/live.css
+          grep -q 'user-menu-panel' site/assets/live.css
+          grep -q 'v41-project-card' site/assets/live.css
+          if grep -q 'Mémoire active' site/assets/live.js; then echo 'Ambiguous memory badge still present' >&2; exit 1; fi
+          if grep -q 'État du pilote' site/assets/live.js; then echo 'Technical pilot copy still visible' >&2; exit 1; fi
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
             echo 'Secret-like material found in public preview' >&2
             exit 1
@@ -92,15 +67,13 @@ jobs:
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
-          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-v4-preview.txt
+          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-v41-preview.txt
 
-      - name: Smoke preview URL after propagation
+      - name: Smoke V4.1 preview URL
         run: |
           set -euo pipefail
-          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-v4-preview.txt | tail -1)
+          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-v41-preview.txt | tail -1)
           test -n "$URL"
-          echo "Testing $URL"
-
           probe() {
             path="$1"; needle="$2"; nav="${3:-0}"
             for i in $(seq 1 15); do
@@ -110,31 +83,26 @@ jobs:
                 code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
               fi
               echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
-              if [ "$code" = "200" ] && grep -q "$needle" /tmp/probe.out; then
-                return 0
-              fi
+              if [ "$code" = "200" ] && grep -q "$needle" /tmp/probe.out; then return 0; fi
               sleep 4
             done
-            echo "FAILED $path"
-            head -c 500 /tmp/probe.out || true
             return 1
           }
-
           probe / '4b4c — Espace projet partagé' 1
-          probe /index.html '4b4c — Espace projet partagé'
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
-          probe /assets/live.js 'Situation actuelle'
-          probe /assets/live.js 'profile-avatars'
-          probe /health 'prepilot-v4'
-          echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-v4-url.txt
+          probe /assets/live.js 'À traiter maintenant'
+          probe /assets/live.js 'remove-avatar'
+          probe /assets/live.css 'v41-sidebar'
+          probe /health 'prepilot-v4.1'
+          echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-v41-url.txt
 
       - name: Preserve deployment result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: 4b4c-v4-preview-result
+          name: 4b4c-v41-preview-result
           path: |
-            /tmp/4b4c-v4-preview.txt
-            /tmp/4b4c-v4-url.txt
+            /tmp/4b4c-v41-preview.txt
+            /tmp/4b4c-v41-url.txt
           if-no-files-found: warn
           retention-days: 1
