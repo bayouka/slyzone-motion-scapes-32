@@ -1,6 +1,6 @@
 import { SupabaseBrowserClient } from './supabase-client.js';
 
-const VERSION = '4b4c team access safety v2.0.0';
+const VERSION = '4b4c team access safety v2.1.0';
 const config = window.__4B4C_CONFIG__ || {};
 const workspaceKey = config.workspaceStorageKey || '4b4c.live.workspace.v1';
 const api = new SupabaseBrowserClient({ url: config.supabaseUrl, publishableKey: config.supabasePublishableKey });
@@ -120,6 +120,7 @@ async function patchMemberModal(dialog) {
 
   const currentRole = ['admin','member','guest'].includes(data.target.role) ? data.target.role : 'member';
   const guestBlocked = data.leadProjects.length > 0;
+  const canRemove = data.actor?.id && data.actor.id !== userId;
   form.innerHTML = `
     <input type="hidden" name="userId" value="${esc(userId)}">
     <div class="stack">
@@ -134,6 +135,7 @@ async function patchMemberModal(dialog) {
       <div class="notice" data-member-role-help>${esc(roleHelp(currentRole))}</div>
       <section data-member-project-area></section>
       <div class="notice"><strong>À retenir :</strong> être responsable d’une action ou d’une étape ne donne pas un droit d’accès supplémentaire. Les responsabilités se gèrent dans le projet.</div>
+      ${canRemove ? `<section style="padding-top:4px"><div class="section-head compact"><div><h3>Retirer l’accès</h3><div class="metric-label">Le retrait coupe immédiatement l’accès à l’espace, aux projets et aux ressources, même si une session est encore ouverte.</div></div></div><div data-remove-confirm-zone><button class="btn danger" type="button" data-remove-member-v2>Retirer de l’espace</button></div></section>` : ''}
     </div>
     <div class="modal-actions">
       <button class="btn" type="button" data-action="close-modal">Annuler</button>
@@ -142,6 +144,30 @@ async function patchMemberModal(dialog) {
 
   renderProjectArea(form, data);
   form.elements.role.addEventListener('change', () => renderProjectArea(form, data));
+
+  form.querySelector('[data-remove-member-v2]')?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    const button = event.currentTarget;
+    const zone = form.querySelector('[data-remove-confirm-zone]');
+    if (button.dataset.confirm !== '1') {
+      button.dataset.confirm = '1';
+      button.textContent = 'Confirmer le retrait';
+      zone.insertAdjacentHTML('afterbegin', `<div class="notice warn" role="alert" style="margin-bottom:8px"><strong>Confirmer le retrait de ${esc(data.name)} ?</strong><br>Les responsabilités déjà consignées restent dans l’historique, mais cette personne perd immédiatement ses accès.</div>`);
+      return;
+    }
+    setBusy(form, true);
+    try {
+      await api.rpc('remove_workspace_member_v1', {
+        p_workspace_id: data.workspaceId,
+        p_user_id: userId,
+      });
+      button.textContent = 'Accès retiré';
+      setTimeout(() => location.reload(), 180);
+    } catch (error) {
+      showError(form, error);
+      setBusy(form, false);
+    }
+  });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
