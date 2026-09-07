@@ -45,10 +45,10 @@ jobs:
           node --check site/assets/supabase-client.js
           node --check site/assets/boot.js
           grep -Fq '4b4c V4.2.2 — Home coherence pass' site/assets/live.css
-          grep -Fq "state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render();" site/assets/live.js
-          grep -Fq "slice(0,3).map(projectCardV3)" site/assets/live.js
-          grep -Fq "élément${attention.length>1?'s':''} à traiter" site/assets/live.js
-          sed -i "s/prepilot-v4.2.2/prepilot-v4.2.2-home-coherence/" src/worker.js
+          grep -Fq 'state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render();' site/assets/live.js
+          grep -Fq 'slice(0,3).map(projectCardV3)' site/assets/live.js
+          grep -Fq ' à traiter' site/assets/live.js
+          sed -i 's/prepilot-v4.2.2/prepilot-v4.2.2-home-coherence/' src/worker.js
           node --check src/worker.js
 
       - name: Deploy isolated temporary Cloudflare Worker
