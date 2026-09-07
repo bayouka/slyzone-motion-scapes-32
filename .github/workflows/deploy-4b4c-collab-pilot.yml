@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/deploy-4b4c-collab-pilot.yml'
       - '4b4c-v4-preview/apply-home-coherence.py'
+      - '4b4c-v4-preview/v43-patches/**'
   workflow_dispatch:
 
 permissions:
@@ -46,7 +47,6 @@ jobs:
           node --check site/assets/live.js
           grep -Fq 'v422-main-flow' site/assets/live.js
           grep -Fq 'v422-rail-flow' site/assets/live.js
-          grep -Fq '4b4c V4.2.2 — Home coherence pass 2' site/assets/live.css
 
       - name: Fetch Communication V2 patchset
         run: |
@@ -69,8 +69,24 @@ jobs:
           base64 -d /tmp/communication-livecss.b64 | gzip -dc > /tmp/communication-livecss.patch
           grep -Fq '/* 2b2c Communication v2 — audience-first messaging hub */' /tmp/communication-livecss.patch
           sed -n '/^+\/\* 2b2c Communication v2/,$p' /tmp/communication-livecss.patch | sed 's/^+//' >> site/assets/live.css
+          echo 'cc4aec514d195035ff123fe7221fe4c4688da7683b35fe50f7b7c0ba641b31e1  site/assets/live.js' | sha256sum -c -
+          echo '89cf7957118eb7f83be2368c4f1df5a04f4e535c2fa245db7e643df324dcef0b  site/assets/live.css' | sha256sum -c -
 
-      - name: Validate combined collaborative pilot
+      - name: Apply validated Home V4.3 product patch
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          cat v43-patches/livejs.00.b64 v43-patches/livejs.01.b64 v43-patches/livejs.02.b64 > /tmp/v43-livejs.b64
+          cat v43-patches/livecss.00.b64 > /tmp/v43-livecss.b64
+          echo '7b83623dc640b1f967de9e822abca9a8efdb0847ff6191711fbf55cfa46eac14  /tmp/v43-livejs.b64' | sha256sum -c -
+          echo '825c04544020d30b74662d56da075934b4c64ab33d9101c24d838172ae24cad1  /tmp/v43-livecss.b64' | sha256sum -c -
+          base64 -d /tmp/v43-livejs.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d /tmp/v43-livecss.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          node --check site/assets/live.js
+          echo '8f76a1eebcdbce2435d369601dbcd708ee320bfdf90938231eea243197c9dcce  site/assets/live.js' | sha256sum -c -
+          echo '89c776671ea9fa3fc6f169faf78590913a24d9f2eb2fc06e897c5b2e6c0c3b12  site/assets/live.css' | sha256sum -c -
+
+      - name: Validate collaborative Home V4.3
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
@@ -78,20 +94,24 @@ jobs:
           node --check site/assets/supabase-client.js
           node --check site/assets/boot.js
           node --check src/worker.js
-          grep -Fq 'v422-main-flow' site/assets/live.js
-          grep -Fq 'v422-rail-flow' site/assets/live.js
+          grep -Fq 'v43-home-grid' site/assets/live.js
+          grep -Fq 'Votre situation' site/assets/live.js
+          grep -Fq 'Aujourd’hui & à venir' site/assets/live.js
+          grep -Fq 'projectResumeCardV43' site/assets/live.js
+          grep -Fq 'v43-mobile-tabbar' site/assets/live.js
+          grep -Fq 'Mon travail' site/assets/live.js
           grep -Fq 'communication-v2-hub' site/assets/live.js
           grep -Fq "api.rpc('create_group_direct_v2'" site/assets/live.js
           grep -Fq "api.rpc('get_message_badges_v2'" site/assets/live.js
           grep -Fq "api.rpc('send_message_with_mentions_v2'" site/assets/live.js
-          grep -Fq '4b4c V4.2.2 — Home coherence pass 2' site/assets/live.css
+          grep -Fq '4b4c V4.3 — personal situation Home' site/assets/live.css
           grep -Fq '2b2c Communication v2' site/assets/live.css
           grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
             echo 'Secret-like material found' >&2
             exit 1
           fi
-          sed -i 's/prepilot-v4.2.2/prepilot-v4.2.2-collab-pilot/' src/worker.js
+          sed -i 's/prepilot-v4.2.2/prepilot-v4.3-collab-pilot/' src/worker.js
           node --check src/worker.js
 
       - name: Deploy isolated collaborative Cloudflare pilot
@@ -100,7 +120,7 @@ jobs:
           set -euo pipefail
           npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-collab-preview.txt
 
-      - name: Smoke deployed collaborative pilot
+      - name: Smoke deployed collaborative Home V4.3
         run: |
           set -euo pipefail
           URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-collab-preview.txt | tail -1)
@@ -121,21 +141,22 @@ jobs:
           }
           probe / '2b2c — Projets qui avancent ensemble' 1
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
-          probe /assets/live.js 'v422-main-flow'
+          probe /assets/live.js 'v43-home-grid'
+          probe /assets/live.js 'Aujourd’hui & à venir'
           probe /assets/live.js 'communication-v2-hub'
           probe /assets/live.js 'send_message_with_mentions_v2'
-          probe /assets/live.css 'Home coherence pass 2'
-          probe /assets/live.css 'Communication v2'
-          probe /health 'prepilot-v4.2.2-collab-pilot'
+          probe /assets/live.css '4b4c V4.3 — personal situation Home'
+          probe /health 'prepilot-v4.3-collab-pilot'
           echo "PILOT_URL=$URL" | tee /tmp/4b4c-collab-url.txt
 
-      - name: Preserve collaborative pilot result
+      - name: Preserve collaborative V4.3 result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: 4b4c-collab-pilot-result
+          name: 4b4c-collab-v43-result
           path: |
             /tmp/4b4c-collab-preview.txt
             /tmp/4b4c-collab-url.txt
+            4b4c-v4-preview/site
           if-no-files-found: warn
           retention-days: 2
