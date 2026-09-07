@@ -47,6 +47,7 @@
       await import('./meeting-agenda-v1.js').catch((error) => console.warn('Meeting agenda enhancer unavailable', error));
       await import('./resource-model-v1.js').catch((error) => console.warn('Resource model enhancer unavailable', error));
       await import('./ui-quality-v1.js').catch((error) => console.warn('UI quality enhancer unavailable', error));
+      await import('./dialog-focus-safety-v2.js').catch((error) => console.warn('Dialog focus safety enhancer unavailable', error));
     })
     .catch((error) => {
       console.error(error);
