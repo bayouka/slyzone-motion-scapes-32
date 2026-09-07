@@ -5,13 +5,13 @@ create temporary table qa_context(action_id uuid,comment_id uuid,comment_attachm
 insert into qa_context default values;
 
 reset role;
-update qa_context
-set action_id=(
+with created_action as (
   insert into public.actions(workspace_id,project_id,title,description,created_by,visibility)
   select '21000000-0000-4000-8000-000000000001',project_id,'Prototype V4 QA','Action commentable','11000000-0000-4000-8000-000000000001','internal'
   from qa_comm_ids
   returning id
-);
+)
+update qa_context set action_id=(select id from created_action);
 
 set local role authenticated;
 select pg_temp.as_user('11000000-0000-4000-8000-000000000001'); -- Fred
