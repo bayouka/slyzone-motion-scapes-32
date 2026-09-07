@@ -61,6 +61,10 @@ jobs:
           set -euo pipefail
           psql -v ON_ERROR_STOP=1 \
             -f supabase/tests_draft/communication_v2/baseline_v422.sql
+          # Read-only introspection of the live V4.2.2 confirmed that the
+          # authenticated role has USAGE on app_private. Reproduce that grant
+          # in the disposable clone so legacy public wrapper RPCs behave alike.
+          psql -v ON_ERROR_STOP=1 -c "grant usage on schema app_private to authenticated;"
 
       - name: Apply Communication v2 draft migrations
         shell: bash
