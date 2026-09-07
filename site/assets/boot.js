@@ -27,12 +27,14 @@
 
   window.__4B4C_LIVE_MODE__ = true;
   import('./home-polish.js').catch((error) => console.warn('Home polish enhancer unavailable', error));
-  import('./live.js').catch((error) => {
-    console.error(error);
-    renderStartupError(
-      '2b2c n’a pas pu démarrer',
-      'Une erreur locale a empêché le chargement de l’application. Rechargez la page.',
-      error?.message || error
-    );
-  });
+  import('./live.js')
+    .then(() => import('./team-access-v1.js').catch((error) => console.warn('Team access enhancer unavailable', error)))
+    .catch((error) => {
+      console.error(error);
+      renderStartupError(
+        '2b2c n’a pas pu démarrer',
+        'Une erreur locale a empêché le chargement de l’application. Rechargez la page.',
+        error?.message || error
+      );
+    });
 })();
