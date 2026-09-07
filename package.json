@@ -1,11 +1,13 @@
 {
   "name": "4b4c",
-  "version": "4.3.0",
+  "version": "4.3.2",
   "private": true,
   "scripts": {
-    "check": "node --check site/assets/live.js && node --check site/assets/home-polish.js && node --check site/assets/supabase-client.js && node --check site/assets/boot.js && node --check src/worker.js",
+    "check": "node --check site/assets/live.js && node --check site/assets/home-polish.js && node --check site/assets/supabase-client.js && node --check site/assets/boot.js && node --check src/worker.js && node scripts/contract-check.mjs",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev"
   },
-  "devDependencies": { "wrangler": "4.129.0" }
+  "devDependencies": {
+    "wrangler": "4.129.0"
+  }
 }
