@@ -20,12 +20,16 @@ update qa_messages set direct_marc=public.get_or_create_direct_v2('21000000-0000
 update qa_messages set direct_julie=public.get_or_create_direct_v2('21000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000003');
 update qa_messages set normal_message=public.send_message_v2(direct_marc,'Message normal sans cloche') where direct_marc is not null;
 
+-- Count bell rows as the administrative QA role so RLS does not make Marc's
+-- rows disappear merely because Fred sent the message.
+reset role;
 select pg_temp.assert_eq(
   (select count(*) from public.notifications where user_id='11000000-0000-4000-8000-000000000002'),
   (select marc_notifications_before from qa_messages),
   'Normal message does not create bell notification'
 );
 
+set local role authenticated;
 select pg_temp.as_user('11000000-0000-4000-8000-000000000002'); -- Marc
 select pg_temp.assert_eq(
   (select coalesce(sum(unread_count),0)::bigint from public.get_unread_conversations_v2('21000000-0000-4000-8000-000000000001') where conversation_id=(select direct_marc from qa_messages)),
@@ -39,6 +43,8 @@ select pg_temp.assert_eq(
   'Marking conversation read clears unread count'
 );
 
+-- Fred sends an explicit mention; Marc is the one who must be able to read the
+-- normalized Mention and its bell notification.
 select pg_temp.as_user('11000000-0000-4000-8000-000000000001'); -- Fred
 update qa_messages set mention_message=public.send_message_with_mentions_v2(
   direct_marc,
@@ -47,17 +53,20 @@ update qa_messages set mention_message=public.send_message_with_mentions_v2(
   array['11000000-0000-4000-8000-000000000002'::uuid]
 ) where direct_marc is not null;
 
+select pg_temp.as_user('11000000-0000-4000-8000-000000000002'); -- Marc
 select pg_temp.assert_eq(
   (select count(*) from public.mentions where message_id=(select mention_message from qa_messages) and mentioned_user_id='11000000-0000-4000-8000-000000000002'),
   1,
-  'Message mention is normalized exactly once'
+  'Message mention is normalized exactly once and visible to Marc'
 );
 select pg_temp.assert_eq(
   (select count(*) from public.notifications where user_id='11000000-0000-4000-8000-000000000002' and kind='mention' and route like '/messages?mention=%'),
   1,
-  'Normal mention creates one bell notification'
+  'Normal mention creates one bell notification for Marc'
 );
 
+-- Fred publishes an announcement in Team General.
+select pg_temp.as_user('11000000-0000-4000-8000-000000000001'); -- Fred
 update qa_messages set announcement_message=public.send_message_with_mentions_v2(
   (select id from public.conversations where workspace_id='21000000-0000-4000-8000-000000000001' and kind='team' and is_general limit 1),
   'Information importante pour toute l’équipe',
@@ -65,6 +74,9 @@ update qa_messages set announcement_message=public.send_message_with_mentions_v2
   array['11000000-0000-4000-8000-000000000002'::uuid]
 );
 
+-- Marc must see the announcement bell and Mention, but the Mention must not
+-- create a second bell item for the same announcement.
+select pg_temp.as_user('11000000-0000-4000-8000-000000000002'); -- Marc
 select pg_temp.assert_eq(
   (select count(*) from public.notifications where user_id='11000000-0000-4000-8000-000000000002' and kind='announcement' and route like '%'||(select announcement_message::text from qa_messages)),
   1,
@@ -92,6 +104,8 @@ select pg_temp.assert_eq(
   'Announcement mention does not duplicate bell notification'
 );
 
+-- Integrity failures are attempted by Fred, who owns both Directs.
+select pg_temp.as_user('11000000-0000-4000-8000-000000000001'); -- Fred
 do $$
 begin
   begin
