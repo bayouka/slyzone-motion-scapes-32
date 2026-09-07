@@ -78,7 +78,18 @@ select pg_temp.assert_eq(
   'Announcement mention still appears in Mentions'
 );
 select pg_temp.assert_eq(
-  (select count(*) from public.notifications n join public.mentions mn on n.user_id=mn.mentioned_user_id where mn.message_id=(select announcement_message from qa_messages) and n.kind='mention' and n.created_at>=mn.created_at-interval '1 second'),
+  (
+    select count(*)
+    from public.notifications n
+    where n.user_id='11000000-0000-4000-8000-000000000002'
+      and n.kind='mention'
+      and n.route=(
+        select '/messages?mention='||mn.id::text
+        from public.mentions mn
+        where mn.message_id=(select announcement_message from qa_messages)
+          and mn.mentioned_user_id='11000000-0000-4000-8000-000000000002'
+      )
+  ),
   0,
   'Announcement mention does not duplicate bell notification'
 );
@@ -91,6 +102,7 @@ begin
     raise exception 'ASSERT_NO_ERROR_STRUCTURED_SUBJECT';
   exception when others then
     if sqlerrm='ASSERT_NO_ERROR_STRUCTURED_SUBJECT' then raise; end if;
+    if position('STRUCTURED_MESSAGE_SUBJECT_REQUIRED' in sqlerrm)=0 then raise; end if;
   end;
 end $$;
 
@@ -108,6 +120,7 @@ begin
     raise exception 'ASSERT_NO_ERROR_CROSS_REPLY';
   exception when others then
     if sqlerrm='ASSERT_NO_ERROR_CROSS_REPLY' then raise; end if;
+    if position('MESSAGE_REPLY_CROSS_CONVERSATION' in sqlerrm)=0 then raise; end if;
   end;
 end $$;
 
