@@ -80,4 +80,11 @@ for select using (
   ))
 );
 
+-- These tables are created by migration 005, after the baseline grants that
+-- existed on V4.2.2. PostgreSQL table privileges must therefore be granted
+-- explicitly; RLS remains the row-level authorization boundary.
+grant select on public.comments to authenticated;
+grant select on public.mentions to authenticated;
+grant select on public.attachments to authenticated;
+
 commit;
