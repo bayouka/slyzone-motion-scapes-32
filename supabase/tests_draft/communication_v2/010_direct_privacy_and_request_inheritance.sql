@@ -89,4 +89,28 @@ select pg_temp.assert_eq((select count(*) from public.conversations where id=(se
 select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Guest cannot infer request through linked project');
 select pg_temp.assert_eq((select count(*) from public.actions where id=(select action_id from qa_runtime)),0,'Guest cannot read internal derived Action');
 
+-- Soft deletion keeps the source row/address stable for derived work, while the
+-- UI can hide its body. The broader Action remains usable by project members.
+select pg_temp.as_user('11000000-0000-4000-8000-000000000001'); -- Fred
+select public.delete_message_v2((select message_id from qa_runtime));
+select pg_temp.assert_eq((select count(*) from public.messages where id=(select message_id from qa_runtime) and deleted_at is not null),1,'Deleted source message keeps a stable row id');
+
+select pg_temp.as_user('11000000-0000-4000-8000-000000000003'); -- Julie
+select pg_temp.assert_eq((select count(*) from public.actions where id=(select action_id from qa_runtime)),1,'Derived Action survives source message soft deletion');
+select pg_temp.assert_eq((select count(*) from public.messages where id=(select message_id from qa_runtime)),0,'Julie still cannot use derived Action to open private source');
+
+-- Leaving/suspending the workspace cuts access even if stale Direct membership
+-- rows remain. Access is gated by active workspace membership as well as audience.
+reset role;
+update public.workspace_members
+set status='suspended'
+where workspace_id='21000000-0000-4000-8000-000000000001'
+  and user_id='11000000-0000-4000-8000-000000000002';
+
+set local role authenticated;
+select pg_temp.as_user('11000000-0000-4000-8000-000000000002'); -- Marc suspended
+select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),0,'Suspended Marc loses Direct access despite stale membership');
+select pg_temp.assert_eq((select count(*) from public.messages where id=(select message_id from qa_runtime)),0,'Suspended Marc loses message access');
+select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Suspended Marc loses message-derived Request access');
+
 rollback;
