@@ -70,12 +70,14 @@ jobs:
             return 1
           }
           probe /health '"app":"4b4c"'
-          probe /health '"version":"v4.3"'
+          probe /health '"version":"v4.3.2"'
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
           probe /assets/live.js 'v43-home-grid'
           probe /assets/live.js 'communication-v2-hub'
           probe /assets/live.js 'register_deliverable_version_v2'
           probe /assets/live.js 'PROJETS ACTIFS'
+          probe /assets/live.js 'meeting-response'
+          probe /assets/live.js 'sync-alert-v432'
           probe /assets/boot.js 'Configuration 2b2c indisponible'
           probe /assets/home-polish.js '4b4c V4.3.1 — Home UX contract polish'
           probe /assets/home-polish.css '4b4c V4.3.1 — Home UX/UI polish'
