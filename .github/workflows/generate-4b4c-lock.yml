@@ -1,0 +1,32 @@
+name: Generate 4b4c lockfile
+on:
+  push:
+    branches: [develop]
+    paths: ['.github/workflows/generate-4b4c-lock.yml']
+permissions:
+  contents: read
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create package files
+        run: |
+          cat > package.json <<'EOF'
+          {
+            "name": "4b4c",
+            "version": "4.3.0",
+            "private": true,
+            "scripts": {
+              "check": "node --check site/assets/live.js && node --check site/assets/supabase-client.js && node --check site/assets/boot.js && node --check src/worker.js",
+              "deploy": "wrangler deploy",
+              "dev": "wrangler dev"
+            },
+            "devDependencies": { "wrangler": "4.129.0" }
+          }
+          EOF
+          npm install --package-lock-only --ignore-scripts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 4b4c-package-lock
+          path: package-lock.json
+          retention-days: 2
