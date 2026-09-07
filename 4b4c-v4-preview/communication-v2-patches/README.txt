@@ -1,0 +1,1 @@
+Communication v2 frontend patches. Generated against the exact V4.2.2 live.js/live.css baseline and applied only on the isolated live-preview branch.
