@@ -59,6 +59,8 @@ create temporary table qa_comm_ids(
   project_general_id uuid
 ) on commit drop;
 
+grant select,update on qa_comm_ids to authenticated;
+
 insert into qa_comm_ids(workspace_id)
 values('21000000-0000-4000-8000-000000000001');
 
