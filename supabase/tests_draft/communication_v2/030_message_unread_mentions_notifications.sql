@@ -10,6 +10,7 @@ create temporary table qa_messages(
   announcement_message uuid,
   marc_notifications_before bigint
 ) on commit drop;
+grant select,update on qa_messages to authenticated;
 insert into qa_messages(marc_notifications_before)
 select count(*) from public.notifications where user_id='11000000-0000-4000-8000-000000000002';
 
@@ -19,7 +20,6 @@ update qa_messages set direct_marc=public.get_or_create_direct_v2('21000000-0000
 update qa_messages set direct_julie=public.get_or_create_direct_v2('21000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000003');
 update qa_messages set normal_message=public.send_message_v2(direct_marc,'Message normal sans cloche') where direct_marc is not null;
 
--- A normal message must not create a bell notification after migration 006.
 select pg_temp.assert_eq(
   (select count(*) from public.notifications where user_id='11000000-0000-4000-8000-000000000002'),
   (select marc_notifications_before from qa_messages),
@@ -58,8 +58,6 @@ select pg_temp.assert_eq(
   'Normal mention creates one bell notification'
 );
 
--- Announcement in Team General: one announcement bell item; its mention remains
--- in Mentions but must not generate a second bell item.
 update qa_messages set announcement_message=public.send_message_with_mentions_v2(
   (select id from public.conversations where workspace_id='21000000-0000-4000-8000-000000000001' and kind='team' and is_general limit 1),
   'Information importante pour toute l’équipe',
@@ -94,7 +92,6 @@ select pg_temp.assert_eq(
   'Announcement mention does not duplicate bell notification'
 );
 
--- Structured messages require a subject.
 do $$
 begin
   begin
@@ -106,7 +103,6 @@ begin
   end;
 end $$;
 
--- Replies cannot point at a message in another conversation.
 update qa_messages set other_message=public.send_message_v2(direct_julie,'Autre conversation') where direct_julie is not null;
 do $$
 begin
