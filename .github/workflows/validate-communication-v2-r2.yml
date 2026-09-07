@@ -1,0 +1,75 @@
+name: Validate communication v2 r2
+
+on:
+  push:
+    branches:
+      - 4b4c-communication-architecture
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  communication-v2-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: communication_v2
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d communication_v2"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: communication_v2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PostgreSQL 17.6
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -Atc "select version();"
+      - name: Rebuild exact communication-relevant V4.2.2 baseline
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -f supabase/tests_draft/communication_v2/baseline_v422.sql
+          psql -v ON_ERROR_STOP=1 -c "grant usage on schema app_private to authenticated;"
+      - name: Apply six draft migrations
+        run: |
+          set -euo pipefail
+          for migration in supabase/migrations_draft/communication_v2/00{1,2,3,4,5,6}_*.sql; do
+            echo "=== Applying ${migration} ==="
+            psql -v ON_ERROR_STOP=1 -f "${migration}"
+          done
+      - name: Run isolated RLS behavior tests
+        working-directory: supabase/tests_draft/communication_v2
+        run: |
+          set -euo pipefail
+          for test_file in 010_*.sql 020_*.sql 030_*.sql 040_*.sql; do
+            echo "=== Running ${test_file} ==="
+            psql -v ON_ERROR_STOP=1 -f "${test_file}"
+          done
+      - name: Final integrity assertions
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          begin
+            if exists(select 1 from pg_trigger where tgname='trg_notify_message' and not tgisinternal) then
+              raise exception 'legacy per-message bell trigger still active';
+            end if;
+            if not exists(select 1 from information_schema.tables where table_schema='public' and table_name='comments') then raise exception 'comments missing'; end if;
+            if not exists(select 1 from information_schema.tables where table_schema='public' and table_name='mentions') then raise exception 'mentions missing'; end if;
+            if not exists(select 1 from information_schema.tables where table_schema='public' and table_name='attachments') then raise exception 'attachments missing'; end if;
+          end $$;
+          SQL
