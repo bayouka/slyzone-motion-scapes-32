@@ -1032,13 +1032,7 @@ async function submitMeetingDetail(data){
   state.modal=null;await refreshWorkspace({quiet:true});showToast(data.status==='completed'?'Réunion clôturée · synthèse conservée':'Réunion mise à jour');
 }
 
-async function submitApprovalRequest(data){
-  const d=findDeliverable(data.deliverableId);if(!d)throw new Error('Livrable introuvable');if(!canWriteProject(d.project_id))throw new Error('Vous ne pouvez pas demander cette validation.');
-  const validator=state.members.find(m=>m.user_id===data.validatorId);if(!validator)throw new Error('Validateur introuvable');
-  if(validator.role==='guest'&&d.visibility!=='shared')await api.update('deliverables',`id=eq.${d.id}`,{visibility:'shared',status:'review',updated_at:new Date().toISOString()},{returnRepresentation:false});else await api.update('deliverables',`id=eq.${d.id}`,{status:'review',updated_at:new Date().toISOString()},{returnRepresentation:false});
-  await api.insert('approvals',[{workspace_id:state.workspace.id,project_id:d.project_id,deliverable_version_id:data.versionId,requested_by:state.user.id,validator_id:data.validatorId,status:'pending',request_note:String(data.comment||'').trim(),comment:''}]);
-  state.modal=null;await refreshWorkspace({quiet:true});await loadProject(d.project_id,true);showToast('Validation demandée');
-}
+
 async function decideApproval(id,status){
   const a=state.approvals.find(x=>x.id===id);if(!a||a.validator_id!==state.user.id||a.status!=='pending')throw new Error('Cette validation ne peut pas être traitée.');
   const comment=String(document.getElementById('approval-comment')?.value||'').trim();
