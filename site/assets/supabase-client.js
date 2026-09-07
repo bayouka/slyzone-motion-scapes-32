@@ -20,6 +20,7 @@ export class SupabaseBrowserClient {
     this.fetchImpl = fetchImpl;
     this.session = this.#loadSession();
     this.rowVersions = new Map();
+    this.rowVersionLocks = new Map();
   }
 
   #loadSession() {
@@ -51,12 +52,41 @@ export class SupabaseBrowserClient {
 
   #rowVersionKey(table, id) { return `${table}:${id}`; }
 
+  #formLocksRow(table, id) {
+    if (typeof document === 'undefined' || !id) return false;
+    const specs = [
+      ['actions', 'action-edit', 'actionId'],
+      ['projects', 'project-edit', 'projectId'],
+      ['milestones', 'milestone-edit', 'milestoneId'],
+      ['requests', 'request-response', 'requestId'],
+    ];
+    for (const [targetTable, formType, idField] of specs) {
+      if (targetTable !== table) continue;
+      for (const form of document.querySelectorAll(`form[data-form="${formType}"]`)) {
+        const control = form.elements?.namedItem?.(idField) || form.querySelector(`[name="${idField}"]`);
+        if (String(control?.value || '') === String(id)) return true;
+      }
+    }
+    if (table === 'profiles' && document.querySelector('form[data-form="profile"]')) {
+      const userId = this.#syncSession()?.user?.id || null;
+      return Boolean(userId && String(userId) === String(id));
+    }
+    return false;
+  }
+
   #rememberRows(table, payload) {
     const rows = Array.isArray(payload) ? payload : [];
     for (const row of rows) {
-      if (row?.id && row?.updated_at) {
-        this.rowVersions.set(this.#rowVersionKey(table, String(row.id)), String(row.updated_at));
+      if (!row?.id || !row?.updated_at) continue;
+      const id = String(row.id);
+      const key = this.#rowVersionKey(table, id);
+      const activeEdit = this.#formLocksRow(table, id);
+      if (activeEdit && !this.rowVersionLocks.has(key)) {
+        const previousVersion = this.rowVersions.get(key);
+        if (previousVersion) this.rowVersionLocks.set(key, previousVersion);
       }
+      if (!activeEdit) this.rowVersionLocks.delete(key);
+      this.rowVersions.set(key, String(row.updated_at));
     }
   }
 
@@ -125,7 +155,15 @@ export class SupabaseBrowserClient {
   async update(table, query, patch, { returnRepresentation = true } = {}) {
     const rowId = this.#rowIdFromQuery(query);
     const versionKey = rowId ? this.#rowVersionKey(table, rowId) : null;
-    const expectedVersion = versionKey ? this.rowVersions.get(versionKey) : null;
+    const activeEdit = Boolean(rowId && this.#formLocksRow(table, rowId));
+    if (versionKey && !activeEdit) this.rowVersionLocks.delete(versionKey);
+    if (versionKey && activeEdit && !this.rowVersionLocks.has(versionKey)) {
+      const current = this.rowVersions.get(versionKey);
+      if (current) this.rowVersionLocks.set(versionKey, current);
+    }
+    const expectedVersion = versionKey
+      ? (this.rowVersionLocks.get(versionKey) || this.rowVersions.get(versionKey))
+      : null;
     const alreadyVersioned = /(?:^|&)updated_at=/.test(String(query));
 
     if (expectedVersion && !alreadyVersioned) {
@@ -134,9 +172,13 @@ export class SupabaseBrowserClient {
         method: 'PATCH', body: patch, prefer: 'return=representation', context: `Mise à jour ${table}`
       });
       if (!Array.isArray(result) || result.length === 0) {
-        this.rowVersions.delete(versionKey);
+        if (versionKey) {
+          this.rowVersionLocks.delete(versionKey);
+          this.rowVersions.delete(versionKey);
+        }
         throw new Error('Cet élément a été modifié ailleurs ou votre accès a changé. Rechargez les données avant d’enregistrer afin de ne pas écraser un changement plus récent.');
       }
+      if (versionKey) this.rowVersionLocks.delete(versionKey);
       this.#rememberRows(table, result);
       return returnRepresentation ? result : null;
     }
@@ -144,6 +186,7 @@ export class SupabaseBrowserClient {
     const result = await this.request(`/rest/v1/${encodeURIComponent(table)}?${query}`, {
       method: 'PATCH', body: patch, prefer: returnRepresentation ? 'return=representation' : 'return=minimal', context: `Mise à jour ${table}`
     });
+    if (versionKey) this.rowVersionLocks.delete(versionKey);
     if (returnRepresentation) this.#rememberRows(table, result);
     else if (versionKey) this.rowVersions.delete(versionKey);
     return result;
