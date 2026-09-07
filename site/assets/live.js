@@ -9,8 +9,8 @@ const state = {
   authMode: 'signin', user: null, profile: null, memberships: [], workspace: null, workspaceRole: null,
   projects: [], archivedProjects: [], members: [], profiles: [], notifications: [], requests: [], approvals: [], meetings: [], meetingAttendees: [], milestones: [],
   actions: [], assignees: [], decisions: [], deliverables: [], deliverableVersions: [], conversations: [], conversationMembers: [], projectMembers: [], projectCache: new Map(), messages: new Map(),
-  unreadMessages: 0, unreadMentions: 0, unreadConversations: new Map(), replyTo: null,
-  modal: null, toast: [], notificationOpen: false, userMenuOpen: false, mobileMenuOpen: false, invitePreview: null, welcome: null, searchQuery: '', libraryQuery: '', libraryProject: 'all', loading: true, busy: false, lastSync: null, previousSeenAt: null, seenMarkedAt: null
+  unreadMessages: 0, unreadMentions: 0, unreadConversations: new Map(), replyTo: null, messageLoads: new Set(),
+  modal: null, toast: [], notificationOpen: false, userMenuOpen: false, mobileMenuOpen: false, invitePreview: null, welcome: null, searchQuery: '', libraryQuery: '', libraryProject: 'all', loading: true, busy: false, lastSync: null, syncError: null, previousSeenAt: null, seenMarkedAt: null
 };
 
 const BRAND_NAME = '2b2c';
@@ -169,9 +169,21 @@ async function refreshWorkspace({ quiet = false } = {}) {
     state.milestones = projects.length
       ? await api.select('milestones', `select=*&project_id=in.(${projects.map(p=>p.id).join(',')})&order=position.asc`)
       : [];
+    state.projectCache = new Map(projects.map(project=>{
+      const projectDeliverables=deliverables.filter(d=>d.project_id===project.id);
+      const deliverableIds=new Set(projectDeliverables.map(d=>d.id));
+      return [project.id,{
+        milestones:state.milestones.filter(m=>m.project_id===project.id),
+        decisions:decisions.filter(d=>d.project_id===project.id),
+        deliverables:projectDeliverables,
+        versions:deliverableVersions.filter(v=>deliverableIds.has(v.deliverable_id))
+      }];
+    }));
     state.lastSync = new Date();
+    state.syncError = null;
   } catch (error) {
-    if (!quiet) showToast(humanError(error), true);
+    state.syncError=humanError(error);
+    if (!quiet) showToast(state.syncError, true);
   } finally {
     state.loading = false;
     if (!state.modal || quiet) render();
@@ -250,6 +262,7 @@ function shell(content, route) {
       <header class="live-topbar v3-topbar v41-topbar v42-topbar">
         <div class="mobile-topbar-start"><button class="mobile-menu-button" data-action="toggle-mobile-menu" aria-label="Ouvrir le menu" aria-controls="mobile-navigation" aria-expanded="${state.mobileMenuOpen?'true':'false'}"><span></span><span></span><span></span></button><a class="mobile-top-brand" href="#/dashboard">${brandMarkHtml('compact')}<strong>${BRAND_NAME}</strong></a></div>
         <button class="compact-search" data-action="open-search"><span>${ICONS.search}</span><strong>Rechercher</strong><kbd>Ctrl K</kbd></button>
+        ${state.syncError?`<button class="sync-alert-v432" data-action="retry-sync" title="${escAttr(state.syncError)}">Synchronisation interrompue · Réessayer</button>`:''}
         <div class="live-actions">
           <button class="top-action-label notification-button" data-action="toggle-notifications" aria-label="Notifications"><span class="top-action-icon">${ICONS.bell}</span><span class="top-action-text">Notifications</span>${unread?`<span class="badge inline-badge">${unread>99?'99+':unread}</span>`:''}</button>
           ${external?'':`<button class="btn primary quick-create-label" data-action="quick-add" aria-label="Créer">＋ Créer</button>`}
@@ -550,7 +563,7 @@ function projectMessages(project) {
   const conversations = state.conversations.filter(c=>c.project_id===project.id);
   const conversation = conversations.find(c=>c.is_general) || conversations[0];
   if (!conversation) return `<div class="card">${empty('Conversation en préparation','Rechargez le projet ou créez une nouvelle conversation.')}</div>`;
-  if (!state.messages.has(conversation.id)) loadMessages(conversation.id);
+  if (!state.messages.has(conversation.id)||state.unreadConversations.get(conversation.id)) loadMessages(conversation.id,true);
   const messages = state.messages.get(conversation.id) || [];
   return `<div class="card chat"><div class="chat-log">${messages.length?messages.map(messageBubble).join(''):empty('Aucun message','Écrivez le premier message lié à ce projet.')}</div><form class="chat-form" data-form="message"><input type="hidden" name="conversationId" value="${conversation.id}"><input type="hidden" name="workspaceId" value="${project.workspace_id}"><textarea name="body" required maxlength="20000" placeholder="Écrire dans ${esc(conversation.title)}…"></textarea><button class="btn primary" type="submit">Envoyer</button></form></div>`;
 }
@@ -599,7 +612,7 @@ function renderMessages(conversationId) {
   const project=visible.filter(c=>c.kind==='project').sort(sortByActivity);
   const direct=visible.filter(c=>c.kind==='direct').sort(sortByActivity);
   const conversation=conversationId?visible.find(c=>c.id===conversationId):(direct.find(c=>state.unreadConversations.get(c.id))||project.find(c=>state.unreadConversations.get(c.id))||team.find(c=>state.unreadConversations.get(c.id))||visible[0]);
-  if(conversation&&!state.messages.has(conversation.id))loadMessages(conversation.id);
+  if(conversation&&(!state.messages.has(conversation.id)||state.unreadConversations.get(conversation.id)))loadMessages(conversation.id,true);
   const messages=conversation?(state.messages.get(conversation.id)||[]):[];
   const kindLabel=conversationKindLabel(conversation?.kind);
   const linked=conversation?.linked_project_id?state.projects.find(p=>p.id===conversation.linked_project_id):null;
@@ -789,6 +802,7 @@ async function handleClick(event) {
     else if (action==='edit-milestone') openModal({type:'milestone-edit',projectId:target.dataset.project,milestoneId:target.dataset.milestone});
     else if (action==='new-meeting') openModal({type:'meeting',projectId:target.dataset.project||currentProjectId()});
     else if (action==='open-meeting') openModal({type:'meeting-detail',id:target.dataset.meeting});
+    else if (action==='meeting-response') await setMeetingResponse(target.dataset.meeting,target.dataset.response);
     else if (action==='meeting-to-action') openModal({type:'action',projectId:target.dataset.project,sourceType:'meeting',sourceId:target.dataset.meeting});
     else if (action==='meeting-to-decision') openModal({type:'decision',projectId:target.dataset.project,sourceType:'meeting',sourceId:target.dataset.meeting});
     else if (action==='upload-file') openModal({type:'upload',projectId:target.dataset.project});
@@ -803,6 +817,7 @@ async function handleClick(event) {
     else if (action==='confirm-seed') await seedPilot();
     else if (action==='toggle-notifications') { state.notificationOpen=!state.notificationOpen; state.userMenuOpen=false; render(); }
     else if (action==='read-all-notifications') await markAllNotificationsRead();
+    else if (action==='retry-sync') await refreshWorkspace({quiet:false});
     else if (action==='open-notification') await openNotification(target.dataset.id,target.dataset.route);
     else if (action==='open-file') await openFile(target.dataset.path);
     else if (action==='copy-invite') await copyText(document.getElementById('invite-link-value')?.value||'');
@@ -1002,10 +1017,12 @@ async function submitMeeting(data) {
   if(data.projectId&&!canWriteProject(data.projectId))throw new Error('Vous ne pouvez pas planifier une réunion dans ce projet.');
   const starts=localDateTimeToIso(data.startsAt); const ends=localDateTimeToIso(data.endsAt);
   if(starts&&ends&&new Date(ends)<new Date(starts))throw new Error('La fin doit être postérieure au début.');
-  const rows=await api.insert('meetings',[{workspace_id:state.workspace.id,project_id:data.projectId||null,title:String(data.title).trim(),status:'planned',starts_at:starts,ends_at:ends,video_room:String(data.videoRoom||'').trim()||null,agenda:String(data.agenda||'').trim(),visibility:data.visibility||'internal',created_by:state.user.id}]);
   const attendeeIds=[...new Set([state.user.id,...(data.attendeeIds||[])])];
+  const includesGuest=attendeeIds.some(id=>state.members.some(m=>m.user_id===id&&m.role==='guest'));
+  const visibility=includesGuest?'shared':(data.visibility||'internal');
+  const rows=await api.insert('meetings',[{workspace_id:state.workspace.id,project_id:data.projectId||null,title:String(data.title).trim(),status:'planned',starts_at:starts,ends_at:ends,video_room:String(data.videoRoom||'').trim()||null,agenda:String(data.agenda||'').trim(),visibility,created_by:state.user.id}]);
   await api.insert('meeting_attendees',attendeeIds.map(user_id=>({meeting_id:rows[0].id,user_id,response:user_id===state.user.id?'accepted':'pending'})),{returnRepresentation:false});
-  state.modal={type:'meeting-detail',id:rows[0].id}; await refreshWorkspace({quiet:true}); showToast('Réunion planifiée · agenda prêt');
+  state.modal={type:'meeting-detail',id:rows[0].id}; await refreshWorkspace({quiet:true}); showToast(includesGuest?'Réunion planifiée · partagée avec les invités':'Réunion planifiée · agenda prêt');
 }
 
 async function submitMeetingDetail(data){
@@ -1043,7 +1060,8 @@ async function submitMemberManage(data){
   if(role==='member'&&accessMode==='selected'&&!visible.size)throw new Error('Sélectionnez au moins un projet visible.');
   if(role==='guest'&&!visible.size)throw new Error('Un invité doit avoir au moins un projet partagé.');
   await api.update('workspace_members',`workspace_id=eq.${state.workspace.id}&user_id=eq.${member.user_id}`,{role,access_mode:accessMode},{returnRepresentation:false});
-  await api.remove('project_members',`user_id=eq.${member.user_id}`);
+  const workspaceProjectIds=[...state.projects,...state.archivedProjects].map(p=>p.id);
+  if(workspaceProjectIds.length)await api.remove('project_members',`user_id=eq.${member.user_id}&project_id=in.(${workspaceProjectIds.join(',')})`);
   const rows=[];
   for(const p of state.projects){const isVisible=accessMode==='all'||visible.has(p.id);if(!isVisible&&!responsibility.has(p.id))continue;let project_role='viewer';if(role==='guest')project_role='client';else if(responsibility.has(p.id))project_role='member';rows.push({project_id:p.id,user_id:member.user_id,role:project_role});}
   if(rows.length)await api.insert('project_members',rows,{returnRepresentation:false});
@@ -1200,12 +1218,16 @@ async function loadProject(projectId, force=false) {
 }
 
 async function loadMessages(conversationId, force=false) {
-  if(!force && state.messages.has(conversationId)) return;
+  if(state.messageLoads.has(conversationId))return;
+  const unread=Number(state.unreadConversations.get(conversationId)||0);
+  if(!force&&state.messages.has(conversationId)&&!unread)return;
+  state.messageLoads.add(conversationId);
   try {
     state.messages.set(conversationId,await api.select('messages',`select=*&conversation_id=eq.${conversationId}&order=created_at.asc&limit=300`));
     await api.rpc('mark_conversation_read_v2',{p_conversation_id:conversationId,p_seen_at:new Date().toISOString()});
     state.unreadConversations.delete(conversationId);await refreshMessageBadges();render();
   } catch(error){showToast(humanError(error),true);}
+  finally{state.messageLoads.delete(conversationId);}
 }
 
 async function acceptInvite(token) {
@@ -1229,6 +1251,16 @@ async function openNotification(id,route) {
   const n=state.notifications.find(n=>String(n.id)===String(id));
   if(n&&!n.read_at){await api.update('notifications',`id=eq.${id}`,{read_at:new Date().toISOString()},{returnRepresentation:false});n.read_at=new Date().toISOString();}
   state.notificationOpen=false; location.hash=(route||'#/dashboard').replace(/^#/,''); render();
+}
+
+async function setMeetingResponse(meetingId,response){
+  if(!['accepted','declined'].includes(response))throw new Error('Réponse de réunion invalide.');
+  const attendee=state.meetingAttendees.find(a=>a.meeting_id===meetingId&&a.user_id===state.user.id);
+  if(!attendee)throw new Error('Vous ne faites pas partie de cette réunion.');
+  await api.update('meeting_attendees',`meeting_id=eq.${meetingId}&user_id=eq.${state.user.id}`,{response},{returnRepresentation:false});
+  attendee.response=response;
+  await refreshWorkspace({quiet:true});
+  showToast(response==='accepted'?'Participation confirmée':'Réunion déclinée');
 }
 
 async function openFile(path) { const url=await api.signedUrl('workspace-files',path,900); window.open(url,'_blank','noopener,noreferrer'); }
@@ -1264,10 +1296,10 @@ function normalizeUser(u){return u?{...u,email:u.email||u.user_metadata?.email}:
 function openModal(modal){state.modal=modal;state.notificationOpen=false;state.userMenuOpen=false;state.mobileMenuOpen=false;render()}
 function empty(title,text){return `<div class="empty"><strong>${esc(title)}</strong>${esc(text)}</div>`}
 function loadingScreen(){return '<div class="onboarding"><div class="onboarding-card"><div class="skeleton"></div><div class="skeleton" style="margin-top:12px"></div></div></div>'}
-function resetState(){Object.assign(state,{authMode:'signin',user:null,profile:null,memberships:[],workspace:null,workspaceRole:null,projects:[],archivedProjects:[],members:[],profiles:[],notifications:[],requests:[],approvals:[],meetings:[],meetingAttendees:[],milestones:[],actions:[],assignees:[],conversations:[],projectMembers:[],projectCache:new Map(),messages:new Map(),modal:null,notificationOpen:false,userMenuOpen:false,mobileMenuOpen:false,previousSeenAt:null,seenMarkedAt:null,loading:false})}
+function resetState(){Object.assign(state,{authMode:'signin',user:null,profile:null,memberships:[],workspace:null,workspaceRole:null,projects:[],archivedProjects:[],members:[],profiles:[],notifications:[],requests:[],approvals:[],meetings:[],meetingAttendees:[],milestones:[],actions:[],assignees:[],decisions:[],deliverables:[],deliverableVersions:[],conversations:[],conversationMembers:[],projectMembers:[],projectCache:new Map(),messages:new Map(),unreadMessages:0,unreadMentions:0,unreadConversations:new Map(),replyTo:null,messageLoads:new Set(),modal:null,toast:[],notificationOpen:false,userMenuOpen:false,mobileMenuOpen:false,invitePreview:null,welcome:null,searchQuery:'',libraryQuery:'',libraryProject:'all',busy:false,lastSync:null,syncError:null,previousSeenAt:null,seenMarkedAt:null,loading:false})}
 function showToast(message,error=false){state.toast.push({id:crypto.randomUUID(),message,error});setTimeout(()=>{state.toast=state.toast.filter(t=>t.message!==message);renderToasts()},4200);renderToasts()}
 function renderToasts(){document.querySelector('.toast-wrap')?.remove();if(!state.toast.length)return;const wrap=document.createElement('div');wrap.className='toast-wrap';wrap.innerHTML=state.toast.slice(-3).map(t=>`<div class="toast ${t.error?'error':''}">${esc(t.message)}</div>`).join('');document.body.appendChild(wrap)}
-function humanError(error){if(error instanceof ApiError&&error.status===409)return 'Cet élément existe déjà.';const msg=String(error?.message||error||'Erreur inconnue');if(/Invalid login credentials/i.test(msg))return 'Email ou mot de passe incorrect.';if(/Email not confirmed/i.test(msg))return 'L’adresse email doit être confirmée avant connexion.';if(/duplicate key.*workspace_invites/i.test(msg))return 'Une invitation en attente existe déjà pour cet email.';if(/row-level security/i.test(msg))return 'Vous n’avez pas les droits nécessaires pour cette action.';return msg.replace(/^\w+\s*:\s*/,'')}
+function humanError(error){if(error instanceof ApiError&&error.status===409)return 'Cet élément existe déjà.';const msg=String(error?.message||error||'Erreur inconnue');if(/Invalid login credentials/i.test(msg))return 'Email ou mot de passe incorrect.';if(/Email not confirmed/i.test(msg))return 'L’adresse email doit être confirmée avant connexion.';if(/duplicate key.*workspace_invites/i.test(msg))return 'Une invitation en attente existe déjà pour cet email.';if(/approvals_one_pending_per_validator_version/i.test(msg))return 'Une validation est déjà en attente auprès de cette personne pour cette version.';if(/APPROVAL_ONLY_VALIDATOR_CAN_DECIDE/i.test(msg))return 'Seul le validateur désigné peut prendre cette décision.';if(/APPROVAL_ALREADY_FINAL|APPROVAL_FINAL_DECISION_IMMUTABLE/i.test(msg))return 'Cette validation a déjà été traitée.';if(/MEETING_ATTENDEE_IDENTITY_IMMUTABLE/i.test(msg))return 'Cette invitation de réunion ne peut pas être déplacée vers une autre personne.';if(/row-level security/i.test(msg))return 'Vous n’avez pas les droits nécessaires pour cette action.';return msg.replace(/^\w+\s*:\s*/,'')}
 function renderWelcome(){
   const w=state.welcome||{workspaceName:state.workspace.name,role:state.workspaceRole,projectNames:state.projects.map(p=>p.name)};
   const names=w.projectNames?.length?w.projectNames:state.projects.map(p=>p.name);
@@ -1318,7 +1350,7 @@ function findVersion(id){for(const cache of state.projectCache.values()){const v
 function findDeliverable(id){for(const cache of state.projectCache.values()){const d=(cache.deliverables||[]).find(x=>x.id===id);if(d)return d}return null}
 function approvalTitle(a){const v=findVersion(a.deliverable_version_id),d=v?findDeliverable(v.deliverable_id):null;return d?`${d.title} · v${v.version_number}`:'Une version attend votre validation'}
 function meetingParticipantChecks(projectId=''){const ids=projectId?new Set(state.projectMembers.filter(pm=>pm.project_id===projectId).map(pm=>pm.user_id)):new Set(state.members.map(m=>m.user_id));if(projectId)state.members.filter(m=>['owner','admin'].includes(m.role)||(m.role==='member'&&m.access_mode==='all')).forEach(m=>ids.add(m.user_id));ids.delete(state.user.id);return [...ids].map(id=>`<label><input type="checkbox" name="attendeeIds" value="${id}"> ${esc(displayName(id))}</label>`).join('')||'<small>Aucun autre participant disponible.</small>'}
-function meetingAttendeeHtml(meetingId){const rows=state.meetingAttendees.filter(a=>a.meeting_id===meetingId);return rows.length?`<div class="meeting-attendees-v4"><span class="eyebrow">Participants</span><div>${rows.map(a=>`<span class="attendee-chip">${avatarHtml(a.user_id)}<b>${esc(displayName(a.user_id))}</b><small>${a.response==='accepted'?'Présent / accepté':a.response==='declined'?'Décliné':'En attente'}</small></span>`).join('')}</div></div>`:''}
+function meetingAttendeeHtml(meetingId){const rows=state.meetingAttendees.filter(a=>a.meeting_id===meetingId);const meeting=state.meetings.find(m=>m.id===meetingId);const mine=rows.find(a=>a.user_id===state.user.id);const canRespond=Boolean(mine&&meeting?.created_by!==state.user.id&&meeting?.status==='planned');return rows.length?`<div class="meeting-attendees-v4"><span class="eyebrow">Participants</span><div>${rows.map(a=>`<span class="attendee-chip">${avatarHtml(a.user_id)}<b>${esc(displayName(a.user_id))}</b><small>${a.response==='accepted'?'Accepté':a.response==='declined'?'Décliné':'En attente'}</small></span>`).join('')}</div>${canRespond?`<div class="meeting-rsvp-v432"><span>Votre réponse</span><button type="button" class="btn small ${mine.response==='accepted'?'primary':''}" data-action="meeting-response" data-meeting="${meetingId}" data-response="accepted">✓ Je participe</button><button type="button" class="btn small ${mine.response==='declined'?'danger':''}" data-action="meeting-response" data-meeting="${meetingId}" data-response="declined">Je décline</button></div>`:''}</div>`:''}
 function parseRoute(){const raw=(location.hash||'#/dashboard').replace(/^#\/?/,'');const parts=raw.split('/').filter(Boolean);if(parts[0]==='welcome')return{name:'welcome'};if(!parts.length||parts[0]==='dashboard')return{name:'dashboard'};if(parts[0]==='projects'&&parts[1])return{name:'project',id:parts[1],tab:parts[2]||'overview',view:parts[3]||'list'};if(parts[0]==='projects')return{name:'projects'};if(parts[0]==='work')return{name:'work'};if(parts[0]==='messages')return{name:'messages',id:parts[1]||null};if(parts[0]==='calendar')return{name:'calendar'};if(parts[0]==='library')return{name:'library'};if(parts[0]==='team')return{name:'team'};if(parts[0]==='archives')return{name:'archives'};if(parts[0]==='profile')return{name:'profile'};if(parts[0]==='settings')return{name:'settings'};return{name:'dashboard'}}
 
 function routeTitle(r){if(r.name==='project')return state.projects.find(p=>p.id===r.id)?.name||'Projet';return({welcome:'Bienvenue',dashboard:'Accueil',projects:'Projets',work:'Mon travail',messages:'Messages',calendar:'Calendrier',library:'Fichiers',team:'Équipe',archives:'Archives',profile:'Mon profil',settings:'Paramètres'})[r.name]||BRAND_NAME}
