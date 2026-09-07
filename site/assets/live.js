@@ -1031,14 +1031,7 @@ async function submitMeetingDetail(data){
   await api.update('meetings',`id=eq.${m.id}`,{agenda:String(data.agenda||'').trim(),live_notes:String(data.liveNotes||'').trim(),summary:String(data.summary||'').trim(),status:data.status||m.status,visibility:data.visibility||m.visibility||'internal'},{returnRepresentation:false});
   state.modal=null;await refreshWorkspace({quiet:true});showToast(data.status==='completed'?'Réunion clôturée · synthèse conservée':'Réunion mise à jour');
 }
-async function submitVersion(form,data){
-  const d=findDeliverable(data.deliverableId);if(!d)throw new Error('Livrable introuvable');if(!canWriteProject(d.project_id))throw new Error('Vous ne pouvez pas ajouter de version.');
-  const file=form.querySelector('input[type=file]')?.files?.[0];if(!file)throw new Error('Fichier requis');if(file.size>50*1024*1024)throw new Error('Le fichier dépasse 50 Mo');
-  const versions=(state.projectCache.get(d.project_id)?.versions||[]).filter(v=>v.deliverable_id===d.id);const number=Math.max(0,...versions.map(v=>Number(v.version_number)||0))+1;
-  const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'')||'fichier';const path=`${state.workspace.id}/${d.project_id}/${crypto.randomUUID()}-${safe}`;
-  await api.upload('workspace-files',path,file);await api.insert('deliverable_versions',[{workspace_id:state.workspace.id,deliverable_id:d.id,version_number:number,storage_path:path,file_name:file.name,mime_type:file.type||null,size_bytes:file.size,created_by:state.user.id}]);
-  await api.update('deliverables',`id=eq.${d.id}`,{status:'draft',updated_at:new Date().toISOString()},{returnRepresentation:false});state.modal=null;await loadProject(d.project_id,true);showToast(`Version ${number} ajoutée`);
-}
+
 async function submitApprovalRequest(data){
   const d=findDeliverable(data.deliverableId);if(!d)throw new Error('Livrable introuvable');if(!canWriteProject(d.project_id))throw new Error('Vous ne pouvez pas demander cette validation.');
   const validator=state.members.find(m=>m.user_id===data.validatorId);if(!validator)throw new Error('Validateur introuvable');
