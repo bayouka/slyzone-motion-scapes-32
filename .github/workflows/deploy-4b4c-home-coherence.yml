@@ -44,11 +44,17 @@ jobs:
           node --check site/assets/live.js
           node --check site/assets/supabase-client.js
           node --check site/assets/boot.js
-          grep -Fq '4b4c V4.2.2 — Home coherence pass' site/assets/live.css
+          grep -Fq '4b4c V4.2.2 — Home coherence pass 2' site/assets/live.css
           grep -Fq 'state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render();' site/assets/live.js
           grep -Fq 'slice(0,3).map(projectCardV3)' site/assets/live.js
+          grep -Fq 'v422-main-flow' site/assets/live.js
+          grep -Fq 'v422-rail-flow' site/assets/live.js
           grep -Fq ' à traiter' site/assets/live.js
-          sed -i 's/prepilot-v4.2.2/prepilot-v4.2.2-home-coherence/' src/worker.js
+          if grep -Fq 'space-signal-card v422-signals' site/assets/live.js; then
+            echo 'Redundant signal card still present' >&2
+            exit 1
+          fi
+          sed -i 's/prepilot-v4.2.2/prepilot-v4.2.2-home-coherence-2/' src/worker.js
           node --check src/worker.js
 
       - name: Deploy isolated temporary Cloudflare Worker
@@ -78,9 +84,9 @@ jobs:
           }
           probe / '2b2c — Projets qui avancent ensemble' 1
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
-          probe /assets/live.js 'slice(0,3).map(projectCardV3)'
-          probe /assets/live.css '4b4c V4.2.2 — Home coherence pass'
-          probe /health 'prepilot-v4.2.2-home-coherence'
+          probe /assets/live.js 'v422-main-flow'
+          probe /assets/live.css '4b4c V4.2.2 — Home coherence pass 2'
+          probe /health 'prepilot-v4.2.2-home-coherence-2'
           echo "PREVIEW_URL=$URL" | tee /tmp/4b4c-home-url.txt
 
       - name: Preserve preview result
