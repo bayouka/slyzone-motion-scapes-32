@@ -2,6 +2,7 @@ begin;
 \ir _fixture.sql
 
 create temporary table qa_context(action_id uuid,comment_id uuid,comment_attachment_id uuid,direct_id uuid,message_id uuid,message_attachment_id uuid) on commit drop;
+grant select,update on qa_context to authenticated;
 insert into qa_context default values;
 
 reset role;
@@ -57,8 +58,6 @@ select pg_temp.assert_eq((select count(*) from public.attachments where id=(sele
 select pg_temp.as_user('11000000-0000-4000-8000-000000000005'); -- guest viewer; Action is internal
 select pg_temp.assert_eq((select count(*) from public.comments where id=(select comment_id from qa_context)),0,'Guest cannot read comment on internal Action');
 
--- A mention must never be used to grant/infer access to somebody who cannot
--- read the underlying object.
 select pg_temp.as_user('11000000-0000-4000-8000-000000000001');
 do $$
 begin
@@ -71,6 +70,7 @@ begin
     raise exception 'ASSERT_NO_ERROR_INACCESSIBLE_MENTION';
   exception when others then
     if sqlerrm='ASSERT_NO_ERROR_INACCESSIBLE_MENTION' then raise; end if;
+    if position('MENTION_TARGET_CANNOT_READ_SOURCE' in sqlerrm)=0 then raise; end if;
   end;
 end $$;
 
