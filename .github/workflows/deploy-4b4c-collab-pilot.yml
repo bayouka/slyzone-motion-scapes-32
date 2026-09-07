@@ -1,0 +1,139 @@
+name: Deploy 4b4c collaborative pilot
+
+on:
+  push:
+    branches: [4b4c-collab-pilot]
+    paths:
+      - '.github/workflows/deploy-4b4c-collab-pilot.yml'
+      - '4b4c-v4-preview/apply-home-coherence.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout collaborative pilot branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Restore exact deployed V4.2.2 site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site
+          gh run download 34068635111 \
+            --repo bayouka/slyzone-motion-scapes-32 \
+            --name 2b2c-v422-exact-site \
+            --dir site
+          echo 'b4de25fc4290f263f79e624e959f6c205678cb5ed103fea31d353957db743e9e  site/assets/live.js' | sha256sum -c -
+          echo 'd3cf80e1f10ff4599e341ce73a7fd5dcc66f7a662b285f2b72eec3f363f5911d  site/assets/live.css' | sha256sum -c -
+          echo '5d15120c9efa2dac43e7b83c54105811f4eb47be79c63107220865a465e4e60a  site/index.html' | sha256sum -c -
+
+      - name: Apply validated Home coherence pass
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          python apply-home-coherence.py
+          node --check site/assets/live.js
+          grep -Fq 'v422-main-flow' site/assets/live.js
+          grep -Fq 'v422-rail-flow' site/assets/live.js
+          grep -Fq '4b4c V4.2.2 — Home coherence pass 2' site/assets/live.css
+
+      - name: Fetch Communication V2 patchset
+        run: |
+          set -euo pipefail
+          git fetch origin 4b4c-communication-live-preview:refs/remotes/origin/4b4c-communication-live-preview
+          mkdir -p /tmp/communication-v2
+          for file in livejs.00.b64 livejs.01.b64 livejs.02.b64 livejs.03.b64 livecss.00.b64; do
+            git show "refs/remotes/origin/4b4c-communication-live-preview:4b4c-v4-preview/communication-v2-patches/$file" > "/tmp/communication-v2/$file"
+          done
+          cat /tmp/communication-v2/livejs.00.b64 /tmp/communication-v2/livejs.01.b64 /tmp/communication-v2/livejs.02.b64 /tmp/communication-v2/livejs.03.b64 > /tmp/communication-livejs.b64
+          cat /tmp/communication-v2/livecss.00.b64 > /tmp/communication-livecss.b64
+          echo 'de8e71f5a2c00699d206475474a5aaee40e3bacf3de5f79359c28bd5c2b45772  /tmp/communication-livejs.b64' | sha256sum -c -
+          echo '91c3bc7d343fe1ae625cfc11358a5649f7dd755bbdaf1e23911ec845c9d736a3  /tmp/communication-livecss.b64' | sha256sum -c -
+
+      - name: Apply Communication V2 on corrected Home
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          base64 -d /tmp/communication-livejs.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d /tmp/communication-livecss.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+
+      - name: Validate combined collaborative pilot
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          node --check site/assets/live.js
+          node --check site/assets/supabase-client.js
+          node --check site/assets/boot.js
+          node --check src/worker.js
+          grep -Fq 'v422-main-flow' site/assets/live.js
+          grep -Fq 'v422-rail-flow' site/assets/live.js
+          grep -Fq 'communication-v2-hub' site/assets/live.js
+          grep -Fq "api.rpc('create_group_direct_v2'" site/assets/live.js
+          grep -Fq "api.rpc('get_message_badges_v2'" site/assets/live.js
+          grep -Fq "api.rpc('send_message_with_mentions_v2'" site/assets/live.js
+          grep -Fq '4b4c V4.2.2 — Home coherence pass 2' site/assets/live.css
+          grep -Fq '2b2c Communication v2' site/assets/live.css
+          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
+          if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
+            echo 'Secret-like material found' >&2
+            exit 1
+          fi
+          sed -i 's/prepilot-v4.2.2/prepilot-v4.2.2-collab-pilot/' src/worker.js
+          node --check src/worker.js
+
+      - name: Deploy isolated collaborative Cloudflare pilot
+        working-directory: 4b4c-v4-preview
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.129.0 deploy --temporary 2>&1 | tee /tmp/4b4c-collab-preview.txt
+
+      - name: Smoke deployed collaborative pilot
+        run: |
+          set -euo pipefail
+          URL=$(grep -Eo 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/4b4c-collab-preview.txt | tail -1)
+          test -n "$URL"
+          probe() {
+            path="$1"; needle="$2"; nav="${3:-0}"
+            for i in $(seq 1 12); do
+              if [ "$nav" = "1" ]; then
+                code=$(curl -L -sS -H 'Sec-Fetch-Mode: navigate' -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              else
+                code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$URL$path" || true)
+              fi
+              echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
+              if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
+              sleep 3
+            done
+            return 1
+          }
+          probe / '2b2c — Projets qui avancent ensemble' 1
+          probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
+          probe /assets/live.js 'v422-main-flow'
+          probe /assets/live.js 'communication-v2-hub'
+          probe /assets/live.js 'send_message_with_mentions_v2'
+          probe /assets/live.css 'Home coherence pass 2'
+          probe /assets/live.css 'Communication v2'
+          probe /health 'prepilot-v4.2.2-collab-pilot'
+          echo "PILOT_URL=$URL" | tee /tmp/4b4c-collab-url.txt
+
+      - name: Preserve collaborative pilot result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 4b4c-collab-pilot-result
+          path: |
+            /tmp/4b4c-collab-preview.txt
+            /tmp/4b4c-collab-url.txt
+          if-no-files-found: warn
+          retention-days: 2
