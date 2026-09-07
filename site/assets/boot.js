@@ -39,6 +39,7 @@
       await import('./planning-clarity-v1.js').catch((error) => console.warn('Planning clarity enhancer unavailable', error));
       await import('./project-flow-v1.js').catch((error) => console.warn('Project flow enhancer unavailable', error));
       await import('./communication-memory-v1.js').catch((error) => console.warn('Communication memory enhancer unavailable', error));
+      await import('./meeting-agenda-v1.js').catch((error) => console.warn('Meeting agenda enhancer unavailable', error));
     })
     .catch((error) => {
       console.error(error);
