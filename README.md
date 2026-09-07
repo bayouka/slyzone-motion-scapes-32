@@ -3,7 +3,7 @@
 Canonical source of the 4b4c collaborative workspace.
 
 ## Active architecture
-- `site/` — complete V4.3 client application.
+- `site/` — complete V4.3.2 client application.
 - `site/assets/live.js` — canonical live product behavior and data-driven screens.
 - `site/assets/live.css` — canonical product visual system.
 - `site/assets/home-polish.js` + `home-polish.css` — small, isolated Home UX/UI refinement layer. It must enhance the existing V4.3 Home only; it must not recreate the Home architecture or replace live product logic.
@@ -45,7 +45,7 @@ See `docs/PRE_COLLAB_AUDIT.md` for the readiness checklist.
 - `backup/pre-cleanup-v43` — rollback snapshot of the historical experimental structure.
 
 ## Quality and deployment
-Every push to `main` or `develop` runs the canonical CI checks. Production deployment is triggered from `main` and targets the stable Cloudflare Worker named `4b4c` when the repository Cloudflare credentials are configured. Production smoke tests verify the stable URL after deployment.
+Every push to `main` or `develop` runs syntax checks plus persistent collaboration contract checks (`scripts/contract-check.mjs`). Production deployment is triggered from `main` and targets the stable Cloudflare Worker named `4b4c` when the repository Cloudflare credentials are configured. Production smoke tests verify the stable URL after deployment.
 
 ## Local commands
 ```bash
