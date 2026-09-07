@@ -3,7 +3,7 @@
   "version": "4.3.0",
   "private": true,
   "scripts": {
-    "check": "node --check site/assets/live.js && node --check site/assets/supabase-client.js && node --check site/assets/boot.js && node --check src/worker.js",
+    "check": "node --check site/assets/live.js && node --check site/assets/home-polish.js && node --check site/assets/supabase-client.js && node --check site/assets/boot.js && node --check src/worker.js",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev"
   },
