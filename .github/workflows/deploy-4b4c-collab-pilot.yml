@@ -61,12 +61,14 @@ jobs:
           echo 'de8e71f5a2c00699d206475474a5aaee40e3bacf3de5f79359c28bd5c2b45772  /tmp/communication-livejs.b64' | sha256sum -c -
           echo '91c3bc7d343fe1ae625cfc11358a5649f7dd755bbdaf1e23911ec845c9d736a3  /tmp/communication-livecss.b64' | sha256sum -c -
 
-      - name: Apply Communication V2 on corrected Home
+      - name: Merge Communication V2 with corrected Home
         working-directory: 4b4c-v4-preview
         run: |
           set -euo pipefail
           base64 -d /tmp/communication-livejs.b64 | gzip -dc | patch -d site -p1 --fuzz=0
-          base64 -d /tmp/communication-livecss.b64 | gzip -dc | patch -d site -p1 --fuzz=0
+          base64 -d /tmp/communication-livecss.b64 | gzip -dc > /tmp/communication-livecss.patch
+          grep -Fq '/* 2b2c Communication v2 — audience-first messaging hub */' /tmp/communication-livecss.patch
+          sed -n '/^+\/\* 2b2c Communication v2/,$p' /tmp/communication-livecss.patch | sed 's/^+//' >> site/assets/live.css
 
       - name: Validate combined collaborative pilot
         working-directory: 4b4c-v4-preview
@@ -137,5 +139,3 @@ jobs:
             /tmp/4b4c-collab-url.txt
           if-no-files-found: warn
           retention-days: 2
-
-# trigger collaborative pilot run
