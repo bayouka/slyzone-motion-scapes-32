@@ -19,6 +19,7 @@ export class SupabaseBrowserClient {
     this.storage = storage;
     this.fetchImpl = fetchImpl;
     this.session = this.#loadSession();
+    this.rowVersions = new Map();
   }
 
   #loadSession() {
@@ -46,6 +47,24 @@ export class SupabaseBrowserClient {
       if (session) this.storage.setItem(this.sessionKey, JSON.stringify(session));
       else this.storage.removeItem(this.sessionKey);
     } catch {}
+  }
+
+  #rowVersionKey(table, id) { return `${table}:${id}`; }
+
+  #rememberRows(table, payload) {
+    const rows = Array.isArray(payload) ? payload : [];
+    for (const row of rows) {
+      if (row?.id && row?.updated_at) {
+        this.rowVersions.set(this.#rowVersionKey(table, String(row.id)), String(row.updated_at));
+      }
+    }
+  }
+
+  #rowIdFromQuery(query = '') {
+    const match = String(query).match(/(?:^|&)id=eq\.([^&]+)/);
+    if (!match) return null;
+    try { return decodeURIComponent(match[1]); }
+    catch { return match[1]; }
   }
 
   getSession() { return this.#syncSession(); }
@@ -90,19 +109,44 @@ export class SupabaseBrowserClient {
   async getUser() { return this.request('/auth/v1/user', { auth: true, context: 'Lecture du compte' }); }
 
   async select(table, query = '') {
-    return this.request(`/rest/v1/${encodeURIComponent(table)}${query ? `?${query}` : ''}`, { context: `Lecture ${table}` });
+    const result = await this.request(`/rest/v1/${encodeURIComponent(table)}${query ? `?${query}` : ''}`, { context: `Lecture ${table}` });
+    this.#rememberRows(table, result);
+    return result;
   }
 
   async insert(table, rows, { returnRepresentation = true } = {}) {
-    return this.request(`/rest/v1/${encodeURIComponent(table)}`, {
+    const result = await this.request(`/rest/v1/${encodeURIComponent(table)}`, {
       method: 'POST', body: rows, prefer: returnRepresentation ? 'return=representation' : 'return=minimal', context: `Création ${table}`
     });
+    if (returnRepresentation) this.#rememberRows(table, result);
+    return result;
   }
 
   async update(table, query, patch, { returnRepresentation = true } = {}) {
-    return this.request(`/rest/v1/${encodeURIComponent(table)}?${query}`, {
+    const rowId = this.#rowIdFromQuery(query);
+    const versionKey = rowId ? this.#rowVersionKey(table, rowId) : null;
+    const expectedVersion = versionKey ? this.rowVersions.get(versionKey) : null;
+    const alreadyVersioned = /(?:^|&)updated_at=/.test(String(query));
+
+    if (expectedVersion && !alreadyVersioned) {
+      const guardedQuery = `${query}&updated_at=eq.${encodeURIComponent(expectedVersion)}`;
+      const result = await this.request(`/rest/v1/${encodeURIComponent(table)}?${guardedQuery}`, {
+        method: 'PATCH', body: patch, prefer: 'return=representation', context: `Mise à jour ${table}`
+      });
+      if (!Array.isArray(result) || result.length === 0) {
+        this.rowVersions.delete(versionKey);
+        throw new Error('Cet élément a été modifié ailleurs ou votre accès a changé. Rechargez les données avant d’enregistrer afin de ne pas écraser un changement plus récent.');
+      }
+      this.#rememberRows(table, result);
+      return returnRepresentation ? result : null;
+    }
+
+    const result = await this.request(`/rest/v1/${encodeURIComponent(table)}?${query}`, {
       method: 'PATCH', body: patch, prefer: returnRepresentation ? 'return=representation' : 'return=minimal', context: `Mise à jour ${table}`
     });
+    if (returnRepresentation) this.#rememberRows(table, result);
+    else if (versionKey) this.rowVersions.delete(versionKey);
+    return result;
   }
 
   async remove(table, query) {
