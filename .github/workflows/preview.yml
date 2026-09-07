@@ -15,6 +15,9 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       PREVIEW_URL: https://4b4c-preview.bayoukadesbois.workers.dev
+      PREVIEW_SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+      PREVIEW_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
+      PRODUCTION_SUPABASE_URL: https://wexfzhegiewhldkugtow.supabase.co
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -30,6 +33,37 @@ jobs:
           grep -Fq 'prefers-reduced-motion:reduce' site/assets/live.css
           grep -Fq 'communication-v2-hub' site/assets/live.js
           grep -Fq 'v43-home-grid' site/assets/live.js
+      - name: Prepare isolated preview runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$PREVIEW_SUPABASE_URL" ] && [ -n "$PREVIEW_SUPABASE_PUBLISHABLE_KEY" ] && [ "$PREVIEW_SUPABASE_URL" != "$PRODUCTION_SUPABASE_URL" ]; then
+            echo 'Using isolated preview Supabase backend.'
+            node <<'NODE'
+          const fs = require('node:fs');
+          const cfg = {
+            mode: 'live',
+            supabaseUrl: process.env.PREVIEW_SUPABASE_URL,
+            supabasePublishableKey: process.env.PREVIEW_SUPABASE_PUBLISHABLE_KEY,
+            workspaceStorageKey: '4b4c.preview.workspace.v1',
+            pollIntervalMs: 15000
+          };
+          fs.writeFileSync('site/runtime-config.js', `window.__4B4C_CONFIG__ = Object.freeze(${JSON.stringify(cfg, null, 2)});\n`);
+          NODE
+          else
+            echo '::warning::No isolated preview backend is configured (or production credentials were supplied). Preview data access will be disabled.'
+            cat > site/runtime-config.js <<'EOF'
+          window.__4B4C_CONFIG__ = Object.freeze({
+            mode: 'preview-disabled',
+            supabaseUrl: '',
+            supabasePublishableKey: '',
+            workspaceStorageKey: '4b4c.preview.workspace.v1',
+            pollIntervalMs: 15000
+          });
+          EOF
+          fi
+          ! grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
+          grep -Fq '4b4c.preview.workspace.v1' site/runtime-config.js
       - name: Deploy isolated preview Worker
         run: npx wrangler deploy --name 4b4c-preview
       - name: Smoke preview
@@ -46,7 +80,19 @@ jobs:
             done
             return 1
           }
+          probe_absent() {
+            path="$1"; needle="$2"
+            for i in $(seq 1 12); do
+              code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$PREVIEW_URL$path" || true)
+              echo "probe-absent $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
+              if [ "$code" = "200" ] && ! grep -Fq "$needle" /tmp/probe.out; then return 0; fi
+              sleep 3
+            done
+            return 1
+          }
           probe /health '"app":"4b4c"'
+          probe /runtime-config.js '4b4c.preview.workspace.v1'
+          probe_absent /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
           probe /assets/live.css '2b2c V4.3.3 — final DA'
           probe /assets/live.js 'communication-v2-hub'
           probe / '2b2c — Projets qui avancent ensemble'
