@@ -2,6 +2,7 @@ begin;
 \ir _fixture.sql
 
 create temporary table qa_runtime(direct_id uuid,message_id uuid,request_id uuid,action_id uuid) on commit drop;
+grant select,update on qa_runtime to authenticated;
 insert into qa_runtime default values;
 
 set local role authenticated;
