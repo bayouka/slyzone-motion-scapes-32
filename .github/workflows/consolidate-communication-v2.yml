@@ -87,21 +87,6 @@ jobs:
               patch_path.unlink()
           PY
 
-      - name: Make standard validator six-file explicit
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 <<'PY'
-          from pathlib import Path
-          p = Path('.github/workflows/validate-communication-v2-r2.yml')
-          text = p.read_text(encoding='utf-8')
-          old = "for migration in supabase/migrations_draft/communication_v2/00{1,2,3,4,5,6}_*.sql; do\n            echo \"=== Applying ${migration} ===\"\n            psql -v ON_ERROR_STOP=1 -f \"${migration}\"\n          done"
-          new = "for migration in \\\n            supabase/migrations_draft/communication_v2/001_conversation_model.sql \\\n            supabase/migrations_draft/communication_v2/002_conversation_security_and_rpcs.sql \\\n            supabase/migrations_draft/communication_v2/003_message_formats_and_integrity.sql \\\n            supabase/migrations_draft/communication_v2/004_request_inheritance.sql \\\n            supabase/migrations_draft/communication_v2/005_context_comments_mentions_attachments.sql \\\n            supabase/migrations_draft/communication_v2/006_notification_cutover.sql; do\n            echo \"=== Applying ${migration} ===\"\n            psql -v ON_ERROR_STOP=1 -f \"${migration}\"\n          done"
-          if old not in text:
-              raise SystemExit('Expected migration glob not found in r2 validator')
-          p.write_text(text.replace(old,new),encoding='utf-8')
-          PY
-
       - name: Rebuild disposable V4.2.2 baseline
         shell: bash
         run: |
@@ -160,14 +145,13 @@ jobs:
           end $$;
           SQL
 
-      - name: Commit consolidated six-file draft only after green validation
+      - name: Commit SQL only after green validation
         shell: bash
         run: |
           set -euo pipefail
-          rm .github/workflows/consolidate-communication-v2.yml
           git config user.name "2b2c QA"
           git config user.email "actions@users.noreply.github.com"
-          git add supabase/migrations_draft/communication_v2 .github/workflows/validate-communication-v2-r2.yml .github/workflows/consolidate-communication-v2.yml
+          git add supabase/migrations_draft/communication_v2
           git diff --cached --check
           git commit -m "Consolidate validated communication v2 migrations"
           git push origin HEAD:4b4c-communication-architecture
