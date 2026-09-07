@@ -29,6 +29,10 @@ jobs:
           grep -Fq 'v43-home-grid' site/assets/live.js
           grep -Fq 'communication-v2-hub' site/assets/live.js
           grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
+          grep -Fq '4b4c V4.3.1 — Home UX contract polish' site/assets/home-polish.js
+          grep -Fq '4b4c V4.3.1 — Home UX/UI polish' site/assets/home-polish.css
+          grep -Fq 'assets/home-polish.css' site/index.html
+          grep -Fq "import('./home-polish.js')" site/assets/boot.js
       - name: Detect Cloudflare credentials
         id: cloudflare
         shell: bash
@@ -64,6 +68,9 @@ jobs:
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
           probe /assets/live.js 'v43-home-grid'
           probe /assets/live.js 'communication-v2-hub'
+          probe /assets/home-polish.js '4b4c V4.3.1 — Home UX contract polish'
+          probe /assets/home-polish.css '4b4c V4.3.1 — Home UX/UI polish'
+          probe / 'assets/home-polish.css'
           probe / '2b2c — Projets qui avancent ensemble'
       - name: Cloudflare credentials missing
         if: steps.cloudflare.outputs.configured != 'true'
