@@ -1,0 +1,45 @@
+name: Deploy 4b4c production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Product integrity
+        run: |
+          set -euo pipefail
+          grep -Fq 'v43-home-grid' site/assets/live.js
+          grep -Fq 'communication-v2-hub' site/assets/live.js
+          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
+      - name: Detect Cloudflare credentials
+        id: cloudflare
+        shell: bash
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy stable Worker 4b4c
+        if: steps.cloudflare.outputs.configured == 'true'
+        run: npx wrangler deploy
+      - name: Cloudflare credentials missing
+        if: steps.cloudflare.outputs.configured != 'true'
+        run: echo 'Stable Cloudflare deployment skipped because repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are not configured.'
