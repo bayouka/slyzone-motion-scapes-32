@@ -34,6 +34,7 @@
     })
     .then(async () => {
       await import('./team-access-v1.js').catch((error) => console.warn('Team access enhancer unavailable', error));
+      await import('./team-access-safety-v2.js').catch((error) => console.warn('Team access safety enhancer unavailable', error));
       await import('./product-coherence-v1.js').catch((error) => console.warn('Product coherence enhancer unavailable', error));
       await import('./daily-work-v1.js').catch((error) => console.warn('Daily work enhancer unavailable', error));
       await import('./planning-clarity-v1.js').catch((error) => console.warn('Planning clarity enhancer unavailable', error));
