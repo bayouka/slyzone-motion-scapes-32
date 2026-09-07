@@ -28,11 +28,17 @@ jobs:
           set -euo pipefail
           grep -Fq 'v43-home-grid' site/assets/live.js
           grep -Fq 'communication-v2-hub' site/assets/live.js
+          grep -Fq 'register_deliverable_version_v2' site/assets/live.js
+          grep -Fq 'PROJETS ACTIFS' site/assets/live.js
+          grep -Fq "m.created_by===state.user.id||state.meetingAttendees.some" site/assets/live.js
+          ! grep -Fq "kind:'Préparation',title:m.title" site/assets/live.js
           grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
           grep -Fq '4b4c V4.3.1 — Home UX contract polish' site/assets/home-polish.js
           grep -Fq '4b4c V4.3.1 — Home UX/UI polish' site/assets/home-polish.css
           grep -Fq 'assets/home-polish.css' site/index.html
           grep -Fq "import('./home-polish.js')" site/assets/boot.js
+          grep -Fq 'Configuration 2b2c indisponible' site/assets/boot.js
+          ! grep -Fq 'assets/app.js' site/assets/boot.js
       - name: Detect Cloudflare credentials
         id: cloudflare
         shell: bash
@@ -68,6 +74,9 @@ jobs:
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
           probe /assets/live.js 'v43-home-grid'
           probe /assets/live.js 'communication-v2-hub'
+          probe /assets/live.js 'register_deliverable_version_v2'
+          probe /assets/live.js 'PROJETS ACTIFS'
+          probe /assets/boot.js 'Configuration 2b2c indisponible'
           probe /assets/home-polish.js '4b4c V4.3.1 — Home UX contract polish'
           probe /assets/home-polish.css '4b4c V4.3.1 — Home UX/UI polish'
           probe / 'assets/home-polish.css'
