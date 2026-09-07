@@ -1,0 +1,223 @@
+/* 4b4c V4.3.1 — Home UX/UI polish. Reference-image quality without copying its decorative widgets. */
+
+.home-ux-contract-v431{
+  --home-violet:#6c63f0;
+  --home-blue:#2f6df6;
+  --home-cyan:#23b7e5;
+  --home-ink:#1d2a42;
+  --home-muted:#708097;
+  --home-line:rgba(188,203,226,.72);
+}
+
+.home-ux-contract-v431{
+  position:relative;
+  background:
+    radial-gradient(520px 260px at 10% -6%,rgba(47,109,246,.07),transparent 70%),
+    radial-gradient(460px 240px at 88% 0%,rgba(108,99,240,.055),transparent 72%);
+}
+
+.home-ux-contract-head-v431{
+  position:relative!important;
+  overflow:hidden!important;
+  margin:0 0 12px!important;
+  padding:13px 16px 14px!important;
+  border:1px solid rgba(191,205,228,.62)!important;
+  border-radius:17px!important;
+  background:
+    radial-gradient(180px 100px at 84% 12%,rgba(108,99,240,.08),transparent 72%),
+    linear-gradient(115deg,rgba(255,255,255,.92),rgba(246,250,255,.82))!important;
+  box-shadow:0 8px 24px rgba(39,55,87,.045),inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+.home-ux-contract-head-v431::after{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--home-cyan),var(--home-violet));
+  opacity:.75;
+}
+.home-ux-contract-head-v431 .eyebrow{display:none!important}
+.home-ux-contract-head-v431 h1{font-size:28px!important;letter-spacing:-.035em!important;color:var(--home-ink)!important}
+.home-ux-contract-head-v431 p{max-width:880px!important;font-size:12.5px!important;color:#5f6f86!important;font-weight:630!important}
+
+.home-ux-contract-v431 .v43-home-grid{
+  grid-template-columns:minmax(0,1fr) 326px!important;
+  gap:14px!important;
+}
+.home-ux-contract-v431 .v43-main-flow,
+.home-ux-contract-v431 .v43-rail-flow{gap:12px!important}
+
+.home-ux-contract-v431 .v43-attention-card,
+.home-ux-contract-v431 .v43-catchup-card,
+.home-ux-contract-v431 .v43-upcoming-card{
+  border:1px solid var(--home-line)!important;
+  box-shadow:0 8px 24px rgba(38,55,88,.045),inset 0 1px 0 rgba(255,255,255,.9)!important;
+  backdrop-filter:blur(8px);
+}
+.home-ux-contract-v431 .v43-attention-card{
+  border-color:rgba(114,143,219,.38)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(246,250,255,.88))!important;
+  box-shadow:0 12px 28px rgba(42,65,111,.065),inset 0 1px 0 rgba(255,255,255,.96)!important;
+}
+
+.home-ux-contract-v431 .v43-attention-card .section-head,
+.home-ux-contract-v431 .v43-catchup-card .section-head{
+  align-items:flex-end!important;
+}
+.home-ux-contract-v431 .v43-attention-card .section-head>div,
+.home-ux-contract-v431 .v43-catchup-card .section-head>div{display:grid;gap:2px}
+.home-ux-contract-v431 .v43-attention-card .section-head .eyebrow,
+.home-ux-contract-v431 .v43-catchup-card .section-head .eyebrow{
+  font-size:8.5px!important;letter-spacing:.085em!important;color:#8190a5!important;
+}
+.home-ux-contract-v431 .v43-attention-card .section-head h2,
+.home-ux-contract-v431 .v43-catchup-card .section-head h2{
+  font-size:18px!important;line-height:1.12!important;letter-spacing:-.025em!important;color:var(--home-ink)!important;
+}
+.home-attention-summary,.home-catchup-summary{
+  font-size:9.5px;font-weight:700;color:#728198;
+}
+.home-catchup-summary{font-weight:650;color:#8793a5}
+
+.home-ux-contract-v431 .v43-attention-list{gap:5px!important}
+.home-ux-contract-v431 .v43-attention-row{
+  grid-template-columns:27px auto minmax(0,1fr) auto!important;
+  gap:9px!important;
+  min-height:55px!important;
+  border:1px solid rgba(205,214,228,.74)!important;
+  background:rgba(255,255,255,.74)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
+  transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease,background .14s ease!important;
+}
+.home-ux-contract-v431 .v43-attention-row:hover{
+  transform:translateY(-1px);
+  border-color:rgba(149,170,214,.66)!important;
+  background:#fff!important;
+  box-shadow:0 7px 18px rgba(47,67,104,.055)!important;
+}
+.home-ux-contract-v431 .v43-attention-row.primary-row{
+  background:linear-gradient(110deg,rgba(238,247,255,.94),rgba(249,247,255,.88))!important;
+  border-color:rgba(115,149,223,.46)!important;
+}
+.home-ux-contract-v431 .attention-type-icon{box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+.home-ux-contract-v431 .attention-kind{border:1px solid rgba(255,255,255,.74)}
+.home-ux-contract-v431 .v43-attention-row strong{font-size:12.5px!important;color:#26364d!important}
+.home-attention-meta{
+  display:flex!important;align-items:center;flex-wrap:wrap;gap:4px 7px!important;margin-top:4px!important;
+  color:#7b889a!important;
+}
+.home-attention-meta>span{display:inline-flex!important;align-items:center!important;min-width:0}
+.home-meta-project{font-weight:700;color:#66758b}
+.home-meta-context{color:#7f8b9d}
+.home-meta-due{font-weight:760;color:#5c6e87}
+.home-person-chip{
+  gap:4px;padding:1px 6px 1px 2px;border:1px solid #e1e7f0;border-radius:999px;background:#f8faff;color:#64758e;
+  max-width:190px;
+}
+.home-person-chip>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-person-avatar{
+  width:18px;height:18px;border-radius:50%;display:grid!important;place-items:center!important;flex:none;
+  background:linear-gradient(145deg,#dfeaff,#eeeaff);color:#4c62b0;font-size:7px;font-weight:850;letter-spacing:-.02em;
+  border:1px solid rgba(115,137,205,.16);
+}
+
+.home-ux-contract-v431 .v43-upcoming-card{padding:14px!important}
+.home-ux-contract-v431 .v43-upcoming-card .rail-card-head{margin-bottom:8px!important}
+.home-ux-contract-v431 .v43-upcoming-card h2{font-size:17px!important}
+.home-next-meeting-wrap{
+  position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch;
+  margin-bottom:3px;padding:4px;border:1px solid rgba(132,159,220,.34);border-radius:14px;
+  background:linear-gradient(120deg,rgba(237,247,255,.88),rgba(248,246,255,.8));
+}
+.home-next-meeting-wrap .v43-upcoming-row.next{
+  border:0!important;background:transparent!important;padding:7px 5px!important;
+}
+.home-meeting-prepare{
+  align-self:center;border:1px solid rgba(84,119,220,.34);border-radius:9px;padding:7px 9px;
+  background:linear-gradient(135deg,#3778f4,#685ef0);color:#fff;font:inherit;font-size:9px;font-weight:800;
+  box-shadow:0 5px 12px rgba(75,91,210,.16);white-space:nowrap;
+}
+.home-meeting-prepare:hover{filter:brightness(.98);transform:translateY(-1px)}
+.home-ux-contract-v431 .v43-upcoming-row:not(.next){border-bottom:1px solid rgba(223,229,239,.62);border-radius:0!important}
+.home-ux-contract-v431 .v43-upcoming-row:not(.next):last-child{border-bottom:0}
+.home-ux-contract-v431 .v43-attendees .avatar{box-shadow:0 2px 5px rgba(32,50,82,.08)}
+.home-ux-contract-v431 .v43-upcoming-card.is-empty{padding:12px 14px!important}
+.home-ux-contract-v431 .v43-upcoming-card.is-empty .v43-upcoming-empty{padding:5px 2px 1px!important}
+
+.home-ux-contract-v431 .v43-catchup-card{padding:14px!important}
+.home-ux-contract-v431 .v43-catchup-card.is-empty{padding:11px 14px!important}
+.home-ux-contract-v431 .v43-catchup-list .catchup-event-v41{
+  grid-template-columns:auto minmax(0,1fr) auto!important;
+  border-bottom:1px solid rgba(226,231,239,.72);border-radius:0!important;padding:8px 3px!important;
+}
+.home-ux-contract-v431 .v43-catchup-list .catchup-event-v41:last-child{border-bottom:0}
+.home-ux-contract-v431 .v43-catchup-list .catchup-event-v41:hover{background:rgba(247,249,253,.8);border-radius:9px!important}
+.home-activity-link{white-space:nowrap}
+.home-ux-contract-v431 .v43-up-to-date{
+  margin-top:2px;padding:7px 9px!important;border-radius:10px;
+  background:linear-gradient(120deg,rgba(239,250,247,.68),rgba(247,251,255,.6));color:#698075!important;
+}
+
+.home-ux-contract-v431 .v43-projects .section-head{margin:2px 1px 8px!important}
+.home-ux-contract-v431 .v43-project-grid{gap:9px!important}
+.home-ux-contract-v431 .project-resume-card-v43{
+  gap:8px!important;padding:12px!important;border-radius:17px!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(246,249,255,.84))!important;
+  border-color:rgba(191,204,226,.72)!important;
+  box-shadow:0 7px 19px rgba(43,59,91,.042),inset 0 1px 0 rgba(255,255,255,.94)!important;
+}
+.home-ux-contract-v431 .project-resume-card-v43:hover{
+  transform:translateY(-2px)!important;border-color:rgba(145,166,210,.67)!important;
+  box-shadow:0 11px 24px rgba(42,60,95,.07)!important;
+}
+.home-ux-contract-v431 .project-resume-next{min-height:54px!important;padding:8px 9px!important}
+.home-project-people{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;
+}
+.home-project-people-label{font-size:8.5px;color:#8692a3;font-weight:650}
+.home-project-avatar-stack{display:flex;align-items:center;padding-left:5px}
+.home-project-avatar{
+  width:23px!important;height:23px!important;margin-left:-5px;border:2px solid #fff!important;border-radius:50%;
+  box-shadow:0 2px 6px rgba(36,52,82,.08);font-size:7px!important;display:grid!important;place-items:center!important;
+}
+.home-project-avatar:first-child{margin-left:0}
+.home-project-avatar-initial{background:linear-gradient(145deg,#e2ecff,#eeeaff);color:#4b61ad;font-weight:850}
+.home-ux-contract-v431 .project-resume-meta{padding-top:6px!important;border-top:1px solid rgba(226,231,239,.68)}
+
+.home-ux-contract-v431 .section-link{font-size:9.5px!important;font-weight:760!important;color:#4268bf!important}
+.home-ux-contract-v431 button:focus-visible,
+.home-ux-contract-v431 a:focus-visible{
+  outline:3px solid rgba(47,109,246,.18)!important;outline-offset:2px!important;
+}
+
+@media(max-width:1100px) and (min-width:768px){
+  .home-ux-contract-v431 .v43-home-grid{grid-template-columns:minmax(0,1fr) 286px!important;gap:12px!important}
+  .home-next-meeting-wrap{grid-template-columns:1fr}
+  .home-meeting-prepare{justify-self:start;margin:0 5px 5px}
+}
+
+@media(max-width:767px){
+  .home-ux-contract-v431{padding-top:14px!important}
+  .home-ux-contract-head-v431{padding:11px 12px 12px!important;margin-bottom:9px!important;border-radius:15px!important}
+  .home-ux-contract-head-v431 h1{font-size:24px!important}
+  .home-ux-contract-head-v431 p{font-size:11.5px!important;line-height:1.4!important}
+  .home-ux-contract-v431 .v43-home-grid{gap:10px!important}
+  .home-ux-contract-v431 .v43-attention-card,
+  .home-ux-contract-v431 .v43-catchup-card,
+  .home-ux-contract-v431 .v43-upcoming-card{border-radius:16px!important}
+  .home-ux-contract-v431 .v43-attention-card .section-head,
+  .home-ux-contract-v431 .v43-catchup-card .section-head{align-items:flex-start!important}
+  .home-ux-contract-v431 .v43-attention-card .section-head h2,
+  .home-ux-contract-v431 .v43-catchup-card .section-head h2{font-size:16px!important}
+  .home-attention-summary,.home-catchup-summary{font-size:9px}
+  .home-ux-contract-v431 .v43-attention-row{
+    grid-template-columns:25px minmax(0,1fr) auto!important;gap:8px!important;padding:9px 8px!important;
+  }
+  .home-ux-contract-v431 .v43-attention-row .attention-kind{grid-column:2!important;grid-row:1!important;width:max-content!important;margin:0!important}
+  .home-ux-contract-v431 .v43-attention-row>div{grid-column:2!important;grid-row:2!important}
+  .home-ux-contract-v431 .v43-attention-row .attention-type-icon{grid-row:1 / span 2!important}
+  .home-ux-contract-v431 .v43-attention-row .row-chevron{grid-column:3!important;grid-row:1 / span 2!important}
+  .home-attention-meta{gap:4px 6px!important}
+  .home-person-chip{max-width:150px}
+  .home-next-meeting-wrap{grid-template-columns:1fr auto;gap:5px;padding:3px}
+  .home-meeting-prepare{padding:7px 8px;font-size:8.5px}
+  .home-ux-contract-v431 .v43-catchup-list .catchup-event-v41{grid-template-columns:auto minmax(0,1fr) auto!important}
+  .home-project-people{margin-top:1px}
+}
