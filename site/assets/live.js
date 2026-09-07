@@ -230,11 +230,11 @@ function shell(content, route) {
   const navHtml = primaryNav.map(([key,label,icon,href]) => `<a href="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="nav-label">${esc(label)}</span>${key==='work'&&attentionCount()?`<span class="nav-count">${attentionCount()}</span>`:''}</a>`).join('');
   const secondaryHtml = secondaryNav.map(([key,label,icon,href]) => `<a href="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="nav-label">${esc(label)}</span></a>`).join('');
   const recentProjects=state.projects.slice(0,3);
-  const recentHtml=recentProjects.length?`<div class="sidebar-context"><div class="sidebar-section-label">PROJETS RÉCENTS</div><div class="sidebar-projects">${recentProjects.map(p=>{const h=projectHealthInfo(p);return `<a href="#/projects/${p.id}/overview"><span class="project-dot ${h.tone}"></span><span>${esc(p.name)}</span></a>`}).join('')}${state.projects.length>3?`<a class="sidebar-all-projects" href="#/projects">Tous les projets <span>→</span></a>`:''}</div></div>`:'';
+  const recentHtml=recentProjects.length?`<div class="sidebar-context"><div class="sidebar-section-label">PROJETS ACTIFS</div><div class="sidebar-projects">${recentProjects.map(p=>{const h=projectHealthInfo(p);return `<a href="#/projects/${p.id}/overview"><span class="project-dot ${h.tone}"></span><span>${esc(p.name)}</span></a>`}).join('')}${state.projects.length>3?`<a class="sidebar-all-projects" href="#/projects">Tous les projets <span>→</span></a>`:''}</div></div>`:'';
   const userMenu=state.userMenuOpen?`<div class="user-menu-panel"><div class="user-menu-head">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${esc(state.user.email||'')}</small></div></div><a href="#/profile">Mon profil</a>${external?'':`<a href="#/settings">Paramètres de l’espace</a>`}<button data-action="signout">Se déconnecter</button></div>`:'';
   const mobilePrimary=primaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span>${key==='work'&&attentionCount()?`<b>${attentionCount()}</b>`:''}</a>`).join('');
   const mobileSecondary=secondaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span></a>`).join('');
-  const mobileDrawer=state.mobileMenuOpen?`<div class="mobile-menu-backdrop" data-action="toggle-mobile-menu" aria-hidden="true"></div><aside class="mobile-drawer" id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation 2b2c"><div class="mobile-drawer-head">${brandHtml()}<button class="mobile-drawer-close" data-action="toggle-mobile-menu" aria-label="Fermer le menu"><span aria-hidden="true">×</span></button></div><div class="mobile-drawer-scroll"><div class="mobile-drawer-workspace"><small>${external?'Espace partagé':'Espace actif'}</small><strong>${esc(state.workspace.name)}</strong></div><button class="mobile-drawer-search" data-action="open-search"><span>${ICONS.search}</span><span>Rechercher dans ${BRAND_NAME}</span><kbd>Ctrl K</kbd></button><nav class="mobile-drawer-nav">${mobilePrimary}</nav>${recentProjects.length?`<div class="mobile-drawer-projects"><span class="sidebar-section-label">PROJETS RÉCENTS</span>${recentProjects.map(p=>`<a href="#/projects/${p.id}/overview" data-nav="#/projects/${p.id}/overview"><span class="project-dot ${projectHealthInfo(p).tone}"></span>${esc(p.name)}</a>`).join('')}</div>`:''}<div class="mobile-drawer-secondary"><span class="sidebar-section-label">${external?'PARTAGE':'ESPACE'}</span><nav class="mobile-drawer-nav">${mobileSecondary}</nav></div></div><div class="mobile-drawer-foot"><a href="#/profile" data-nav="#/profile">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button data-action="signout"><span aria-hidden="true">↪</span> Se déconnecter</button></div></aside>`:'';
+  const mobileDrawer=state.mobileMenuOpen?`<div class="mobile-menu-backdrop" data-action="toggle-mobile-menu" aria-hidden="true"></div><aside class="mobile-drawer" id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation 2b2c"><div class="mobile-drawer-head">${brandHtml()}<button class="mobile-drawer-close" data-action="toggle-mobile-menu" aria-label="Fermer le menu"><span aria-hidden="true">×</span></button></div><div class="mobile-drawer-scroll"><div class="mobile-drawer-workspace"><small>${external?'Espace partagé':'Espace actif'}</small><strong>${esc(state.workspace.name)}</strong></div><button class="mobile-drawer-search" data-action="open-search"><span>${ICONS.search}</span><span>Rechercher dans ${BRAND_NAME}</span><kbd>Ctrl K</kbd></button><nav class="mobile-drawer-nav">${mobilePrimary}</nav>${recentProjects.length?`<div class="mobile-drawer-projects"><span class="sidebar-section-label">PROJETS ACTIFS</span>${recentProjects.map(p=>`<a href="#/projects/${p.id}/overview" data-nav="#/projects/${p.id}/overview"><span class="project-dot ${projectHealthInfo(p).tone}"></span>${esc(p.name)}</a>`).join('')}</div>`:''}<div class="mobile-drawer-secondary"><span class="sidebar-section-label">${external?'PARTAGE':'ESPACE'}</span><nav class="mobile-drawer-nav">${mobileSecondary}</nav></div></div><div class="mobile-drawer-foot"><a href="#/profile" data-nav="#/profile">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button data-action="signout"><span aria-hidden="true">↪</span> Se déconnecter</button></div></aside>`:'';
   const mobileTabs = external
     ? [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['calendar','Calendrier',ICONS.calendar,'#/calendar'],['library','Fichiers',ICONS.library,'#/library']]
     : [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['work','Mon travail',ICONS.work,'#/work'],['messages','Messages',ICONS.messages,'#/messages']];
@@ -310,8 +310,6 @@ function personalAttentionItems(){
   state.approvals.filter(a=>a.validator_id===state.user.id&&a.status==='pending').forEach(a=>items.push({key:`approval:${a.id}`,entityType:'approval',entityId:a.id,kind:'Validation',title:approvalTitle(a),projectId:a.project_id,tone:'blue',rank:0,byLabel:a.requested_by&&a.requested_by!==state.user.id?`demandé par ${displayName(a.requested_by)}`:'votre décision est attendue',dueAt:null}));
   state.requests.filter(r=>r.recipient_id===state.user.id&&r.status==='open').forEach(r=>items.push({key:`request:${r.id}`,entityType:'request',entityId:r.id,kind:'Demande',title:r.title,projectId:r.project_id,tone:'warn',rank:1,byLabel:r.requester_id&&r.requester_id!==state.user.id?`demandé par ${displayName(r.requester_id)}`:'une réponse est attendue',dueAt:r.due_at||null,preview:r.body||''}));
   assignedOpenActions().forEach(a=>{const overdue=a.due_at&&new Date(a.due_at)<new Date();const blocked=a.status==='blocked';items.push({key:`action:${a.id}`,entityType:'action',entityId:a.id,kind:blocked?'Blocage':'Action',title:a.title,projectId:a.project_id,tone:blocked?'danger':overdue?'warn':a.priority==='urgent'?'blue':'',rank:blocked?2:overdue?3:4+priorityRank(a.priority),byLabel:a.created_by&&a.created_by!==state.user.id?`créé par ${displayName(a.created_by)}`:'à faire par vous',dueAt:a.due_at||null,preview:blocked?(a.blocked_reason||'La progression est empêchée'):a.description||''})});
-  const soon=Date.now()+4*60*60*1000;
-  state.meetings.filter(m=>m.status==='planned'&&m.starts_at&&new Date(m.starts_at).getTime()>Date.now()&&new Date(m.starts_at).getTime()<=soon&&state.meetingAttendees.some(a=>a.meeting_id===m.id&&a.user_id===state.user.id&&a.response!=='declined')).forEach(m=>items.push({key:`meeting:${m.id}`,entityType:'meeting',entityId:m.id,kind:'Préparation',title:m.title,projectId:m.project_id,tone:'',rank:5,byLabel:'réunion imminente',dueAt:m.starts_at,preview:m.agenda||''}));
   return items.sort((a,b)=>a.rank-b.rank||new Date(a.dueAt||'2999')-new Date(b.dueAt||'2999')).slice(0,20);
 }
 function attentionOpenAttrs(x){if(x.entityType==='approval')return`data-action="open-approval" data-approval="${x.entityId}"`;if(x.entityType==='request')return`data-action="open-request" data-request="${x.entityId}"`;if(x.entityType==='meeting')return`data-action="open-meeting" data-meeting="${x.entityId}"`;if(x.entityType==='action'&&canWriteProject(x.projectId))return`data-action="edit-action" data-id="${x.entityId}"`;return`data-nav="#/projects/${x.projectId}/work/list"`}
@@ -388,7 +386,7 @@ function waitingOnTeamItems(){
 
 function homeUpcomingItems(){
   const rows=[];
-  state.meetings.filter(m=>m.starts_at&&m.status!=='cancelled'&&new Date(m.starts_at)>new Date()).forEach(m=>rows.push({type:'meeting',id:m.id,title:m.title,projectId:m.project_id,ts:new Date(m.starts_at).getTime(),when:attentionDueLabel(m.starts_at),route:null}));
+  state.meetings.filter(m=>m.starts_at&&m.status!=='cancelled'&&new Date(m.starts_at)>new Date()&&(m.created_by===state.user.id||state.meetingAttendees.some(a=>a.meeting_id===m.id&&a.user_id===state.user.id&&a.response!=='declined'))).forEach(m=>rows.push({type:'meeting',id:m.id,title:m.title,projectId:m.project_id,ts:new Date(m.starts_at).getTime(),when:attentionDueLabel(m.starts_at),route:null}));
   upcomingDueItems().forEach(x=>rows.push({type:'due',title:x.title,projectId:x.project_id,ts:new Date(x.due_at.length===10?`${x.due_at}T12:00:00`:x.due_at).getTime(),when:x.due_at&&x.due_at.length===10?formatDate(x.due_at):attentionDueLabel(x.due_at),route:x.route,kind:x.kind}));
   const seen=new Set();
   return rows.sort((a,b)=>a.ts-b.ts).filter(x=>{const k=`${x.type}|${x.projectId}|${x.title}|${x.ts}`;if(seen.has(k))return false;seen.add(k);return true}).slice(0,5);
@@ -1089,6 +1087,12 @@ async function refreshMessageBadges(){
 function scalarRpc(value){return Array.isArray(value)?(value[0]?.id||value[0]?.get_or_create_direct_v2||value[0]?.create_group_direct_v2||value[0]?.create_team_topic_v2||value[0]?.create_project_topic_v2||value[0]):value}
 
 
+async function registerUploadedVersion(deliverableId,path,file){
+  const result=await api.rpc('register_deliverable_version_v2',{p_deliverable_id:deliverableId,p_storage_path:path,p_file_name:file.name,p_mime_type:file.type||null,p_size_bytes:file.size});
+  const value=Array.isArray(result)?result[0]:result;
+  return Number(value?.register_deliverable_version_v2??value)||0;
+}
+
 async function submitUpload(form,data) {
   const file=form.querySelector('input[type=file]')?.files?.[0]; if(!file) throw new Error('Fichier requis');
   if(!canWriteProject(data.projectId))throw new Error('Vous ne pouvez pas ajouter de ressource dans ce projet.');
@@ -1096,9 +1100,39 @@ async function submitUpload(form,data) {
   const safeName=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'')||'fichier';
   const path=`${state.workspace.id}/${data.projectId}/${crypto.randomUUID()}-${safeName}`;
   const deliverables=await api.insert('deliverables',[{workspace_id:state.workspace.id,project_id:data.projectId,title:String(data.title).trim(),description:'',visibility:data.visibility||'internal',status:'draft',created_by:state.user.id}]);
-  try {await api.upload('workspace-files',path,file);await api.insert('deliverable_versions',[{workspace_id:state.workspace.id,deliverable_id:deliverables[0].id,version_number:1,storage_path:path,file_name:file.name,mime_type:file.type||null,size_bytes:file.size,created_by:state.user.id}]);}
-  catch(error){try{await api.remove('deliverables',`id=eq.${deliverables[0].id}`);}catch{}throw error;}
+  let uploaded=false;
+  try {
+    await api.upload('workspace-files',path,file); uploaded=true;
+    await registerUploadedVersion(deliverables[0].id,path,file);
+  } catch(error) {
+    if(uploaded){try{await api.removeObject('workspace-files',path)}catch{}}
+    try{await api.remove('deliverables',`id=eq.${deliverables[0].id}`)}catch{}
+    throw error;
+  }
   state.modal=null; await loadProject(data.projectId,true); showToast('Livrable ajouté · version 1');
+}
+
+async function submitVersion(form,data){
+  const d=findDeliverable(data.deliverableId);if(!d)throw new Error('Livrable introuvable');if(!canWriteProject(d.project_id))throw new Error('Vous ne pouvez pas ajouter de version.');
+  const file=form.querySelector('input[type=file]')?.files?.[0];if(!file)throw new Error('Fichier requis');if(file.size>50*1024*1024)throw new Error('Le fichier dépasse 50 Mo');
+  const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'')||'fichier';const path=`${state.workspace.id}/${d.project_id}/${crypto.randomUUID()}-${safe}`;
+  let uploaded=false;
+  try{
+    await api.upload('workspace-files',path,file);uploaded=true;
+    const number=await registerUploadedVersion(d.id,path,file);
+    state.modal=null;await loadProject(d.project_id,true);showToast(number?`Version ${number} ajoutée`:'Nouvelle version ajoutée');
+  }catch(error){if(uploaded){try{await api.removeObject('workspace-files',path)}catch{}}throw error;}
+}
+
+async function submitApprovalRequest(data){
+  const d=findDeliverable(data.deliverableId);if(!d)throw new Error('Livrable introuvable');if(!canWriteProject(d.project_id))throw new Error('Vous ne pouvez pas demander cette validation.');
+  const validator=state.members.find(m=>m.user_id===data.validatorId);if(!validator)throw new Error('Validateur introuvable');
+  const mapped=state.projectMembers.some(pm=>pm.project_id===d.project_id&&pm.user_id===data.validatorId);
+  const broadAccess=['owner','admin'].includes(validator.role)||(validator.role==='member'&&validator.access_mode==='all');
+  if(!mapped&&!broadAccess)throw new Error('Ce validateur n’a pas accès à ce projet.');
+  if(validator.role==='guest'&&d.visibility!=='shared')await api.update('deliverables',`id=eq.${d.id}`,{visibility:'shared',status:'review',updated_at:new Date().toISOString()},{returnRepresentation:false});else await api.update('deliverables',`id=eq.${d.id}`,{status:'review',updated_at:new Date().toISOString()},{returnRepresentation:false});
+  await api.insert('approvals',[{workspace_id:state.workspace.id,project_id:d.project_id,deliverable_version_id:data.versionId,requested_by:state.user.id,validator_id:data.validatorId,status:'pending',request_note:String(data.comment||'').trim(),comment:''}]);
+  state.modal=null;await refreshWorkspace({quiet:true});await loadProject(d.project_id,true);showToast('Validation demandée');
 }
 
 async function submitInvite(data) {
@@ -1279,11 +1313,11 @@ function searchResultsHtml(q){
 function priorityLabel(p){return({low:'Basse',normal:'Normale',high:'Haute',urgent:'Urgente'})[p]||p||'Normale'}
 function sourceLabel(s){return({message:'Message',meeting:'Réunion',note:'Note'})[s]||'Élément'}
 function writableProjectOptions(selected='',required=true){const list=state.projects.filter(p=>canWriteProject(p.id));if(required&&!list.length)return '<option value="">Aucun projet modifiable</option>';return list.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${esc(p.name)}</option>`).join('')}
-function projectParticipantOptions(projectId,selected='',includeGuests=true,exclude=''){const pms=state.projectMembers.filter(pm=>pm.project_id===projectId);const ids=new Set(pms.filter(pm=>includeGuests||['lead','member'].includes(pm.role)).map(pm=>pm.user_id));state.members.filter(m=>['owner','admin'].includes(m.role)).forEach(m=>ids.add(m.user_id));return [...ids].filter(id=>id!==exclude).map(id=>{const wm=state.members.find(m=>m.user_id===id);if(!includeGuests&&wm?.role==='guest')return '';return `<option value="${id}" ${id===selected?'selected':''}>${esc(displayName(id))}${wm?.role==='guest'?' · invité':''}</option>`}).join('')}
+function projectParticipantOptions(projectId,selected='',includeGuests=true,exclude=''){const pms=state.projectMembers.filter(pm=>pm.project_id===projectId);const ids=new Set(pms.filter(pm=>includeGuests||['lead','member'].includes(pm.role)).map(pm=>pm.user_id));state.members.filter(m=>['owner','admin'].includes(m.role)||(includeGuests&&m.role==='member'&&m.access_mode==='all')).forEach(m=>ids.add(m.user_id));return [...ids].filter(id=>id!==exclude).map(id=>{const wm=state.members.find(m=>m.user_id===id);if(!includeGuests&&wm?.role==='guest')return '';return `<option value="${id}" ${id===selected?'selected':''}>${esc(displayName(id))}${wm?.role==='guest'?' · invité':''}</option>`}).join('')}
 function findVersion(id){for(const cache of state.projectCache.values()){const v=(cache.versions||[]).find(x=>x.id===id);if(v)return v}return null}
 function findDeliverable(id){for(const cache of state.projectCache.values()){const d=(cache.deliverables||[]).find(x=>x.id===id);if(d)return d}return null}
 function approvalTitle(a){const v=findVersion(a.deliverable_version_id),d=v?findDeliverable(v.deliverable_id):null;return d?`${d.title} · v${v.version_number}`:'Une version attend votre validation'}
-function meetingParticipantChecks(projectId=''){const ids=projectId?new Set(state.projectMembers.filter(pm=>pm.project_id===projectId).map(pm=>pm.user_id)):new Set(state.members.map(m=>m.user_id));ids.delete(state.user.id);return [...ids].map(id=>`<label><input type="checkbox" name="attendeeIds" value="${id}"> ${esc(displayName(id))}</label>`).join('')||'<small>Aucun autre participant disponible.</small>'}
+function meetingParticipantChecks(projectId=''){const ids=projectId?new Set(state.projectMembers.filter(pm=>pm.project_id===projectId).map(pm=>pm.user_id)):new Set(state.members.map(m=>m.user_id));if(projectId)state.members.filter(m=>['owner','admin'].includes(m.role)||(m.role==='member'&&m.access_mode==='all')).forEach(m=>ids.add(m.user_id));ids.delete(state.user.id);return [...ids].map(id=>`<label><input type="checkbox" name="attendeeIds" value="${id}"> ${esc(displayName(id))}</label>`).join('')||'<small>Aucun autre participant disponible.</small>'}
 function meetingAttendeeHtml(meetingId){const rows=state.meetingAttendees.filter(a=>a.meeting_id===meetingId);return rows.length?`<div class="meeting-attendees-v4"><span class="eyebrow">Participants</span><div>${rows.map(a=>`<span class="attendee-chip">${avatarHtml(a.user_id)}<b>${esc(displayName(a.user_id))}</b><small>${a.response==='accepted'?'Présent / accepté':a.response==='declined'?'Décliné':'En attente'}</small></span>`).join('')}</div></div>`:''}
 function parseRoute(){const raw=(location.hash||'#/dashboard').replace(/^#\/?/,'');const parts=raw.split('/').filter(Boolean);if(parts[0]==='welcome')return{name:'welcome'};if(!parts.length||parts[0]==='dashboard')return{name:'dashboard'};if(parts[0]==='projects'&&parts[1])return{name:'project',id:parts[1],tab:parts[2]||'overview',view:parts[3]||'list'};if(parts[0]==='projects')return{name:'projects'};if(parts[0]==='work')return{name:'work'};if(parts[0]==='messages')return{name:'messages',id:parts[1]||null};if(parts[0]==='calendar')return{name:'calendar'};if(parts[0]==='library')return{name:'library'};if(parts[0]==='team')return{name:'team'};if(parts[0]==='archives')return{name:'archives'};if(parts[0]==='profile')return{name:'profile'};if(parts[0]==='settings')return{name:'settings'};return{name:'dashboard'}}
 
