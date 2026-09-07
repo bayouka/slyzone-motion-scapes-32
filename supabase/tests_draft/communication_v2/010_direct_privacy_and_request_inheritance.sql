@@ -1,0 +1,61 @@
+begin;
+\ir _fixture.sql
+
+create temporary table qa_runtime(direct_id uuid,message_id uuid,request_id uuid) on commit drop;
+insert into qa_runtime default values;
+
+set local role authenticated;
+select pg_temp.as_user('11000000-0000-4000-8000-000000000001'); -- Fred
+
+update qa_runtime
+set direct_id=public.get_or_create_direct_v2(
+  '21000000-0000-4000-8000-000000000001',
+  '11000000-0000-4000-8000-000000000002'
+);
+
+update qa_runtime
+set message_id=public.send_message_v2(direct_id,'Message privé Fred → Marc')
+where direct_id is not null;
+
+select public.link_direct_to_project_v2(
+  (select direct_id from qa_runtime),
+  (select project_id from qa_comm_ids)
+);
+
+update qa_runtime
+set request_id=public.create_request_from_message_v2(
+  message_id,
+  '11000000-0000-4000-8000-000000000002',
+  'Marc, merci de répondre avant jeudi',
+  'Validation attendue',
+  now()+interval '2 days',
+  'approval'
+)
+where message_id is not null;
+
+-- A second 1-to-1 request must reuse the canonical Direct.
+select pg_temp.assert_true(
+  public.get_or_create_direct_v2('21000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000002')
+  = (select direct_id from qa_runtime),
+  'Fred/Marc 1-to-1 Direct is reused'
+);
+
+select pg_temp.as_user('11000000-0000-4000-8000-000000000002'); -- Marc
+select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),1,'Marc reads his Direct');
+select pg_temp.assert_eq((select count(*) from public.messages where id=(select message_id from qa_runtime)),1,'Marc reads the private message');
+select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),1,'Marc reads the request addressed to him');
+
+select pg_temp.as_user('11000000-0000-4000-8000-000000000003'); -- Julie, already member of HFConcept
+select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),0,'Julie cannot read Fred/Marc Direct even though it is linked to her project');
+select pg_temp.assert_eq((select count(*) from public.messages where id=(select message_id from qa_runtime)),0,'Julie cannot read private source message');
+select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Message-source Request inherits Direct confidentiality');
+
+select pg_temp.as_user('11000000-0000-4000-8000-000000000004'); -- workspace member, no selected project access
+select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),0,'Unrelated workspace member cannot read Direct');
+select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Unrelated workspace member cannot read private Request');
+
+select pg_temp.as_user('11000000-0000-4000-8000-000000000005'); -- guest/project viewer
+select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),0,'Guest cannot read unrelated Direct');
+select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Guest cannot infer request through linked project');
+
+rollback;
