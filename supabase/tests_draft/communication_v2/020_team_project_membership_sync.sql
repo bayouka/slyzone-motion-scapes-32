@@ -2,6 +2,7 @@ begin;
 \ir _fixture.sql
 
 create temporary table qa_topics(team_general uuid,team_topic uuid,project_topic uuid) on commit drop;
+grant select,update on qa_topics to authenticated;
 insert into qa_topics(team_general)
 select id from public.conversations
 where workspace_id='21000000-0000-4000-8000-000000000001' and kind='team' and is_general;
