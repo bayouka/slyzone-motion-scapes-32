@@ -1,0 +1,25 @@
+name: Cross-repo read probe
+on:
+  push:
+    branches: [noop-check]
+    paths:
+      - '.github/workflows/crossrepo-read-probe.yml'
+      - 'crossrepo-probe-trigger.txt'
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe private 2b2c access without exposing credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          status="$(curl -sS -o /tmp/probe.json -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' https://api.github.com/repos/bayouka/2b2c/commits/fe28dc39aff21c1265243d10cdbe364e468ce13b)"
+          echo "cross_repo_http=$status"
+          if [ "$status" = "200" ]; then
+            echo "cross_repo_read=yes"
+          else
+            echo "cross_repo_read=no"
+          fi
