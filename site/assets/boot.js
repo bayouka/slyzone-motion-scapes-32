@@ -5,6 +5,7 @@
 
   if (hasLiveConfig) {
     window.__4B4C_LIVE_MODE__ = true;
+    import('./home-polish.js').catch((error) => console.warn('Home polish enhancer unavailable', error));
     import('./live.js').catch((error) => {
       console.error(error);
       document.getElementById('app').innerHTML = `

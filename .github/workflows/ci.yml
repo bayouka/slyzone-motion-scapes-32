@@ -27,6 +27,10 @@ jobs:
           grep -Fq 'communication-v2-hub' site/assets/live.js
           grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
           grep -Fq '4b4c V4.3 — personal situation Home' site/assets/live.css
+          grep -Fq '4b4c V4.3.1 — Home UX contract polish' site/assets/home-polish.js
+          grep -Fq '4b4c V4.3.1 — Home UX/UI polish' site/assets/home-polish.css
+          grep -Fq 'assets/home-polish.css' site/index.html
+          grep -Fq "import('./home-polish.js')" site/assets/boot.js
           grep -Fq "app: '4b4c'" src/worker.js
           grep -Fq "version: 'v4.3'" src/worker.js
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
