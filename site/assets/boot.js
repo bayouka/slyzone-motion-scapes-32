@@ -28,7 +28,10 @@
   window.__4B4C_LIVE_MODE__ = true;
   import('./home-polish.js').catch((error) => console.warn('Home polish enhancer unavailable', error));
   import('./live.js')
-    .then(() => import('./team-access-v1.js').catch((error) => console.warn('Team access enhancer unavailable', error)))
+    .then(async () => {
+      await import('./team-access-v1.js').catch((error) => console.warn('Team access enhancer unavailable', error));
+      await import('./product-coherence-v1.js').catch((error) => console.warn('Product coherence enhancer unavailable', error));
+    })
     .catch((error) => {
       console.error(error);
       renderStartupError(
