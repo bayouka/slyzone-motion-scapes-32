@@ -1,7 +1,7 @@
 begin;
 \ir _fixture.sql
 
-create temporary table qa_runtime(direct_id uuid,message_id uuid,request_id uuid) on commit drop;
+create temporary table qa_runtime(direct_id uuid,message_id uuid,request_id uuid,action_id uuid) on commit drop;
 insert into qa_runtime default values;
 
 set local role authenticated;
@@ -40,6 +40,34 @@ select pg_temp.assert_true(
   'Fred/Marc 1-to-1 Direct is reused'
 );
 
+-- Private message -> broader Project Action must require explicit confirmation.
+do $$
+begin
+  begin
+    perform public.create_action_from_message_v2(
+      (select message_id from qa_runtime),
+      (select project_id from qa_comm_ids),
+      'Action issue du Direct',
+      'Doit élargir l’audience',
+      'normal',null,'internal',false
+    );
+    raise exception 'ASSERT_NO_ERROR_AUDIENCE_EXPANSION';
+  exception when others then
+    if sqlerrm='ASSERT_NO_ERROR_AUDIENCE_EXPANSION' then raise; end if;
+    if position('AUDIENCE_EXPANSION_CONFIRMATION_REQUIRED' in sqlerrm)=0 then raise; end if;
+  end;
+end $$;
+
+update qa_runtime
+set action_id=public.create_action_from_message_v2(
+  message_id,
+  (select project_id from qa_comm_ids),
+  'Action issue du Direct',
+  'Audience élargie après confirmation explicite',
+  'normal',null,'internal',true
+)
+where message_id is not null;
+
 select pg_temp.as_user('11000000-0000-4000-8000-000000000002'); -- Marc
 select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),1,'Marc reads his Direct');
 select pg_temp.assert_eq((select count(*) from public.messages where id=(select message_id from qa_runtime)),1,'Marc reads the private message');
@@ -49,13 +77,16 @@ select pg_temp.as_user('11000000-0000-4000-8000-000000000003'); -- Julie, alread
 select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),0,'Julie cannot read Fred/Marc Direct even though it is linked to her project');
 select pg_temp.assert_eq((select count(*) from public.messages where id=(select message_id from qa_runtime)),0,'Julie cannot read private source message');
 select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Message-source Request inherits Direct confidentiality');
+select pg_temp.assert_eq((select count(*) from public.actions where id=(select action_id from qa_runtime)),1,'Julie can read the explicitly broadened Project Action');
 
 select pg_temp.as_user('11000000-0000-4000-8000-000000000004'); -- workspace member, no selected project access
 select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),0,'Unrelated workspace member cannot read Direct');
 select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Unrelated workspace member cannot read private Request');
+select pg_temp.assert_eq((select count(*) from public.actions where id=(select action_id from qa_runtime)),0,'Unrelated selected-access member cannot read Project Action');
 
 select pg_temp.as_user('11000000-0000-4000-8000-000000000005'); -- guest/project viewer
 select pg_temp.assert_eq((select count(*) from public.conversations where id=(select direct_id from qa_runtime)),0,'Guest cannot read unrelated Direct');
 select pg_temp.assert_eq((select count(*) from public.requests where id=(select request_id from qa_runtime)),0,'Guest cannot infer request through linked project');
+select pg_temp.assert_eq((select count(*) from public.actions where id=(select action_id from qa_runtime)),0,'Guest cannot read internal derived Action');
 
 rollback;
