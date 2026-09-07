@@ -30,6 +30,16 @@ export class SupabaseBrowserClient {
     } catch { return null; }
   }
 
+  #syncSession() {
+    const stored = this.#loadSession();
+    const currentAccess = this.session?.access_token || null;
+    const storedAccess = stored?.access_token || null;
+    const currentRefresh = this.session?.refresh_token || null;
+    const storedRefresh = stored?.refresh_token || null;
+    if (currentAccess !== storedAccess || currentRefresh !== storedRefresh) this.session = stored;
+    return this.session;
+  }
+
   #saveSession(session) {
     this.session = session || null;
     try {
@@ -38,7 +48,7 @@ export class SupabaseBrowserClient {
     } catch {}
   }
 
-  getSession() { return this.session; }
+  getSession() { return this.#syncSession(); }
 
   async signUp({ email, password, displayName }) {
     const payload = await this.#requestRaw('/auth/v1/signup', {
@@ -60,6 +70,7 @@ export class SupabaseBrowserClient {
   }
 
   async refreshSession() {
+    this.#syncSession();
     if (!this.session?.refresh_token) throw new Error('Session expirée');
     const payload = await this.#requestRaw('/auth/v1/token?grant_type=refresh_token', {
       method: 'POST', body: { refresh_token: this.session.refresh_token }, auth: false, context: 'Rafraîchissement de session'
@@ -69,6 +80,7 @@ export class SupabaseBrowserClient {
   }
 
   async signOut() {
+    this.#syncSession();
     if (this.session?.access_token) {
       try { await this.#requestRaw('/auth/v1/logout', { method: 'POST', auth: true, retryAuth: false }); } catch {}
     }
@@ -129,6 +141,7 @@ export class SupabaseBrowserClient {
   }
 
   #headers({ auth, prefer, json = true, extraHeaders = {} }) {
+    if (auth) this.#syncSession();
     const headers = { apikey: this.publishableKey, ...extraHeaders };
     if (json) headers['Content-Type'] = 'application/json';
     if (auth && this.session?.access_token) headers.Authorization = `Bearer ${this.session.access_token}`;
@@ -137,6 +150,7 @@ export class SupabaseBrowserClient {
   }
 
   async #requestRaw(path, { method = 'GET', body, rawBody, auth = false, retryAuth = false, prefer, extraHeaders = {}, context = '' } = {}) {
+    if (auth) this.#syncSession();
     const execute = () => this.fetchImpl(`${this.url}${path}`, {
       method,
       headers: this.#headers({ auth, prefer, json: rawBody === undefined, extraHeaders }),
