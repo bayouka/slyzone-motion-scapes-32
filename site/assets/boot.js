@@ -35,6 +35,7 @@
     .then(async () => {
       await import('./team-access-v1.js').catch((error) => console.warn('Team access enhancer unavailable', error));
       await import('./team-access-safety-v2.js').catch((error) => console.warn('Team access safety enhancer unavailable', error));
+      await import('./team-access-submit-safety-v3.js').catch((error) => console.warn('Team access submit safety enhancer unavailable', error));
       await import('./invite-lifecycle-v1.js').catch((error) => console.warn('Invite lifecycle enhancer unavailable', error));
       await import('./approval-flow-safety-v1.js').catch((error) => console.warn('Approval flow safety enhancer unavailable', error));
       await import('./product-coherence-v1.js').catch((error) => console.warn('Product coherence enhancer unavailable', error));
