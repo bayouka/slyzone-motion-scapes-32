@@ -188,6 +188,10 @@
         unique.push(entry.node);
         if (unique.length === 4) break;
       }
+      if (card.querySelector('.v435-project-people')) {
+        card.dataset.homeRefined = '1';
+        return;
+      }
       if (unique.length) {
         const row = document.createElement('div');
         row.className = 'home-project-people';
