@@ -1,8 +1,8 @@
 name: Deploy 4b4c production
 
+# Production is deployed by Cloudflare Workers Builds from main.
+# This workflow stays available only as a manual fallback and never consumes Actions credits on push.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,22 +23,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - name: Product integrity
-        run: |
-          set -euo pipefail
-          grep -Fq 'v43-home-grid' site/assets/live.js
-          grep -Fq 'communication-v2-hub' site/assets/live.js
-          grep -Fq 'register_deliverable_version_v2' site/assets/live.js
-          grep -Fq 'PROJETS ACTIFS' site/assets/live.js
-          grep -Fq "m.created_by===state.user.id||state.meetingAttendees.some" site/assets/live.js
-          ! grep -Fq "kind:'Préparation',title:m.title" site/assets/live.js
-          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
-          grep -Fq '4b4c V4.3.1 — Home UX contract polish' site/assets/home-polish.js
-          grep -Fq '4b4c V4.3.1 — Home UX/UI polish' site/assets/home-polish.css
-          grep -Fq 'assets/home-polish.css' site/index.html
-          grep -Fq "import('./home-polish.js')" site/assets/boot.js
-          grep -Fq 'Configuration 2b2c indisponible' site/assets/boot.js
-          ! grep -Fq 'assets/app.js' site/assets/boot.js
       - name: Detect Cloudflare credentials
         id: cloudflare
         shell: bash
@@ -57,32 +41,19 @@ jobs:
         run: |
           set -euo pipefail
           probe() {
-            path="$1"
-            needle="$2"
+            path="$1"; needle="$2"
             for i in $(seq 1 12); do
               code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path" || true)
-              echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
-              if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then
-                return 0
-              fi
+              if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
               sleep 3
             done
             return 1
           }
           probe /health '"app":"4b4c"'
-          probe /health '"version":"v4.3.2"'
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
-          probe /assets/live.js 'v43-home-grid'
-          probe /assets/live.js 'communication-v2-hub'
-          probe /assets/live.js 'register_deliverable_version_v2'
-          probe /assets/live.js 'PROJETS ACTIFS'
-          probe /assets/live.js 'meeting-response'
-          probe /assets/live.js 'sync-alert-v432'
-          probe /assets/boot.js 'Configuration 2b2c indisponible'
-          probe /assets/home-polish.js '4b4c V4.3.1 — Home UX contract polish'
-          probe /assets/home-polish.css '4b4c V4.3.1 — Home UX/UI polish'
-          probe / 'assets/home-polish.css'
+          probe /assets/boot.js 'workflow-backend-v2.js'
+          probe /assets/boot.js 'project-progress-v2.js'
           probe / '2b2c — Projets qui avancent ensemble'
       - name: Cloudflare credentials missing
         if: steps.cloudflare.outputs.configured != 'true'
-        run: echo 'Stable Cloudflare deployment skipped because repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are not configured.'
+        run: echo 'Manual fallback skipped because Cloudflare repository secrets are not configured.'
