@@ -1,0 +1,36 @@
+name: Agenda attention migrate once
+
+on:
+  push:
+    branches:
+      - feature-agenda-attention-v1-20260909
+    paths:
+      - .github/agenda-attention-migrate.txt
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: feature-agenda-attention-v1-20260909
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - run: python scripts/agenda-attention-migrate.py
+      - run: node --check site/assets/live.js
+      - run: node --check site/assets/workflow-backend-safe-v1.js
+      - name: Commit transformed sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "bayouka"
+          git config user.email "bayoukadesbois@gmail.com"
+          git add site/assets/live.js site/assets/workflow-backend-safe-v1.js
+          git diff --cached --quiet && exit 0
+          git commit -m "refactor: integrate agenda and attention natively"
+          git push origin HEAD:feature-agenda-attention-v1-20260909
