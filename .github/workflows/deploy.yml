@@ -1,16 +1,29 @@
 name: Deploy 4b4c production
 
-# Production is deployed by Cloudflare Workers Builds from main.
-# This workflow stays available only as a manual fallback and never consumes Actions credits on push.
+# Public transport repo: deploy production directly to Cloudflare with Wrangler.
+# Standard GitHub-hosted runners for this public repository do not consume the
+# private repository's Actions minutes. Other CI workflows remain manual-only.
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'src/**'
+      - 'wrangler.jsonc'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: 4b4c-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -21,8 +34,18 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --no-audit --no-fund
       - run: npm run check
+      - name: Verify production payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq "name\": \"4b4c" wrangler.jsonc
+          grep -Fq 'v4.4.3-invite-prelive' src/worker.js
+          grep -Fq 'invite-prelive-v2.js?v=4.4.3-invite-prelive' site/assets/boot.js
+          grep -Fq 'workflow-backend-v2.js' site/assets/boot.js
+          grep -Fq 'project-progress-v2.js' site/assets/boot.js
+          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
       - name: Detect Cloudflare credentials
         id: cloudflare
         shell: bash
@@ -31,29 +54,28 @@ jobs:
             echo 'configured=true' >> "$GITHUB_OUTPUT"
           else
             echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo 'Cloudflare repository secrets are not configured.' >&2
+            exit 1
           fi
       - name: Deploy stable Worker 4b4c
-        if: steps.cloudflare.outputs.configured == 'true'
-        run: npx wrangler deploy
+        run: npx --yes wrangler@4.129.0 deploy
       - name: Smoke production
-        if: steps.cloudflare.outputs.configured == 'true'
         shell: bash
         run: |
           set -euo pipefail
           probe() {
             path="$1"; needle="$2"
-            for i in $(seq 1 12); do
-              code=$(curl -L -sS -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path" || true)
+            for i in $(seq 1 15); do
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=443-$GITHUB_SHA" || true)
+              echo "probe $path attempt=$i http=$code bytes=$(wc -c < /tmp/probe.out 2>/dev/null || echo 0)"
               if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
               sleep 3
             done
+            cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"app":"4b4c"'
+          probe /health '"version":"v4.4.3-invite-prelive"'
           probe /runtime-config.js 'wexfzhegiewhldkugtow.supabase.co'
+          probe /assets/boot.js 'invite-prelive-v2.js?v=4.4.3-invite-prelive'
           probe /assets/boot.js 'workflow-backend-v2.js'
-          probe /assets/boot.js 'project-progress-v2.js'
           probe / '2b2c — Projets qui avancent ensemble'
-      - name: Cloudflare credentials missing
-        if: steps.cloudflare.outputs.configured != 'true'
-        run: echo 'Manual fallback skipped because Cloudflare repository secrets are not configured.'
