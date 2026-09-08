@@ -15,9 +15,9 @@ function assert(condition, message) {
   }
 }
 
-assert(worker.includes('v4.4.8-smart-sync'), 'worker health version is not v4.4.8-smart-sync');
-assert(index.includes('assets/boot.js?build=448'), 'index smart-sync cache-bust missing');
-assert(boot.includes("const VERSION = 'v4.4.8-smart-sync'"), 'boot native-access version missing');
+assert(worker.includes('v4.4.9-deliverable-integrity'), 'worker health version is not v4.4.9-deliverable-integrity');
+assert(index.includes('assets/boot.js?build=449'), 'index deliverable-integrity cache-bust missing');
+assert(boot.includes("const VERSION = 'v4.4.9-deliverable-integrity'"), 'boot deliverable-integrity version missing');
 assert(boot.includes('syncProbeIntervalMs: Math.max(15000'), 'smart sync probe floor missing');
 assert(boot.includes('fullRefreshFallbackMs: Math.max(300000'), 'full refresh safety fallback missing');
 assert(boot.includes('workflow-backend-safe-v1.js'), 'observer-free workflow bridge missing');
@@ -57,14 +57,28 @@ assert(live.includes('workspaceRefreshPromise'), 'full refresh single-flight gua
 assert(!live.includes('Number(config.pollIntervalMs || 15000)'), 'legacy full-workspace polling remains');
 assert(!live.includes('new MutationObserver'), 'core app instantiates a MutationObserver');
 assert(live.includes('set_project_pause_v1'), 'native project pause workflow missing');
-assert(live.includes('complete_project_v1'), 'native project completion workflow missing');
+assert(live.includes('complete_project_v1'), 'legacy project completion fallback missing');
 assert(live.includes('reopen_project_v1'), 'native project reopen workflow missing');
 assert(live.includes('projectServerSummaryCard'), 'native project summary card missing');
 assert(live.includes('data-invite-role'), 'native invitation role UI missing');
 assert(live.includes('data-member-role'), 'native member role UI missing');
 assert(!live.includes('Responsabilité / écriture'), 'legacy responsibility selector remains in native access UI');
 assert(!live.includes('Visibilité portefeuille'), 'legacy portfolio visibility selector remains in native access UI');
+
+for (const required of [
+  'register_deliverable_version_v3',
+  'request_deliverable_approval_v1',
+  'decide_deliverable_approval_v1',
+  'get_project_closure_preview_v2',
+  'complete_project_v2',
+  'referenceVersionIds',
+  'DELIVERABLE_VERSION_IMMUTABLE',
+]) {
+  assert(safeBridge.includes(required), `deliverable integrity workflow missing: ${required}`);
+}
+assert(!safeBridge.includes("api.insert('approvals'"), 'safe bridge must not insert approvals directly');
+assert(!safeBridge.includes("api.update('approvals'"), 'safe bridge must not update approvals directly');
 assert(!safeBridge.includes('new MutationObserver'), 'safe workflow bridge instantiates a MutationObserver');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
-console.log('stability/smart-sync production contract: ok');
+console.log('stability/deliverable-integrity production contract: ok');
