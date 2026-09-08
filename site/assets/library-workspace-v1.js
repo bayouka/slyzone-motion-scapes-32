@@ -1,6 +1,6 @@
 import { SupabaseBrowserClient } from './supabase-client.js';
 
-const VERSION = '2b2c library workspace v1.0.0';
+const VERSION = '2b2c library workspace v1.0.1';
 const config = window.__4B4C_CONFIG__ || {};
 const api = new SupabaseBrowserClient({ url: config.supabaseUrl, publishableKey: config.supabasePublishableKey });
 const workspaceKey = config.workspaceStorageKey || '4b4c.live.workspace.v1';
@@ -24,7 +24,12 @@ const dateLabel = (v) => v ? new Intl.DateTimeFormat('fr-FR',{day:'numeric',mont
 const approvalLabel = (status) => ({pending:'Validation en attente',approved:'Approuvé',changes_requested:'Modifications demandées',cancelled:'Remplacé / annulé'})[status] || 'Brouillon';
 const approvalTone = (status) => status==='approved'?'good':status==='pending'?'blue':status==='changes_requested'?'danger':'';
 
-function isActive(){ return /^#\/?library(?:\/|$)/.test(location.hash || '#/library'); }
+function safeExternalUrl(value){
+  const url=new URL(String(value||''));
+  if(!['http:','https:'].includes(url.protocol)) throw new Error('Ce lien utilise un protocole non autorisé.');
+  return url.toString();
+}
+function isActive(){ return /^#\/?library(?:\/|$)/.test(location.hash || ''); }
 function workspaceId(){ return localStorage.getItem(workspaceKey) || ''; }
 function projectName(id){ return viewState?.projects?.find(p=>p.id===id)?.name || 'Projet'; }
 function latestVersion(deliverableId){ return viewState?.versions?.filter(v=>v.deliverable_id===deliverableId).sort((a,b)=>b.version_number-a.version_number)[0] || null; }
@@ -188,7 +193,7 @@ function render(){
 
 async function openResource(id){
   const r=viewState?.resources?.find(x=>x.id===id); if(!r)return;
-  if(r.kind==='link'){ window.open(r.url,'_blank','noopener,noreferrer'); return; }
+  if(r.kind==='link'){ window.open(safeExternalUrl(r.url),'_blank','noopener,noreferrer'); return; }
   const url=await api.signedUrl('workspace-files',r.storage_path,900); window.open(url,'_blank','noopener,noreferrer');
 }
 async function openVersion(id){
