@@ -1,9 +1,13 @@
 name: Deploy 4b4c production
 
-# Cloudflare Workers Builds is the active production deployment path.
-# GitHub Actions stays manual-only while Actions credits are unavailable.
+# Public repository: standard GitHub-hosted runners are free.
+# Keep normal operation manual-only; this temporary path is used once to catch production up.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/deploy-once-452.txt'
 
 permissions:
   contents: read
@@ -54,5 +58,6 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"app":"4b4c"'
+          probe /health '"version":"v4.4.12-delivery-cycle"'
+          probe /assets/boot.js "v4.4.12-delivery-cycle"
           probe / '2b2c — Projets qui avancent ensemble'
