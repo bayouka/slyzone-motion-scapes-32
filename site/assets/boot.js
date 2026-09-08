@@ -34,10 +34,12 @@
 
   import(`./live.js?${VERSION}`)
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
-    .then(() => import(`./resources-workspace-v1.js?${VERSION}`).catch((error) => {
-      // Resources is an isolated route enhancement: it must never take down the core app.
-      console.error('[2b2c] resources workspace unavailable; native resources view kept', error);
-    }))
+    .then(() => import(`./resources-workspace-v1.js?${VERSION}`)
+      .then(() => import(`./resources-workspace-form-guard-v1.js?${VERSION}`))
+      .catch((error) => {
+        // Resources is isolated: a failure here must never take down the core app.
+        console.error('[2b2c] resources workspace unavailable; native resources view kept', error);
+      }))
     .catch((error) => {
       console.error(error);
       renderStartupError(
