@@ -42,16 +42,18 @@ jobs:
 
           idx=Path('site/index.html')
           s=idx.read_text(encoding='utf-8')
-          s,n=re.subn(r'assets/boot\.js\?v=[^"\']+', 'assets/boot.js?v=4.4.8-smart-sync', s, count=1)
+          s,n=re.subn(r'assets/boot\.js\?[^"\']+', 'assets/boot.js?build=448', s, count=1)
           if n != 1:
             raise SystemExit(f'index boot cache-bust replacement count={n}')
           idx.write_text(s,encoding='utf-8')
-          if 'v4.4.8-smart-sync' not in idx.read_text(encoding='utf-8'):
-            raise SystemExit('index smart-sync cache-bust was not persisted')
+          persisted=idx.read_text(encoding='utf-8')
+          if 'assets/boot.js?build=448' not in persisted:
+            raise SystemExit('index build=448 cache-bust was not persisted')
 
           p=Path('scripts/stability-check.mjs')
           s=p.read_text(encoding='utf-8')
-          s=s.replace("assert(index.includes('boot.js?v=4.4.8-smart-sync'), 'index does not cache-bust the native-access boot');", "assert(index.includes('v4.4.8-smart-sync'), 'index smart-sync cache-bust missing');")
+          import re as _re
+          s=_re.sub(r"assert\(index\.includes\('[^']*'\), 'index [^']*'\);", "assert(index.includes('assets/boot.js?build=448'), 'index smart-sync cache-bust missing');", s, count=1)
           p.write_text(s,encoding='utf-8')
           print('disk normalization: ok')
           PY
@@ -75,7 +77,7 @@ jobs:
             'worker':Path('src/worker.js').read_text(encoding='utf-8'),
           }
           required={
-            'index':['v4.4.8-smart-sync'],
+            'index':['assets/boot.js?build=448'],
             'boot':["const VERSION = 'v4.4.8-smart-sync'",'syncProbeIntervalMs','fullRefreshFallbackMs'],
             'worker':['v4.4.8-smart-sync'],
             'live':['get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise','syncDigest','refreshWorkspaceImpl'],
