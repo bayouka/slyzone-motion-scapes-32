@@ -15,8 +15,9 @@ deploy = deploy.replace(OLD, NEW)
 '''
 new = '''# Version/cache bust + deployment guards. Runtime files are matched by structure,
 # so a harmless formatting/cache-query difference cannot block the migration.
+CACHE = NEW.removeprefix('v')
 boot, n_boot = re.subn(r"const VERSION = 'v[^']+'", f"const VERSION = '{NEW}'", boot, count=1)
-index, n_index = re.subn(r'boot\\.js\\?v=[^"\\']+', f'boot.js?v={NEW}', index, count=1)
+index, n_index = re.subn(r'boot\\.js\\?v=[^"\\']+', f'boot.js?v={CACHE}', index, count=1)
 worker, n_worker = re.subn(r"version: 'v[^']+'", f"version: '{NEW}'", worker, count=1)
 if n_boot != 1 or n_index != 1 or n_worker != 1:
     raise SystemExit(f'version markers: boot={n_boot} index={n_index} worker={n_worker}')
@@ -25,6 +26,7 @@ if OLD not in stability:
 if OLD not in deploy:
     raise SystemExit('deploy: old version marker missing')
 stability = stability.replace(OLD, NEW)
+stability = stability.replace('boot.js?v=4.4.6-native-access', f'boot.js?v={CACHE}')
 deploy = deploy.replace(OLD, NEW)
 '''
 if source.count(old) != 1:
