@@ -33,6 +33,7 @@
       return import('./live.js');
     })
     .then(async () => {
+      await import('./invite-modal-stability-v1.js').catch((error) => console.warn('Invite modal stability unavailable', error));
       await import('./team-access-v1.js').catch((error) => console.warn('Team access enhancer unavailable', error));
       await import('./team-access-safety-v2.js').catch((error) => console.warn('Team access safety enhancer unavailable', error));
       await import('./team-access-submit-safety-v3.js').catch((error) => console.warn('Team access submit safety enhancer unavailable', error));
