@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.4.9-deliverable-integrity';
+  const VERSION = 'v4.4.10-resources-model';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -26,16 +26,15 @@
     return;
   }
 
-  // Stability mode: keep the core app and secured workflow only. Previous
-  // enhancer modules used multiple global MutationObservers on the same DOM.
-  // A lightweight server digest is probed frequently; the expensive full
-  // workspace refresh runs only on change.
+  // Stability mode: core app + secured event-driven modules only.
+  // No MutationObserver is allowed in the production runtime.
   window.__4B4C_CONFIG__ = Object.freeze({ ...config, syncProbeIntervalMs: Math.max(15000, Number(config.syncProbeIntervalMs || 20000)), fullRefreshFallbackMs: Math.max(300000, Number(config.fullRefreshFallbackMs || 300000)) });
   window.__4B4C_LIVE_MODE__ = true;
   window.__4B4C_STABILITY_MODE__ = VERSION;
 
   import(`./live.js?${VERSION}`)
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
+    .then(() => import(`./resources-workspace-v1.js?${VERSION}`))
     .catch((error) => {
       console.error(error);
       renderStartupError(
