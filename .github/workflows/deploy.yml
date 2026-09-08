@@ -33,15 +33,23 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run check
-      - name: Verify OOM-safe production payload
+      - name: Verify stability-safe production payload
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq 'v4.4.4-oom-hotfix' src/worker.js
-          grep -Fq 'invite-prelive-v2.js?v=4.4.4-oom-hotfix' site/assets/boot.js
-          grep -Fq 'workflow-backend-v2.js' site/assets/boot.js
-          ! grep -Fq "import('./project-progress-v2.js')" site/assets/boot.js
-          grep -Fq 'project-progress-v2 disabled by v4.4.4 OOM hotfix' site/assets/project-progress-v2.js
+          grep -Fq 'v4.4.5-stability-safe' src/worker.js
+          grep -Fq 'v4.4.5-stability-safe' site/index.html
+          grep -Fq "window.__4B4C_STABILITY_MODE__ = VERSION" site/assets/boot.js
+          grep -Fq 'pollIntervalMs: Math.max(60000' site/assets/boot.js
+          grep -Fq 'invite-prelive-v2.js' site/assets/boot.js
+          grep -Fq 'workflow-backend-safe-v1.js' site/assets/boot.js
+          ! grep -Fq "auth-recovery-v1.js" site/assets/boot.js
+          ! grep -Fq "home-polish.js" site/assets/boot.js
+          ! grep -Fq "team-access-v1.js" site/assets/boot.js
+          ! grep -Fq "ui-quality-v1.js" site/assets/boot.js
+          ! grep -Fq "dialog-focus-safety-v2.js" site/assets/boot.js
+          ! grep -Fq "project-progress-v2.js" site/assets/boot.js
+          ! grep -Fq 'MutationObserver' site/assets/workflow-backend-safe-v1.js
           grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
       - name: Detect Cloudflare credentials
         shell: bash
@@ -58,14 +66,15 @@ jobs:
           probe() {
             path="$1"; needle="$2"
             for i in $(seq 1 15); do
-              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=444-$GITHUB_SHA" || true)
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=445-$GITHUB_SHA" || true)
               if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
               sleep 3
             done
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.4-oom-hotfix"'
-          probe /assets/boot.js 'invite-prelive-v2.js?v=4.4.4-oom-hotfix'
-          probe /assets/project-progress-v2.js 'project-progress-v2 disabled by v4.4.4 OOM hotfix'
+          probe /health '"version":"v4.4.5-stability-safe"'
+          probe /assets/boot.js 'workflow-backend-safe-v1.js'
+          probe /assets/boot.js 'pollIntervalMs: Math.max(60000'
+          probe /assets/workflow-backend-safe-v1.js 'no MutationObserver'
           probe / '2b2c — Projets qui avancent ensemble'
