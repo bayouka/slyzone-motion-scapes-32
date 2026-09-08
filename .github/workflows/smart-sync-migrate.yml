@@ -1,0 +1,83 @@
+name: Smart sync migration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/smart-sync-migrate.py'
+      - '.github/workflows/smart-sync-migrate.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 4b4c-smart-sync-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PRODUCTION_URL: https://4b4c.bayoukadesbois.workers.dev
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Apply smart sync migration
+        run: python3 scripts/smart-sync-migrate.py
+      - name: Validate smart sync sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check site/assets/live.js
+          node --check site/assets/boot.js
+          node --check site/assets/workflow-backend-safe-v1.js
+          npm run check
+          node scripts/stability-check.mjs
+          grep -Fq 'v4.4.8-smart-sync' src/worker.js
+          grep -Fq 'get_workspace_sync_digest_v1' site/assets/live.js
+          grep -Fq 'smartSync' site/assets/live.js
+          grep -Fq 'workspaceRefreshPromise' site/assets/live.js
+          grep -Fq 'syncProbeIntervalMs' site/assets/boot.js
+          ! grep -Fq 'Number(config.pollIntervalMs || 15000)' site/assets/live.js
+          ! grep -Fq 'new MutationObserver' site/assets/live.js
+      - name: Commit smart sync implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'bayouka'
+          git config user.email 'bayoukadesbois@gmail.com'
+          git add site/assets/live.js site/assets/boot.js site/index.html src/worker.js scripts/stability-check.mjs
+          git diff --cached --quiet && { echo 'No smart sync changes to commit'; exit 1; }
+          git commit -m 'perf: replace global polling with smart sync digest'
+          git push origin HEAD:main
+      - name: Deploy stable Worker 4b4c
+        run: npx --yes wrangler@4.129.0 deploy
+      - name: Smoke production
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe() {
+            path="$1"; needle="$2"
+            for i in $(seq 1 15); do
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=448-$GITHUB_SHA-$i" || true)
+              echo "probe $path attempt=$i http=$code"
+              if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
+              sleep 3
+            done
+            cat /tmp/probe.out || true
+            return 1
+          }
+          probe /health '"version":"v4.4.8-smart-sync"'
+          probe /assets/boot.js 'syncProbeIntervalMs'
+          probe /assets/live.js 'get_workspace_sync_digest_v1'
+          probe /assets/live.js 'workspaceRefreshPromise'
+          probe / '2b2c — Projets qui avancent ensemble'
