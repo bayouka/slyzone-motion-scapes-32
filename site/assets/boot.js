@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.4.10-resources-model';
+  const VERSION = 'v4.4.11-library-model';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -37,9 +37,13 @@
     .then(() => import(`./resources-workspace-v1.js?${VERSION}`)
       .then(() => import(`./resources-workspace-form-guard-v1.js?${VERSION}`))
       .catch((error) => {
-        // Resources is isolated: a failure here must never take down the core app.
+        // Project resources is isolated: failure keeps the native route available.
         console.error('[2b2c] resources workspace unavailable; native resources view kept', error);
       }))
+    .then(() => import(`./library-workspace-v1.js?${VERSION}`).catch((error) => {
+      // Global library is also isolated and must never take down the core app.
+      console.error('[2b2c] library workspace unavailable; native library view kept', error);
+    }))
     .catch((error) => {
       console.error(error);
       renderStartupError(
