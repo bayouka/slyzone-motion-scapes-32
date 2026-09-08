@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.4.5-stability-safe';
+  const VERSION = 'v4.4.6-native-access';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -34,8 +34,7 @@
   window.__4B4C_LIVE_MODE__ = true;
   window.__4B4C_STABILITY_MODE__ = VERSION;
 
-  import(`./invite-prelive-v2.js?${VERSION}`)
-    .then(() => import(`./live.js?${VERSION}`))
+  import(`./live.js?${VERSION}`)
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
     .catch((error) => {
       console.error(error);

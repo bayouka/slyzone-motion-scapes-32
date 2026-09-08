@@ -679,8 +679,19 @@ function renderLibrary() {
 
 function renderTeam() {
   const canManage = ['owner','admin'].includes(state.workspaceRole);
-  const external=isExternalUser();
-  return `<div class="section-head page-head-v3"><div><span class="eyebrow">Accès & responsabilités</span><h1>${external?'Équipe du projet':'Équipe'}</h1><p>${external?'Seulement les personnes qui partagent vos projets.':'Distinguez qui peut voir un projet de qui est réellement responsable de son avancement.'}</p></div>${canManage?`<button class="btn primary" data-action="invite-member">＋ Inviter</button>`:''}</div><div class="card"><div class="stack">${state.members.map(m=>{const responsibility=projectResponsibilityCount(m.user_id);const visible=m.role==='owner'||m.role==='admin'||m.access_mode==='all'?'Tous':projectCountForUser(m.user_id);return `<div class="list-row team-row">${avatarHtml(m.user_id)}<div class="list-main"><strong>${esc(displayName(m.user_id))}${m.user_id===state.user.id?' (vous)':''}</strong><small>${workspaceRoleLabel(m.role)} · visibilité : ${visible==='Tous'?'tous les projets':`${visible} projet${visible>1?'s':''}`} · responsabilité : ${responsibility} projet${responsibility>1?'s':''}</small></div><span class="pill ${m.role==='owner'?'blue':''}">${workspaceRoleLabel(m.role)}</span>${canManage&&m.role!=='owner'?`<button class="btn small" data-action="manage-member" data-user="${m.user_id}">Gérer</button>`:''}</div>`}).join('')}</div></div>${canManage?`<div class="card" style="margin-top:16px"><div class="section-head compact"><div><h2>Invitations</h2><div class="metric-label">Une invitation définit séparément le rôle, la visibilité et les responsabilités.</div></div><button class="section-link" data-action="load-invites">Actualiser</button></div><div id="invite-list"><span class="metric-label">Aucune donnée chargée.</span></div></div>`:''}`;
+  const external = isExternalUser();
+  const memberRows = state.members.map(m => {
+    const explicitIds = new Set(state.projectMembers.filter(pm => pm.user_id === m.user_id).map(pm => pm.project_id));
+    const restrictedCount = state.projects.filter(p => p.visibility === 'restricted' && explicitIds.has(p.id)).length;
+    const sharedCount = state.projects.filter(p => explicitIds.has(p.id)).length;
+    let accessText = 'Accès selon les projets partagés';
+    if (m.role === 'owner') accessText = 'Accès complet · propriétaire de l’espace';
+    else if (m.role === 'admin') accessText = 'Accès complet · administration de l’espace';
+    else if (m.role === 'member') accessText = `Projets Équipe automatiques${restrictedCount ? ` · ${restrictedCount} projet${restrictedCount > 1 ? 's' : ''} restreint${restrictedCount > 1 ? 's' : ''}` : ''}`;
+    else if (m.role === 'guest') accessText = `${sharedCount} projet${sharedCount > 1 ? 's' : ''} explicitement partagé${sharedCount > 1 ? 's' : ''}`;
+    return `<div class="list-row team-row">${avatarHtml(m.user_id)}<div class="list-main"><strong>${esc(displayName(m.user_id))}${m.user_id===state.user.id?' (vous)':''}</strong><small>${workspaceRoleLabel(m.role)} · ${accessText}</small></div><span class="pill ${m.role==='owner'?'blue':''}">${workspaceRoleLabel(m.role)}</span>${canManage&&m.role!=='owner'?`<button class="btn small" data-action="manage-member" data-user="${m.user_id}">Gérer</button>`:''}</div>`;
+  }).join('');
+  return `<div class="section-head page-head-v3"><div><span class="eyebrow">Personnes & accès</span><h1>${external?'Équipe du projet':'Équipe'}</h1><p>${external?'Seulement les personnes qui partagent vos projets.':'Le rôle définit les droits dans l’espace. La visibilité du projet définit qui peut y participer. Les responsabilités se gèrent ensuite dans la roadmap.'}</p></div>${canManage?`<button class="btn primary" data-action="invite-member">＋ Inviter</button>`:''}</div><div class="card"><div class="stack">${memberRows}</div></div>${canManage?`<div class="card" style="margin-top:16px"><div class="section-head compact"><div><h2>Invitations</h2><div class="metric-label">Membre : projets Équipe automatiques. Administrateur : accès global. Invité externe : partage explicite uniquement.</div></div><button class="section-link" data-action="load-invites">Actualiser</button></div><div id="invite-list"><span class="metric-label">Aucune donnée chargée.</span></div></div>`:''}`;
 }
 
 function renderProfile(){
@@ -723,9 +734,21 @@ function meetingDetailModal(modal){
   return modalFrame(m.title,`${projectName(m.project_id)||'Espace'} · ${m.starts_at?formatDateTime(m.starts_at):'Date à définir'}`,`<form data-form="meeting-detail"><input type="hidden" name="meetingId" value="${m.id}"><input type="hidden" name="projectId" value="${m.project_id||''}"><div class="meeting-workflow-v4"><div class="meeting-stagebar"><span class="${m.status==='planned'?'active':''}">Avant</span><span class="${m.status==='live'?'active':''}">Live</span><span class="${m.status==='completed'?'active':''}">Après</span></div>${meetingAttendeeHtml(m.id)}<section class="meeting-stage-panel"><div><span class="eyebrow">Avant</span><h3>Objectif & agenda</h3></div><textarea name="agenda" ${writable?'':'readonly'} placeholder="But du point, décisions à prendre, sujets à préparer…">${esc(m.agenda||'')}</textarea></section><section class="meeting-stage-panel"><div><span class="eyebrow">Live</span><h3>Notes de réunion</h3></div><textarea name="liveNotes" ${writable?'':'readonly'} placeholder="Notes factuelles, questions, arbitrages…">${esc(m.live_notes||'')}</textarea>${writable&&m.project_id?`<div class="meeting-object-actions"><button class="btn small" type="button" data-action="meeting-to-action" data-meeting="${m.id}" data-project="${m.project_id}">＋ Action</button><button class="btn small" type="button" data-action="meeting-to-decision" data-meeting="${m.id}" data-project="${m.project_id}">＋ Décision</button></div>`:''}</section><section class="meeting-stage-panel"><div><span class="eyebrow">Après</span><h3>Synthèse utile</h3></div><textarea name="summary" ${writable?'':'readonly'} placeholder="Ce qui a changé, décisions, prochaines étapes…">${esc(m.summary||'')}</textarea></section></div>${writable?`<div class="form-grid"><div class="field"><label>État</label><select name="status">${['planned','live','completed','cancelled'].map(v=>`<option value="${v}" ${m.status===v?'selected':''}>${meetingStatusLabel(v)}</option>`).join('')}</select></div><div class="field"><label>Visibilité</label><select name="visibility"><option value="internal" ${m.visibility!=='shared'?'selected':''}>Interne</option><option value="shared" ${m.visibility==='shared'?'selected':''}>Partagée</option></select></div></div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Fermer</button><button class="btn primary" type="submit">Enregistrer la réunion</button></div>`:`<div class="modal-actions"><button class="btn primary" type="button" data-action="close-modal">Fermer</button></div>`}</form>`);
 }
 function memberManageModal(modal){
-  const m=state.members.find(x=>x.user_id===modal.userId); if(!m)return '';
-  const assigned=new Map(state.projectMembers.filter(pm=>pm.user_id===m.user_id).map(pm=>[pm.project_id,pm.role]));
-  return modalFrame(`Gérer ${displayName(m.user_id)}`,'Séparez visibilité et responsabilité : voir un projet ne signifie pas pouvoir le modifier.',`<form data-form="member-manage"><input type="hidden" name="userId" value="${m.user_id}"><div class="form-grid"><div class="field"><label>Rôle dans l’espace</label><select name="role"><option value="admin" ${m.role==='admin'?'selected':''}>Administrateur</option><option value="member" ${m.role==='member'?'selected':''}>Membre</option><option value="guest" ${m.role==='guest'?'selected':''}>Invité / client</option></select></div><div class="field"><label>Visibilité portefeuille</label><select name="accessMode"><option value="all" ${m.access_mode==='all'?'selected':''}>Tous les projets</option><option value="selected" ${m.access_mode!=='all'?'selected':''}>Projets sélectionnés</option></select></div></div><div class="member-project-grid"><div><span class="eyebrow">Projets visibles</span><div class="project-checks">${state.projects.map(p=>`<label><input type="checkbox" name="projectIds" value="${p.id}" ${m.access_mode==='all'||assigned.has(p.id)?'checked':''}> ${esc(p.name)}</label>`).join('')}</div></div><div><span class="eyebrow">Responsabilité / écriture</span><div class="project-checks">${state.projects.map(p=>`<label><input type="checkbox" name="responsibilityIds" value="${p.id}" ${['lead','member'].includes(assigned.get(p.id))?'checked':''}> ${esc(p.name)}</label>`).join('')}</div></div></div><div class="notice">Pour un invité/client, 2b2c impose automatiquement une visibilité limitée et aucun droit d’écriture interne.</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Enregistrer les accès</button></div></form>`);
+  const m = state.members.find(x => x.user_id === modal.userId); if(!m)return '';
+  const assigned = new Set(state.projectMembers.filter(pm => pm.user_id === m.user_id).map(pm => pm.project_id));
+  const role = modal.role || m.role || 'member';
+  const defaultSelected = role === 'member'
+    ? state.projects.filter(p => p.visibility === 'restricted' && assigned.has(p.id)).map(p => p.id)
+    : role === 'guest' ? state.projects.filter(p => assigned.has(p.id)).map(p => p.id) : [];
+  const selected = new Set(Array.isArray(modal.projectIds) ? modal.projectIds : defaultSelected);
+  const candidates = role === 'member' ? state.projects.filter(p => p.visibility === 'restricted') : role === 'guest' ? state.projects : [];
+  const roleHelp = role === 'admin'
+    ? '<div class="notice"><strong>Administrateur :</strong> accès à tout l’espace et à tous les projets. Aucun projet à sélectionner ici.</div>'
+    : role === 'guest'
+      ? '<div class="notice"><strong>Invité externe :</strong> accès uniquement aux projets explicitement sélectionnés. Aucun futur projet ne sera ajouté automatiquement.</div>'
+      : '<div class="notice"><strong>Membre :</strong> accès automatique aux projets Équipe actuels et futurs. Sélectionnez seulement les projets restreints à partager.</div>';
+  const projectArea = role === 'admin' ? '' : `<div class="field span-2"><label>${role==='guest'?'Projets à partager':'Projets restreints à partager'}</label><div class="project-checks">${candidates.length?candidates.map(p=>`<label><input type="checkbox" name="projectIds" value="${p.id}" ${selected.has(p.id)?'checked':''}> ${esc(p.name)}${p.visibility==='restricted'?' <small>· Restreint</small>':''}</label>`).join(''):'<span class="metric-label">Aucun projet concerné.</span>'}</div></div>`;
+  return modalFrame(`Gérer ${displayName(m.user_id)}`,'Modifiez son rôle et son accès aux projets. Les responsabilités d’actions et de jalons se gèrent dans les projets.',`<form data-form="member-manage"><input type="hidden" name="userId" value="${m.user_id}"><div class="form-grid"><div class="field span-2"><label>Rôle dans l’espace</label><select name="role" data-member-role><option value="admin" ${role==='admin'?'selected':''}>Administrateur</option><option value="member" ${role==='member'?'selected':''}>Membre</option><option value="guest" ${role==='guest'?'selected':''}>Invité externe</option></select></div><div class="span-2">${roleHelp}</div>${projectArea}</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Enregistrer les accès</button></div></form>`);
 }
 function renderModal(modal) {
   if (modal.type==='quick-add') return modalFrame('Créer','Uniquement les objets généraux. Les éléments contextuels se créent depuis leur projet.',`<div class="quick-create-grid"><button class="quick-create-card" data-action="new-project"><span>◫</span><strong>Projet</strong><small>Objectif, équipe et roadmap initiale</small></button><button class="quick-create-card" data-action="go-messages"><span>✉</span><strong>Message</strong><small>Direct, groupe privé ou sujet d’équipe</small></button><button class="quick-create-card" data-action="new-action"><span>✓</span><strong>Action</strong><small>Travail assignable et daté</small></button><button class="quick-create-card" data-action="new-meeting"><span>□</span><strong>Réunion</strong><small>Avant, Live, Après</small></button></div>`);
@@ -747,7 +770,18 @@ function renderModal(modal) {
   if (modal.type==='meeting-detail') return meetingDetailModal(modal);
   if (modal.type==='upload') return modalFrame('Ajouter un livrable','Le premier fichier devient la version 1 et reste relié au projet.',`<form data-form="upload"><input type="hidden" name="projectId" value="${escAttr(modal.projectId)}"><div class="stack"><div class="field"><label>Titre du livrable</label><input name="title" required autofocus></div><div class="field"><label>Fichier</label><input type="file" name="file" required></div><div class="field"><label>Visibilité</label><select name="visibility"><option value="internal">Interne</option><option value="shared">Partagé aux invités</option></select></div></div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Ajouter</button></div></form>`);
   if (modal.type==='version') {const d=findDeliverable(modal.deliverableId);if(!d)return '';return modalFrame('Nouvelle version',d.title,`<form data-form="version"><input type="hidden" name="deliverableId" value="${d.id}"><input type="hidden" name="projectId" value="${d.project_id}"><div class="field"><label>Fichier</label><input type="file" name="file" required></div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Ajouter la version</button></div></form>`);}
-  if (modal.type==='invite') return modalFrame('Inviter une personne','Définissez ce qu’elle voit et, séparément, les projets où elle pourra agir.',`<form data-form="invite"><div class="form-grid"><div class="field span-2"><label>Email</label><input type="email" name="email" required autofocus></div><div class="field"><label>Rôle espace</label><select name="role"><option value="member">Membre</option><option value="admin">Administrateur</option><option value="guest">Invité / client</option></select></div><div class="field"><label>Visibilité</label><select name="accessMode"><option value="selected">Projets sélectionnés</option><option value="all">Tous les projets</option></select></div></div><div class="member-project-grid"><div><span class="eyebrow">Projets visibles</span><div class="project-checks">${state.projects.map(p=>`<label><input type="checkbox" name="projectIds" value="${p.id}" ${modal.projectId===p.id?'checked':''}> ${esc(p.name)}</label>`).join('')}</div></div><div><span class="eyebrow">Responsabilité / écriture</span><div class="project-checks">${state.projects.map(p=>`<label><input type="checkbox" name="responsibilityIds" value="${p.id}" ${modal.projectId===p.id?'checked':''}> ${esc(p.name)}</label>`).join('')}</div></div></div><div class="notice">Administrateur = tout gérer. Membre = visibilité choisie, écriture seulement sur ses responsabilités. Invité/client = projets sélectionnés et vue partagée uniquement.</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Créer l’invitation</button></div></form>`);
+  if (modal.type==='invite') {
+    const role = modal.role || 'member';
+    const selected = new Set(Array.isArray(modal.projectIds) ? modal.projectIds : (modal.projectId ? [modal.projectId] : []));
+    const candidates = role === 'member' ? state.projects.filter(p => p.visibility === 'restricted') : role === 'guest' ? state.projects : [];
+    const roleHelp = role === 'admin'
+      ? '<div class="notice"><strong>Administrateur :</strong> accès à tout l’espace et à tous les projets. Aucun projet à sélectionner.</div>'
+      : role === 'guest'
+        ? '<div class="notice"><strong>Invité externe :</strong> accès uniquement aux projets choisis ci-dessous. Il ne recevra jamais automatiquement les futurs projets.</div>'
+        : '<div class="notice"><strong>Membre :</strong> accès automatique à tous les projets Équipe actuels et futurs. Sélectionnez seulement les projets restreints à partager immédiatement.</div>';
+    const projectArea = role === 'admin' ? '' : `<div class="field span-2"><label>${role==='guest'?'Projets à partager':'Projets restreints à partager'}</label><div class="project-checks">${candidates.length?candidates.map(p=>`<label><input type="checkbox" name="projectIds" value="${p.id}" ${selected.has(p.id)?'checked':''}> ${esc(p.name)}${p.visibility==='restricted'?' <small>· Restreint</small>':''}</label>`).join(''):'<span class="metric-label">Aucun projet concerné.</span>'}</div></div>`;
+    return modalFrame('Inviter une personne','Choisissez son rôle et son accès. Les responsabilités se définissent ensuite directement dans les projets.',`<form data-form="invite"><div class="form-grid"><div class="field span-2"><label>Email</label><input type="email" name="email" required autofocus autocomplete="email" value="${escAttr(modal.email||'')}"></div><div class="field span-2"><label>Rôle dans l’espace</label><select name="role" data-invite-role><option value="member" ${role==='member'?'selected':''}>Membre</option><option value="admin" ${role==='admin'?'selected':''}>Administrateur</option><option value="guest" ${role==='guest'?'selected':''}>Invité externe</option></select></div><div class="span-2">${roleHelp}</div>${projectArea}</div><div class="notice"><strong>Connexion :</strong> 2b2c crée un lien personnel lié à cette adresse. La personne se connecte ou crée son propre compte et choisit elle-même son mot de passe.</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Créer l’invitation</button></div></form>`);
+  }
   if (modal.type==='member-manage') return memberManageModal(modal);
   if (modal.type==='new-direct') return modalFrame('Nouveau message privé','L’audience est figée par les membres du fil. Un lien de projet n’ajoute jamais de lecteur.',`<form data-form="new-direct"><div class="field"><label>Destinataire</label><select name="otherUserId" required><option value="">Choisir…</option>${state.members.filter(m=>m.user_id!==state.user.id&&m.status==='active').map(m=>`<option value="${m.user_id}">${esc(displayName(m.user_id))}</option>`).join('')}</select></div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Ouvrir le direct</button></div></form>`);
   if (modal.type==='new-group-direct') return modalFrame('Groupe privé','Choisissez au moins une autre personne. Seuls les membres sélectionnés verront ce fil.',`<form data-form="new-group-direct"><div class="field"><label>Nom du groupe</label><input name="title" maxlength="120" placeholder="Ex. Design + Produit"></div><div class="member-check-grid">${state.members.filter(m=>m.user_id!==state.user.id&&m.status==='active').map(m=>`<label><input type="checkbox" name="directMemberIds" value="${m.user_id}">${avatarHtml(m.user_id)}<span>${esc(displayName(m.user_id))}</span></label>`).join('')}</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Créer le groupe</button></div></form>`);
@@ -874,6 +908,20 @@ async function handleSubmit(event) {
 
 async function handleChange(event) {
   const el = event.target;
+  if (el.matches('[data-invite-role]') && state.modal?.type === 'invite') {
+    const form = el.closest('form');
+    const fd = form ? new FormData(form) : null;
+    state.modal = { ...state.modal, role: el.value, email: String(fd?.get('email') || ''), projectIds: fd ? fd.getAll('projectIds') : [] };
+    render();
+    return;
+  }
+  if (el.matches('[data-member-role]') && state.modal?.type === 'member-manage') {
+    const form = el.closest('form');
+    const fd = form ? new FormData(form) : null;
+    state.modal = { ...state.modal, role: el.value, projectIds: fd ? fd.getAll('projectIds') : [] };
+    render();
+    return;
+  }
   if (el.matches('[data-status-action]')) {
     try {
       const a=state.actions.find(x=>x.id===el.dataset.statusAction); if(!a||!canWriteProject(a.project_id)) throw new Error('Vous n’avez pas la responsabilité de modifier cette action.');
@@ -1052,18 +1100,21 @@ async function decideApproval(id,status){
 async function submitMemberManage(data){
   if(!['owner','admin'].includes(state.workspaceRole))throw new Error('Vous ne pouvez pas modifier les accès.');
   const member=state.members.find(m=>m.user_id===data.userId);if(!member||member.role==='owner')throw new Error('Ce membre ne peut pas être modifié ici.');
-  const role=data.role||'member';const accessMode=role==='admin'?'all':role==='guest'?'selected':(data.accessMode||'selected');
-  const visible=new Set(data.projectIds||[]);const responsibility=new Set(role==='guest'?[]:(data.responsibilityIds||[]));
-  if(role==='member'&&accessMode==='selected'&&!visible.size)throw new Error('Sélectionnez au moins un projet visible.');
-  if(role==='guest'&&!visible.size)throw new Error('Un invité doit avoir au moins un projet partagé.');
-  await api.update('workspace_members',`workspace_id=eq.${state.workspace.id}&user_id=eq.${member.user_id}`,{role,access_mode:accessMode},{returnRepresentation:false});
-  const workspaceProjectIds=[...state.projects,...state.archivedProjects].map(p=>p.id);
-  if(workspaceProjectIds.length)await api.remove('project_members',`user_id=eq.${member.user_id}&project_id=in.(${workspaceProjectIds.join(',')})`);
-  const rows=[];
-  for(const p of state.projects){const isVisible=accessMode==='all'||visible.has(p.id);if(!isVisible&&!responsibility.has(p.id))continue;let project_role='viewer';if(role==='guest')project_role='client';else if(responsibility.has(p.id))project_role='member';rows.push({project_id:p.id,user_id:member.user_id,role:project_role});}
-  if(rows.length)await api.insert('project_members',rows,{returnRepresentation:false});
-  // Communication v2: conversation membership is synchronized by database triggers.
-  state.modal=null;await refreshWorkspace({quiet:true});showToast('Accès et responsabilités mis à jour');
+  const role=data.role||'member';
+  let projectIds=[...new Set(data.projectIds||[])];
+  if(role==='admin') projectIds=[];
+  if(role==='member') {
+    const restricted=new Set(state.projects.filter(p=>p.visibility==='restricted').map(p=>p.id));
+    projectIds=projectIds.filter(id=>restricted.has(id));
+  }
+  if(role==='guest'&&!projectIds.length)throw new Error('Un invité externe doit avoir au moins un projet partagé.');
+  await api.rpc('set_workspace_member_access_v1', {
+    p_workspace_id: state.workspace.id,
+    p_user_id: member.user_id,
+    p_role: role,
+    p_project_ids: projectIds,
+  });
+  state.modal=null;await refreshWorkspace({quiet:true});showToast('Accès du membre mis à jour');
 }
 async function submitMessage(data) {
   const body=String(data.body||'').trim(); if(!body)return;
@@ -1152,14 +1203,28 @@ async function submitApprovalRequest(data){
 
 async function submitInvite(data) {
   if(!['owner','admin'].includes(state.workspaceRole)) throw new Error('Vous ne pouvez pas inviter de membre.');
-  const role=data.role||'member';const accessMode=role==='admin'?'all':role==='guest'?'selected':(data.accessMode||'selected');
-  const visible=new Set(data.projectIds||[]);const responsibility=new Set(role==='guest'?[]:(data.responsibilityIds||[]));
-  if(accessMode==='selected'&&!visible.size)throw new Error('Sélectionnez au moins un projet visible.');
-  const rows=await api.insert('workspace_invites',[{workspace_id:state.workspace.id,email:String(data.email).trim().toLowerCase(),role,status:'pending',access_mode:accessMode,invited_by:state.user.id}]);
-  const mappings=[];
-  for(const p of state.projects){const selected=visible.has(p.id);const responsible=responsibility.has(p.id);if(accessMode==='selected'&&!selected&&!responsible)continue;if(accessMode==='all'&&!responsible)continue;mappings.push({invite_id:rows[0].id,project_id:p.id,project_role:role==='guest'?'client':responsible?'member':'viewer'});}
-  if(mappings.length)await api.insert('workspace_invite_projects',mappings,{returnRepresentation:false});
-  const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('invite',rows[0].token);state.modal={type:'invite-link',url:url.toString(),email:rows[0].email};render();
+  const role = data.role || 'member';
+  const email = String(data.email || '').trim().toLowerCase();
+  if(!email) throw new Error('Adresse email requise.');
+  let projectIds = [...new Set(data.projectIds || [])];
+  if(role === 'admin') projectIds = [];
+  if(role === 'member') {
+    const restricted = new Set(state.projects.filter(p => p.visibility === 'restricted').map(p => p.id));
+    projectIds = projectIds.filter(id => restricted.has(id));
+  }
+  if(role === 'guest' && !projectIds.length) throw new Error('Choisissez au moins un projet pour un invité externe.');
+  const result = await api.rpc('create_workspace_invite_v2', {
+    p_workspace_id: state.workspace.id,
+    p_email: email,
+    p_role: role,
+    p_project_ids: projectIds,
+  });
+  const invite = Array.isArray(result) ? result[0] : result;
+  if(!invite?.token) throw new Error('Invitation créée sans lien exploitable.');
+  const url = new URL(location.origin + location.pathname);
+  url.searchParams.set('invite', invite.token);
+  state.modal = {type:'invite-link',url:url.toString(),email};
+  render();
 }
 
 async function seedPilot() {
@@ -1264,7 +1329,8 @@ async function openFile(path) { const url=await api.signedUrl('workspace-files',
 async function loadInvites(button) {
   const rows=await api.select('workspace_invites',`select=*&workspace_id=eq.${state.workspace.id}&order=created_at.desc&limit=30`);
   const parent=button.closest('#invite-list')||document.getElementById('invite-list'); if(!parent)return;
-  parent.innerHTML=rows.length?`<div class="stack">${rows.map(i=>`<div class="list-row"><div class="list-main"><strong>${esc(i.email)}</strong><small>${workspaceRoleLabel(i.role)} · ${i.access_mode==='all'?'Tous les projets':'Projets sélectionnés'} · ${inviteStatus(i.status)} · expire ${formatDate(i.expires_at)}</small></div><span class="pill ${i.status==='pending'?'blue':i.status==='accepted'?'good':''}">${inviteStatus(i.status)}</span></div>`).join('')}</div>`:empty('Aucune invitation','Utilisez Inviter pour créer un accès ciblé.');
+  const accessLabel=(invite)=>invite.role==='admin'?'Accès global':invite.role==='guest'?'Projets explicitement partagés':'Projets Équipe automatiques';
+  parent.innerHTML=rows.length?`<div class="stack">${rows.map(i=>`<div class="list-row"><div class="list-main"><strong>${esc(i.email)}</strong><small>${workspaceRoleLabel(i.role)} · ${accessLabel(i)} · ${inviteStatus(i.status)} · expire ${formatDate(i.expires_at)}</small></div><span class="pill ${i.status==='pending'?'blue':i.status==='accepted'?'good':''}">${inviteStatus(i.status)}</span></div>`).join('')}</div>`:empty('Aucune invitation','Utilisez Inviter pour créer un accès ciblé.');
 }
 
 function projectCard(p){return projectCardV3(p)}

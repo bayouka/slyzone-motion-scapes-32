@@ -169,7 +169,7 @@ async function submitProjectEdit(form, fd) {
   await done(form,'Projet mis à jour.',`#/projects/${projectId}/overview`);
 }
 
-const handledForms = new Set(['action','action-edit','milestone','milestone-edit','meeting','member-manage','project-edit']);
+const handledForms = new Set(['action','action-edit','milestone','milestone-edit','meeting','project-edit']);
 document.addEventListener('submit', async (event) => {
   const form = event.target?.closest?.('form[data-form]');
   const kind = form?.dataset?.form;
@@ -186,7 +186,6 @@ document.addEventListener('submit', async (event) => {
     else if (kind === 'milestone') await submitMilestone(form,fd,false);
     else if (kind === 'milestone-edit') await submitMilestone(form,fd,true);
     else if (kind === 'meeting') await submitMeeting(form,fd);
-    else if (kind === 'member-manage') await submitMemberManage(form,fd);
     else if (kind === 'project-edit') await submitProjectEdit(form,fd);
   } catch (error) {
     notice(form,failText(error),true);
