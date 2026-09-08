@@ -22,6 +22,7 @@ const approvalRetryDb = read('supabase/migrations/20260908210237_approval_requir
 const communicationDb = read('supabase/migrations/20260908213711_communication_v3_secure_contextual_workflows.sql');
 const meetingOwnerDb = read('supabase/migrations/20260908214017_communication_v3_meeting_thread_owner_fix.sql');
 const communicationLegacyDb = read('supabase/migrations/20260908220327_communication_v3_legacy_rpc_hardening.sql');
+const communicationStorageDb = read('supabase/migrations/20260908220806_communication_v3_message_storage_paths.sql');
 
 function assert(condition, message) {
   if (!condition) {
@@ -66,18 +67,12 @@ assert(live.includes('workspaceRefreshPromise'), 'refresh single-flight guard mi
 assert(!live.includes('Number(config.pollIntervalMs || 15000)'), 'legacy full-workspace polling remains');
 assert(!live.includes('new MutationObserver'), 'core app instantiates a MutationObserver');
 
-for (const required of ['register_deliverable_version_v3','request_deliverable_approval_v1','decide_deliverable_approval_v1','DELIVERABLE_VERSION_IMMUTABLE']) {
-  assert(safeBridge.includes(required), `safe bridge deliverable contract missing: ${required}`);
-}
+for (const required of ['register_deliverable_version_v3','request_deliverable_approval_v1','decide_deliverable_approval_v1','DELIVERABLE_VERSION_IMMUTABLE']) assert(safeBridge.includes(required), `safe bridge deliverable contract missing: ${required}`);
 assert(!safeBridge.includes("api.insert('approvals'"), 'safe bridge must not insert approvals directly');
 assert(!safeBridge.includes("api.update('approvals'"), 'safe bridge must not update approvals directly');
 assert(!safeBridge.includes('new MutationObserver'), 'safe bridge instantiates a MutationObserver');
 
-for (const required of [
-  'create_project_resource_link_v1','register_project_resource_file_v1','update_project_resource_v1','create_deliverable_with_first_version_v1',
-  'register_deliverable_version_v3','request_deliverable_approval_v1','decide_deliverable_approval_v1','get_project_delivery_history_v1',
-  'request_note','decision_note','created_by','sharedVersion','routeProjectId'
-]) assert(resources.includes(required), `resources v2 contract missing: ${required}`);
+for (const required of ['create_project_resource_link_v1','register_project_resource_file_v1','update_project_resource_v1','create_deliverable_with_first_version_v1','register_deliverable_version_v3','request_deliverable_approval_v1','decide_deliverable_approval_v1','get_project_delivery_history_v1','request_note','decision_note','created_by','sharedVersion','routeProjectId']) assert(resources.includes(required), `resources v2 contract missing: ${required}`);
 assert(resources.includes("window.addEventListener('hashchange'"), 'resources v2 route activation missing');
 assert(!resources.includes('new MutationObserver'), 'resources v2 instantiates a MutationObserver');
 assert(!resources.includes("api.insert('approvals'"), 'resources v2 must not insert approvals directly');
@@ -85,34 +80,25 @@ assert(!resources.includes("api.update('approvals'"), 'resources v2 must not upd
 assert(resourcesCss.includes('.resources-workspace-v1'), 'base resources CSS root missing');
 assert(resourcesCssV2.includes('.resources-workspace-v2'), 'resources v2 CSS root missing');
 
-for (const required of [
-  'get_project_closure_preview_v3','complete_project_v3','get_project_delivery_history_v1','reopen_project_v1',
-  'reference_version_ids','sequence_no','approval_status','start-complete-project','completed delivery page'
-]) assert(delivery.includes(required), `delivery lifecycle contract missing: ${required}`);
+for (const required of ['get_project_closure_preview_v3','complete_project_v3','get_project_delivery_history_v1','reopen_project_v1','reference_version_ids','sequence_no','approval_status','start-complete-project','completed delivery page']) assert(delivery.includes(required), `delivery lifecycle contract missing: ${required}`);
 assert(delivery.includes("document.addEventListener('click'"), 'delivery click capture missing');
 assert(delivery.includes('stopImmediatePropagation'), 'delivery must own closure click before legacy handlers');
 assert(!delivery.includes('new MutationObserver'), 'delivery module instantiates a MutationObserver');
 assert(deliveryCss.includes('.dw-backdrop'), 'delivery modal CSS missing');
 assert(deliveryCss.includes('.delivery-completed-page-v1'), 'completed project CSS missing');
 
-for (const required of ["api.select('project_resources'","api.select('deliverables'","api.select('deliverable_versions'","api.select('approvals'","api.select('deliverable_version_shares'",'safeExternalUrl','signedUrl','Ressource de travail','Livrable']) {
-  assert(library.includes(required), `global library contract missing: ${required}`);
-}
+for (const required of ["api.select('project_resources'","api.select('deliverables'","api.select('deliverable_versions'","api.select('approvals'","api.select('deliverable_version_shares'",'safeExternalUrl','signedUrl','Ressource de travail','Livrable']) assert(library.includes(required), `global library contract missing: ${required}`);
 assert(library.includes("location.hash || ''"), 'library must not activate on an empty auth hash');
 assert(!library.includes('new MutationObserver'), 'global library instantiates a MutationObserver');
 assert(libraryCss.includes('.library-workspace-v1'), 'library CSS root missing');
 
-for (const required of [
-  'send_message_v3','edit_message_v3','delete_message_v3','mark_conversation_read_v3','search_messages_v1',
-  'get_conversation_capabilities_v1','get_or_create_direct_v2','create_group_direct_v2','create_team_topic_v2','create_project_topic_v2',
-  'get_or_create_meeting_conversation_v1','link_direct_to_project_v3','set_conversation_notifications_v2','set_conversation_status_v2',
-  'create_action_from_message_v2','create_request_from_message_v2','create_decision_from_message_v2','get_workspace_sync_digest_v1'
-]) assert(communication.includes(required), `communication v3 workflow missing: ${required}`);
+for (const required of ['send_message_v3','edit_message_v2','delete_message_v3','mark_conversation_read_v3','search_messages_v1','get_conversation_capabilities_v1','get_or_create_direct_v2','create_group_direct_v2','create_team_topic_v2','create_project_topic_v2','get_or_create_meeting_conversation_v1','link_direct_to_project_v3','set_conversation_notifications_v2','set_conversation_status_v2','create_action_from_message_v2','create_request_from_message_v2','create_decision_from_message_v2','get_workspace_sync_digest_v1']) assert(communication.includes(required), `communication v3 workflow missing: ${required}`);
 assert(communication.includes("window.addEventListener('hashchange'"), 'communication route activation missing');
 assert(communication.includes("'/messages/'"), 'communication exact message routing missing');
 assert(communication.includes('MAX_FILES=10'), 'communication attachment count limit missing');
 assert(communication.includes('MAX_FILE_SIZE=25*1024*1024'), 'communication attachment size limit missing');
 assert(communication.includes('composerHasDraft'), 'communication draft protection missing');
+assert(communication.includes("api.upload('workspace-files'"), 'communication attachment upload missing');
 assert(!communication.includes('new MutationObserver'), 'communication workspace instantiates MutationObserver');
 assert(!communication.includes("api.insert('messages'"), 'communication workspace must use message RPCs');
 assert(!communication.includes("api.insert('mentions'"), 'communication workspace must use mention-aware RPCs');
@@ -120,20 +106,15 @@ assert(!communication.includes("api.insert('attachments'"), 'communication works
 assert(communicationCss.includes('.communication-workspace-v1'), 'communication CSS root missing');
 assert(communicationCss.includes('@media(max-width:767px)'), 'communication mobile CSS contract missing');
 
-for (const required of ['create table if not exists public.project_closures','complete_project_v3','get_project_delivery_history_v1','approval_requested','approval_approved','approval_changes_requested','approval_replaced','APPROVAL_VERSION_SUPERSEDED']) {
-  assert(deliveryDb.includes(required), `delivery database contract missing: ${required}`);
-}
+for (const required of ['create table if not exists public.project_closures','complete_project_v3','get_project_delivery_history_v1','approval_requested','approval_approved','approval_changes_requested','approval_replaced','APPROVAL_VERSION_SUPERSEDED']) assert(deliveryDb.includes(required), `delivery database contract missing: ${required}`);
 assert(closurePreferenceDb.includes('alter column closure_id set not null'), 'closure snapshots must belong to a structured closure');
 assert(closurePreferenceDb.includes('dv.version_number=(select max'), 'closure recommendation must prefer current version');
 assert(approvalRetryDb.includes('APPROVAL_NEW_VERSION_REQUIRED'), 'changes-requested version must require a new immutable version');
 
-for (const required of ['send_message_v3','search_messages_v1','get_or_create_meeting_conversation_v1','link_direct_to_project_v3','mark_conversation_read_v3','can_announce_conversation_v1','MESSAGE_ATTACHMENT_LIMIT']) {
-  assert(communicationDb.includes(required), `communication database contract missing: ${required}`);
-}
+for (const required of ['send_message_v3','search_messages_v1','get_or_create_meeting_conversation_v1','link_direct_to_project_v3','mark_conversation_read_v3','can_announce_conversation_v1','MESSAGE_ATTACHMENT_LIMIT']) assert(communicationDb.includes(required), `communication database contract missing: ${required}`);
 assert(meetingOwnerDb.includes('v_meeting.created_by'), 'meeting thread must remain owned by meeting creator');
-for (const required of ['send_message_with_mentions_v2','public.send_message_v3','public.edit_message_v3','public.delete_message_v3','public.mark_conversation_read_v3','public.link_direct_to_project_v3','ATTACHMENT_MESSAGE_AUTHOR_REQUIRED']) {
-  assert(communicationLegacyDb.includes(required), `legacy communication hardening missing: ${required}`);
-}
+for (const required of ['send_message_with_mentions_v2','public.send_message_v3','public.edit_message_v3','public.delete_message_v3','public.mark_conversation_read_v3','public.link_direct_to_project_v3','ATTACHMENT_MESSAGE_AUTHOR_REQUIRED']) assert(communicationLegacyDb.includes(required), `legacy communication hardening missing: ${required}`);
+for (const required of ["split_part(p_name,'/',2)='messages'",'conversation_id','public.attachments','not exists(select 1 from public.attachments']) assert(communicationStorageDb.includes(required), `message storage contract missing: ${required}`);
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
 console.log('stability/communication-v3 production contract: ok');
