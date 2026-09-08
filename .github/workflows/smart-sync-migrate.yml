@@ -43,23 +43,43 @@ jobs:
           s=s.replace("assert(index.includes('boot.js?v=4.4.8-smart-sync'), 'index does not cache-bust the native-access boot');", "assert(index.includes('v4.4.8-smart-sync'), 'index smart-sync cache-bust missing');")
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Validate smart sync sources
+      - name: Check transformed JavaScript syntax
         shell: bash
         run: |
           set -euo pipefail
           node --check site/assets/live.js
+          echo 'live.js syntax: ok'
           node --check site/assets/boot.js
+          echo 'boot.js syntax: ok'
           node --check site/assets/workflow-backend-safe-v1.js
+          echo 'safe bridge syntax: ok'
+      - name: Check transformed cache versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -n 'boot.js' site/index.html
+          grep -n 'const VERSION' site/assets/boot.js | head -5
+          grep -n 'version:' src/worker.js | head -5
           grep -Fq 'v4.4.8-smart-sync' site/index.html
-          npm run check
-          node scripts/stability-check.mjs
-          grep -Fq 'v4.4.8-smart-sync' src/worker.js
+          grep -Fq "const VERSION = 'v4.4.8-smart-sync'" site/assets/boot.js
+          grep -Fq "version: 'v4.4.8-smart-sync'" src/worker.js
+          echo 'cache/version markers: ok'
+      - name: Run collaboration contracts
+        run: npm run check
+      - name: Run stability contract
+        run: node scripts/stability-check.mjs
+      - name: Check smart sync contract
+        shell: bash
+        run: |
+          set -euo pipefail
           grep -Fq 'get_workspace_sync_digest_v1' site/assets/live.js
           grep -Fq 'smartSync' site/assets/live.js
           grep -Fq 'workspaceRefreshPromise' site/assets/live.js
           grep -Fq 'syncProbeIntervalMs' site/assets/boot.js
+          grep -Fq 'fullRefreshFallbackMs' site/assets/boot.js
           ! grep -Fq 'Number(config.pollIntervalMs || 15000)' site/assets/live.js
           ! grep -Fq 'new MutationObserver' site/assets/live.js
+          echo 'smart sync contract: ok'
       - name: Commit smart sync implementation
         shell: bash
         run: |
