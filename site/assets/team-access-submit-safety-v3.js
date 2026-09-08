@@ -1,6 +1,6 @@
 import { SupabaseBrowserClient } from './supabase-client.js';
 
-const VERSION = '4b4c team access submit safety v3.0.0';
+const VERSION = '4b4c team access submit safety v3.1.0';
 const config = window.__4B4C_CONFIG__ || {};
 const workspaceKey = config.workspaceStorageKey || '4b4c.live.workspace.v1';
 
@@ -24,6 +24,16 @@ function setBusy(form, busy) {
   });
 }
 
+function friendlyError(error) {
+  const message = String(error?.message || error || 'Erreur inconnue');
+  if (message.includes('PENDING_INVITE_ALREADY_EXISTS')) return 'Une invitation en attente existe déjà pour cette adresse. Utilisez la liste des invitations pour la copier, la renouveler ou la révoquer.';
+  if (message.includes('GUEST_PROJECT_REQUIRED')) return 'Choisissez au moins un projet pour un invité externe.';
+  if (message.includes('PROJECT_ACCESS_INVALID')) return 'Un des projets sélectionnés n’est pas accessible avec ce rôle. Rechargez la page puis réessayez.';
+  if (message.includes('FORBIDDEN')) return 'Vous n’avez pas le droit de gérer les invitations de cet espace.';
+  if (message.includes('AUTH_REQUIRED')) return 'Votre session a expiré. Reconnectez-vous puis réessayez.';
+  return message;
+}
+
 function showError(form, error) {
   let box = form.querySelector('[data-team-submit-error]');
   if (!box) {
@@ -33,7 +43,7 @@ function showError(form, error) {
     box.setAttribute('role','alert');
     form.prepend(box);
   }
-  box.innerHTML = `<strong>Impossible de terminer l’action.</strong><br>${esc(error?.message || error)}`;
+  box.innerHTML = `<strong>Impossible de terminer l’action.</strong><br>${esc(friendlyError(error))}`;
 }
 
 async function submitInvite(form, fd) {
@@ -41,7 +51,6 @@ async function submitInvite(form, fd) {
   if (!wid) throw new Error('Espace de travail introuvable. Rechargez la page.');
   const api = apiClient();
   if (!api.getSession()) throw new Error('Votre session a expiré. Reconnectez-vous puis réessayez.');
-  const user = await api.getUser();
 
   const role = String(fd.get('role') || 'member');
   const email = String(fd.get('email') || '').trim().toLowerCase();
@@ -49,29 +58,18 @@ async function submitInvite(form, fd) {
   if (!email) throw new Error('Adresse email requise.');
   if (role === 'guest' && selected.length === 0) throw new Error('Choisissez au moins un projet pour un invité externe.');
 
-  const rows = await api.insert('workspace_invites', [{
-    workspace_id: wid,
-    email,
-    role,
-    status: 'pending',
-    access_mode: role === 'guest' ? 'selected' : 'all',
-    invited_by: user.id,
-  }]);
-  const invite = rows?.[0];
-  if (!invite?.id || !invite?.token) throw new Error('Invitation créée sans lien exploitable.');
-
-  try {
-    if (selected.length && role !== 'admin') {
-      await api.insert('workspace_invite_projects', selected.map((projectId) => ({
-        invite_id: invite.id,
-        project_id: projectId,
-        project_role: role === 'guest' ? 'viewer' : 'member',
-      })), { returnRepresentation:false });
-    }
-  } catch (error) {
-    try { await api.remove('workspace_invites', `id=eq.${invite.id}`); } catch {}
-    throw error;
-  }
+  // One authenticated RPC performs identity lookup, invitation creation and
+  // project mappings in a single database transaction. This deliberately
+  // avoids a separate /auth/v1/user request, which is unnecessary and can
+  // fail independently on mobile browsers even while the current session is valid.
+  const result = await api.rpc('create_workspace_invite_v2', {
+    p_workspace_id: wid,
+    p_email: email,
+    p_role: role,
+    p_project_ids: selected,
+  });
+  const invite = Array.isArray(result) ? result[0] : result;
+  if (!invite?.invite_id || !invite?.token) throw new Error('Invitation créée sans lien exploitable.');
 
   const url = new URL(location.href);
   url.search = '';
