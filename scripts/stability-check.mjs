@@ -14,6 +14,9 @@ const deliveryCss = read('site/assets/delivery-workflow-v1.css');
 const library = read('site/assets/library-workspace-v1.js');
 const libraryCss = read('site/assets/library-workspace-v1.css');
 const runtime = read('site/runtime-config.js');
+const deliveryDb = read('supabase/migrations/20260908204538_delivery_approval_closure_v1.sql');
+const closurePreferenceDb = read('supabase/migrations/20260908205909_delivery_closure_current_version_preference_v1.sql');
+const approvalRetryDb = read('supabase/migrations/20260908210237_approval_requires_new_version_after_changes_v1.sql');
 
 function assert(condition, message) {
   if (!condition) {
@@ -91,6 +94,13 @@ for (const required of ["api.select('project_resources'","api.select('deliverabl
 assert(library.includes("location.hash || ''"), 'library must not activate on an empty auth hash');
 assert(!library.includes('new MutationObserver'), 'global library instantiates a MutationObserver');
 assert(libraryCss.includes('.library-workspace-v1'), 'library CSS root missing');
+
+for (const required of ['create table if not exists public.project_closures','complete_project_v3','get_project_delivery_history_v1','approval_requested','approval_approved','approval_changes_requested','approval_replaced','APPROVAL_VERSION_SUPERSEDED']) {
+  assert(deliveryDb.includes(required), `delivery database contract missing: ${required}`);
+}
+assert(closurePreferenceDb.includes('alter column closure_id set not null'), 'closure snapshots must belong to a structured closure');
+assert(closurePreferenceDb.includes('dv.version_number=(select max'), 'closure recommendation must prefer current version');
+assert(approvalRetryDb.includes('APPROVAL_NEW_VERSION_REQUIRED'), 'changes-requested version must require a new immutable version');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
 console.log('stability/delivery-cycle production contract: ok');
