@@ -81,3 +81,5 @@ jobs:
           probe /assets/live.js 'get_project_summaries_v1'
           probe /assets/live.js 'complete_project_v1'
           probe / '2b2c — Projets qui avancent ensemble'
+
+# Trigger marker: native-project-state-v447
