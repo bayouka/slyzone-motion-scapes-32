@@ -1,0 +1,55 @@
+/* 2b2c — Home mobile layout safety v1.0.0
+   Force the personal Home to use one coherent full-width column on phones. */
+@media (max-width: 767px) {
+  .home-ux-contract-v431 .v43-home-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: none !important;
+    gap: 12px !important;
+  }
+
+  .home-ux-contract-v431 .v43-main-flow,
+  .home-ux-contract-v431 .v43-rail-flow {
+    display: contents !important;
+  }
+
+  .home-ux-contract-v431 .v43-attention-card,
+  .home-ux-contract-v431 .v43-upcoming-card,
+  .home-ux-contract-v431 .v43-catchup-card,
+  .home-ux-contract-v431 .v43-projects {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    align-self: stretch !important;
+    flex: 0 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .home-ux-contract-v431 .v43-upcoming-card .rail-card-head,
+  .home-ux-contract-v431 .v43-upcoming-list,
+  .home-ux-contract-v431 .v43-catchup-list,
+  .home-ux-contract-v431 .v43-attention-list,
+  .home-ux-contract-v431 .v43-project-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .home-ux-contract-v431 .v43-project-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .home-ux-contract-v431 .project-resume-card-v43,
+  .home-ux-contract-v431 .v43-upcoming-row,
+  .home-ux-contract-v431 .v43-attention-row,
+  .home-ux-contract-v431 .catchup-event-v41 {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
