@@ -52,15 +52,16 @@ jobs:
           probe() {
             path="$1"; needle="$2"
             for i in $(seq 1 15); do
-              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=445-$GITHUB_SHA" || true)
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=446-$GITHUB_SHA" || true)
               if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
               sleep 3
             done
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.5-stability-safe"'
+          probe /health '"version":"v4.4.6-native-access"'
           probe /assets/boot.js 'workflow-backend-safe-v1.js'
           probe /assets/boot.js 'pollIntervalMs: Math.max(60000'
-          probe /assets/workflow-backend-safe-v1.js 'no MutationObserver'
+          probe /assets/live.js 'create_workspace_invite_v2'
+          probe /assets/live.js 'data-invite-role'
           probe / '2b2c — Projets qui avancent ensemble'
