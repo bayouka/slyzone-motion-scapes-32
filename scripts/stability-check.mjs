@@ -4,6 +4,7 @@ const read = (path) => fs.readFileSync(path, 'utf8');
 const boot = read('site/assets/boot.js');
 const worker = read('src/worker.js');
 const index = read('site/index.html');
+const live = read('site/assets/live.js');
 const safeBridge = read('site/assets/workflow-backend-safe-v1.js');
 const runtime = read('site/runtime-config.js');
 
@@ -14,13 +15,13 @@ function assert(condition, message) {
   }
 }
 
-assert(worker.includes('v4.4.5-stability-safe'), 'worker health version is not v4.4.5-stability-safe');
-assert(index.includes('boot.js?v=4.4.5-stability-safe'), 'index does not cache-bust the stability-safe boot');
-assert(boot.includes("const VERSION = 'v4.4.5-stability-safe'"), 'boot stability version missing');
+assert(worker.includes('v4.4.6-native-access'), 'worker health version is not v4.4.6-native-access');
+assert(index.includes('boot.js?v=4.4.6-native-access'), 'index does not cache-bust the native-access boot');
+assert(boot.includes("const VERSION = 'v4.4.6-native-access'"), 'boot native-access version missing');
 assert(boot.includes('pollIntervalMs: Math.max(60000'), 'polling floor is not 60 seconds');
-assert(boot.includes('invite-prelive-v2.js'), 'secure invitation controller missing');
 assert(boot.includes('workflow-backend-safe-v1.js'), 'observer-free workflow bridge missing');
 assert(boot.includes('live.js'), 'core live app missing');
+assert(!boot.includes('invite-prelive-v2.js'), 'legacy pre-live invitation controller is still loaded');
 
 for (const forbidden of [
   'auth-recovery-v1.js',
@@ -46,7 +47,13 @@ for (const forbidden of [
   assert(!boot.includes(forbidden), `forbidden enhancer still loaded: ${forbidden}`);
 }
 
+assert(live.includes('create_workspace_invite_v2'), 'native secure invitation RPC missing');
+assert(live.includes('set_workspace_member_access_v1'), 'native secure member-access RPC missing');
+assert(live.includes('data-invite-role'), 'native invitation role UI missing');
+assert(live.includes('data-member-role'), 'native member role UI missing');
+assert(!live.includes('Responsabilité / écriture'), 'legacy responsibility selector remains in native access UI');
+assert(!live.includes('Visibilité portefeuille'), 'legacy portfolio visibility selector remains in native access UI');
 assert(!safeBridge.includes('new MutationObserver'), 'safe workflow bridge instantiates a MutationObserver');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
-console.log('stability-safe production contract: ok');
+console.log('stability/native-access production contract: ok');
