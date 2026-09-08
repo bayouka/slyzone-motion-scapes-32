@@ -30,13 +30,13 @@
     .catch((error) => console.warn('Auth recovery enhancer unavailable', error))
     .then(() => {
       import('./home-polish.js').catch((error) => console.warn('Home polish enhancer unavailable', error));
-      return import('./live.js');
+      return import('./live.js?v=4.4.2-invite-cache');
     })
     .then(async () => {
-      await import('./invite-modal-stability-v1.js').catch((error) => console.warn('Invite modal stability unavailable', error));
-      await import('./team-access-v1.js').catch((error) => console.warn('Team access enhancer unavailable', error));
+      await import('./invite-modal-stability-v1.js?v=4.4.2-invite-cache').catch((error) => console.warn('Invite modal stability unavailable', error));
+      await import('./team-access-v1.js?v=4.4.2-invite-cache').catch((error) => console.warn('Team access enhancer unavailable', error));
       await import('./team-access-safety-v2.js').catch((error) => console.warn('Team access safety enhancer unavailable', error));
-      await import('./team-access-submit-safety-v3.js').catch((error) => console.warn('Team access submit safety enhancer unavailable', error));
+      await import('./team-access-submit-safety-v3.js?v=4.4.2-invite-cache').catch((error) => console.warn('Team access submit safety enhancer unavailable', error));
       await import('./invite-lifecycle-v1.js').catch((error) => console.warn('Invite lifecycle enhancer unavailable', error));
       await import('./approval-flow-safety-v1.js').catch((error) => console.warn('Approval flow safety enhancer unavailable', error));
       await import('./product-coherence-v1.js').catch((error) => console.warn('Product coherence enhancer unavailable', error));
