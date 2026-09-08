@@ -2,8 +2,9 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
+  const VERSION = 'v4.4.5-stability-safe';
 
-  const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
     if (!app) return;
     app.innerHTML = `
@@ -25,34 +26,17 @@
     return;
   }
 
+  // Stability mode: keep the core app and secured workflow only. Previous
+  // enhancer modules used multiple global MutationObservers on the same DOM.
+  // Slow the core full-workspace polling from ~15 s to at least 60 s while the
+  // rendering architecture is consolidated.
+  window.__4B4C_CONFIG__ = Object.freeze({ ...config, pollIntervalMs: Math.max(60000, Number(config.pollIntervalMs || 0)) });
   window.__4B4C_LIVE_MODE__ = true;
-  import('./auth-recovery-v1.js')
-    .catch((error) => console.warn('Auth recovery enhancer unavailable', error))
-    .then(async () => {
-      await import('./invite-prelive-v2.js?v=4.4.4-oom-hotfix');
-      import('./home-polish.js').catch((error) => console.warn('Home polish enhancer unavailable', error));
-      return import('./live.js?v=4.4.4-oom-hotfix');
-    })
-    .then(async () => {
-      await import('./team-access-v1.js?v=4.4.4-oom-hotfix').catch((error) => console.warn('Team access enhancer unavailable', error));
-      await import('./team-access-safety-v2.js').catch((error) => console.warn('Team access safety enhancer unavailable', error));
-      await import('./team-access-submit-safety-v3.js?v=4.4.4-oom-hotfix').catch((error) => console.warn('Team access submit safety enhancer unavailable', error));
-      await import('./invite-lifecycle-v1.js').catch((error) => console.warn('Invite lifecycle enhancer unavailable', error));
-      await import('./approval-flow-safety-v1.js').catch((error) => console.warn('Approval flow safety enhancer unavailable', error));
-      await import('./product-coherence-v1.js').catch((error) => console.warn('Product coherence enhancer unavailable', error));
-      await import('./daily-work-v1.js').catch((error) => console.warn('Daily work enhancer unavailable', error));
-      await import('./planning-clarity-v1.js').catch((error) => console.warn('Planning clarity enhancer unavailable', error));
-      await import('./project-lifecycle-safety-v1.js').catch((error) => console.warn('Project lifecycle safety enhancer unavailable', error));
-      await import('./project-flow-v1.js').catch((error) => console.warn('Project flow enhancer unavailable', error));
-      await import('./communication-memory-v1.js').catch((error) => console.warn('Communication memory enhancer unavailable', error));
-      await import('./meeting-agenda-v1.js').catch((error) => console.warn('Meeting agenda enhancer unavailable', error));
-      await import('./resource-model-v1.js').catch((error) => console.warn('Resource model enhancer unavailable', error));
-      await import('./workflow-backend-v2.js').catch((error) => console.warn('Workflow backend v2 unavailable', error));
-      // project-progress-v2.js deliberately not loaded in v4.4.4: its previous
-      // MutationObserver implementation could self-trigger until browser OOM.
-      await import('./ui-quality-v1.js').catch((error) => console.warn('UI quality enhancer unavailable', error));
-      await import('./dialog-focus-safety-v2.js').catch((error) => console.warn('Dialog focus safety enhancer unavailable', error));
-    })
+  window.__4B4C_STABILITY_MODE__ = VERSION;
+
+  import(`./invite-prelive-v2.js?${VERSION}`)
+    .then(() => import(`./live.js?${VERSION}`))
+    .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
     .catch((error) => {
       console.error(error);
       renderStartupError(
