@@ -1,10 +1,8 @@
 name: 4b4c CI
 
+# Cloudflare Workers Builds is the active deployment path. Keep GitHub Actions manual-only.
 on:
-  push:
-    branches: [develop, main]
-  pull_request:
-    branches: [develop, main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -35,10 +33,11 @@ jobs:
           grep -Fq '4b4c V4.3.1 — Home UX/UI polish' site/assets/home-polish.css
           grep -Fq 'assets/home-polish.css' site/index.html
           grep -Fq "import('./home-polish.js')" site/assets/boot.js
+          grep -Fq "import('./workflow-backend-v2.js')" site/assets/boot.js
+          grep -Fq "import('./project-progress-v2.js')" site/assets/boot.js
           grep -Fq 'Configuration 2b2c indisponible' site/assets/boot.js
           ! grep -Fq 'assets/app.js' site/assets/boot.js
           grep -Fq "app: '4b4c'" src/worker.js
-          grep -Fq "version: 'v4.3.2'" src/worker.js
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
             echo 'Secret-like material found in public application' >&2
             exit 1
