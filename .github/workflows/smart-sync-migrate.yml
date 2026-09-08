@@ -48,41 +48,44 @@ jobs:
         run: |
           set -euo pipefail
           node --check site/assets/live.js
-          echo 'live.js syntax: ok'
           node --check site/assets/boot.js
-          echo 'boot.js syntax: ok'
           node --check site/assets/workflow-backend-safe-v1.js
-          echo 'safe bridge syntax: ok'
-      - name: Check transformed cache versions
+          echo 'transformed JavaScript syntax: ok'
+      - name: Validate transformed smart sync payload
         shell: bash
         run: |
-          set -euo pipefail
-          grep -Fn 'v4.4.8-smart-sync' site/index.html
-          grep -Fn "const VERSION = 'v4.4.8-smart-sync'" site/assets/boot.js
-          grep -Fn 'v4.4.8-smart-sync' src/worker.js
-          echo 'cache/version markers: ok'
+          python3 - <<'PY'
+          from pathlib import Path
+          files={
+            'index':Path('site/index.html').read_text(encoding='utf-8'),
+            'boot':Path('site/assets/boot.js').read_text(encoding='utf-8'),
+            'live':Path('site/assets/live.js').read_text(encoding='utf-8'),
+            'worker':Path('src/worker.js').read_text(encoding='utf-8'),
+          }
+          required={
+            'index':['v4.4.8-smart-sync'],
+            'boot':["const VERSION = 'v4.4.8-smart-sync'",'syncProbeIntervalMs','fullRefreshFallbackMs'],
+            'worker':['v4.4.8-smart-sync'],
+            'live':['get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise','syncDigest','refreshWorkspaceImpl'],
+          }
+          for name,needles in required.items():
+            for needle in needles:
+              if needle not in files[name]:
+                raise SystemExit(f'{name}: missing required marker: {needle!r}')
+              print(f'{name}: found {needle}')
+          forbidden={
+            'live':['Number(config.pollIntervalMs || 15000)','new MutationObserver'],
+          }
+          for name,needles in forbidden.items():
+            for needle in needles:
+              if needle in files[name]:
+                raise SystemExit(f'{name}: forbidden marker present: {needle!r}')
+          print('smart sync transformed payload: ok')
+          PY
       - name: Run collaboration contracts
         run: npm run check
       - name: Run stability contract
         run: node scripts/stability-check.mjs
-      - name: Check smart sync contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          grep -Fq 'get_workspace_sync_digest_v1' site/assets/live.js
-          grep -Fq 'smartSync' site/assets/live.js
-          grep -Fq 'workspaceRefreshPromise' site/assets/live.js
-          grep -Fq 'syncProbeIntervalMs' site/assets/boot.js
-          grep -Fq 'fullRefreshFallbackMs' site/assets/boot.js
-          if grep -Fq 'Number(config.pollIntervalMs || 15000)' site/assets/live.js; then
-            echo 'legacy full-workspace polling still present' >&2
-            exit 1
-          fi
-          if grep -Fq 'new MutationObserver' site/assets/live.js; then
-            echo 'MutationObserver detected in live core' >&2
-            exit 1
-          fi
-          echo 'smart sync contract: ok'
       - name: Commit smart sync implementation
         shell: bash
         run: |
