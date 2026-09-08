@@ -1,14 +1,8 @@
 name: Deploy 4b4c production
 
+# Cloudflare Workers Builds is the active production deployment path.
+# GitHub Actions stays manual-only while Actions credits are unavailable.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'site/**'
-      - 'src/**'
-      - 'scripts/stability-check.mjs'
-      - 'wrangler.jsonc'
-      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -52,7 +46,7 @@ jobs:
           probe() {
             path="$1"; needle="$2"
             for i in $(seq 1 15); do
-              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=448-$GITHUB_SHA-$i" || true)
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?manual-$GITHUB_SHA-$i" || true)
               echo "probe $path attempt=$i http=$code"
               if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
               sleep 3
@@ -60,11 +54,5 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.8-smart-sync"'
-          probe /assets/boot.js 'syncProbeIntervalMs'
-          probe /assets/boot.js 'fullRefreshFallbackMs'
-          probe /assets/live.js 'get_workspace_sync_digest_v1'
-          probe /assets/live.js 'workspaceRefreshPromise'
-          probe /assets/live.js 'get_project_summaries_v1'
-          probe /assets/live.js 'create_workspace_invite_v2'
+          probe /health '"app":"4b4c"'
           probe / '2b2c — Projets qui avancent ensemble'
