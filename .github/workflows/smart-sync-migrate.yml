@@ -33,15 +33,27 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Apply smart sync migration
         run: python3 scripts/smart-sync-migrate.py
-      - name: Normalize smart sync stability guard
+      - name: Normalize smart sync files on disk
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
+          idx=Path('site/index.html')
+          s=idx.read_text(encoding='utf-8')
+          s,n=re.subn(r'assets/boot\.js\?v=[^"\']+', 'assets/boot.js?v=4.4.8-smart-sync', s, count=1)
+          if n != 1:
+            raise SystemExit(f'index boot cache-bust replacement count={n}')
+          idx.write_text(s,encoding='utf-8')
+          if 'v4.4.8-smart-sync' not in idx.read_text(encoding='utf-8'):
+            raise SystemExit('index smart-sync cache-bust was not persisted')
+
           p=Path('scripts/stability-check.mjs')
           s=p.read_text(encoding='utf-8')
           s=s.replace("assert(index.includes('boot.js?v=4.4.8-smart-sync'), 'index does not cache-bust the native-access boot');", "assert(index.includes('v4.4.8-smart-sync'), 'index smart-sync cache-bust missing');")
           p.write_text(s,encoding='utf-8')
+          print('disk normalization: ok')
           PY
       - name: Check transformed JavaScript syntax
         shell: bash
@@ -73,13 +85,9 @@ jobs:
               if needle not in files[name]:
                 raise SystemExit(f'{name}: missing required marker: {needle!r}')
               print(f'{name}: found {needle}')
-          forbidden={
-            'live':['Number(config.pollIntervalMs || 15000)','new MutationObserver'],
-          }
-          for name,needles in forbidden.items():
-            for needle in needles:
-              if needle in files[name]:
-                raise SystemExit(f'{name}: forbidden marker present: {needle!r}')
+          for needle in ['Number(config.pollIntervalMs || 15000)','new MutationObserver']:
+            if needle in files['live']:
+              raise SystemExit(f'live: forbidden marker present: {needle!r}')
           print('smart sync transformed payload: ok')
           PY
       - name: Run collaboration contracts
