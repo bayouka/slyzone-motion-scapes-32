@@ -23,6 +23,7 @@ const communicationDb = read('supabase/migrations/20260908213711_communication_v
 const meetingOwnerDb = read('supabase/migrations/20260908214017_communication_v3_meeting_thread_owner_fix.sql');
 const communicationLegacyDb = read('supabase/migrations/20260908220327_communication_v3_legacy_rpc_hardening.sql');
 const communicationStorageDb = read('supabase/migrations/20260908220806_communication_v3_message_storage_paths.sql');
+const communicationDeleteDb = read('supabase/migrations/20260908221034_communication_v3_deleted_message_privacy.sql');
 
 function assert(condition, message) {
   if (!condition) {
@@ -115,6 +116,8 @@ for (const required of ['send_message_v3','search_messages_v1','get_or_create_me
 assert(meetingOwnerDb.includes('v_meeting.created_by'), 'meeting thread must remain owned by meeting creator');
 for (const required of ['send_message_with_mentions_v2','public.send_message_v3','public.edit_message_v3','public.delete_message_v3','public.mark_conversation_read_v3','public.link_direct_to_project_v3','ATTACHMENT_MESSAGE_AUTHOR_REQUIRED']) assert(communicationLegacyDb.includes(required), `legacy communication hardening missing: ${required}`);
 for (const required of ["split_part(p_name,'/',2)='messages'",'conversation_id','public.attachments','not exists(select 1 from public.attachments']) assert(communicationStorageDb.includes(required), `message storage contract missing: ${required}`);
+assert(communicationDeleteDb.includes("body='Message supprimé'"), 'deleted message content must be scrubbed');
+assert(communicationDeleteDb.includes('m.deleted_at is null'), 'deleted message attachments must not remain readable');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
 console.log('stability/communication-v3 production contract: ok');
