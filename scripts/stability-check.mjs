@@ -15,10 +15,11 @@ function assert(condition, message) {
   }
 }
 
-assert(worker.includes('v4.4.7-native-progress'), 'worker health version is not v4.4.7-native-progress');
-assert(index.includes('boot.js?v=4.4.7-native-progress'), 'index does not cache-bust the native-access boot');
-assert(boot.includes("const VERSION = 'v4.4.7-native-progress'"), 'boot native-access version missing');
-assert(boot.includes('pollIntervalMs: Math.max(60000'), 'polling floor is not 60 seconds');
+assert(worker.includes('v4.4.8-smart-sync'), 'worker health version is not v4.4.8-smart-sync');
+assert(index.includes('assets/boot.js?build=448'), 'index smart-sync cache-bust missing');
+assert(boot.includes("const VERSION = 'v4.4.8-smart-sync'"), 'boot native-access version missing');
+assert(boot.includes('syncProbeIntervalMs: Math.max(15000'), 'smart sync probe floor missing');
+assert(boot.includes('fullRefreshFallbackMs: Math.max(300000'), 'full refresh safety fallback missing');
 assert(boot.includes('workflow-backend-safe-v1.js'), 'observer-free workflow bridge missing');
 assert(boot.includes('live.js'), 'core live app missing');
 assert(!boot.includes('invite-prelive-v2.js'), 'legacy pre-live invitation controller is still loaded');
@@ -50,6 +51,11 @@ for (const forbidden of [
 assert(live.includes('create_workspace_invite_v2'), 'native secure invitation RPC missing');
 assert(live.includes('set_workspace_member_access_v1'), 'native secure member-access RPC missing');
 assert(live.includes('get_project_summaries_v1'), 'server project summaries RPC missing');
+assert(live.includes('get_workspace_sync_digest_v1'), 'workspace sync digest RPC missing');
+assert(live.includes('smartSync'), 'smart sync controller missing');
+assert(live.includes('workspaceRefreshPromise'), 'full refresh single-flight guard missing');
+assert(!live.includes('Number(config.pollIntervalMs || 15000)'), 'legacy full-workspace polling remains');
+assert(!live.includes('new MutationObserver'), 'core app instantiates a MutationObserver');
 assert(live.includes('set_project_pause_v1'), 'native project pause workflow missing');
 assert(live.includes('complete_project_v1'), 'native project completion workflow missing');
 assert(live.includes('reopen_project_v1'), 'native project reopen workflow missing');
@@ -61,4 +67,4 @@ assert(!live.includes('Visibilité portefeuille'), 'legacy portfolio visibility 
 assert(!safeBridge.includes('new MutationObserver'), 'safe workflow bridge instantiates a MutationObserver');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
-console.log('stability/native-progress production contract: ok');
+console.log('stability/smart-sync production contract: ok');

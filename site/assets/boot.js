@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.4.7-native-progress';
+  const VERSION = 'v4.4.8-smart-sync';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -28,9 +28,9 @@
 
   // Stability mode: keep the core app and secured workflow only. Previous
   // enhancer modules used multiple global MutationObservers on the same DOM.
-  // Slow the core full-workspace polling from ~15 s to at least 60 s while the
-  // rendering architecture is consolidated.
-  window.__4B4C_CONFIG__ = Object.freeze({ ...config, pollIntervalMs: Math.max(60000, Number(config.pollIntervalMs || 0)) });
+  // Stability mode keeps the observer-free core. A lightweight server digest is
+  // probed frequently; the expensive full workspace refresh runs only on change.
+  window.__4B4C_CONFIG__ = Object.freeze({ ...config, syncProbeIntervalMs: Math.max(15000, Number(config.syncProbeIntervalMs || 20000)), fullRefreshFallbackMs: Math.max(300000, Number(config.fullRefreshFallbackMs || 300000)) });
   window.__4B4C_LIVE_MODE__ = true;
   window.__4B4C_STABILITY_MODE__ = VERSION;
 

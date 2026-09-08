@@ -10,8 +10,12 @@ const state = {
   projects: [], archivedProjects: [], members: [], profiles: [], notifications: [], requests: [], approvals: [], meetings: [], meetingAttendees: [], milestones: [],
   actions: [], assignees: [], decisions: [], deliverables: [], deliverableVersions: [], conversations: [], conversationMembers: [], projectMembers: [], projectSummaries: new Map(), projectCache: new Map(), messages: new Map(),
   unreadMessages: 0, unreadMentions: 0, unreadConversations: new Map(), replyTo: null, messageLoads: new Set(),
-  modal: null, toast: [], notificationOpen: false, userMenuOpen: false, mobileMenuOpen: false, invitePreview: null, welcome: null, searchQuery: '', libraryQuery: '', libraryProject: 'all', loading: true, busy: false, lastSync: null, syncError: null, previousSeenAt: null, seenMarkedAt: null
+  modal: null, toast: [], notificationOpen: false, userMenuOpen: false, mobileMenuOpen: false, invitePreview: null, welcome: null, searchQuery: '', libraryQuery: '', libraryProject: 'all', loading: true, busy: false, lastSync: null, syncError: null, syncDigest: null, syncProbeAt: 0, previousSeenAt: null, seenMarkedAt: null
 };
+
+let workspaceRefreshPromise = null;
+let smartSyncPromise = null;
+let lastFullRefreshAt = 0;
 
 const BRAND_NAME = '2b2c';
 const BRAND_TAGLINE = 'Projets qui avancent ensemble';
@@ -59,7 +63,8 @@ async function boot() {
       else if (state.mobileMenuOpen || state.userMenuOpen || state.notificationOpen) { state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render(); }
     }
   });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user && !state.modal) refreshWorkspace({ quiet: true }); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user && !state.modal) smartSync({ force: true }); });
+  window.addEventListener('focus', () => { if (state.user && state.workspace && !state.modal && !document.hidden) smartSync(); });
 
   const inviteToken = new URLSearchParams(location.search).get('invite');
   if (inviteToken) {
@@ -82,8 +87,8 @@ async function boot() {
   render();
 
   setInterval(() => {
-    if (state.user && state.workspace && !state.modal && !document.hidden) refreshWorkspace({ quiet: true });
-  }, Math.max(10000, Number(config.pollIntervalMs || 15000)));
+    if (state.user && state.workspace && !state.modal && !document.hidden) smartSync();
+  }, Math.max(15000, Number(config.syncProbeIntervalMs || 20000)));
 }
 
 async function afterAuthenticated() {
@@ -124,7 +129,7 @@ async function selectWorkspace(workspaceId, { preserveModal = false } = {}) {
   state.previousSeenAt = membership.last_seen_at || membership.joined_at || null;
   state.workspace = first(await api.select('workspaces', `select=*&id=eq.${workspaceId}`));
   if (!preserveModal) state.modal = null;
-  state.projectCache.clear(); state.projectSummaries.clear(); state.messages.clear();
+  state.projectCache.clear(); state.projectSummaries.clear(); state.messages.clear(); state.syncDigest=null; state.syncProbeAt=0; lastFullRefreshAt=0;
   await refreshWorkspace({ quiet: true });
   try {
     const marked = await api.rpc('mark_workspace_seen', { p_workspace_id: workspaceId });
@@ -135,12 +140,53 @@ async function selectWorkspace(workspaceId, { preserveModal = false } = {}) {
   }
 }
 
-async function refreshWorkspace({ quiet = false } = {}) {
+function syncDigestFromRows(rows){
+  if(Array.isArray(rows)) return String(rows[0]?.digest||'');
+  if(rows&&typeof rows==='object') return String(rows.digest||'');
+  return typeof rows==='string'?rows:'';
+}
+
+async function smartSync({force=false}={}){
+  if(!state.user||!state.workspace||state.modal||document.hidden)return;
+  const now=Date.now();
+  const minGap=Math.max(8000,Math.floor(Number(config.syncProbeIntervalMs||20000)/2));
+  if(!force&&state.syncProbeAt&&now-state.syncProbeAt<minGap)return;
+  if(smartSyncPromise)return smartSyncPromise;
+  smartSyncPromise=(async()=>{
+    state.syncProbeAt=Date.now();
+    try{
+      const rows=await api.rpc('get_workspace_sync_digest_v1',{p_workspace_id:state.workspace.id});
+      const nextDigest=syncDigestFromRows(rows);
+      if(!nextDigest)return;
+      const changed=!state.syncDigest||nextDigest!==state.syncDigest;
+      const fallbackMs=Math.max(300000,Number(config.fullRefreshFallbackMs||300000));
+      const fallbackDue=!lastFullRefreshAt||Date.now()-lastFullRefreshAt>=fallbackMs;
+      if(changed||fallbackDue){
+        await refreshWorkspace({quiet:true});
+      }else if(state.syncError){
+        state.syncError=null;
+        render();
+      }
+    }catch(error){
+      const message=humanError(error);
+      if(state.syncError!==message){state.syncError=message;render();}
+    }
+  })();
+  try{return await smartSyncPromise;}finally{smartSyncPromise=null;}
+}
+
+async function refreshWorkspace(options={}){
+  if(workspaceRefreshPromise)return workspaceRefreshPromise;
+  workspaceRefreshPromise=refreshWorkspaceImpl(options);
+  try{return await workspaceRefreshPromise;}finally{workspaceRefreshPromise=null;}
+}
+
+async function refreshWorkspaceImpl({ quiet = false } = {}) {
   if (!state.workspace) return;
   const wid = state.workspace.id;
   if (!quiet) state.loading = true;
   try {
-    const [projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, meetingAttendees, actions, assignees, decisions, deliverables, deliverableVersions, conversations, conversationMembers, projectMembers, summaryRows, unreadRows, badgeRows] = await Promise.all([
+    const [projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, meetingAttendees, actions, assignees, decisions, deliverables, deliverableVersions, conversations, conversationMembers, projectMembers, summaryRows, unreadRows, badgeRows, digestRows] = await Promise.all([
       api.select('projects', `select=*&workspace_id=eq.${wid}&status=neq.archived&order=updated_at.desc`),
       api.select('projects', `select=*&workspace_id=eq.${wid}&status=eq.archived&order=updated_at.desc`),
       api.select('workspace_members', `select=*&workspace_id=eq.${wid}&status=eq.active&order=joined_at.asc`),
@@ -160,10 +206,12 @@ async function refreshWorkspace({ quiet = false } = {}) {
       api.select('project_members', 'select=*'),
       api.rpc('get_project_summaries_v1', { p_workspace_id: wid }).catch(()=>[]),
       api.rpc('get_unread_conversations_v2', { p_workspace_id: wid }).catch(()=>[]),
-      api.rpc('get_message_badges_v2', { p_workspace_id: wid }).catch(()=>[])
+      api.rpc('get_message_badges_v2', { p_workspace_id: wid }).catch(()=>[]),
+      api.rpc('get_workspace_sync_digest_v1', { p_workspace_id: wid }).catch(()=>[])
     ]);
     Object.assign(state, { projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, meetingAttendees, actions, assignees, decisions, deliverables, deliverableVersions, conversations, conversationMembers, projectMembers });
     state.projectSummaries = new Map((Array.isArray(summaryRows)?summaryRows:[]).map(row=>[row.project_id,row]));
+    state.syncDigest = syncDigestFromRows(digestRows) || state.syncDigest;
     state.unreadConversations = new Map((Array.isArray(unreadRows)?unreadRows:[]).map(row=>[row.conversation_id,Number(row.unread_count)||0]));
     const badges = first(Array.isArray(badgeRows)?badgeRows:[]) || {};
     state.unreadMessages = Number(badges.unread_messages)||0;
@@ -182,6 +230,7 @@ async function refreshWorkspace({ quiet = false } = {}) {
       }];
     }));
     state.lastSync = new Date();
+    lastFullRefreshAt = Date.now();
     state.syncError = null;
   } catch (error) {
     state.syncError=humanError(error);
