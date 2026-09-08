@@ -28,15 +28,17 @@
   window.__4B4C_LIVE_MODE__ = true;
   import('./auth-recovery-v1.js')
     .catch((error) => console.warn('Auth recovery enhancer unavailable', error))
-    .then(() => {
+    .then(async () => {
+      // Must be registered before live.js: this capture listener owns invitation clicks
+      // so the legacy modal/submit path can never run first.
+      await import('./invite-prelive-v2.js?v=4.4.3-invite-prelive');
       import('./home-polish.js').catch((error) => console.warn('Home polish enhancer unavailable', error));
-      return import('./live.js?v=4.4.2-invite-cache');
+      return import('./live.js?v=4.4.3-invite-prelive');
     })
     .then(async () => {
-      await import('./invite-modal-stability-v1.js?v=4.4.2-invite-cache').catch((error) => console.warn('Invite modal stability unavailable', error));
-      await import('./team-access-v1.js?v=4.4.2-invite-cache').catch((error) => console.warn('Team access enhancer unavailable', error));
+      await import('./team-access-v1.js?v=4.4.3-invite-prelive').catch((error) => console.warn('Team access enhancer unavailable', error));
       await import('./team-access-safety-v2.js').catch((error) => console.warn('Team access safety enhancer unavailable', error));
-      await import('./team-access-submit-safety-v3.js?v=4.4.2-invite-cache').catch((error) => console.warn('Team access submit safety enhancer unavailable', error));
+      await import('./team-access-submit-safety-v3.js?v=4.4.3-invite-prelive').catch((error) => console.warn('Team access submit safety enhancer unavailable', error));
       await import('./invite-lifecycle-v1.js').catch((error) => console.warn('Invite lifecycle enhancer unavailable', error));
       await import('./approval-flow-safety-v1.js').catch((error) => console.warn('Approval flow safety enhancer unavailable', error));
       await import('./product-coherence-v1.js').catch((error) => console.warn('Product coherence enhancer unavailable', error));
