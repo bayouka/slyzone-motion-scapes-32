@@ -9,6 +9,8 @@ const safeBridge = read('site/assets/workflow-backend-safe-v1.js');
 const resources = read('site/assets/resources-workspace-v1.js');
 const resourcesGuard = read('site/assets/resources-workspace-form-guard-v1.js');
 const resourcesCss = read('site/assets/resources-workspace-v1.css');
+const library = read('site/assets/library-workspace-v1.js');
+const libraryCss = read('site/assets/library-workspace-v1.css');
 const runtime = read('site/runtime-config.js');
 
 function assert(condition, message) {
@@ -18,15 +20,18 @@ function assert(condition, message) {
   }
 }
 
-assert(worker.includes('v4.4.10-resources-model'), 'worker health version is not v4.4.10-resources-model');
-assert(index.includes('assets/boot.js?build=450'), 'index resources-model cache-bust missing');
+assert(worker.includes('v4.4.11-library-model'), 'worker health version is not v4.4.11-library-model');
+assert(index.includes('assets/boot.js?build=451'), 'index library-model cache-bust missing');
 assert(index.includes('assets/resources-workspace-v1.css'), 'resources workspace stylesheet missing');
-assert(boot.includes("const VERSION = 'v4.4.10-resources-model'"), 'boot resources-model version missing');
+assert(index.includes('assets/library-workspace-v1.css'), 'library workspace stylesheet missing');
+assert(boot.includes("const VERSION = 'v4.4.11-library-model'"), 'boot library-model version missing');
 assert(boot.includes('syncProbeIntervalMs: Math.max(15000'), 'smart sync probe floor missing');
 assert(boot.includes('fullRefreshFallbackMs: Math.max(300000'), 'full refresh safety fallback missing');
 assert(boot.includes('workflow-backend-safe-v1.js'), 'observer-free workflow bridge missing');
 assert(boot.includes('resources-workspace-v1.js'), 'route-driven resources workspace missing');
 assert(boot.includes('resources-workspace-form-guard-v1.js'), 'resources form focus guard missing');
+assert(boot.includes('library-workspace-v1.js'), 'route-driven global library missing');
+assert(boot.includes('native library view kept'), 'library fallback contract missing');
 assert(boot.includes('live.js'), 'core live app missing');
 assert(!boot.includes('invite-prelive-v2.js'), 'legacy pre-live invitation controller is still loaded');
 
@@ -107,6 +112,27 @@ assert(resourcesGuard.includes("document.addEventListener('visibilitychange'"), 
 assert(!resourcesGuard.includes('new MutationObserver'), 'resources form guard instantiates a MutationObserver');
 assert(resourcesCss.includes('.resources-workspace-v1'), 'resources workspace CSS root missing');
 assert(resourcesCss.includes('@media(max-width:767px)'), 'resources mobile CSS contract missing');
+
+for (const required of [
+  "api.select('project_resources'",
+  "api.select('deliverables'",
+  "api.select('deliverable_versions'",
+  "api.select('approvals'",
+  "api.select('deliverable_version_shares'",
+  'safeExternalUrl',
+  'signedUrl',
+  'Ressource de travail',
+  'Livrable',
+]) {
+  assert(library.includes(required), `global library contract missing: ${required}`);
+}
+assert(library.includes("location.hash || ''"), 'library must not activate on an empty auth hash');
+assert(library.includes("window.addEventListener('hashchange'"), 'library route activation missing');
+assert(!library.includes('new MutationObserver'), 'global library instantiates a MutationObserver');
+assert(!library.includes("api.insert('approvals'"), 'global library must not insert approvals directly');
+assert(!library.includes("api.update('approvals'"), 'global library must not update approvals directly');
+assert(libraryCss.includes('.library-workspace-v1'), 'library workspace CSS root missing');
+assert(libraryCss.includes('@media(max-width:767px)'), 'library mobile CSS contract missing');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
-console.log('stability/resources-model production contract: ok');
+console.log('stability/library-model production contract: ok');
