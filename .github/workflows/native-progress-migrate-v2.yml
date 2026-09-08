@@ -56,7 +56,7 @@ jobs:
           set -euo pipefail
           git config user.name 'bayouka'
           git config user.email 'bayoukadesbois@gmail.com'
-          git add site/assets/live.js site/assets/boot.js site/index.html src/worker.js scripts/stability-check.mjs .github/workflows/deploy.yml
+          git add site/assets/live.js site/assets/boot.js site/index.html src/worker.js scripts/stability-check.mjs
           git diff --cached --quiet && { echo 'No migration changes to commit'; exit 1; }
           git commit -m 'refactor: integrate server project progress natively'
           git push origin HEAD:main
