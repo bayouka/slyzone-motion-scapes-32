@@ -269,13 +269,14 @@ function render() {
 }
 
 function shell(content, route) {
-  const unread = state.notifications.filter(n => !n.read_at).length;
+  const unreadNotifications = state.notifications.filter(n => !n.read_at).length;
+  const unread = Math.max(attentionCount(), unreadNotifications);
   const external=isExternalUser();
   const primaryNav = external
     ? [
         ['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],
         ['projects','Projets',ICONS.projects,'#/projects'],
-        ['calendar','Calendrier',ICONS.calendar,'#/calendar'],
+        ['calendar','Agenda',ICONS.calendar,'#/calendar'],
         ['library','Fichiers',ICONS.library,'#/library']
       ]
     : [
@@ -283,7 +284,7 @@ function shell(content, route) {
         ['projects','Projets',ICONS.projects,'#/projects'],
         ['work','Mon travail',ICONS.work,'#/work'],
         ['messages','Messages',ICONS.messages,'#/messages'],
-        ['calendar','Calendrier',ICONS.calendar,'#/calendar'],
+        ['calendar','Agenda',ICONS.calendar,'#/calendar'],
         ['library','Fichiers',ICONS.library,'#/library']
       ];
   const secondaryNav = external
@@ -299,7 +300,7 @@ function shell(content, route) {
   const mobileSecondary=secondaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span></a>`).join('');
   const mobileDrawer=state.mobileMenuOpen?`<div class="mobile-menu-backdrop" data-action="toggle-mobile-menu" aria-hidden="true"></div><aside class="mobile-drawer" id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation 2b2c"><div class="mobile-drawer-head">${brandHtml()}<button class="mobile-drawer-close" data-action="toggle-mobile-menu" aria-label="Fermer le menu"><span aria-hidden="true">×</span></button></div><div class="mobile-drawer-scroll"><div class="mobile-drawer-workspace"><small>${external?'Espace partagé':'Espace actif'}</small><strong>${esc(state.workspace.name)}</strong></div><button class="mobile-drawer-search" data-action="open-search"><span>${ICONS.search}</span><span>Rechercher dans ${BRAND_NAME}</span><kbd>Ctrl K</kbd></button><nav class="mobile-drawer-nav">${mobilePrimary}</nav>${recentProjects.length?`<div class="mobile-drawer-projects"><span class="sidebar-section-label">PROJETS ACTIFS</span>${recentProjects.map(p=>`<a href="#/projects/${p.id}/overview" data-nav="#/projects/${p.id}/overview"><span class="project-dot ${projectHealthInfo(p).tone}"></span>${esc(p.name)}</a>`).join('')}</div>`:''}<div class="mobile-drawer-secondary"><span class="sidebar-section-label">${external?'PARTAGE':'ESPACE'}</span><nav class="mobile-drawer-nav">${mobileSecondary}</nav></div></div><div class="mobile-drawer-foot"><a href="#/profile" data-nav="#/profile">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button data-action="signout"><span aria-hidden="true">↪</span> Se déconnecter</button></div></aside>`:'';
   const mobileTabs = external
-    ? [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['calendar','Calendrier',ICONS.calendar,'#/calendar'],['library','Fichiers',ICONS.library,'#/library']]
+    ? [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['calendar','Agenda',ICONS.calendar,'#/calendar'],['library','Fichiers',ICONS.library,'#/library']]
     : [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['work','Mon travail',ICONS.work,'#/work'],['messages','Messages',ICONS.messages,'#/messages']];
   const mobileTabbar=`<nav class="v43-mobile-tabbar" aria-label="Navigation principale mobile">${mobileTabs.map(([key,label,icon,href])=>`<a href="${href}" class="${active(key)?'active':''}"><span>${icon}</span><small>${esc(label)}</small>${key==='work'&&attentionCount()?`<b>${attentionCount()}</b>`:''}${key==='messages'&&state.unreadMessages?`<b>${state.unreadMessages>99?'99+':state.unreadMessages}</b>`:''}</a>`).join('')}<button data-action="toggle-mobile-menu" aria-label="Plus"><span class="more-glyph">•••</span><small>Plus</small></button></nav>`;
   return `<div class="live-app live-shell v3-shell v41-shell v42-shell v421-shell v422-shell ${external?'external-shell':''}">
@@ -410,6 +411,11 @@ function homeActionKind(a){
 }
 function personalAttentionItems(){
   const items=[];
+  state.meetingAttendees.filter(a=>a.user_id===state.user.id&&a.response==='pending').forEach(a=>{
+    const meeting=state.meetings.find(m=>m.id===a.meeting_id);
+    if(!meeting||meeting.status!=='planned'||!meeting.starts_at||new Date(meeting.starts_at)<new Date())return;
+    items.push({key:`meeting:${meeting.id}`,entityType:'meeting',entityId:meeting.id,kind:'Réunion',title:`Confirmer votre présence · ${meeting.title}`,projectId:meeting.project_id,tone:'blue',rank:1,byLabel:meeting.created_by&&meeting.created_by!==state.user.id?`invité par ${displayName(meeting.created_by)}`:'votre réponse est attendue',byUserId:meeting.created_by||null,dueAt:meeting.starts_at,preview:meeting.agenda||''});
+  });
   state.approvals.filter(a=>a.validator_id===state.user.id&&a.status==='pending').forEach(a=>items.push({key:`approval:${a.id}`,entityType:'approval',entityId:a.id,kind:'Validation',title:approvalTitle(a),projectId:a.project_id,tone:'blue',rank:0,byLabel:a.requested_by&&a.requested_by!==state.user.id?`demandé par ${displayName(a.requested_by)}`:'votre décision est attendue',byUserId:a.requested_by||null,dueAt:null}));
   state.requests.filter(r=>r.recipient_id===state.user.id&&r.status==='open').forEach(r=>items.push({key:`request:${r.id}`,entityType:'request',entityId:r.id,kind:'Demande',title:r.title,projectId:r.project_id,tone:'warn',rank:1,byLabel:r.requester_id&&r.requester_id!==state.user.id?`demandé par ${displayName(r.requester_id)}`:'une réponse est attendue',byUserId:r.requester_id||null,dueAt:r.due_at||null,preview:r.body||''}));
   assignedOpenActions().forEach(a=>{const overdue=a.due_at&&new Date(a.due_at)<new Date();const blocked=a.status==='blocked';items.push({key:`action:${a.id}`,entityType:'action',entityId:a.id,kind:homeActionKind(a),title:a.title,projectId:a.project_id,tone:blocked?'danger':overdue?'warn':a.priority==='urgent'?'blue':'',rank:blocked?2:overdue?3:4+priorityRank(a.priority),byLabel:a.created_by&&a.created_by!==state.user.id?`créé par ${displayName(a.created_by)}`:'',byUserId:a.created_by||null,dueAt:a.due_at||null,preview:blocked?(a.blocked_reason||'La progression est empêchée'):a.description||''})});
@@ -547,7 +553,7 @@ function renderDashboard() {
       </div>
 
       <aside class="v43-rail-flow" aria-label="Aujourd’hui et à venir">
-        <section class="card v43-upcoming-card ${upcoming.length?'':'is-empty'}"><div class="rail-card-head"><div><span class="eyebrow">Temps</span><h2>Aujourd’hui & à venir</h2></div><a class="section-link" href="#/calendar">Calendrier →</a></div>${upcoming.length?`<div class="v43-upcoming-list">${upcoming.map((x,i)=>x.type==='meeting'?`<button class="v43-upcoming-row meeting ${i===0?'next':''}" data-action="open-meeting" data-meeting="${x.id}"><span class="v43-time">${esc(x.when)}</span><div><strong>${esc(x.title)}</strong><small>${esc(projectName(x.projectId)||'Espace')}</small>${homeMeetingPeople(x.id).length?`<span class="v43-attendees">${homeMeetingPeople(x.id).map(a=>avatarHtml(a.user_id)).join('')}</span>`:''}</div><span class="row-chevron">›</span></button>`:`<a class="v43-upcoming-row" href="${x.route}"><span class="v43-time">${esc(x.when)}</span><div><strong>${esc(x.title)}</strong><small>${esc(projectName(x.projectId)||'Espace')}${x.kind?` · ${esc(x.kind)}`:''}</small></div><span class="row-chevron">›</span></a>`).join('')}</div>${upcoming.length>3?`<a class="v435-upcoming-more" href="#/calendar">Voir les ${upcoming.length-3} suivants →</a>`:''}`:`<div class="v43-upcoming-empty"><strong>Rien d’urgent à venir.</strong><span>Le calendrier reste disponible si vous voulez planifier la suite.</span></div>`}</section>
+        <section class="card v43-upcoming-card ${upcoming.length?'':'is-empty'}"><div class="rail-card-head"><div><span class="eyebrow">Temps</span><h2>Aujourd’hui & à venir</h2></div><a class="section-link" href="#/calendar">Agenda →</a></div>${upcoming.length?`<div class="v43-upcoming-list">${upcoming.map((x,i)=>x.type==='meeting'?`<button class="v43-upcoming-row meeting ${i===0?'next':''}" data-action="open-meeting" data-meeting="${x.id}"><span class="v43-time">${esc(x.when)}</span><div><strong>${esc(x.title)}</strong><small>${esc(projectName(x.projectId)||'Espace')}</small>${homeMeetingPeople(x.id).length?`<span class="v43-attendees">${homeMeetingPeople(x.id).map(a=>avatarHtml(a.user_id)).join('')}</span>`:''}</div><span class="row-chevron">›</span></button>`:`<a class="v43-upcoming-row" href="${x.route}"><span class="v43-time">${esc(x.when)}</span><div><strong>${esc(x.title)}</strong><small>${esc(projectName(x.projectId)||'Espace')}${x.kind?` · ${esc(x.kind)}`:''}</small></div><span class="row-chevron">›</span></a>`).join('')}</div>${upcoming.length>3?`<a class="v435-upcoming-more" href="#/calendar">Voir les ${upcoming.length-3} suivants →</a>`:''}`:`<div class="v43-upcoming-empty"><strong>Rien d’urgent à venir.</strong><span>L’agenda reste disponible si vous voulez planifier la suite.</span></div>`}</section>
       </aside>
     </div>`;
 }
@@ -751,7 +757,7 @@ function renderCalendar() {
   const upcoming=meetings.filter(m=>m.starts_at&&new Date(m.starts_at)>=now&&!['completed','cancelled'].includes(m.status));
   const past=meetings.filter(m=>m.starts_at&&new Date(m.starts_at)<now||m.status==='completed');
   const thisWeek=upcoming.filter(m=>new Date(m.starts_at)<new Date(Date.now()+7*86400000));
-  return `<div class="section-head page-head-v3"><div><span class="eyebrow">Temps partagé</span><h1>Calendrier</h1><p>Les réunions de vos projets visibles, sans mélanger les tâches avec le temps synchrone.</p></div>${!isExternalUser()?`<button class="btn primary" data-action="new-meeting">＋ Réunion</button>`:''}</div>
+  return `<div class="section-head page-head-v3"><div><span class="eyebrow">Temps partagé</span><h1>Agenda</h1><p>Réunions et échéances importantes réunies dans une vue temporelle cohérente.</p></div>${!isExternalUser()?`<button class="btn primary" data-action="new-meeting">＋ Réunion</button>`:''}</div>
     <div class="calendar-summary-v4"><div class="card"><span class="eyebrow">7 prochains jours</span><div class="metric">${thisWeek.length}</div><small>réunion${thisWeek.length>1?'s':''}</small></div><div class="card"><span class="eyebrow">À venir</span><div class="metric">${upcoming.length}</div><small>planifiée${upcoming.length>1?'s':''}</small></div><div class="card"><span class="eyebrow">Mémoire</span><div class="metric">${past.length}</div><small>réunion${past.length>1?'s':''} passée${past.length>1?'s':''}</small></div></div>
     <div class="calendar-columns-v4"><div class="card"><div class="section-head compact"><h2>À venir</h2></div>${upcoming.length?`<div class="meeting-list-v4">${upcoming.map(m=>meetingRow(m,true)).join('')}</div>`:empty('Aucune réunion à venir','Votre calendrier est libre.')}</div><div class="card"><div class="section-head compact"><h2>Passées</h2></div>${past.length?`<div class="meeting-list-v4">${past.slice().reverse().slice(0,10).map(m=>meetingRow(m,true)).join('')}</div>`:empty('Aucun historique','Les synthèses des réunions terminées apparaîtront ici.')}</div></div>`;
 }
@@ -798,8 +804,12 @@ function renderSettings() {
 }
 
 function renderNotificationPanel() {
-  const items = state.notifications.slice(0,12);
-  return `<div class="notification-panel"><div class="card-head"><h3>Notifications</h3>${state.notifications.some(n=>!n.read_at)?`<button class="btn small" data-action="read-all-notifications">Tout lire</button>`:''}</div>${items.length?`<div class="stack">${items.map(n=>`<div class="list-row clickable" data-action="open-notification" data-id="${n.id}" data-route="${escAttr(n.route||'#/dashboard')}"><span class="dot" style="color:${n.read_at?'#c8ced8':'#3867f4'}"></span><div class="list-main"><strong>${esc(n.title)}</strong><small>${notificationKind(n.kind)} · ${relativeDate(new Date(n.created_at))}</small></div></div>`).join('')}</div>`:empty('Aucune notification','Les nouvelles affectations et discussions apparaîtront ici.')}</div>`;
+  const attention=personalAttentionItems().slice(0,6);
+  const items=state.notifications.slice(0,8);
+  return `<div class="notification-panel attention-center-v1"><div class="card-head"><div><span class="eyebrow">Priorités personnelles</span><h3>Centre d’attention</h3></div>${state.notifications.some(n=>!n.read_at)?`<button class="btn small" data-action="read-all-notifications">Marquer les nouveautés lues</button>`:''}</div>
+    <div class="notification-section-v1"><div class="notification-section-head-v1"><strong>À traiter</strong><span>${attention.length}</span></div>${attention.length?`<div class="stack">${attention.map(x=>`<div class="list-row clickable attention-center-row-v1 ${x.tone||''}" ${attentionOpenAttrs(x)}><span class="attention-type-icon ${x.tone||''}">${attentionIcon(x.kind)}</span><div class="list-main"><strong>${esc(x.title)}</strong><small>${esc(projectName(x.projectId)||'Espace')}${x.dueAt?` · ${esc(attentionDueLabel(x.dueAt))}`:''}</small></div><span class="row-chevron">›</span></div>`).join('')}</div>`:`<div class="v43-up-to-date">Rien ne demande votre intervention.</div>`}</div>
+    <div class="notification-section-v1 secondary"><div class="notification-section-head-v1"><strong>Nouveautés</strong><span>${items.filter(n=>!n.read_at).length}</span></div>${items.length?`<div class="stack">${items.map(n=>`<div class="list-row clickable" data-action="open-notification" data-id="${n.id}" data-route="${escAttr(n.route||'#/dashboard')}"><span class="dot" style="color:${n.read_at?'#c8ced8':'#3867f4'}"></span><div class="list-main"><strong>${esc(n.title)}</strong><small>${notificationKind(n.kind)} · ${relativeDate(new Date(n.created_at))}</small></div></div>`).join('')}</div>`:empty('Aucune nouveauté','Les événements importants apparaîtront ici.')}</div>
+  </div>`;
 }
 
 function actionEditModal(modal){
@@ -1188,19 +1198,36 @@ async function submitMilestoneEdit(data) {
 async function submitMeeting(data) {
   if(data.projectId&&!canWriteProject(data.projectId))throw new Error('Vous ne pouvez pas planifier une réunion dans ce projet.');
   const starts=localDateTimeToIso(data.startsAt); const ends=localDateTimeToIso(data.endsAt);
-  if(starts&&ends&&new Date(ends)<new Date(starts))throw new Error('La fin doit être postérieure au début.');
-  const attendeeIds=[...new Set([state.user.id,...(data.attendeeIds||[])])];
-  const includesGuest=attendeeIds.some(id=>state.members.some(m=>m.user_id===id&&m.role==='guest'));
-  const visibility=includesGuest?'shared':(data.visibility||'internal');
-  const rows=await api.insert('meetings',[{workspace_id:state.workspace.id,project_id:data.projectId||null,title:String(data.title).trim(),status:'planned',starts_at:starts,ends_at:ends,video_room:String(data.videoRoom||'').trim()||null,agenda:String(data.agenda||'').trim(),visibility,created_by:state.user.id}]);
-  await api.insert('meeting_attendees',attendeeIds.map(user_id=>({meeting_id:rows[0].id,user_id,response:user_id===state.user.id?'accepted':'pending'})),{returnRepresentation:false});
-  state.modal={type:'meeting-detail',id:rows[0].id}; await refreshWorkspace({quiet:true}); showToast(includesGuest?'Réunion planifiée · partagée avec les invités':'Réunion planifiée · agenda prêt');
+  if(!starts)throw new Error('Indiquez le début de la réunion.');
+  const meetingId=await api.rpc('create_meeting_with_attendees_v2',{
+    p_workspace_id:state.workspace.id,
+    p_title:String(data.title||'').trim(),
+    p_starts_at:starts,
+    p_ends_at:ends,
+    p_project_id:data.projectId||null,
+    p_video_room:String(data.videoRoom||'').trim()||null,
+    p_visibility:data.visibility||'internal',
+    p_attendee_ids:data.attendeeIds||[],
+    p_agenda:String(data.agenda||'').trim(),
+  });
+  state.modal=null; await refreshWorkspace({quiet:true}); location.hash=`#/calendar/meeting/${Array.isArray(meetingId)?meetingId[0]:meetingId}`; showToast('Réunion planifiée · agenda prêt');
 }
 
 async function submitMeetingDetail(data){
   const m=state.meetings.find(x=>x.id===data.meetingId);if(!m)throw new Error('Réunion introuvable');
-  if(m.project_id&&!canWriteProject(m.project_id))throw new Error('Vous ne pouvez pas modifier cette réunion.');
-  await api.update('meetings',`id=eq.${m.id}`,{agenda:String(data.agenda||'').trim(),live_notes:String(data.liveNotes||'').trim(),summary:String(data.summary||'').trim(),status:data.status||m.status,visibility:data.visibility||m.visibility||'internal'},{returnRepresentation:false});
+  await api.rpc('update_meeting_v2',{
+    p_meeting_id:m.id,
+    p_title:m.title,
+    p_starts_at:m.starts_at,
+    p_ends_at:m.ends_at,
+    p_video_room:m.video_room||null,
+    p_visibility:data.visibility||m.visibility||'internal',
+    p_agenda:String(data.agenda||'').trim(),
+    p_live_notes:String(data.liveNotes||'').trim(),
+    p_summary:String(data.summary||'').trim(),
+    p_status:data.status||m.status,
+    p_attendee_ids:null,
+  });
   state.modal=null;await refreshWorkspace({quiet:true});showToast(data.status==='completed'?'Réunion clôturée · synthèse conservée':'Réunion mise à jour');
 }
 
@@ -1431,10 +1458,7 @@ async function openNotification(id,route) {
 
 async function setMeetingResponse(meetingId,response){
   if(!['accepted','declined'].includes(response))throw new Error('Réponse de réunion invalide.');
-  const attendee=state.meetingAttendees.find(a=>a.meeting_id===meetingId&&a.user_id===state.user.id);
-  if(!attendee)throw new Error('Vous ne faites pas partie de cette réunion.');
-  await api.update('meeting_attendees',`meeting_id=eq.${meetingId}&user_id=eq.${state.user.id}`,{response},{returnRepresentation:false});
-  attendee.response=response;
+  await api.rpc('set_meeting_response_v2',{p_meeting_id:meetingId,p_response:response});
   await refreshWorkspace({quiet:true});
   showToast(response==='accepted'?'Participation confirmée':'Réunion déclinée');
 }
@@ -1476,7 +1500,7 @@ function loadingScreen(){return '<div class="onboarding"><div class="onboarding-
 function resetState(){Object.assign(state,{authMode:'signin',user:null,profile:null,memberships:[],workspace:null,workspaceRole:null,projects:[],archivedProjects:[],members:[],profiles:[],notifications:[],requests:[],approvals:[],meetings:[],meetingAttendees:[],milestones:[],actions:[],assignees:[],decisions:[],deliverables:[],deliverableVersions:[],conversations:[],conversationMembers:[],projectMembers:[],projectCache:new Map(),messages:new Map(),unreadMessages:0,unreadMentions:0,unreadConversations:new Map(),replyTo:null,messageLoads:new Set(),modal:null,toast:[],notificationOpen:false,userMenuOpen:false,mobileMenuOpen:false,invitePreview:null,welcome:null,searchQuery:'',libraryQuery:'',libraryProject:'all',busy:false,lastSync:null,syncError:null,previousSeenAt:null,seenMarkedAt:null,loading:false})}
 function showToast(message,error=false){state.toast.push({id:crypto.randomUUID(),message,error});setTimeout(()=>{state.toast=state.toast.filter(t=>t.message!==message);renderToasts()},4200);renderToasts()}
 function renderToasts(){document.querySelector('.toast-wrap')?.remove();if(!state.toast.length)return;const wrap=document.createElement('div');wrap.className='toast-wrap';wrap.innerHTML=state.toast.slice(-3).map(t=>`<div class="toast ${t.error?'error':''}">${esc(t.message)}</div>`).join('');document.body.appendChild(wrap)}
-function humanError(error){if(error instanceof ApiError&&error.status===409)return 'Cet élément existe déjà.';const msg=String(error?.message||error||'Erreur inconnue');if(/Invalid login credentials/i.test(msg))return 'Email ou mot de passe incorrect.';if(/Email not confirmed/i.test(msg))return 'L’adresse email doit être confirmée avant connexion.';if(/duplicate key.*workspace_invites/i.test(msg))return 'Une invitation en attente existe déjà pour cet email.';if(/approvals_one_pending_per_validator_version/i.test(msg))return 'Une validation est déjà en attente auprès de cette personne pour cette version.';if(/APPROVAL_ONLY_VALIDATOR_CAN_DECIDE/i.test(msg))return 'Seul le validateur désigné peut prendre cette décision.';if(/APPROVAL_ALREADY_FINAL|APPROVAL_FINAL_DECISION_IMMUTABLE/i.test(msg))return 'Cette validation a déjà été traitée.';if(/MEETING_ATTENDEE_IDENTITY_IMMUTABLE/i.test(msg))return 'Cette invitation de réunion ne peut pas être déplacée vers une autre personne.';if(/row-level security/i.test(msg))return 'Vous n’avez pas les droits nécessaires pour cette action.';return msg.replace(/^\w+\s*:\s*/,'')}
+function humanError(error){if(error instanceof ApiError&&error.status===409)return 'Cet élément existe déjà.';const msg=String(error?.message||error||'Erreur inconnue');if(/Invalid login credentials/i.test(msg))return 'Email ou mot de passe incorrect.';if(/Email not confirmed/i.test(msg))return 'L’adresse email doit être confirmée avant connexion.';if(/duplicate key.*workspace_invites/i.test(msg))return 'Une invitation en attente existe déjà pour cet email.';if(/approvals_one_pending_per_validator_version/i.test(msg))return 'Une validation est déjà en attente auprès de cette personne pour cette version.';if(/APPROVAL_ONLY_VALIDATOR_CAN_DECIDE/i.test(msg))return 'Seul le validateur désigné peut prendre cette décision.';if(/APPROVAL_ALREADY_FINAL|APPROVAL_FINAL_DECISION_IMMUTABLE/i.test(msg))return 'Cette validation a déjà été traitée.';if(/MEETING_ATTENDEE_IDENTITY_IMMUTABLE/i.test(msg))return 'Cette invitation de réunion ne peut pas être déplacée vers une autre personne.';if(/MEETING_RSVP_CLOSED/i.test(msg))return 'Les réponses de présence sont closes pour cette réunion.';if(/MEETING_FINALIZED_STATUS_IMMUTABLE|MEETING_STATUS_BACKWARD_DENIED/i.test(msg))return 'Une réunion terminée ne peut pas revenir à une étape précédente.';if(/GUEST_MEETING_REQUIRES_SHARED_PROJECT/i.test(msg))return 'Une réunion avec un invité doit être partagée et liée à un projet commun.';if(/MEETING_ATTENDEE_NO_PROJECT_ACCESS/i.test(msg))return 'Un participant sélectionné n’a pas accès à ce projet.';if(/row-level security/i.test(msg))return 'Vous n’avez pas les droits nécessaires pour cette action.';return msg.replace(/^\w+\s*:\s*/,'')}
 function renderWelcome(){
   const w=state.welcome||{workspaceName:state.workspace.name,role:state.workspaceRole,projectNames:state.projects.map(p=>p.name)};
   const names=w.projectNames?.length?w.projectNames:state.projects.map(p=>p.name);
@@ -1530,7 +1554,7 @@ function meetingParticipantChecks(projectId=''){const ids=projectId?new Set(stat
 function meetingAttendeeHtml(meetingId){const rows=state.meetingAttendees.filter(a=>a.meeting_id===meetingId);const meeting=state.meetings.find(m=>m.id===meetingId);const mine=rows.find(a=>a.user_id===state.user.id);const canRespond=Boolean(mine&&meeting?.created_by!==state.user.id&&meeting?.status==='planned');return rows.length?`<div class="meeting-attendees-v4"><span class="eyebrow">Participants</span><div>${rows.map(a=>`<span class="attendee-chip">${avatarHtml(a.user_id)}<b>${esc(displayName(a.user_id))}</b><small>${a.response==='accepted'?'Accepté':a.response==='declined'?'Décliné':'En attente'}</small></span>`).join('')}</div>${canRespond?`<div class="meeting-rsvp-v432"><span>Votre réponse</span><button type="button" class="btn small ${mine.response==='accepted'?'primary':''}" data-action="meeting-response" data-meeting="${meetingId}" data-response="accepted">✓ Je participe</button><button type="button" class="btn small ${mine.response==='declined'?'danger':''}" data-action="meeting-response" data-meeting="${meetingId}" data-response="declined">Je décline</button></div>`:''}</div>`:''}
 function parseRoute(){const raw=(location.hash||'#/dashboard').replace(/^#\/?/,'');const parts=raw.split('/').filter(Boolean);if(parts[0]==='welcome')return{name:'welcome'};if(!parts.length||parts[0]==='dashboard')return{name:'dashboard'};if(parts[0]==='projects'&&parts[1])return{name:'project',id:parts[1],tab:parts[2]||'overview',view:parts[3]||'list'};if(parts[0]==='projects')return{name:'projects'};if(parts[0]==='work')return{name:'work'};if(parts[0]==='messages')return{name:'messages',id:parts[1]||null};if(parts[0]==='calendar')return{name:'calendar'};if(parts[0]==='library')return{name:'library'};if(parts[0]==='team')return{name:'team'};if(parts[0]==='archives')return{name:'archives'};if(parts[0]==='profile')return{name:'profile'};if(parts[0]==='settings')return{name:'settings'};return{name:'dashboard'}}
 
-function routeTitle(r){if(r.name==='project')return state.projects.find(p=>p.id===r.id)?.name||'Projet';return({welcome:'Bienvenue',dashboard:'Accueil',projects:'Projets',work:'Mon travail',messages:'Messages',calendar:'Calendrier',library:'Fichiers',team:'Équipe',archives:'Archives',profile:'Mon profil',settings:'Paramètres'})[r.name]||BRAND_NAME}
+function routeTitle(r){if(r.name==='project')return state.projects.find(p=>p.id===r.id)?.name||'Projet';return({welcome:'Bienvenue',dashboard:'Accueil',projects:'Projets',work:'Mon travail',messages:'Messages',calendar:'Agenda',library:'Fichiers',team:'Équipe',archives:'Archives',profile:'Mon profil',settings:'Paramètres'})[r.name]||BRAND_NAME}
 
 function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function escAttr(value){return esc(value)}

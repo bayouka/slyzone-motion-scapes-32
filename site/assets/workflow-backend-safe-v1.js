@@ -330,7 +330,7 @@ async function decideApproval(target) {
   location.reload();
 }
 
-const handledForms = new Set(['action','action-edit','milestone','milestone-edit','meeting','project-edit','upload','version','approval-request','project-complete','project-complete-v2']);
+const handledForms = new Set(['action','action-edit','milestone','milestone-edit','project-edit','upload','version','approval-request','project-complete','project-complete-v2']);
 document.addEventListener('submit', async (event) => {
   const form = event.target?.closest?.('form[data-form]');
   const kind = form?.dataset?.form;
