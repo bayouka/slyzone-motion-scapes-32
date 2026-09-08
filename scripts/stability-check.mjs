@@ -7,6 +7,7 @@ const index = read('site/index.html');
 const live = read('site/assets/live.js');
 const safeBridge = read('site/assets/workflow-backend-safe-v1.js');
 const resources = read('site/assets/resources-workspace-v1.js');
+const resourcesGuard = read('site/assets/resources-workspace-form-guard-v1.js');
 const resourcesCss = read('site/assets/resources-workspace-v1.css');
 const runtime = read('site/runtime-config.js');
 
@@ -25,6 +26,7 @@ assert(boot.includes('syncProbeIntervalMs: Math.max(15000'), 'smart sync probe f
 assert(boot.includes('fullRefreshFallbackMs: Math.max(300000'), 'full refresh safety fallback missing');
 assert(boot.includes('workflow-backend-safe-v1.js'), 'observer-free workflow bridge missing');
 assert(boot.includes('resources-workspace-v1.js'), 'route-driven resources workspace missing');
+assert(boot.includes('resources-workspace-form-guard-v1.js'), 'resources form focus guard missing');
 assert(boot.includes('live.js'), 'core live app missing');
 assert(!boot.includes('invite-prelive-v2.js'), 'legacy pre-live invitation controller is still loaded');
 
@@ -95,11 +97,14 @@ for (const required of [
 ]) {
   assert(resources.includes(required), `resources model workflow missing: ${required}`);
 }
-assert(resources.includes("routeProjectId"), 'resources workspace must be route-driven');
+assert(resources.includes('routeProjectId'), 'resources workspace must be route-driven');
 assert(resources.includes("window.addEventListener('hashchange'"), 'resources route activation missing');
 assert(!resources.includes('new MutationObserver'), 'resources workspace instantiates a MutationObserver');
 assert(!resources.includes("api.insert('approvals'"), 'resources workspace must not insert approvals directly');
 assert(!resources.includes("api.update('approvals'"), 'resources workspace must not update approvals directly');
+assert(resourcesGuard.includes("window.addEventListener('focus'"), 'resources focus guard missing');
+assert(resourcesGuard.includes("document.addEventListener('visibilitychange'"), 'resources visibility guard missing');
+assert(!resourcesGuard.includes('new MutationObserver'), 'resources form guard instantiates a MutationObserver');
 assert(resourcesCss.includes('.resources-workspace-v1'), 'resources workspace CSS root missing');
 assert(resourcesCss.includes('@media(max-width:767px)'), 'resources mobile CSS contract missing');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
