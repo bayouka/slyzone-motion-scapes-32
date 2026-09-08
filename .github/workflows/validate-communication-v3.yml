@@ -1,0 +1,24 @@
+name: Validate communication v3 once
+
+on:
+  push:
+    branches:
+      - feature-communication-v1-20260908
+    paths:
+      - .github/validate-communication-v3.txt
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
