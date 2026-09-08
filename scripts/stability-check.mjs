@@ -1,0 +1,52 @@
+import fs from 'node:fs';
+
+const read = (path) => fs.readFileSync(path, 'utf8');
+const boot = read('site/assets/boot.js');
+const worker = read('src/worker.js');
+const index = read('site/index.html');
+const safeBridge = read('site/assets/workflow-backend-safe-v1.js');
+const runtime = read('site/runtime-config.js');
+
+function assert(condition, message) {
+  if (!condition) {
+    console.error(`STABILITY CHECK FAILED: ${message}`);
+    process.exit(1);
+  }
+}
+
+assert(worker.includes('v4.4.5-stability-safe'), 'worker health version is not v4.4.5-stability-safe');
+assert(index.includes('boot.js?v=4.4.5-stability-safe'), 'index does not cache-bust the stability-safe boot');
+assert(boot.includes("const VERSION = 'v4.4.5-stability-safe'"), 'boot stability version missing');
+assert(boot.includes('pollIntervalMs: Math.max(60000'), 'polling floor is not 60 seconds');
+assert(boot.includes('invite-prelive-v2.js'), 'secure invitation controller missing');
+assert(boot.includes('workflow-backend-safe-v1.js'), 'observer-free workflow bridge missing');
+assert(boot.includes('live.js'), 'core live app missing');
+
+for (const forbidden of [
+  'auth-recovery-v1.js',
+  'home-polish.js',
+  'team-access-v1.js',
+  'team-access-safety-v2.js',
+  'team-access-submit-safety-v3.js',
+  'invite-lifecycle-v1.js',
+  'approval-flow-safety-v1.js',
+  'product-coherence-v1.js',
+  'daily-work-v1.js',
+  'planning-clarity-v1.js',
+  'project-lifecycle-safety-v1.js',
+  'project-flow-v1.js',
+  'communication-memory-v1.js',
+  'meeting-agenda-v1.js',
+  'resource-model-v1.js',
+  'workflow-backend-v2.js',
+  'project-progress-v2.js',
+  'ui-quality-v1.js',
+  'dialog-focus-safety-v2.js',
+]) {
+  assert(!boot.includes(forbidden), `forbidden enhancer still loaded: ${forbidden}`);
+}
+
+assert(!safeBridge.includes('new MutationObserver'), 'safe workflow bridge instantiates a MutationObserver');
+assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
+
+console.log('stability-safe production contract: ok');
