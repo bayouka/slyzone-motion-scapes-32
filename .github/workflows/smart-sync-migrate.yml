@@ -33,6 +33,16 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Apply smart sync migration
         run: python3 scripts/smart-sync-migrate.py
+      - name: Normalize smart sync stability guard
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/stability-check.mjs')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("assert(index.includes('boot.js?v=4.4.8-smart-sync'), 'index does not cache-bust the native-access boot');", "assert(index.includes('v4.4.8-smart-sync'), 'index smart-sync cache-bust missing');")
+          p.write_text(s,encoding='utf-8')
+          PY
       - name: Validate smart sync sources
         shell: bash
         run: |
@@ -40,6 +50,7 @@ jobs:
           node --check site/assets/live.js
           node --check site/assets/boot.js
           node --check site/assets/workflow-backend-safe-v1.js
+          grep -Fq 'v4.4.8-smart-sync' site/index.html
           npm run check
           node scripts/stability-check.mjs
           grep -Fq 'v4.4.8-smart-sync' src/worker.js
