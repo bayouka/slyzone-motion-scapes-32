@@ -35,7 +35,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run check
       - run: node --check site/assets/workflow-backend-safe-v1.js
-      - name: Verify stability-safe production payload
+      - name: Verify stable production payload
         run: node scripts/stability-check.mjs
       - name: Detect Cloudflare credentials
         shell: bash
@@ -52,16 +52,18 @@ jobs:
           probe() {
             path="$1"; needle="$2"
             for i in $(seq 1 15); do
-              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=446-$GITHUB_SHA" || true)
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?verify=447-$GITHUB_SHA" || true)
               if [ "$code" = "200" ] && grep -Fq "$needle" /tmp/probe.out; then return 0; fi
               sleep 3
             done
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.6-native-access"'
+          probe /health '"version":"v4.4.7-native-progress"'
           probe /assets/boot.js 'workflow-backend-safe-v1.js'
           probe /assets/boot.js 'pollIntervalMs: Math.max(60000'
           probe /assets/live.js 'create_workspace_invite_v2'
-          probe /assets/live.js 'data-invite-role'
+          probe /assets/live.js 'get_project_summaries_v1'
+          probe /assets/live.js 'projectServerSummaryCard'
+          probe /assets/live.js 'complete_project_v1'
           probe / '2b2c — Projets qui avancent ensemble'
