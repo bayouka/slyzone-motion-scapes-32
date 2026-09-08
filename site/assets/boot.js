@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.4.11-library-model';
+  const VERSION = 'v4.4.12-delivery-cycle';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -19,37 +19,28 @@
   };
 
   if (!hasLiveConfig) {
-    renderStartupError(
-      'Configuration 2b2c indisponible',
-      'L’application ne peut pas se connecter à son espace de données pour le moment. Réessayez dans quelques instants.'
-    );
+    renderStartupError('Configuration 2b2c indisponible','L’application ne peut pas se connecter à son espace de données pour le moment. Réessayez dans quelques instants.');
     return;
   }
 
-  // Stability mode: core app + secured event-driven modules only.
+  // Stability mode: core app + explicit event/route driven modules only.
   // No MutationObserver is allowed in the production runtime.
   window.__4B4C_CONFIG__ = Object.freeze({ ...config, syncProbeIntervalMs: Math.max(15000, Number(config.syncProbeIntervalMs || 20000)), fullRefreshFallbackMs: Math.max(300000, Number(config.fullRefreshFallbackMs || 300000)) });
   window.__4B4C_LIVE_MODE__ = true;
   window.__4B4C_STABILITY_MODE__ = VERSION;
 
   import(`./live.js?${VERSION}`)
+    // Delivery is registered before the legacy-safe bridge so it owns project closure clicks.
+    .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
-    .then(() => import(`./resources-workspace-v1.js?${VERSION}`)
-      .then(() => import(`./resources-workspace-form-guard-v1.js?${VERSION}`))
-      .catch((error) => {
-        // Project resources is isolated: failure keeps the native route available.
-        console.error('[2b2c] resources workspace unavailable; native resources view kept', error);
-      }))
+    .then(() => import(`./resources-workspace-v2.js?${VERSION}`).catch((error) => {
+      console.error('[2b2c] resources v2 unavailable; native resources view kept', error);
+    }))
     .then(() => import(`./library-workspace-v1.js?${VERSION}`).catch((error) => {
-      // Global library is also isolated and must never take down the core app.
       console.error('[2b2c] library workspace unavailable; native library view kept', error);
     }))
     .catch((error) => {
       console.error(error);
-      renderStartupError(
-        '2b2c n’a pas pu démarrer',
-        'Une erreur locale a empêché le chargement de l’application. Rechargez la page.',
-        error?.message || error
-      );
+      renderStartupError('2b2c n’a pas pu démarrer','Une erreur locale a empêché le chargement de l’application. Rechargez la page.',error?.message || error);
     });
 })();
