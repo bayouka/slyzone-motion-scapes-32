@@ -57,12 +57,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -n 'boot.js' site/index.html
-          grep -n 'const VERSION' site/assets/boot.js | head -5
-          grep -n 'version:' src/worker.js | head -5
-          grep -Fq 'v4.4.8-smart-sync' site/index.html
-          grep -Fq "const VERSION = 'v4.4.8-smart-sync'" site/assets/boot.js
-          grep -Fq "version: 'v4.4.8-smart-sync'" src/worker.js
+          grep -Fn 'v4.4.8-smart-sync' site/index.html
+          grep -Fn "const VERSION = 'v4.4.8-smart-sync'" site/assets/boot.js
+          grep -Fn 'v4.4.8-smart-sync' src/worker.js
           echo 'cache/version markers: ok'
       - name: Run collaboration contracts
         run: npm run check
@@ -77,8 +74,14 @@ jobs:
           grep -Fq 'workspaceRefreshPromise' site/assets/live.js
           grep -Fq 'syncProbeIntervalMs' site/assets/boot.js
           grep -Fq 'fullRefreshFallbackMs' site/assets/boot.js
-          ! grep -Fq 'Number(config.pollIntervalMs || 15000)' site/assets/live.js
-          ! grep -Fq 'new MutationObserver' site/assets/live.js
+          if grep -Fq 'Number(config.pollIntervalMs || 15000)' site/assets/live.js; then
+            echo 'legacy full-workspace polling still present' >&2
+            exit 1
+          fi
+          if grep -Fq 'new MutationObserver' site/assets/live.js; then
+            echo 'MutationObserver detected in live core' >&2
+            exit 1
+          fi
           echo 'smart sync contract: ok'
       - name: Commit smart sync implementation
         shell: bash
