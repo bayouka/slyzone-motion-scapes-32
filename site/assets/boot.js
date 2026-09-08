@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.4.13-communication-v3';
+  const VERSION = 'v4.4.14-agenda-attention';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -35,6 +35,9 @@
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] communication workspace unavailable; native messages view kept', error);
+    }))
+    .then(() => import(`./agenda-workspace-v1.js?${VERSION}`).catch((error) => {
+      console.error('[2b2c] agenda workspace unavailable; native calendar view kept', error);
     }))
     .then(() => import(`./resources-workspace-v2.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] resources v2 unavailable; native resources view kept', error);
