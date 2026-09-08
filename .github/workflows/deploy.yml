@@ -1,9 +1,13 @@
 name: Deploy 4b4c production
 
-# Cloudflare Workers Builds is the active production deployment path.
-# GitHub Actions stays manual-only; public standard runners can be used for explicit recovery deploys when needed.
+# GitHub Actions remains manual-only after this explicit one-shot public-repository recovery deploy.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/deploy-once-453.txt
 
 permissions:
   contents: read
@@ -54,6 +58,8 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.12-delivery-cycle"'
-          probe /assets/boot.js "v4.4.12-delivery-cycle"
+          probe /health '"version":"v4.4.13-communication-v3"'
+          probe /assets/boot.js "v4.4.13-communication-v3"
+          probe /assets/boot.js "communication-workspace-v1.js"
+          probe / "assets/boot.js?build=453"
           probe / '2b2c — Projets qui avancent ensemble'
