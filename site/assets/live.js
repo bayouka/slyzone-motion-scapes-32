@@ -8,7 +8,7 @@ const WORKSPACE_KEY = config.workspaceStorageKey || '4b4c.live.workspace.v1';
 const state = {
   authMode: 'signin', user: null, profile: null, memberships: [], workspace: null, workspaceRole: null,
   projects: [], archivedProjects: [], members: [], profiles: [], notifications: [], requests: [], approvals: [], meetings: [], meetingAttendees: [], milestones: [],
-  actions: [], assignees: [], decisions: [], deliverables: [], deliverableVersions: [], conversations: [], conversationMembers: [], projectMembers: [], projectCache: new Map(), messages: new Map(),
+  actions: [], assignees: [], decisions: [], deliverables: [], deliverableVersions: [], conversations: [], conversationMembers: [], projectMembers: [], projectSummaries: new Map(), projectCache: new Map(), messages: new Map(),
   unreadMessages: 0, unreadMentions: 0, unreadConversations: new Map(), replyTo: null, messageLoads: new Set(),
   modal: null, toast: [], notificationOpen: false, userMenuOpen: false, mobileMenuOpen: false, invitePreview: null, welcome: null, searchQuery: '', libraryQuery: '', libraryProject: 'all', loading: true, busy: false, lastSync: null, syncError: null, previousSeenAt: null, seenMarkedAt: null
 };
@@ -124,7 +124,7 @@ async function selectWorkspace(workspaceId, { preserveModal = false } = {}) {
   state.previousSeenAt = membership.last_seen_at || membership.joined_at || null;
   state.workspace = first(await api.select('workspaces', `select=*&id=eq.${workspaceId}`));
   if (!preserveModal) state.modal = null;
-  state.projectCache.clear(); state.messages.clear();
+  state.projectCache.clear(); state.projectSummaries.clear(); state.messages.clear();
   await refreshWorkspace({ quiet: true });
   try {
     const marked = await api.rpc('mark_workspace_seen', { p_workspace_id: workspaceId });
@@ -140,7 +140,7 @@ async function refreshWorkspace({ quiet = false } = {}) {
   const wid = state.workspace.id;
   if (!quiet) state.loading = true;
   try {
-    const [projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, meetingAttendees, actions, assignees, decisions, deliverables, deliverableVersions, conversations, conversationMembers, projectMembers, unreadRows, badgeRows] = await Promise.all([
+    const [projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, meetingAttendees, actions, assignees, decisions, deliverables, deliverableVersions, conversations, conversationMembers, projectMembers, summaryRows, unreadRows, badgeRows] = await Promise.all([
       api.select('projects', `select=*&workspace_id=eq.${wid}&status=neq.archived&order=updated_at.desc`),
       api.select('projects', `select=*&workspace_id=eq.${wid}&status=eq.archived&order=updated_at.desc`),
       api.select('workspace_members', `select=*&workspace_id=eq.${wid}&status=eq.active&order=joined_at.asc`),
@@ -158,10 +158,12 @@ async function refreshWorkspace({ quiet = false } = {}) {
       api.select('conversations', `select=*&workspace_id=eq.${wid}&status=neq.archived&order=last_message_at.desc.nullslast,created_at.desc&limit=150`),
       api.select('conversation_members', 'select=*'),
       api.select('project_members', 'select=*'),
+      api.rpc('get_project_summaries_v1', { p_workspace_id: wid }).catch(()=>[]),
       api.rpc('get_unread_conversations_v2', { p_workspace_id: wid }).catch(()=>[]),
       api.rpc('get_message_badges_v2', { p_workspace_id: wid }).catch(()=>[])
     ]);
     Object.assign(state, { projects, archivedProjects, members, profiles, notifications, requests, approvals, meetings, meetingAttendees, actions, assignees, decisions, deliverables, deliverableVersions, conversations, conversationMembers, projectMembers });
+    state.projectSummaries = new Map((Array.isArray(summaryRows)?summaryRows:[]).map(row=>[row.project_id,row]));
     state.unreadConversations = new Map((Array.isArray(unreadRows)?unreadRows:[]).map(row=>[row.conversation_id,Number(row.unread_count)||0]));
     const badges = first(Array.isArray(badgeRows)?badgeRows:[]) || {};
     state.unreadMessages = Number(badges.unread_messages)||0;
@@ -280,7 +282,7 @@ function shell(content, route) {
 
 function isExternalUser(){return state.workspaceRole==='guest'}
 function projectMembership(projectId,userId=state.user?.id){return state.projectMembers.find(pm=>pm.project_id===projectId&&pm.user_id===userId)||null}
-function canWriteProject(projectId){if(['owner','admin'].includes(state.workspaceRole))return true;if(state.workspaceRole!=='member')return false;const pm=projectMembership(projectId);return !!pm&&['lead','member'].includes(pm.role)}
+function canWriteProject(projectId){const project=state.projects.find(p=>p.id===projectId)||state.archivedProjects.find(p=>p.id===projectId);if(project&&project.status!=='active')return false;if(['owner','admin'].includes(state.workspaceRole))return true;if(state.workspaceRole!=='member')return false;const pm=projectMembership(projectId);return !!pm&&['lead','member'].includes(pm.role)}
 function projectResponsibilityCount(userId){return state.projectMembers.filter(pm=>pm.user_id===userId&&['lead','member'].includes(pm.role)).length}
 function deliverableStatusLabel(s){return({draft:'Brouillon',review:'En validation',approved:'Approuvé',archived:'Archivé'})[s]||s||'Brouillon'}
 function meetingStatusLabel(s){return({planned:'Prévue',live:'En cours',completed:'Terminée',cancelled:'Annulée'})[s]||s||'Prévue'}
@@ -294,26 +296,56 @@ function assignedOpenActions(userId=state.user?.id){
   const ids=new Set(state.assignees.filter(a=>a.user_id===userId).map(a=>a.action_id));
   return state.actions.filter(a=>ids.has(a.id)&&!['done','cancelled'].includes(a.status));
 }
+function projectSummary(projectId){return state.projectSummaries.get(projectId)||null}
+function projectStateReasonText(summary){
+  if(!summary)return '';
+  const blocked=Number(summary.action_blocked||0), overdue=Number(summary.action_overdue||0), milestoneOverdue=Number(summary.milestone_overdue||0);
+  if(summary.state_code==='completed')return 'Projet terminé';
+  if(summary.state_code==='on_hold')return 'Projet en pause';
+  if(milestoneOverdue)return `${milestoneOverdue} phase${milestoneOverdue>1?'s':''} en retard`;
+  if(blocked&&overdue)return `${blocked} action${blocked>1?'s':''} bloquée${blocked>1?'s':''} · ${overdue} en retard`;
+  if(blocked)return `${blocked} action${blocked>1?'s':''} bloquée${blocked>1?'s':''}`;
+  if(overdue)return `${overdue} action${overdue>1?'s':''} en retard`;
+  if(summary.state_code==='off_track')return 'Date cible dépassée';
+  return 'Aucun signal critique détecté';
+}
 function projectProgressInfo(project){
-  const phases=projectMilestones(project.id);
-  if(phases.length){
-    const done=phases.filter(m=>m.status==='done').length;
-    return {progress:Math.round(done/phases.length*100),label:`${done}/${phases.length} phase${phases.length>1?'s':''} terminée${done>1?'s':''}`,source:'phases'};
+  const summary=projectSummary(project.id);
+  if(summary){
+    const progress=Math.max(0,Math.min(100,Number(summary.progress_pct||0)));
+    const basis=summary.progress_basis;
+    const label=basis==='roadmap'
+      ? `${Number(summary.milestone_done||0)}/${Number(summary.milestone_count||0)} phase${Number(summary.milestone_count||0)>1?'s':''} terminée${Number(summary.milestone_done||0)>1?'s':''}`
+      : basis==='actions'
+        ? `${Number(summary.action_done||0)}/${Number(summary.action_count||0)} action${Number(summary.action_count||0)>1?'s':''} terminée${Number(summary.action_done||0)>1?'s':''}`
+        : 'Projet à structurer';
+    return {progress,label,source:basis||'server',summary};
   }
+  const phases=projectMilestones(project.id);
+  if(phases.length){const done=phases.filter(m=>m.status==='done').length;return{progress:Math.round(done/phases.length*100),label:`${done}/${phases.length} phase${phases.length>1?'s':''} terminée${done>1?'s':''}`,source:'phases'}};
   const actions=state.actions.filter(a=>a.project_id===project.id&&!['cancelled'].includes(a.status));
   if(actions.length){const done=actions.filter(a=>a.status==='done').length;return{progress:Math.round(done/actions.length*100),label:`${done}/${actions.length} action${actions.length>1?'s':''} terminée${done>1?'s':''}`,source:'actions'}};
   return {progress:null,label:'Progression non calculable',source:'none'};
 }
 function projectHealthInfo(project){
+  const summary=projectSummary(project.id);
+  if(summary){
+    const reason=projectStateReasonText(summary);
+    if(summary.state_code==='completed')return{tone:'good',label:'Terminé',reason};
+    if(summary.state_code==='on_hold')return{tone:'blue',label:'En pause',reason};
+    if(summary.state_code==='off_track')return{tone:'danger',label:'En difficulté',reason};
+    if(summary.state_code==='at_risk')return{tone:'warn',label:'À surveiller',reason};
+    return{tone:'good',label:'En bonne voie',reason};
+  }
   const open=state.actions.filter(a=>a.project_id===project.id&&!['done','cancelled'].includes(a.status));
   const progress=projectProgressInfo(project).progress;
   const now=Date.now();
   const overdue=open.filter(a=>a.due_at&&new Date(a.due_at).getTime()<now);
   const blocked=open.filter(a=>a.status==='blocked');
-  if(blocked.length){return{tone:'danger',label:'Bloqué',reason:`${blocked.length} blocage${blocked.length>1?'s':''} empêche${blocked.length>1?'nt':''} la progression`}}
+  if(blocked.length)return{tone:'danger',label:'En difficulté',reason:`${blocked.length} blocage${blocked.length>1?'s':''} empêche${blocked.length>1?'nt':''} la progression`};
   const targetLate=project.target_date&&new Date(`${project.target_date}T23:59:59`).getTime()<now&&(progress??0)<100;
-  if(targetLate||overdue.length||['at_risk','off_track'].includes(project.health)){return{tone:'warn',label:'À surveiller',reason:overdue.length?`${overdue.length} échéance${overdue.length>1?'s':''} dépassée${overdue.length>1?'s':''}`:targetLate?'Date cible dépassée':'Risque signalé, progression encore possible'}}
-  if(projectMilestones(project.id).length||open.length||project.health==='on_track'){return{tone:'good',label:'En bonne voie',reason:'Aucun problème significatif'}}
+  if(targetLate||overdue.length||['at_risk','off_track'].includes(project.health))return{tone:'warn',label:'À surveiller',reason:overdue.length?`${overdue.length} échéance${overdue.length>1?'s':''} dépassée${overdue.length>1?'s':''}`:targetLate?'Date cible dépassée':'Risque signalé, progression encore possible'};
+  if(projectMilestones(project.id).length||open.length||project.health==='on_track')return{tone:'good',label:'En bonne voie',reason:'Aucun problème significatif'};
   return{tone:'neutral',label:'À structurer',reason:'Pas encore assez de données'};
 }
 function attentionDueLabel(value){if(!value)return'';const d=new Date(value);if(Number.isNaN(d.getTime()))return'';const now=new Date();const same=d.toDateString()===now.toDateString();const tomorrow=new Date(now);tomorrow.setDate(now.getDate()+1);if(same)return`aujourd’hui ${new Intl.DateTimeFormat('fr-FR',{hour:'2-digit',minute:'2-digit'}).format(d)}`;if(d.toDateString()===tomorrow.toDateString())return`demain ${new Intl.DateTimeFormat('fr-FR',{hour:'2-digit',minute:'2-digit'}).format(d)}`;return formatDateTime(value)}
@@ -417,7 +449,7 @@ function homeMeetingPeople(meetingId){return state.meetingAttendees.filter(a=>a.
 function homeSummary(attention,upcoming){
   const parts=[];
   if(attention.length)parts.push(`${attention.length} élément${attention.length>1?'s':''} demande${attention.length>1?'nt':''} votre attention`);else parts.push('Vous êtes à jour');
-  const blocked=state.projects.find(p=>projectHealthInfo(p).label==='Bloqué');if(blocked)parts.push(`${blocked.name} est bloqué`);
+  const difficult=state.projects.find(p=>projectHealthInfo(p).tone==='danger');if(difficult)parts.push(`${difficult.name} est en difficulté`);
   const nextMeeting=upcoming.find(x=>x.type==='meeting');if(nextMeeting)parts.push(`prochaine réunion ${nextMeeting.when}`);
   return parts.slice(0,3).join(' · ');
 }
@@ -426,7 +458,7 @@ function projectResumeScore(p){
   if(state.requests.some(r=>r.project_id===p.id&&r.recipient_id===state.user.id&&r.status==='open'))return 1;
   const mine=assignedOpenActions().filter(a=>a.project_id===p.id);if(mine.some(a=>a.status==='blocked'))return 2;
   if(mine.some(a=>a.due_at&&new Date(a.due_at).getTime()<Date.now()+2*86400000))return 3;
-  if(projectHealthInfo(p).label==='Bloqué')return 4;
+  if(projectHealthInfo(p).tone==='danger')return 4;
   if(mine.length)return 5;
   if(p.target_date&&new Date(`${p.target_date}T23:59:59`).getTime()<Date.now()+7*86400000)return 6;
   return 20;
@@ -440,8 +472,8 @@ function projectNextForUser(p){
   return{label:'Rien n’est attendu de vous',title:'Le projet avance sans intervention de votre part pour le moment.',when:'',tone:'neutral'};
 }
 function projectResumeCardV43(p){
-  const health=projectHealthInfo(p),phases=projectMilestones(p.id),current=phases.find(m=>m.status==='active')||phases.find(m=>m.status==='todo'),next=projectNextForUser(p),done=phases.filter(m=>m.status==='done').length,people=projectPeople(p.id).slice(0,4);
-  const progress=phases.length?`${done} étape${done>1?'s':''} sur ${phases.length} terminée${done>1?'s':''}`:'Roadmap à structurer';
+  const health=projectHealthInfo(p),phases=projectMilestones(p.id),current=phases.find(m=>m.status==='active')||phases.find(m=>m.status==='todo'),next=projectNextForUser(p),people=projectPeople(p.id).slice(0,4),progressInfo=projectProgressInfo(p);
+  const progress=progressInfo.progress===null?'Progression à structurer':`${progressInfo.progress}% · ${progressInfo.label}`;
   return `<a class="project-resume-card-v43" href="#/projects/${p.id}/overview"><div class="project-resume-top"><div><span class="project-symbol">${esc(p.name.slice(0,1).toUpperCase())}</span><div><h3>${esc(p.name)}</h3><small>${current?esc(current.title):phases.length?'Projet terminé':'À structurer'}</small></div></div><span class="pill ${health.tone}" title="${escAttr(health.reason)}">${health.label}</span></div><div class="project-resume-next ${next.tone}"><span>${esc(next.label)}</span><strong>${esc(next.title)}</strong>${next.when?`<small>${esc(next.when)}</small>`:''}</div>${people.length?`<div class="v435-project-people"><span>Équipe</span><span class="v435-avatar-stack">${people.map(pm=>avatarHtml(pm.user_id)).join('')}</span></div>`:''}<div class="project-resume-meta"><span>${esc(progress)}</span><span>${p.target_date?`cible ${formatDate(p.target_date)}`:'sans date cible'}</span></div></a>`;
 }
 
@@ -481,18 +513,27 @@ function renderProject(id, tab='overview', view='list') {
   const actions = state.actions.filter(a=>a.project_id===id);
   const milestones = state.projectCache.get(id)?.milestones || [];
   const done = actions.filter(a=>a.status==='done').length;
-  const progress = actions.length ? Math.round(done/actions.length*100) : 0;
+  const progress = projectProgressInfo(project).progress ?? 0;
   const external=isExternalUser();
   const tabs = external ? [['overview','Vue partagée'],['resources','Livrables'],['meetings','Réunions']] : [['overview','Vue d’ensemble'],['work','Travail'],['messages','Messages'],['resources','Ressources'],['meetings','Réunions']];
   if(external && !tabs.some(([key])=>key===tab)) tab='overview';
   const people=projectPeople(id);
   const canManageProject = canWriteProject(id);
-  const head = `<div class="project-head-v3"><div class="project-breadcrumb"><a href="#/projects">Projets</a><span>›</span><span>${esc(project.name)}</span></div><div class="project-title-row"><div class="project-title-main"><div class="project-icon">${esc(project.name.slice(0,1).toUpperCase())}</div><div><div class="project-title-line"><h1>${esc(project.name)}</h1><span class="pill good">${projectStatusLabel(project.status)}</span><span class="pill ${healthTone(project.health)}">${healthLabel(project.health)}</span>${external?'<span class="pill blue">Vue partenaire</span>':''}</div><p>${esc(project.objective || 'Aucun objectif renseigné.')}</p><div class="project-people">${people.length?people.slice(0,5).map(pm=>avatarHtml(pm.user_id)).join(''):''}${people.length>5?`<span class="avatar more">+${people.length-5}</span>`:''}<span>${people.length?`${people.length} participant${people.length>1?'s':''}`:'Aucun participant assigné'}</span></div></div></div><div class="project-head-actions">${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn" data-action="invite-member" data-project="${project.id}">Partager</button>`:''}${canManageProject&&!external?`<button class="btn" data-action="edit-project" data-project="${project.id}">Modifier</button>`:''}${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn icon-only" data-action="manage-project" data-project="${project.id}" aria-label="Gérer le projet">•••</button>`:''}</div></div><div class="tabs project-tabs">${tabs.map(([key,label])=>`<a href="#/projects/${id}/${key}" class="${tab===key?'active':''}">${label}</a>`).join('')}</div></div>`;
+  const derivedHealth = projectHealthInfo(project);
+  const head = `<div class="project-head-v3"><div class="project-breadcrumb"><a href="#/projects">Projets</a><span>›</span><span>${esc(project.name)}</span></div><div class="project-title-row"><div class="project-title-main"><div class="project-icon">${esc(project.name.slice(0,1).toUpperCase())}</div><div><div class="project-title-line"><h1>${esc(project.name)}</h1><span class="pill ${derivedHealth.tone}" title="${escAttr(derivedHealth.reason)}">${derivedHealth.label}</span>${external?'<span class="pill blue">Vue partenaire</span>':''}</div><p>${esc(project.objective || 'Aucun objectif renseigné.')}</p><div class="project-people">${people.length?people.slice(0,5).map(pm=>avatarHtml(pm.user_id)).join(''):''}${people.length>5?`<span class="avatar more">+${people.length-5}</span>`:''}<span>${people.length?`${people.length} participant${people.length>1?'s':''}`:'Aucun participant assigné'}</span></div></div></div><div class="project-head-actions">${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn" data-action="invite-member" data-project="${project.id}">Partager</button>`:''}${canManageProject&&!external?`<button class="btn" data-action="edit-project" data-project="${project.id}">Modifier</button>`:''}${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn icon-only" data-action="manage-project" data-project="${project.id}" aria-label="Gérer le projet">•••</button>`:''}</div></div><div class="tabs project-tabs">${tabs.map(([key,label])=>`<a href="#/projects/${id}/${key}" class="${tab===key?'active':''}">${label}</a>`).join('')}</div></div>`;
   if (tab==='work'&&!external) return head + projectWork(project, actions, milestones, view);
   if (tab==='messages'&&!external) return head + projectMessages(project);
   if (tab==='meetings') return head + projectMeetings(project);
   if (tab==='resources') return head + projectResources(project);
   return head + (external?projectExternalOverview(project,actions,milestones,progress):projectOverview(project, actions, milestones, progress));
+}
+
+function projectServerSummaryCard(project){
+  const summary=projectSummary(project.id);if(!summary)return '';
+  const progress=projectProgressInfo(project),health=projectHealthInfo(project);
+  const openActions=Number(summary.action_open||0),openMilestones=Number(summary.milestone_open||0),blocked=Number(summary.action_blocked||0),overdue=Number(summary.action_overdue||0)+Number(summary.milestone_overdue||0);
+  const signals=[];if(blocked)signals.push(`${blocked} bloquée${blocked>1?'s':''}`);if(overdue)signals.push(`${overdue} en retard`);if(!signals.length)signals.push('aucun signal critique');
+  return `<div class="card situation-card"><div class="section-head compact"><div><span class="eyebrow">État calculé</span><h2>${health.label}</h2></div><strong>${progress.progress??0}%</strong></div><p class="situation-copy">${esc(health.reason)}</p><div class="project-progress-row"><span>${esc(progress.label)}</span><span>${openActions} action${openActions>1?'s':''} ouverte${openActions>1?'s':''} · ${openMilestones} phase${openMilestones>1?'s':''} ouverte${openMilestones>1?'s':''}</span></div><div class="progress"><span style="width:${progress.progress??0}%"></span></div><div class="metric-label" style="margin-top:10px">${esc(signals.join(' · '))}</div></div>`;
 }
 
 function projectOverview(project, actions, milestones, progress) {
@@ -511,7 +552,7 @@ function projectOverview(project, actions, milestones, progress) {
   const nextAction=open.filter(a=>!nowAction||a.id!==nowAction.id).sort((a,b)=>new Date(a.due_at||'2999')-new Date(b.due_at||'2999'))[0];
   const meetings=state.meetings.filter(m=>m.project_id===project.id&&m.starts_at&&new Date(m.starts_at)>new Date()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
   const situation=projectSituationText(project,current,open,blocking,pendingApproval,pendingRequest);
-  return `<div class="project-room-layout"><section class="stack">
+  return `<div class="project-room-layout"><section class="stack">${projectServerSummaryCard(project)}
       <div class="card situation-card"><div class="section-head compact"><div><span class="eyebrow">Situation actuelle</span><h2>${esc(situation.title)}</h2></div><span class="updated-note">${project.updated_at?`Mis à jour ${relativeDate(new Date(project.updated_at))}`:'À jour'}</span></div><p class="situation-copy">${esc(situation.body)}</p>${milestones.length?progressTrack(milestones):`<div class="empty compact-empty"><strong>Roadmap à structurer</strong><span>Créez 3 à 7 phases pour rendre le parcours du projet lisible.</span></div>`}</div>
       <div class="project-kpi-grid"><a class="mini-status-card ${pendingApproval?'attention':''}" href="#/work"><span>Votre attention</span><strong>${pendingApproval?'1 validation':pendingRequest?'1 demande':mine.length?`${mine.length} action${mine.length>1?'s':''}`:'Rien d’urgent'}</strong><small>${pendingApproval?'Une version attend votre décision':pendingRequest?esc(pendingRequest.title):mine[0]?esc(mine[0].title):'Vous êtes à jour'}</small></a><a class="mini-status-card ${blocking.length?'danger':''}" href="#/projects/${project.id}/work/board"><span>Blocages</span><strong>${blocking.length||'Aucun'}</strong><small>${blocking[0]?esc(blocking[0].title):'Le projet peut avancer'}</small></a><a class="mini-status-card" href="#/projects/${project.id}/work/roadmap"><span>Prochain jalon</span><strong>${esc(nextPhase?.title||current?.title||'À définir')}</strong><small>${nextPhase?.due_date?`Cible : ${formatDate(nextPhase.due_date)}`:current?.due_date?`Cible : ${formatDate(current.due_date)}`:'Sans date cible'}</small></a></div>
       <div class="grid cols-2 v3-lower-grid"><div class="card"><div class="section-head compact"><h3>Dernière décision</h3>${canWriteProject(project.id)?`<button class="section-link" data-action="new-decision" data-project="${project.id}">＋ Décision</button>`:''}</div>${decisions[0]?`<div class="memory-row"><strong>${esc(decisions[0].title)}</strong><p>${esc(decisions[0].rationale||'')}</p><small>${decisions[0].decided_at?formatDate(decisions[0].decided_at):formatDate(decisions[0].created_at)}</small></div>`:empty('Aucune décision','Consignez les choix importants et leur raison.')}</div><div class="card"><div class="section-head compact"><h3>Prochaine réunion</h3><a class="section-link" href="#/projects/${project.id}/meetings">Réunions →</a></div>${meetings[0]?meetingRow(meetings[0]):empty('Aucune réunion','Planifiez un point uniquement si nécessaire.')}</div></div>
@@ -754,8 +795,9 @@ function renderModal(modal) {
   if (modal.type==='quick-add') return modalFrame('Créer','Uniquement les objets généraux. Les éléments contextuels se créent depuis leur projet.',`<div class="quick-create-grid"><button class="quick-create-card" data-action="new-project"><span>◫</span><strong>Projet</strong><small>Objectif, équipe et roadmap initiale</small></button><button class="quick-create-card" data-action="go-messages"><span>✉</span><strong>Message</strong><small>Direct, groupe privé ou sujet d’équipe</small></button><button class="quick-create-card" data-action="new-action"><span>✓</span><strong>Action</strong><small>Travail assignable et daté</small></button><button class="quick-create-card" data-action="new-meeting"><span>□</span><strong>Réunion</strong><small>Avant, Live, Après</small></button></div>`);
   if (modal.type==='activity') {const rows=recentActivitySinceSeen();return modalFrame('Activité importante','Uniquement les changements qui modifient votre contexte depuis votre dernière visite.',`<div class="activity-detail-v43 catchup-list-v41">${rows.length?rows.map(x=>`<a href="${x.route}" class="catchup-event-v41"><span class="change-tag ${x.audience} ${x.tone||''}">${x.label}</span><div><strong>${esc(x.title)}</strong><small>${esc(x.sub)} · ${x.when}</small></div><span class="row-chevron">›</span></a>`).join(''):'<div class="v43-up-to-date">Vous êtes à jour.</div>'}</div>`);}
   if (modal.type==='project') return modalFrame('Nouveau projet','Créez immédiatement un projet exploitable : objectif, équipe et premières phases.',`<form data-form="project"><div class="form-grid"><div class="field span-2"><label>Nom</label><input name="name" required maxlength="160" autofocus></div><div class="field span-2"><label>Objectif / résultat attendu</label><textarea name="objective" required placeholder="Ex. Valider une version testable avec 6 utilisateurs."></textarea></div><div class="field"><label>Date cible</label><input name="targetDate" type="date"></div><div class="field span-2"><label>Participants dès le départ</label><div class="project-checks">${state.members.filter(m=>m.user_id!==state.user.id&&m.role!=='guest').map(m=>`<label><input type="checkbox" name="participantIds" value="${m.user_id}"> ${esc(displayName(m.user_id))}</label>`).join('')||'<small>Invitez d’abord vos associés si nécessaire.</small>'}</div></div><div class="field span-2"><label>Roadmap initiale · une phase par ligne</label><textarea name="phaseTitles" rows="5">Cadrage\nRéalisation\nValidation\nLivraison</textarea><small>Gardez 3 à 7 phases. Elles restent entièrement modifiables.</small></div></div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Créer et ouvrir le projet</button></div></form>`);
-  if (modal.type==='project-edit') { const p=state.projects.find(x=>x.id===modal.projectId); if(!p)return ''; return modalFrame('Modifier le projet','Nom, objectif, état, santé et date cible.',`<form data-form="project-edit"><input type="hidden" name="projectId" value="${p.id}"><div class="form-grid"><div class="field span-2"><label>Nom</label><input name="name" required maxlength="160" value="${escAttr(p.name)}"></div><div class="field span-2"><label>Objectif</label><textarea name="objective">${esc(p.objective||'')}</textarea></div><div class="field"><label>État</label><select name="status">${['active','on_hold','completed'].map(v=>`<option value="${v}" ${p.status===v?'selected':''}>${projectStatusLabel(v)}</option>`).join('')}</select></div><div class="field"><label>Santé</label><select name="health">${['on_track','at_risk','off_track'].map(v=>`<option value="${v}" ${p.health===v?'selected':''}>${healthLabel(v)}</option>`).join('')}</select></div><div class="field"><label>Date cible</label><input name="targetDate" type="date" value="${escAttr(p.target_date||'')}"></div></div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>`); }
-  if (modal.type==='project-manage') { const p=state.projects.find(x=>x.id===modal.projectId); if(!p)return ''; return modalFrame('Gérer le projet','L’archive conserve la mémoire ; la suppression est réservée aux projets réellement jetables.',`<div class="notice"><strong>${esc(p.name)}</strong><br>Préférez l’archivage dès qu’un projet a produit des décisions, messages ou ressources.</div><div class="modal-actions"><button class="btn" data-action="close-modal">Annuler</button><button class="btn" data-action="archive-project" data-project="${p.id}">Archiver</button><button class="btn danger" data-action="delete-project" data-project="${p.id}">Supprimer définitivement</button></div>`); }
+  if (modal.type==='project-edit') { const p=state.projects.find(x=>x.id===modal.projectId); if(!p)return ''; return modalFrame('Modifier le projet','Modifiez le cadrage. L’état et la santé sont gérés automatiquement par le workflow.',`<form data-form="project-edit"><input type="hidden" name="projectId" value="${p.id}"><div class="form-grid"><div class="field span-2"><label>Nom</label><input name="name" required maxlength="160" value="${escAttr(p.name)}"></div><div class="field span-2"><label>Objectif</label><textarea name="objective">${esc(p.objective||'')}</textarea></div><div class="field"><label>Date cible</label><input name="targetDate" type="date" value="${escAttr(p.target_date||'')}"></div></div><div class="notice">L’état En bonne voie / À surveiller / En difficulté est calculé depuis les jalons, actions, blocages et échéances.</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>`); }
+  if (modal.type==='project-manage') { const p=state.projects.find(x=>x.id===modal.projectId); if(!p)return ''; const lifecycle=p.status==='active'?`<button class="btn" data-action="pause-project" data-project="${p.id}">Mettre en pause</button><button class="btn primary" data-action="start-complete-project" data-project="${p.id}">Terminer le projet</button>`:p.status==='on_hold'?`<button class="btn" data-action="resume-project" data-project="${p.id}">Reprendre</button><button class="btn primary" data-action="start-complete-project" data-project="${p.id}">Terminer le projet</button>`:p.status==='completed'?`<button class="btn primary" data-action="reopen-project" data-project="${p.id}">Réouvrir le projet</button>`:''; return modalFrame('Gérer le projet',`${projectStatusLabel(p.status)} · ${projectHealthInfo(p).label}`,`<div class="notice"><strong>${esc(p.name)}</strong><br>${esc(projectHealthInfo(p).reason)}</div><div class="modal-actions"><button class="btn" data-action="close-modal">Fermer</button>${lifecycle}<button class="btn" data-action="archive-project" data-project="${p.id}">Archiver</button><button class="btn danger" data-action="delete-project" data-project="${p.id}">Supprimer définitivement</button></div>`); }
+  if (modal.type==='project-complete') { const p=state.projects.find(x=>x.id===modal.projectId); if(!p)return ''; const preview=modal.preview||{}; const open=Number(preview.open_commitments||0); const refs=state.deliverables.filter(d=>d.project_id===p.id&&d.status!=='archived'); return modalFrame('Terminer le projet','Conservez une trace claire du résultat obtenu avant de clôturer.',`<form data-form="project-complete"><input type="hidden" name="projectId" value="${p.id}"><div class="stack"><div class="field"><label>Résultat obtenu</label><textarea name="result" required placeholder="Qu’est-ce qui a réellement été livré ou validé ?"></textarea></div>${refs.length?`<div class="field"><label>Livrables de référence (facultatif)</label><div class="project-checks">${refs.map(d=>`<label><input type="checkbox" name="referenceDeliverableIds" value="${d.id}"> ${esc(d.title)}</label>`).join('')}</div></div>`:''}${open?`<div class="notice danger"><strong>${open} engagement${open>1?'s':''} encore ouvert${open>1?'s':''}</strong><br>${Number(preview.open_actions||0)} action(s) · ${Number(preview.open_milestones||0)} phase(s) · ${Number(preview.open_requests||0)} demande(s) · ${Number(preview.pending_approvals||0)} validation(s).</div><div class="field"><label>Ce qu’il reste à transmettre ou traiter</label><textarea name="remaining" required></textarea></div><label><input type="checkbox" name="confirmOpen" value="1" required> Je confirme la clôture malgré ces engagements ouverts.</label>`:'<div class="notice"><strong>Aucun engagement ouvert.</strong> Le projet peut être clôturé proprement.</div>'}</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Confirmer la clôture</button></div></form>`); }
   if (modal.type==='profile') return modalFrame('Modifier mon profil','Choisissez le nom et la photo qui vous identifient dans 2b2c.',`<form data-form="profile"><div class="stack"><div class="profile-editor">${avatarHtml(state.user.id)}<div class="field" style="flex:1"><label>Nom affiché dans 2b2c</label><input name="displayName" required maxlength="80" value="${escAttr(displayName(state.user.id))}"></div></div><div class="field"><label>Photo de profil</label><input name="avatar" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><small>JPG, PNG, WebP ou GIF · 5 Mo max. Vous pouvez remplacer votre photo à tout moment.</small></div>${state.profile?.avatar_url?`<button class="text-danger-action" type="button" data-action="remove-avatar">Supprimer la photo actuelle</button>`:''}</div><div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div></form>`);
   if (modal.type==='action') return modalFrame('Nouvelle action','Une action doit avoir un résultat clair et, si possible, un responsable et une échéance.',`<form data-form="action"><input type="hidden" name="sourceType" value="${escAttr(modal.sourceType||'')}"><input type="hidden" name="sourceId" value="${escAttr(modal.sourceId||'')}"><div class="form-grid"><div class="field span-2"><label>Titre</label><input name="title" required maxlength="200" autofocus value="${escAttr(modal.prefillTitle||'')}"></div><div class="field"><label>Projet</label><select name="projectId" required>${writableProjectOptions(modal.projectId)}</select></div><div class="field"><label>Responsable</label><select name="assignee"><option value="">Non assigné</option>${modal.projectId?projectParticipantOptions(modal.projectId,'',false):memberOptions()}</select></div>${modal.projectId?`<div class="field"><label>Phase roadmap</label><select name="milestoneId"><option value="">Hors roadmap</option>${milestoneOptions(modal.projectId,modal.milestoneId)}</select></div>`:''}<div class="field"><label>Priorité</label><select name="priority"><option value="normal">Normale</option><option value="high">Haute</option><option value="urgent">Urgente</option><option value="low">Basse</option></select></div><div class="field"><label>Échéance</label><input name="dueAt" type="datetime-local"></div><div class="field"><label>Visibilité</label><select name="visibility"><option value="internal">Interne</option><option value="shared">Partagée aux invités</option></select></div><div class="field span-2"><label>Description</label><textarea name="description"></textarea></div></div>${modal.sourceType?`<div class="notice">La source (${esc(modal.sourceType)}) restera liée à cette action.</div>`:''}<div class="modal-actions"><button class="btn" type="button" data-action="close-modal">Annuler</button><button class="btn primary" type="submit">Créer</button></div></form>`);
   if (modal.type==='action-edit') return actionEditModal(modal);
@@ -826,6 +868,10 @@ async function handleClick(event) {
     else if (action==='cancel-reply') { state.replyTo=null; render(); }
     else if (action==='edit-project') openModal({type:'project-edit',projectId:target.dataset.project});
     else if (action==='manage-project') openModal({type:'project-manage',projectId:target.dataset.project});
+    else if (action==='pause-project') await setProjectPause(target.dataset.project,true);
+    else if (action==='resume-project') await setProjectPause(target.dataset.project,false);
+    else if (action==='start-complete-project') await openProjectCompletion(target.dataset.project);
+    else if (action==='reopen-project') await reopenProject(target.dataset.project);
     else if (action==='archive-project') await archiveProject(target.dataset.project);
     else if (action==='restore-project') await restoreProject(target.dataset.project);
     else if (action==='delete-project') await deleteProject(target.dataset.project);
@@ -875,12 +921,13 @@ async function handleSubmit(event) {
   const form = event.target.closest('form[data-form]'); if (!form) return;
   event.preventDefault(); if (state.busy) return;
   state.busy = true; const fd=new FormData(form); const data = Object.fromEntries(fd.entries());
-  data.projectIds=fd.getAll('projectIds'); data.responsibilityIds=fd.getAll('responsibilityIds'); data.participantIds=fd.getAll('participantIds'); data.attendeeIds=fd.getAll('attendeeIds'); data.mentionIds=fd.getAll('mentionIds'); data.directMemberIds=fd.getAll('directMemberIds');
+  data.projectIds=fd.getAll('projectIds'); data.responsibilityIds=fd.getAll('responsibilityIds'); data.participantIds=fd.getAll('participantIds'); data.attendeeIds=fd.getAll('attendeeIds'); data.mentionIds=fd.getAll('mentionIds'); data.directMemberIds=fd.getAll('directMemberIds'); data.referenceDeliverableIds=fd.getAll('referenceDeliverableIds');
   try {
     if (form.dataset.form==='auth') await submitAuth(data);
     else if (form.dataset.form==='workspace') await submitWorkspace(data);
     else if (form.dataset.form==='project') await submitProject(data);
     else if (form.dataset.form==='project-edit') await submitProjectEdit(data);
+    else if (form.dataset.form==='project-complete') await submitProjectCompletion(data);
     else if (form.dataset.form==='profile') await submitProfile(form,data);
     else if (form.dataset.form==='action') await submitAction(data);
     else if (form.dataset.form==='action-edit') await submitActionEdit(data);
@@ -963,9 +1010,27 @@ async function submitProject(data) {
 }
 
 async function submitProjectEdit(data) {
-  const patch={name:String(data.name).trim(),objective:String(data.objective||'').trim(),status:data.status||'active',health:data.health||'on_track',target_date:data.targetDate||null};
+  const patch={name:String(data.name).trim(),objective:String(data.objective||'').trim(),target_date:data.targetDate||null};
   await api.update('projects',`id=eq.${data.projectId}`,patch,{returnRepresentation:false});
   state.modal=null; await refreshWorkspace({quiet:true}); location.hash=`#/projects/${data.projectId}/overview`; showToast('Projet modifié');
+}
+
+async function setProjectPause(projectId,paused){
+  await api.rpc('set_project_pause_v1',{p_project_id:projectId,p_paused:!!paused});
+  state.modal=null;await refreshWorkspace({quiet:true});location.hash=`#/projects/${projectId}/overview`;showToast(paused?'Projet mis en pause':'Projet repris');
+}
+async function openProjectCompletion(projectId){
+  const preview=await api.rpc('get_project_closure_preview_v1',{p_project_id:projectId});
+  state.modal={type:'project-complete',projectId,preview:Array.isArray(preview)?preview[0]:preview};render();
+}
+async function submitProjectCompletion(data){
+  const projectId=data.projectId;const result=String(data.result||'').trim();if(!result)throw new Error('Indiquez le résultat obtenu.');
+  await api.rpc('complete_project_v1',{p_project_id:projectId,p_result:result,p_reference_deliverable_ids:data.referenceDeliverableIds||[],p_remaining:String(data.remaining||'').trim(),p_confirm_open:data.confirmOpen==='1'});
+  state.modal=null;await refreshWorkspace({quiet:true});location.hash=`#/projects/${projectId}/overview`;showToast('Projet terminé et clôture enregistrée');
+}
+async function reopenProject(projectId){
+  await api.rpc('reopen_project_v1',{p_project_id:projectId});
+  state.modal=null;await refreshWorkspace({quiet:true});location.hash=`#/projects/${projectId}/overview`;showToast('Projet réouvert');
 }
 
 async function archiveProject(projectId) {

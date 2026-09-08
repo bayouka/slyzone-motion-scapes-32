@@ -15,9 +15,9 @@ function assert(condition, message) {
   }
 }
 
-assert(worker.includes('v4.4.6-native-access'), 'worker health version is not v4.4.6-native-access');
-assert(index.includes('boot.js?v=4.4.6-native-access'), 'index does not cache-bust the native-access boot');
-assert(boot.includes("const VERSION = 'v4.4.6-native-access'"), 'boot native-access version missing');
+assert(worker.includes('v4.4.7-native-progress'), 'worker health version is not v4.4.7-native-progress');
+assert(index.includes('boot.js?v=4.4.7-native-progress'), 'index does not cache-bust the native-access boot');
+assert(boot.includes("const VERSION = 'v4.4.7-native-progress'"), 'boot native-access version missing');
 assert(boot.includes('pollIntervalMs: Math.max(60000'), 'polling floor is not 60 seconds');
 assert(boot.includes('workflow-backend-safe-v1.js'), 'observer-free workflow bridge missing');
 assert(boot.includes('live.js'), 'core live app missing');
@@ -49,6 +49,11 @@ for (const forbidden of [
 
 assert(live.includes('create_workspace_invite_v2'), 'native secure invitation RPC missing');
 assert(live.includes('set_workspace_member_access_v1'), 'native secure member-access RPC missing');
+assert(live.includes('get_project_summaries_v1'), 'server project summaries RPC missing');
+assert(live.includes('set_project_pause_v1'), 'native project pause workflow missing');
+assert(live.includes('complete_project_v1'), 'native project completion workflow missing');
+assert(live.includes('reopen_project_v1'), 'native project reopen workflow missing');
+assert(live.includes('projectServerSummaryCard'), 'native project summary card missing');
 assert(live.includes('data-invite-role'), 'native invitation role UI missing');
 assert(live.includes('data-member-role'), 'native member role UI missing');
 assert(!live.includes('Responsabilité / écriture'), 'legacy responsibility selector remains in native access UI');
@@ -56,4 +61,4 @@ assert(!live.includes('Visibilité portefeuille'), 'legacy portfolio visibility 
 assert(!safeBridge.includes('new MutationObserver'), 'safe workflow bridge instantiates a MutationObserver');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'), 'wrong Supabase backend');
 
-console.log('stability/native-access production contract: ok');
+console.log('stability/native-progress production contract: ok');
