@@ -27,7 +27,8 @@ const communicationLegacyDb=read('supabase/migrations/20260908220327_communicati
 const communicationStorageDb=read('supabase/migrations/20260908220806_communication_v3_message_storage_paths.sql');
 const communicationDeleteDb=read('supabase/migrations/20260908221034_communication_v3_deleted_message_privacy.sql');
 const communicationIndexesDb=read('supabase/migrations/20260908221655_communication_v3_supporting_fk_indexes.sql');
-const agendaDb=read('supabase/migrations/20260909003000_agenda_meeting_workflows_v1.sql');
+const agendaDb=read('supabase/migrations/20260908224237_agenda_meeting_workflows_v1.sql');
+const agendaManagerDb=read('supabase/migrations/20260908224452_agenda_meeting_manager_scope_v1.sql');
 
 function assert(ok,msg){if(!ok){console.error(`STABILITY CHECK FAILED: ${msg}`);process.exit(1);}}
 function all(text,items,label){for(const item of items)assert(text.includes(item),`${label}: ${item}`);}
@@ -37,7 +38,7 @@ assert(index.includes('assets/boot.js?build=454'),'cache bust 454');
 all(index,['assets/resources-workspace-v1.css','assets/resources-workspace-v2.css','assets/delivery-workflow-v1.css','assets/library-workspace-v1.css','assets/communication-workspace-v1.css','assets/agenda-workspace-v1.css'],'stylesheet missing');
 all(boot,["const VERSION = 'v4.4.14-agenda-attention'",'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','delivery-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','agenda-workspace-v1.js','resources-workspace-v2.js','library-workspace-v1.js'],'boot contract missing');
 assert(boot.indexOf('delivery-workflow-v1.js')<boot.indexOf('workflow-backend-safe-v1.js'),'delivery must register before safe bridge');
-for(const forbidden of ['resources-workspace-v1.js?','resources-workspace-form-guard-v1.js','invite-prelive-v2.js','auth-recovery-v1.js','home-polish.js','team-access-v1.js','team-access-safety-v2.js','team-access-submit-safety-v3.js','invite-lifecycle-v1.js','approval-flow-safety-v1.js','product-coherence-v1.js','daily-work-v1.js','planning-clarity-v1.js','project-lifecycle-safety-v1.js','project-flow-v1.js','communication-memory-v1.js','meeting-agenda-v1.js','resource-model-v1.js','workflow-backend-v2.js','project-progress-v2.js','ui-quality-v1.js','dialog-focus-safety-v2.js']) assert(!boot.includes(forbidden),`forbidden enhancer loaded: ${forbidden}`);
+for(const forbidden of ['resources-workspace-v1.js?','resources-workspace-form-guard-v1.js','invite-prelive-v2.js','auth-recovery-v1.js','home-polish.js','team-access-v1.js','team-access-safety-v2.js','team-access-submit-safety-v3.js','invite-lifecycle-v1.js','approval-flow-safety-v1.js','product-coherence-v1.js','daily-work-v1.js','planning-clarity-v1.js','project-lifecycle-safety-v1.js','project-flow-v1.js','communication-memory-v1.js','meeting-agenda-v1.js','resource-model-v1.js','workflow-backend-v2.js','project-progress-v2.js','ui-quality-v1.js','dialog-focus-safety-v2.js'])assert(!boot.includes(forbidden),`forbidden enhancer loaded: ${forbidden}`);
 
 all(live,['create_workspace_invite_v2','set_workspace_member_access_v1','get_project_summaries_v1','get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise'],'core native contract missing');
 all(live,["['calendar','Agenda',ICONS.calendar,'#/calendar']",'Centre d’attention','set_meeting_response_v2','create_meeting_with_attendees_v2','update_meeting_v2','Confirmer votre présence'],'agenda native integration missing');
@@ -95,6 +96,8 @@ assert(communicationDeleteDb.includes('m.deleted_at is null'),'deleted attachmen
 all(communicationIndexesDb,['attachments_workspace_id_idx','attachments_created_by_idx','mentions_workspace_id_idx','mentions_mentioned_by_idx'],'communication supporting indexes missing');
 
 all(agendaDb,['get_agenda_items_v1','create_meeting_with_attendees_v2','get_meeting_capabilities_v1','set_meeting_response_v2','update_meeting_v2','GUEST_MEETING_REQUIRES_SHARED_PROJECT','MEETING_FINALIZED_STATUS_IMMUTABLE','sync_meeting_conversation_members_v1','revoke all on function public.get_agenda_items_v1','grant execute on function public.get_agenda_items_v1','meetings_workspace_starts_at_idx','actions_workspace_due_at_idx','milestones_workspace_due_date_idx','requests_workspace_due_at_idx'],'agenda database contract missing');
+all(agendaManagerDb,['get_meeting_capabilities_v1','update_meeting_v2','MEETING_MANAGE_DENIED','p.lead_user_id=auth.uid()','p.lead_user_id=v_actor'],'meeting manager scope contract missing');
+assert(!agendaManagerDb.includes('app_private.can_write_project(v_meeting.project_id)'),'meeting manager scope must not use generic project write permission');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'),'wrong Supabase backend');
 
 console.log('stability/agenda-attention v4.4.14 production contract: ok');
