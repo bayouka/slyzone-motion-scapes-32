@@ -3,11 +3,6 @@ name: Deploy 4b4c production
 # Production deployment is explicit/manual by default.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/deploy-once-navigation-flow-v502.txt
 
 permissions:
   contents: read
