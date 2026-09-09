@@ -77,6 +77,10 @@ assert(live.includes("event.key==='Tab'&&state.mobileMenuOpen"), 'mobile drawer 
 assert(live.includes("state.mobileMenuOpen?'Fermer le menu':'Ouvrir le menu'"), 'hamburger accessible label must follow open state');
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
+assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(v5), 'obsolete .mobile-nav selector reintroduced in V5');
+const legacyCore = read('site/assets/core-legacy-v455.css');
+assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile-nav selector reintroduced in legacy bundle');
+assert(!/\.mobile-nav-btn(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile-nav-btn selector reintroduced in legacy bundle');
 
 
 
