@@ -100,8 +100,6 @@ jobs:
           probe /assets/design-v5.css "mobile navigation architecture & scroll behavior"
           probe /assets/design-v5.css "position:fixed!important"
           probe / "assets/design-v5.css?v=5.0.2-navigation-flow"
-          probe / "assets/design-v5.css?v=5.0.2-navigation-flow"
-          probe / "assets/design-v5.css?v=5.0.2-navigation-flow"
           probe /assets/call-native-v1.css "call UX completeness"
           probe /assets/call-native-v1.css "professional call chrome"
           probe /assets/live.js "open-project-call-v1"
