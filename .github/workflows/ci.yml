@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          grep -Fq "const VERSION = 'v4.5.4-semantic-hygiene'" site/assets/boot.js
+          grep -Fq "const VERSION = 'v4.5.5-css-consolidation'" site/assets/boot.js
           grep -Fq "import(`./live.js?" site/assets/boot.js
           grep -Fq "delivery-workflow-v1.js" site/assets/boot.js
           grep -Fq "workflow-backend-safe-v1.js" site/assets/boot.js
@@ -40,14 +40,14 @@ jobs:
           ! grep -Fq "MutationObserver(" site/assets/boot.js
 
           grep -Fq "assets/design-v5.css?v=5.0.2-navigation-flow" site/index.html
-          grep -Fq "assets/boot.js?build=504" site/index.html
+          grep -Fq "assets/boot.js?build=505" site/index.html
           grep -Fq "resetViewScrollV52" site/assets/live.js
           grep -Fq "v52-mobile-primary" site/assets/live.js
           grep -Fq "open-call-picker-v1" site/assets/live.js
           grep -Fq "heartbeat_call_v1" site/assets/live.js
 
           grep -Fq "app: '4b4c'" src/worker.js
-          grep -Fq "v4.5.4-semantic-hygiene" src/worker.js
+          grep -Fq "v4.5.5-css-consolidation" src/worker.js
 
       - name: Repository safety contract
         shell: bash
