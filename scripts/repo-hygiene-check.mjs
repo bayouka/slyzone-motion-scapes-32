@@ -11,6 +11,10 @@ const assert = (condition, message) => {
 const boot = read('site/assets/boot.js');
 const index = read('site/index.html');
 const worker = read('src/worker.js');
+const live = read('site/assets/live.js');
+const pkg = JSON.parse(read('package.json'));
+const lock = JSON.parse(read('package-lock.json'));
+
 
 const requiredBootModules = [
   'live.js',
@@ -32,6 +36,9 @@ const cssRefs = [...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)
 assert(cssRefs.length > 0, 'no stylesheets found in index');
 assert(cssRefs.at(-1)?.startsWith('assets/design-v5.css?'), 'design-v5.css must be the final stylesheet');
 assert(cssRefs.filter(x => x.startsWith('assets/design-v5.css?')).length === 1, 'design-v5.css must be loaded exactly once');
+assert(cssRefs.indexOf('assets/v434-polish.css') < cssRefs.indexOf('assets/v435-final.css'), 'legacy CSS must preserve chronological cascade: v434 before v435');
+assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
+
 
 assert(index.includes('assets/boot.js?build=503'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.2-navigation-flow'), 'unexpected V5 design asset version');
@@ -40,6 +47,31 @@ assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitl
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
 assert(worker.includes("'referrer-policy': 'strict-origin-when-cross-origin'"), 'missing Referrer-Policy');
 assert(worker.includes("'permissions-policy'"), 'missing Permissions-Policy');
+
+const routeRenderers = [
+  'renderDashboard','renderProjects','renderProject','renderMyWork','renderMessages',
+  'renderCalendar','renderLibrary','renderTeam','renderProfile','renderSettings','renderWelcome','renderArchives',
+];
+for (let i = 0; i < routeRenderers.length; i++) {
+  const name = routeRenderers[i];
+  const start = live.indexOf('function ' + name + '(');
+  assert(start >= 0, `missing route renderer: ${name}`);
+  if (start < 0) continue;
+  const next = live.indexOf('\nfunction ', start + 10);
+  const block = live.slice(start, next > start ? next : live.length);
+  assert(block.includes('<h1'), `route renderer must provide an h1: ${name}`);
+}
+
+for (const form of live.matchAll(/<form\b[\s\S]*?<\/form>/g)) {
+  for (const button of form[0].matchAll(/<button\b([^>]*)>/g)) {
+    assert(/\btype=/.test(button[1]), `button inside form missing explicit type: ${button[0].slice(0,120)}`);
+  }
+}
+
+assert(live.includes('auditRenderedSemanticsV454'), 'runtime semantic guard missing');
+assert(live.includes('aria-current="page"'), 'active navigation must expose aria-current');
+assert(live.includes("event.key==='Tab'&&state.mobileMenuOpen"), 'mobile drawer keyboard focus trap missing');
+
 
 const markerDir = '.github';
 if (fs.existsSync(markerDir)) {
