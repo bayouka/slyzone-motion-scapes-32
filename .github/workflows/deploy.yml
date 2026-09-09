@@ -3,9 +3,15 @@ name: Deploy 4b4c production
 # Production deployment is explicit/manual by default.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/deploy-once-call-continuity-v1.txt
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: 4b4c-production
@@ -21,6 +27,12 @@ jobs:
       PRODUCTION_URL: https://4b4c.bayoukadesbois.workers.dev
     steps:
       - uses: actions/checkout@v5
+      - name: Mark deployment pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -d '{"state":"pending","context":"4b4c-production-deploy","description":"Deploying v4.4.17 call continuity"}'
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -53,8 +65,8 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.16-multiparty-calls"'
-          probe /assets/boot.js "v4.4.16-multiparty-calls"
+          probe /health '"version":"v4.4.17-call-continuity"'
+          probe /assets/boot.js "v4.4.17-call-continuity"
           probe /assets/boot.js "communication-workspace-v1.js"
           probe /assets/live.js "open-call-picker-v1"
           probe /assets/live.js "start_private_call_v2"
@@ -62,7 +74,18 @@ jobs:
           probe /assets/live.js "respond_call_invite_v1"
           probe /assets/live.js "call-stage-focus-v2"
           probe /assets/live.js "call-pip-v2"
+          probe /assets/live.js "call-minimize-v1"
+          probe /assets/live.js "2b2c:start-call"
+          probe /assets/communication-workspace-v1.js "call-conversation"
           probe /assets/live.js "call-switch-camera-v1"
           probe /assets/live.js "facingMode:{ideal:'user'}"
-          probe / "assets/boot.js?build=456"
+          probe / "assets/boot.js?build=457"
           probe / '2b2c — Projets qui avancent ensemble'
+
+      - name: Mark deployment success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -d '{"state":"success","context":"4b4c-production-deploy","description":"v4.4.17 call continuity live on Cloudflare"}'
