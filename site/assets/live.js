@@ -280,6 +280,23 @@ async function refreshWorkspaceImpl({ quiet = false } = {}) {
   }
 }
 
+function auditRenderedSemanticsV454(){
+  queueMicrotask(()=>{
+    try{
+      const root=document.getElementById('app');if(!root)return;
+      const content=root.querySelector('.live-content');
+      const scope=content||root;
+      const h1s=scope.querySelectorAll('h1');
+      if(h1s.length!==1)console.warn('[2b2c] semantic heading audit: expected exactly one visible h1, found',h1s.length);
+      const mains=root.querySelectorAll('main');
+      if(content&&mains.length!==1)console.warn('[2b2c] semantic landmark audit: expected one main landmark, found',mains.length);
+      const ids=[...root.querySelectorAll('[id]')].map(el=>el.id).filter(Boolean);
+      const duplicates=[...new Set(ids.filter((id,index)=>ids.indexOf(id)!==index))];
+      if(duplicates.length)console.warn('[2b2c] duplicate DOM ids detected',duplicates);
+    }catch(error){console.warn('[2b2c] semantic audit failed',error);}
+  });
+}
+
 function render() {
   document.documentElement.classList.toggle('mobile-menu-open', Boolean(state.mobileMenuOpen));
   document.body.classList.toggle('mobile-menu-open', Boolean(state.mobileMenuOpen));
@@ -305,6 +322,7 @@ function render() {
   app.innerHTML = shell(content, route);
   if (state.modal) app.insertAdjacentHTML('beforeend', renderModal(state.modal));
   renderToasts();
+  auditRenderedSemanticsV454();
 }
 
 function shell(content, route) {
