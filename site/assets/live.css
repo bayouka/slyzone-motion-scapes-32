@@ -120,7 +120,7 @@ html,body{background:var(--v42-canvas)}
 .v42-shell .live-content{background:
   radial-gradient(900px 520px at 82% -12%,rgba(91,117,244,.075),transparent 64%),
   radial-gradient(700px 420px at 8% 18%,rgba(124,98,239,.035),transparent 68%),var(--v42-canvas);min-height:calc(100vh - 66px)}
-.v42-shell .live-content .card,.v42-shell .next-card,.v42-shell .file-card,.v42-shell .work-table,.v42-shell .meeting-card-v4,.v42-shell .roadmap-phase-card,.v42-shell .conversation-panel,.v42-shell .conversation-item,.notification-panel,
+.v42-shell .live-content .card,.v42-shell .next-card,.v42-shell .file-card,.v42-shell .work-table,.v42-shell .meeting-card-v4,.v42-shell .conversation-panel,.v42-shell .conversation-item,.notification-panel,
 .modal,.auth-card,.onboarding-card{
   border-color:var(--v42-line)!important;background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(250,252,255,.82))!important;
   box-shadow:var(--v42-shadow);backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%);
@@ -239,7 +239,7 @@ html,body,#app{max-width:100%;min-width:0;overflow-x:clip}
 .v421-shell :focus-visible{outline:3px solid rgba(53,109,243,.26);outline-offset:2px}
 
 /* Apply the premium surface language to all main page families, not only Home. */
-.v421-shell .live-content :is(.project-head-v3,.project-room-card,.project-overview-card,.work-group,.work-table,.kanban-column,.calendar-shell,.calendar-day,.library-toolbar,.file-card,.conversation-panel,.conversation-item,.team-row,.archive-card,.settings-link,.meeting-card-v4,.meeting-stage-panel,.roadmap-phase-card,.detail-block,.welcome-card){
+.v421-shell .live-content :is(.project-head-v3,.project-room-card,.project-overview-card,.work-group,.work-table,.kanban-column,.calendar-shell,.calendar-day,.library-toolbar,.file-card,.conversation-panel,.conversation-item,.team-row,.archive-card,.settings-link,.meeting-card-v4,.meeting-stage-panel,.detail-block,.welcome-card){
   border-color:rgba(197,208,226,.72)!important;
 }
 .v421-shell .live-content :is(.project-head-v3,.project-room-card,.project-overview-card,.work-group,.work-table,.calendar-shell,.library-toolbar,.conversation-panel,.welcome-card){
