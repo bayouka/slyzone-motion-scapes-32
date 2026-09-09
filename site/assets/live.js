@@ -1921,7 +1921,7 @@ function renderActiveCallV1(){
     }
   }
   const statusHtml=(ctx.invites||[]).length?`<div class="call-participant-status-v2">${ctx.invites.map(i=>`<span class="${i.status}"><b>${esc(displayName(i.invited_user_id))}</b> · ${callInviteStatusLabelV1(i)}</span>`).join('')}</div>`:'';
-  root.innerHTML=`<section class="call-shell-v1 call-shell-v2 call-shell-pro-v4"><header class="call-pro-header-v4"><div class="call-pro-title-v4"><span class="call-live-status-v4"><i></i> En direct</span><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):(ctx.projectId?projectName(ctx.projectId):'Visio'))}</strong><small>${participantCount} participant${participantCount>1?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div><div class="call-head-actions-v2"><button class="call-head-button-v4" data-action="call-minimize-v1" aria-label="Réduire">—</button><button class="call-head-button-v4" data-action="call-add-v1" aria-label="Ajouter une personne">＋</button>${ctx.call.started_by===state.user.id?'<button class="call-head-button-v4 danger-soft" data-action="call-end-v1">Terminer</button>':''}</div></header><div class="call-stage-wrap-v2 call-stage-pro-v4">${stage}${statusHtml}</div><footer class="call-controls-v2 call-controls-pro-v4"><button class="call-control-v2" data-action="call-mic-v1"><span>${ctx.micTrack?.enabled?'🎙':'🔇'}</span><small>Micro</small></button><button class="call-control-v2" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}><span>${ctx.cameraTrack?.enabled?'📹':'🚫'}</span><small>Caméra</small></button>${ctx.canFlipCamera?'<button class="call-control-v2" data-action="call-switch-camera-v1"><span>↻</span><small>Retourner</small></button>':''}${navigator.mediaDevices?.getDisplayMedia?'<button class="call-control-v2" data-action="call-screen-v1"><span>▣</span><small>'+ (ctx.screenTrack?'Arrêter écran':'Partager') +'</small></button>':''}<button class="call-control-v2" data-action="call-add-v1"><span>＋</span><small>Ajouter</small></button><button class="call-control-v2 danger" data-action="call-leave-v1"><span>☎</span><small>Quitter</small></button></footer></section>`;
+  root.innerHTML=`<section class="call-shell-v1 call-shell-v2 call-shell-pro-v4"><header class="call-pro-header-v4"><div class="call-pro-title-v4"><span class="call-live-status-v4"><i></i> En direct</span><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):(ctx.projectId?projectName(ctx.projectId):'Visio'))}</strong><small>${participantCount} participant${participantCount>1?'s':''} · ${formatCallDurationV1(ctx.call.started_at)}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div><div class="call-head-actions-v2"><button class="call-head-button-v4" data-action="call-minimize-v1" aria-label="Réduire">—</button><button class="call-head-button-v4" data-action="call-add-v1" aria-label="Participants">＋</button>${document.fullscreenEnabled?'<button class="call-head-button-v4" data-action="call-fullscreen-v1" aria-label="Plein écran">⛶</button>':''}${ctx.call.started_by===state.user.id?`<button class="call-head-button-v4 danger-soft ${ctx.endConfirmUntil>Date.now()?'confirming':''}" data-action="call-end-v1">${ctx.endConfirmUntil>Date.now()?'Confirmer':'Terminer'}</button>`:''}</div></header><div class="call-stage-wrap-v2 call-stage-pro-v4">${stage}${statusHtml}</div><footer class="call-controls-v2 call-controls-pro-v4"><button class="call-control-v2" data-action="call-mic-v1"><span>${ctx.micTrack?.enabled?'🎙':'🔇'}</span><small>Micro</small></button><button class="call-control-v2" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}><span>${ctx.cameraTrack?.enabled?'📹':'🚫'}</span><small>Caméra</small></button>${ctx.canFlipCamera?'<button class="call-control-v2" data-action="call-switch-camera-v1"><span>↻</span><small>Retourner</small></button>':''}${navigator.mediaDevices?.getDisplayMedia?'<button class="call-control-v2" data-action="call-screen-v1"><span>▣</span><small>'+ (ctx.screenTrack?'Arrêter écran':'Partager') +'</small></button>':''}<button class="call-control-v2" data-action="call-add-v1"><span>＋</span><small>Ajouter</small></button><button class="call-control-v2 danger" data-action="call-leave-v1"><span>☎</span><small>Quitter</small></button></footer></section>`;
   attachCallVideosV1(ctx);
 }
 async function toggleMicV1(){if(!activeCallV1?.micTrack)return;activeCallV1.micTrack.enabled=!activeCallV1.micTrack.enabled;await syncCallMediaV1(activeCallV1);renderActiveCallV1();}
@@ -1962,7 +1962,23 @@ async function toggleScreenV1(){
 }
 function cleanupCallV1(ctx){callDockedV1=false;callFocusUserV1=null;ctx.closed=true;if(callPollTimerV1)clearTimeout(callPollTimerV1);ctx.screenTrack?.stop();ctx.localStream?.getTracks().forEach(t=>t.stop());for(const pc of ctx.peers.values())pc.close();}
 async function leaveActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;cleanupCallV1(ctx);try{await api.rpc('leave_call_v1',{p_call_id:ctx.call.id})}catch{}activeCallV1=null;document.getElementById('active-call-v1')?.remove();}
+async function requestEndActiveCallV1(){
+  const ctx=activeCallV1;if(!ctx)return;
+  if(!ctx.endConfirmUntil||ctx.endConfirmUntil<Date.now()){
+    ctx.endConfirmUntil=Date.now()+5000;renderActiveCallV1();
+    setTimeout(()=>{if(activeCallV1===ctx&&ctx.endConfirmUntil&&ctx.endConfirmUntil<Date.now())renderActiveCallV1();},5200);
+    return;
+  }
+  await endActiveCallV1();
+}
 async function endActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;await api.rpc('end_call_v1',{p_call_id:ctx.call.id,p_expected_version:ctx.call.version});cleanupCallV1(ctx);activeCallV1=null;document.getElementById('active-call-v1')?.remove();}
+async function toggleCallFullscreenV1(){
+  const shell=document.querySelector('#active-call-v1 .call-shell-pro-v4');if(!shell)return;
+  try{
+    if(document.fullscreenElement)await document.exitFullscreen();
+    else if(shell.requestFullscreen)await shell.requestFullscreen();
+  }catch(error){console.warn('call fullscreen',error);}
+}
 async function checkIncomingCallV1(){
   if(!state.user||!state.workspace||activeCallV1)return;
   try{
