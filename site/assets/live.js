@@ -904,8 +904,11 @@ async function handleClick(event) {
     else if (action==='toggle-mobile-menu') { event.preventDefault(); state.mobileMenuOpen=!state.mobileMenuOpen; state.userMenuOpen=false; state.notificationOpen=false; render(); if(state.mobileMenuOpen) requestAnimationFrame(()=>document.querySelector('.mobile-drawer-close')?.focus()); }
     else if (action==='open-call-picker-v1') openCallPickerV1();
     else if (action==='call-picker-close-v1') closeCallPickerV1();
-    else if (action==='call-person-v1') await startDirectCallV1(target.dataset.user);
-    else if (action==='call-team-v1') await startTeamCallV1();
+    else if (action==='call-toggle-person-v1') toggleCallPersonV1(target.dataset.user);
+    else if (action==='call-select-all-v1') selectAllCallPeopleV1();
+    else if (action==='call-confirm-start-v1') await confirmStartCallV1();
+    else if (action==='call-confirm-add-v1') await confirmAddPeopleV1();
+    else if (action==='call-add-v1') openAddPeopleV1();
     else if (action==='call-accept-v1') await acceptIncomingCallV1(target.dataset.call);
     else if (action==='call-decline-v1') await declineIncomingCallV1(target.dataset.call);
     else if (action==='call-mic-v1') await toggleMicV1();
@@ -1575,23 +1578,68 @@ async function copyText(text){try{await navigator.clipboard.writeText(text);show
 let activeCallV1=null;
 let incomingCallV1=null;
 let callPollTimerV1=null;
+let callPickerSelectedV1=new Set();
+let callPickerModeV1='start';
 
 function callProjectContextV1(){
   return String(document.getElementById('call-project-v1')?.value||'')||null;
 }
 function closeCallPickerV1(){document.getElementById('call-picker-v1')?.remove();}
-function openCallPickerV1(){
+function callUnavailableIdsV1(){
+  const ids=new Set([state.user.id]);
+  const ctx=activeCallV1;
+  if(ctx){
+    for(const id of ctx.remoteStreams.keys())ids.add(id);
+    for(const invite of ctx.invites||[])if(invite.status!=='declined'&&invite.status!=='cancelled')ids.add(invite.invited_user_id);
+  }
+  return ids;
+}
+function renderCallPickerV1(){
   closeCallPickerV1();
-  if(activeCallV1){renderActiveCallV1();return;}
-  const teammates=state.members.filter(m=>m.user_id!==state.user.id&&m.status==='active'&&m.role!=='guest');
+  const adding=callPickerModeV1==='add';
+  const unavailable=adding?callUnavailableIdsV1():new Set([state.user.id]);
+  const teammates=state.members.filter(m=>m.status==='active'&&m.role!=='guest'&&!unavailable.has(m.user_id));
+  const projectValue=adding?(activeCallV1?.projectId||''):(callProjectContextV1()||'');
+  const selectedCount=callPickerSelectedV1.size;
   const root=document.createElement('div');root.id='call-picker-v1';
-  root.innerHTML=`<div class="call-modal-backdrop-v1"><section class="call-picker-card-v1" role="dialog" aria-modal="true" aria-label="Appeler">
-    <header><div><span class="eyebrow">Communication</span><h2>Appeler</h2><p>Appelez une personne maintenant. Le projet est facultatif.</p></div><button class="icon-button" data-action="call-picker-close-v1" aria-label="Fermer">✕</button></header>
-    <label class="field"><span>Contexte facultatif</span><select id="call-project-v1"><option value="">Sans projet</option>${state.projects.filter(p=>p.status==='active').map(p=>`<option value="${escAttr(p.id)}">${esc(p.name)}</option>`).join('')}</select></label>
-    <div class="call-people-v1">${teammates.length?teammates.map(m=>`<button data-action="call-person-v1" data-user="${escAttr(m.user_id)}"><span class="avatar">${initials(displayName(m.user_id))}</span><span><strong>${esc(displayName(m.user_id))}</strong><small>Appel privé</small></span><b>Appeler</b></button>`).join(''):'<div class="notice">Aucun autre membre interne actif.</div>'}</div>
-    <div class="call-team-row-v1"><div><strong>Appel d’équipe</strong><small>Salle libre accessible aux membres de l’espace.</small></div><button class="btn" data-action="call-team-v1">Ouvrir</button></div>
+  root.innerHTML=`<div class="call-modal-backdrop-v1"><section class="call-picker-card-v1" role="dialog" aria-modal="true" aria-label="${adding?'Ajouter des participants':'Nouvel appel'}">
+    <header><div><span class="eyebrow">Communication</span><h2>${adding?'Ajouter des participants':'Nouvel appel'}</h2><p>${adding?'Invitez d’autres membres sans couper l’appel.':'Choisissez une ou plusieurs personnes à appeler.'}</p></div><button class="icon-button" data-action="call-picker-close-v1" aria-label="Fermer">✕</button></header>
+    ${adding?'':`<label class="field"><span>Contexte facultatif</span><select id="call-project-v1"><option value="">Sans projet</option>${state.projects.filter(p=>p.status==='active').map(p=>`<option value="${escAttr(p.id)}" ${p.id===projectValue?'selected':''}>${esc(p.name)}</option>`).join('')}</select></label>`}
+    <div class="call-picker-tools-v1"><strong>${adding?'Personnes disponibles':'Qui voulez-vous appeler ?'}</strong>${teammates.length>1?`<button class="text-action" data-action="call-select-all-v1">${selectedCount===teammates.length?'Tout désélectionner':'Tout sélectionner'}</button>`:''}</div>
+    <div class="call-people-v1">${teammates.length?teammates.map(m=>{const on=callPickerSelectedV1.has(m.user_id);return `<button class="${on?'selected':''}" data-action="call-toggle-person-v1" data-user="${escAttr(m.user_id)}"><span class="avatar">${initials(displayName(m.user_id))}</span><span><strong>${esc(displayName(m.user_id))}</strong><small>${on?'Sélectionné':'Disponible'}</small></span><b>${on?'✓':'+'}</b></button>`}).join(''):'<div class="notice">Aucune autre personne disponible à inviter.</div>'}</div>
+    <footer class="call-picker-actions-v1"><button class="btn" data-action="call-picker-close-v1">Annuler</button><button class="btn primary" data-action="${adding?'call-confirm-add-v1':'call-confirm-start-v1'}" ${selectedCount?'':'disabled'}>${adding?'Ajouter':'Appeler'}${selectedCount?` (${selectedCount})`:''}</button></footer>
   </section></div>`;
   document.body.appendChild(root);
+}
+function openCallPickerV1(){
+  if(activeCallV1){callPickerModeV1='add';callPickerSelectedV1=new Set();renderCallPickerV1();return;}
+  callPickerModeV1='start';callPickerSelectedV1=new Set();renderCallPickerV1();
+}
+function openAddPeopleV1(){if(!activeCallV1)return;callPickerModeV1='add';callPickerSelectedV1=new Set();renderCallPickerV1();}
+function toggleCallPersonV1(userId){
+  const currentProject=callProjectContextV1();
+  if(callPickerSelectedV1.has(userId))callPickerSelectedV1.delete(userId);else callPickerSelectedV1.add(userId);
+  renderCallPickerV1();
+  if(currentProject&&!document.getElementById('call-project-v1')?.value){const select=document.getElementById('call-project-v1');if(select)select.value=currentProject;}
+}
+function selectAllCallPeopleV1(){
+  const adding=callPickerModeV1==='add';
+  const unavailable=adding?callUnavailableIdsV1():new Set([state.user.id]);
+  const ids=state.members.filter(m=>m.status==='active'&&m.role!=='guest'&&!unavailable.has(m.user_id)).map(m=>m.user_id);
+  callPickerSelectedV1=callPickerSelectedV1.size===ids.length?new Set():new Set(ids);
+  renderCallPickerV1();
+}
+async function confirmStartCallV1(){
+  const targets=[...callPickerSelectedV1];if(!targets.length)return;
+  const projectId=callProjectContextV1();
+  const call=first(await api.rpc('start_private_call_v2',{p_workspace_id:state.workspace.id,p_target_user_ids:targets,p_project_id:projectId}));
+  await connectCallV1(call,null);
+}
+async function confirmAddPeopleV1(){
+  const ctx=activeCallV1;const targets=[...callPickerSelectedV1];if(!ctx||!targets.length)return;
+  await api.rpc('invite_to_call_v1',{p_call_id:ctx.call.id,p_target_user_ids:targets});
+  closeCallPickerV1();callPickerSelectedV1=new Set();showToast(targets.length>1?`${targets.length} invitations envoyées`:'Invitation envoyée');
+  await refreshCallInvitesV1(ctx);renderActiveCallV1();
 }
 
 async function callIceServersV1(){
@@ -1640,7 +1688,7 @@ async function connectCallV1(call,targetUserId=null){
   closeCallPickerV1();
   const localStream=await localMediaV1();
   await api.rpc('join_call_v1',{p_call_id:call.id});
-  const initialCameraTrack=localStream.getVideoTracks()[0]||null;let canFlipCamera=false;try{const devices=await navigator.mediaDevices.enumerateDevices();canFlipCamera=devices.filter(d=>d.kind==='videoinput').length>1;}catch{}activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:initialCameraTrack,cameraFacing:initialCameraTrack?.getSettings?.().facingMode||'user',canFlipCamera,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),closed:false};
+  const initialCameraTrack=localStream.getVideoTracks()[0]||null;let canFlipCamera=false;try{const devices=await navigator.mediaDevices.enumerateDevices();canFlipCamera=devices.filter(d=>d.kind==='videoinput').length>1;}catch{}activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:initialCameraTrack,cameraFacing:initialCameraTrack?.getSettings?.().facingMode||'user',canFlipCamera,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),invites:[],closed:false};
   incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();await syncCallMediaV1(activeCallV1);renderActiveCallV1();void pollCallV1(activeCallV1);
 }
 async function startDirectCallV1(targetUserId){
@@ -1651,19 +1699,24 @@ async function startTeamCallV1(){
   const call=first(await api.rpc('start_workspace_call_v1',{p_workspace_id:state.workspace.id}));await connectCallV1(call,null);
 }
 async function acceptIncomingCallV1(callId){
-  const call=first(await api.select('call_sessions',`select=*&id=eq.${callId}&ended_at=is.null&limit=1`));if(!call)throw new Error('Cet appel n’est plus disponible.');await connectCallV1(call,call.started_by);
+  const call=first(await api.rpc('respond_call_invite_v1',{p_call_id:callId,p_accept:true}));if(!call)throw new Error('Cet appel n’est plus disponible.');await connectCallV1(call,call.started_by);
 }
 async function declineIncomingCallV1(callId){
-  await api.rpc('decline_direct_call_v1',{p_call_id:callId});incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();
+  await api.rpc('respond_call_invite_v1',{p_call_id:callId,p_accept:false});incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();
+}
+async function refreshCallInvitesV1(ctx){
+  try{ctx.invites=await api.select('call_invites',`select=*&call_session_id=eq.${ctx.call.id}&order=created_at.asc`);}catch{ctx.invites=ctx.invites||[];}
 }
 async function pollCallV1(ctx){
   if(ctx.closed||activeCallV1!==ctx)return;
   try{
-    const [participants,signals,calls]=await Promise.all([
+    const [participants,signals,calls,invites]=await Promise.all([
       api.select('call_participants',`select=*&call_session_id=eq.${ctx.call.id}&left_at=is.null&order=joined_at.asc`),
       api.select('call_signals',`select=*&call_session_id=eq.${ctx.call.id}&to_user=eq.${state.user.id}&order=id.asc&limit=200`),
-      api.select('call_sessions',`select=*&id=eq.${ctx.call.id}&limit=1`)
+      api.select('call_sessions',`select=*&id=eq.${ctx.call.id}&limit=1`),
+      api.select('call_invites',`select=*&call_session_id=eq.${ctx.call.id}&order=created_at.asc`)
     ]);
+    ctx.invites=invites||[];
     const activeIds=new Set(participants.map(p=>p.user_id));for(const p of participants)if(p.user_id!==state.user.id)await maybeOfferCallV1(ctx,p.user_id);
     for(const [id,pc] of [...ctx.peers])if(!activeIds.has(id)){pc.close();ctx.peers.delete(id);ctx.remoteStreams.delete(id);ctx.offered.delete(id);}
     for(const signal of signals)await processCallSignalV1(ctx,signal);
@@ -1679,11 +1732,29 @@ function attachCallVideosV1(ctx){
   const local=document.getElementById('call-local-v1');if(local){local.srcObject=ctx.localPreviewStream;local.muted=true;void local.play().catch(()=>{});}
   for(const [id,stream] of ctx.remoteStreams){const v=document.getElementById(`call-remote-${id}`);if(v){v.srcObject=stream;void v.play().catch(()=>{});}}
 }
+function callInviteStatusLabelV1(invite){
+  if(invite.status==='accepted')return 'A rejoint';
+  if(invite.status==='declined')return 'A refusé';
+  return 'Sonnerie…';
+}
 function renderActiveCallV1(){
   const ctx=activeCallV1;if(!ctx)return;
   let root=document.getElementById('active-call-v1');if(!root){root=document.createElement('div');root.id='active-call-v1';document.body.appendChild(root);}
   const remotes=[...ctx.remoteStreams.entries()];
-  root.innerHTML=`<section class="call-shell-v1"><header><div><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):'Appel d’équipe')}</strong><small>${remotes.length+1} participant${remotes.length?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div></header><div class="call-grid-v1">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>videoTileCallV1(`call-remote-${id}`,stream,displayName(id))).join('')}${remotes.length?'':'<div class="call-wait-v1"><strong>En attente de l’autre participant…</strong></div>'}</div><footer><button class="btn" data-action="call-mic-v1">${ctx.micTrack?.enabled?'🎙 Micro':'🔇 Micro'}</button><button class="btn" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}>${ctx.cameraTrack?.enabled?'📹 Caméra':'🚫 Caméra'}</button>${ctx.canFlipCamera?'<button class="btn" data-action="call-switch-camera-v1">↻ Retourner</button>':''}<button class="btn" data-action="call-screen-v1">${ctx.screenTrack?'▣ Arrêter partage':'▣ Partager écran'}</button><button class="btn danger" data-action="call-leave-v1">Quitter</button>${ctx.call.started_by===state.user.id?'<button class="btn danger" data-action="call-end-v1">Terminer pour tous</button>':''}</footer></section>`;
+  const pending=(ctx.invites||[]).filter(i=>i.status==='pending');
+  const accepted=(ctx.invites||[]).filter(i=>i.status==='accepted');
+  const participantCount=1+remotes.length;
+  let stage='';
+  if(remotes.length===0){
+    stage=`<div class="call-stage-solo-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${pending.length?`<div class="call-ringing-v2"><strong>En attente de ${pending.map(i=>esc(displayName(i.invited_user_id))).join(', ')}</strong><small>La visio commencera automatiquement dès qu’une personne accepte.</small></div>`:''}</div>`;
+  }else if(remotes.length===1){
+    const [id,stream]=remotes[0];
+    stage=`<div class="call-stage-focus-v2">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}<div class="call-pip-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}</div></div>`;
+  }else{
+    stage=`<div class="call-grid-v1 call-grid-many-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>videoTileCallV1(`call-remote-${id}`,stream,displayName(id))).join('')}</div>`;
+  }
+  const statusHtml=(ctx.invites||[]).length?`<div class="call-participant-status-v2">${ctx.invites.map(i=>`<span class="${i.status}"><b>${esc(displayName(i.invited_user_id))}</b> · ${callInviteStatusLabelV1(i)}</span>`).join('')}</div>`:'';
+  root.innerHTML=`<section class="call-shell-v1 call-shell-v2"><header><div><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):(ctx.projectId?projectName(ctx.projectId):'Visio'))}</strong><small>${participantCount} participant${participantCount>1?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div><div class="call-head-actions-v2"><button class="btn small" data-action="call-add-v1">＋ Ajouter</button>${ctx.call.started_by===state.user.id?'<button class="text-action call-end-all-v2" data-action="call-end-v1">Terminer</button>':''}</div></header><div class="call-stage-wrap-v2">${stage}${statusHtml}</div><footer class="call-controls-v2"><button class="call-control-v2" data-action="call-mic-v1"><span>${ctx.micTrack?.enabled?'🎙':'🔇'}</span><small>Micro</small></button><button class="call-control-v2" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}><span>${ctx.cameraTrack?.enabled?'📹':'🚫'}</span><small>Caméra</small></button>${ctx.canFlipCamera?'<button class="call-control-v2" data-action="call-switch-camera-v1"><span>↻</span><small>Retourner</small></button>':''}${navigator.mediaDevices?.getDisplayMedia?'<button class="call-control-v2" data-action="call-screen-v1"><span>▣</span><small>'+ (ctx.screenTrack?'Arrêter écran':'Partager') +'</small></button>':''}<button class="call-control-v2" data-action="call-add-v1"><span>＋</span><small>Ajouter</small></button><button class="call-control-v2 danger" data-action="call-leave-v1"><span>☎</span><small>Quitter</small></button></footer></section>`;
   attachCallVideosV1(ctx);
 }
 async function toggleMicV1(){if(!activeCallV1?.micTrack)return;activeCallV1.micTrack.enabled=!activeCallV1.micTrack.enabled;await syncCallMediaV1(activeCallV1);renderActiveCallV1();}
@@ -1728,12 +1799,13 @@ async function endActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;await api
 async function checkIncomingCallV1(){
   if(!state.user||!state.workspace||activeCallV1)return;
   try{
-    const since=new Date(Date.now()-90000).toISOString();
-    const rows=await api.select('call_sessions',`select=*&workspace_id=eq.${state.workspace.id}&direct_user_id=eq.${state.user.id}&ended_at=is.null&started_at=gte.${encodeURIComponent(since)}&order=started_at.desc&limit=1`);
-    const call=rows[0]||null;if(!call){incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();return;}
+    const since=new Date(Date.now()-120000).toISOString();
+    const invites=await api.select('call_invites',`select=*&workspace_id=eq.${state.workspace.id}&invited_user_id=eq.${state.user.id}&status=eq.pending&created_at=gte.${encodeURIComponent(since)}&order=created_at.desc&limit=1`);
+    const invite=invites[0]||null;if(!invite){incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();return;}
+    const call=first(await api.select('call_sessions',`select=*&id=eq.${invite.call_session_id}&ended_at=is.null&limit=1`));if(!call){return;}
     if(incomingCallV1?.id===call.id&&document.getElementById('incoming-call-v1'))return;incomingCallV1=call;
     let root=document.getElementById('incoming-call-v1');if(!root){root=document.createElement('div');root.id='incoming-call-v1';document.body.appendChild(root);}
-    root.innerHTML=`<section class="incoming-call-card-v1"><div class="incoming-call-icon-v1">▣</div><div><small>Appel entrant</small><strong>${esc(displayName(call.started_by))}</strong><span>${esc(projectName(call.project_id)||'Sans projet')}</span></div><div class="incoming-call-actions-v1"><button class="btn danger" data-action="call-decline-v1" data-call="${escAttr(call.id)}">Refuser</button><button class="btn primary" data-action="call-accept-v1" data-call="${escAttr(call.id)}">Accepter</button></div></section>`;
+    root.innerHTML=`<section class="incoming-call-card-v1"><div class="incoming-call-icon-v1">▣</div><div><small>Appel entrant</small><strong>${esc(displayName(invite.invited_by||call.started_by))}</strong><span>${esc(projectName(call.project_id)||'Sans projet')}</span></div><div class="incoming-call-actions-v1"><button class="btn danger" data-action="call-decline-v1" data-call="${escAttr(call.id)}">Refuser</button><button class="btn primary" data-action="call-accept-v1" data-call="${escAttr(call.id)}">Accepter</button></div></section>`;
   }catch(error){console.warn('incoming call',error);}
 }
 setInterval(()=>void checkIncomingCallV1(),1800);
