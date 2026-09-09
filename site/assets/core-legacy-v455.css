@@ -1957,8 +1957,6 @@ body{background:radial-gradient(800px 560px at 18% 8%,rgba(8,200,239,.075),trans
   .announcement-subject{grid-column:1/-1!important;width:100%!important}
   .v43-upcoming-list .v43-upcoming-row:nth-of-type(n+4){display:none!important}
   .v435-upcoming-more{display:block!important}
-  .modal-backdrop{padding:0!important;align-items:stretch!important}
-  .modal{width:100%!important;max-width:none!important;max-height:100dvh!important;height:100dvh!important;border-radius:0!important;padding:18px 16px calc(90px + env(safe-area-inset-bottom))!important}
   .modal-actions{position:sticky!important;bottom:0!important;background:rgba(250,252,255,.94)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:12px 0 calc(6px + env(safe-area-inset-bottom))!important;z-index:4}
   .v43-catchup-card.is-empty{min-height:0!important}
 }
