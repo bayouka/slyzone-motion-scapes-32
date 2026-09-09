@@ -3,6 +3,11 @@ name: Deploy 4b4c production
 # Production deployment is explicit/manual by default.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/deploy-once-semantic-hygiene-v454.txt
 
 permissions:
   contents: read
@@ -98,6 +103,9 @@ jobs:
           probe /assets/design-v5.css "Global mobile overlay audit"
           probe /assets/live.js "resetViewScrollV52"
           probe /assets/live.js "v52-mobile-primary"
+          probe /assets/live.js "auditRenderedSemanticsV454"
+          probe /assets/live.js "aria-current=\"page\""
+          probe /assets/live.js "event.key==='Tab'&&state.mobileMenuOpen"
           probe /assets/design-v5.css "mobile navigation architecture & scroll behavior"
           probe /assets/design-v5.css "position:fixed!important"
           probe / "assets/design-v5.css?v=5.0.2-navigation-flow"
