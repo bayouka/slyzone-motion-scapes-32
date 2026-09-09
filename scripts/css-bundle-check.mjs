@@ -9,8 +9,8 @@ const parts = [
   'site/assets/home-mobile-layout-v1.css',
 ];
 
-let expected = `/* 4b4c legacy core bundle — generated in source order for V4.5.5
-   Consolidates historical global layers without changing cascade semantics.
+let expected = `/* 4b4c legacy core bundle — generated in source order for V4.5.6
+   Consolidates historical global layers while pruning rules proven shadowed later in the cascade.
    V5 design layer must remain loaded after this file. */\n\n`;
 
 for (const path of parts) {
