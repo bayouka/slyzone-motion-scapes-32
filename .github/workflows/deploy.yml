@@ -58,10 +58,10 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.13-communication-v3"'
-          probe /assets/boot.js "v4.4.13-communication-v3"
+          probe /health '"version":"v4.4.14-native-calls"'
+          probe /assets/boot.js "v4.4.14-native-calls"
           probe /assets/boot.js "communication-workspace-v1.js"
           probe /assets/live.js "open-call-picker-v1"
           probe /assets/live.js "start_direct_call_v1"
-          probe / "assets/boot.js?build=453"
+          probe / "assets/boot.js?build=454"
           probe / '2b2c — Projets qui avancent ensemble'
