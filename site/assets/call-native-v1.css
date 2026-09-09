@@ -140,3 +140,8 @@
   .call-picker-actions-v1 .metric-label{width:100%;margin:0 0 4px}
   .call-screen-priority-v1>.call-tile-v1{min-height:0}
 }
+
+/* v4.4.19 call launcher visibility */
+#call-picker-v1{position:fixed;inset:0;z-index:5000;pointer-events:auto}
+#call-picker-v1 .call-modal-backdrop-v1{z-index:5000;pointer-events:auto}
+#call-picker-v1 .call-picker-card-v1{position:relative;z-index:5001}
