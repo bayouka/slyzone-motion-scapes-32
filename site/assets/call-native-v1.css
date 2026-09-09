@@ -117,3 +117,26 @@
  .call-stage-speaker-v3>.call-tile-v1{min-height:0}.call-filmstrip-v3{justify-content:flex-start}.call-filmstrip-v3>button{flex-basis:105px;height:76px}
  .call-head-actions-v2 .call-end-all-v2{display:none}
 }
+
+
+/* v4.4.18 — prejoin and screen-share priority */
+.call-prejoin-card-v1{width:min(620px,100%);max-height:min(820px,94dvh);overflow:auto;border:1px solid rgba(255,255,255,.9);border-radius:26px;background:#fbf8f2;padding:18px;box-shadow:0 30px 90px rgba(38,31,64,.26)}
+.call-prejoin-card-v1>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.call-prejoin-card-v1 h2{margin:2px 0 4px;font-size:22px}.call-prejoin-card-v1 p{margin:0;color:#7b8492;font-size:12px}
+.call-prejoin-preview-v1{position:relative;overflow:hidden;aspect-ratio:16/9;border-radius:20px;background:#1f2530}
+.call-prejoin-preview-v1 video{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.call-prejoin-preview-v1>span{position:absolute;left:12px;bottom:12px;padding:6px 9px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:800}
+.call-prejoin-controls-v1{display:flex;justify-content:center;gap:8px;margin:14px 0;overflow-x:auto}
+.call-screen-priority-v1>.call-tile-v1{background:#0d1117}
+.call-screen-priority-v1>.call-tile-v1 video{object-fit:contain;background:#0d1117}
+.call-picker-actions-v1 .metric-label{margin-right:auto;align-self:center}
+.call-people-v1>button:disabled{opacity:.48;cursor:not-allowed;box-shadow:none}
+@media(max-width:767px){
+  .call-prejoin-card-v1{width:100%;max-height:92dvh;border-radius:24px 24px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
+  .call-modal-backdrop-v1:has(.call-prejoin-card-v1){padding:0;place-items:end center}
+  .call-prejoin-preview-v1{aspect-ratio:3/4;max-height:52dvh}
+  .call-prejoin-controls-v1{justify-content:flex-start}
+  .call-picker-actions-v1{flex-wrap:wrap}
+  .call-picker-actions-v1 .metric-label{width:100%;margin:0 0 4px}
+  .call-screen-priority-v1>.call-tile-v1{min-height:0}
+}
