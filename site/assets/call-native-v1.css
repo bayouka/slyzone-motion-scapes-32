@@ -38,3 +38,25 @@
 .incoming-actions-v1{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 @keyframes incomingPulseV1{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(56,103,244,.22)}50%{transform:scale(1.05);box-shadow:0 0 0 10px rgba(56,103,244,0)}}
 @media(max-width:640px){.incoming-call-card-v1{left:10px;right:10px;top:auto;bottom:92px;width:auto}.call-person-v1{min-height:58px}}
+
+/* Production live.js integration */
+.call-modal-backdrop-v1{position:fixed;inset:0;z-index:1250;display:grid;place-items:center;padding:16px;background:rgba(28,32,43,.34);backdrop-filter:blur(3px)}
+.call-picker-card-v1{width:min(620px,100%);max-height:min(760px,90dvh);overflow:auto;border:1px solid rgba(255,255,255,.9);border-radius:26px;background:#fbf8f2;padding:18px;box-shadow:0 30px 90px rgba(38,31,64,.26)}
+.call-picker-card-v1>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.call-picker-card-v1 h2{margin:2px 0 4px;font-size:22px}.call-picker-card-v1 p{margin:0;color:#7b8492;font-size:12px}
+.call-people-v1>button{display:flex;align-items:center;gap:10px;width:100%;min-height:58px;padding:10px 12px;border:1px solid rgba(23,32,51,.10);border-radius:16px;background:white;text-align:left;cursor:pointer}
+.call-people-v1>button>span:nth-child(2){min-width:0;flex:1}.call-people-v1>button strong,.call-people-v1>button small{display:block}.call-people-v1>button small{margin-top:2px;color:#7c8591}.call-people-v1>button b{font-size:11px;color:#6254c9}
+.call-team-row-v1{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:12px;border-radius:16px;background:#f0ecff}.call-team-row-v1 small{display:block;margin-top:3px;color:#7c8591}
+#active-call-v1{position:fixed;inset:0;z-index:1300}
+#active-call-v1 .call-shell-v1{inset:10px}
+#active-call-v1 .call-shell-v1>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:rgba(255,255,255,.92);border-bottom:1px solid rgba(23,32,51,.08)}
+#active-call-v1 .call-shell-v1>header strong,#active-call-v1 .call-shell-v1>header small{display:block}#active-call-v1 .call-shell-v1>header small{margin-top:2px;color:#7b8492}
+#active-call-v1 .call-shell-v1>footer{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;padding:12px 14px;background:rgba(255,255,255,.96);border-top:1px solid rgba(23,32,51,.08)}
+#active-call-v1 .call-shell-v1>footer .danger{color:#a23c51;border-color:#edc8d0}
+.call-avatar-fallback-v1{position:absolute;inset:0;display:grid;place-items:center;color:white;font-size:34px;font-weight:800;background:radial-gradient(circle at 50% 35%,#56627a,#252c38)}
+.call-tile-v1 video{position:relative;z-index:1;background:#252c38}.call-tile-v1 span{z-index:3}
+.call-wait-v1{aspect-ratio:auto}
+.incoming-call-icon-v1{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:#6254c9;color:white;font-size:20px;animation:incomingPulseV1 1.4s ease-in-out infinite}
+.incoming-call-card-v1>div:nth-child(2) small,.incoming-call-card-v1>div:nth-child(2) strong,.incoming-call-card-v1>div:nth-child(2) span{display:block}.incoming-call-card-v1>div:nth-child(2) strong{margin-top:2px}.incoming-call-card-v1>div:nth-child(2) span{margin-top:2px;color:#7d8692;font-size:11px}
+.incoming-call-actions-v1{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+@media(max-width:767px){.call-modal-backdrop-v1{padding:10px}.call-picker-card-v1{max-height:86dvh;border-radius:22px}.call-button-v1 .top-action-text{display:none}#active-call-v1 .call-shell-v1{inset:0;border-radius:0}#active-call-v1 .call-grid-v1{grid-template-columns:1fr;padding:8px}#active-call-v1 .call-shell-v1>footer{padding-bottom:max(12px,env(safe-area-inset-bottom))}}
