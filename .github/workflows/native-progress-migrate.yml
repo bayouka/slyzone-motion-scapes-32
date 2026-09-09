@@ -1,4 +1,6 @@
-name: Native project progress migration
+name: [ARCHIVED] Native project progress migration
+
+# ARCHIVED: historical one-off migration. Do not execute against the current V4.5 runtime.
 
 on:
   workflow_dispatch:
@@ -12,6 +14,7 @@ concurrency:
 
 jobs:
   migrate-and-deploy:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
