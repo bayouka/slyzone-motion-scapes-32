@@ -12,6 +12,7 @@ const boot = read('site/assets/boot.js');
 const index = read('site/index.html');
 const worker = read('src/worker.js');
 const live = read('site/assets/live.js');
+const liveCss = read('site/assets/live.css');
 const pkg = JSON.parse(read('package.json'));
 const lock = JSON.parse(read('package-lock.json'));
 
