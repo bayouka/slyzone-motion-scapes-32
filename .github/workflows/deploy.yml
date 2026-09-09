@@ -3,11 +3,6 @@ name: Deploy 4b4c production
 # Production deployment is explicit/manual by default.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/deploy-once-call-presence-ui-v1.txt
 
 permissions:
   contents: read
@@ -82,7 +77,6 @@ jobs:
           probe /assets/live.js "callPickerCapacityV1"
           probe /assets/live.js "call-screen-priority-v1"
           probe /assets/live.js "CALL_PICKER_RENDER_FAILED"
-          probe /assets/live.js "call-prejoin-confirm-v1"
           probe /assets/live.js "Connexion…"
           probe /assets/call-native-v1.css "call-prejoin-error-v1"
           probe /assets/live.js "call-button-v1[data-action=\"open-call-picker-v1\"]"
@@ -90,4 +84,3 @@ jobs:
           probe /assets/call-native-v1.css "call-screen-priority-v1"
           probe / "assets/boot.js?build=461"
           probe / '2b2c — Projets qui avancent ensemble'
-
