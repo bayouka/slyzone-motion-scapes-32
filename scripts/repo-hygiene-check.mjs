@@ -12,6 +12,7 @@ const boot = read('site/assets/boot.js');
 const index = read('site/index.html');
 const worker = read('src/worker.js');
 const live = read('site/assets/live.js');
+const liveCss = read('site/assets/live.css');
 const pkg = JSON.parse(read('package.json'));
 const lock = JSON.parse(read('package-lock.json'));
 
@@ -81,6 +82,8 @@ assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(v5), 'obsolete .mobile-nav selecto
 const legacyCore = read('site/assets/core-legacy-v455.css');
 assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile-nav selector reintroduced in legacy bundle');
 assert(!/\.mobile-nav-btn(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile-nav-btn selector reintroduced in legacy bundle');
+assert(!/\.modal\{[^}]*height:100dvh!important/.test(legacyCore), 'legacy full-height mobile modal rule reintroduced');
+assert(!/\.v422-projects(?:\s|[>{:+~.#\[])/.test(liveCss), 'obsolete .v422-projects selector reintroduced');
 
 
 
