@@ -7,7 +7,7 @@ on:
     branches:
       - main
     paths:
-      - .github/deploy-once-nav-dead-css-v458.txt
+      - .github/deploy-once-nav-dead-css-v458b.txt
 
 permissions:
   contents: read
