@@ -3,6 +3,11 @@ name: Deploy 4b4c production
 # Production deployment is explicit/manual by default.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/deploy-once-css-prune-v456.txt
 
 permissions:
   contents: read
@@ -88,6 +93,7 @@ jobs:
           probe /assets/call-native-v1.css "call UI polish & motion"
           probe /assets/call-native-v1.css "prefers-reduced-motion"
           probe /assets/core-legacy-v455.css "legacy core bundle"
+          probe /assets/core-legacy-v455.css "pruning rules proven shadowed"
           probe /assets/design-v5.css "Soft Spatial Workspace"
           probe / "assets/core-legacy-v455.css?v=4.5.6"
           probe /assets/design-v5.css "--v5-glass"
