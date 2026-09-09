@@ -51,7 +51,7 @@ jobs:
           set -euo pipefail
           probe() {
             path="$1"; needle="$2"
-            for i in $(seq 1 15); do
+            for i in $(seq 1 6); do
               code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/probe.out -w '%{http_code}' "$PRODUCTION_URL$path?manual-$GITHUB_SHA-$i" || true)
               echo "probe $path attempt=$i http=$code"
               if [ "$code" = "200" ] && grep -Fq -- "$needle" /tmp/probe.out; then return 0; fi
