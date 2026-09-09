@@ -86,6 +86,7 @@ assert(!/\.modal\{[^}]*height:100dvh!important/.test(legacyCore), 'legacy full-h
 assert(!/\.v422-projects(?:\s|[>{:+~.#\[])/.test(liveCss), 'obsolete .v422-projects selector reintroduced');
 assert(!/v41-project-card/.test(liveCss + live), 'obsolete v41 project-card class reintroduced');
 assert(!/roadmap-phase-card/.test(liveCss + read('site/assets/design-v5.css') + live), 'obsolete roadmap-phase-card selector reintroduced');
+assert(!/\.roadmap-index\{[^}]*font-size:/.test(liveCss), 'roadmap index legacy font-size reintroduced');
 
 
 
