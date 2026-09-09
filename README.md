@@ -1,57 +1,83 @@
 # 4b4c
 
-Canonical source of the 4b4c collaborative workspace.
+Canonical source of the 4b4c collaborative workspace. The product is branded **2b2c** in the user interface.
 
-## Active architecture
-- `site/` — complete V4.3.2 client application.
-- `site/assets/live.js` — canonical live product behavior and data-driven screens.
-- `site/assets/live.css` — canonical product visual system.
-- `site/assets/home-polish.js` + `home-polish.css` — small, isolated Home UX/UI refinement layer. It must enhance the existing V4.3 Home only; it must not recreate the Home architecture or replace live product logic.
-- `src/worker.js` — Cloudflare Worker / SPA fallback.
-- `wrangler.jsonc` — stable Cloudflare Worker configuration (`4b4c`).
-- Supabase backend — `wexfzhegiewhldkugtow`.
+## Current production architecture
 
-## Home product contract
+- `site/index.html` — SPA shell.
+- `site/assets/boot.js` — production bootstrap and explicit module loading.
+- `site/assets/live.js` — canonical application shell, routing, workspace state and core screens.
+- `site/assets/design-v5.css` — current global V5 **Soft Spatial Workspace** design layer, loaded last.
+- `site/assets/call-native-v1.css` + call logic in `live.js` — native WebRTC video-call UI.
+- `site/assets/communication-workspace-v1.js` — collaboration/messaging workspace enhancement.
+- `site/assets/resources-workspace-v2.js` — resource/deliverable workspace enhancement.
+- `site/assets/library-workspace-v1.js` — global file library enhancement.
+- `site/assets/delivery-workflow-v1.js` + `workflow-backend-safe-v1.js` — delivery/approval safety bridges.
+- `src/worker.js` — Cloudflare Worker / SPA fallback / response hardening.
+- `wrangler.jsonc` — stable Cloudflare Worker configuration named `4b4c`.
+- Supabase production backend — project `wexfzhegiewhldkugtow`.
+
+Production version: **v4.5.2-navigation-flow / build 502**.
+
+## Product contract
+
+2b2c is a simple, complete collaborative workspace: projects, personal work, messages, meetings, roadmap, files, approvals and native video calls in one product.
+
 The Home is a personal situation summary, not a generic widget dashboard. In under 10 seconds it should answer:
+
 1. What is expected from me?
 2. Who is waiting for me?
 3. What changed since my last visit?
 4. What is coming soon?
 5. Which project should I resume, and why?
 
-Keep the hierarchy: personal summary → `À traiter maintenant` → `Aujourd’hui & à venir` → `Depuis votre dernière visite` → `Reprendre un projet`.
-Do not add weather, quotes, productivity scores, decorative charts, large team widgets, or other dashboard gadgets. Human context should come from the real requester, meeting participants, project participants, mentions and changes. Desktop actions such as validations/requests/actions should stay contextual (drawer); project navigation remains a full page. Mobile must reflow intentionally rather than compress desktop.
+Do not add decorative dashboard gadgets that do not improve collaboration or decision-making.
 
-## Closed-pilot collaboration contract
-Before inviting real collaborators, preserve these rules:
+## Collaboration rules
+
 - workspace role, project visibility and project responsibility are separate concepts;
-- a `selected` member must not see data from unselected projects;
-- a guest/client only sees explicitly selected projects and shared content, and cannot write internal project content;
-- invitations are bound to the invited email and carry explicit project mappings;
-- Home time signals are personal: a meeting appears there only when the user created it or is an attendee;
-- `À traiter` contains real intervention obligations, not synthetic notification noise;
-- file versions are registered server-side so concurrent collaborators cannot allocate the same version number;
-- validation targets must already have access to the project; a guest can validate only a shared deliverable;
-- Messages V2 keeps Team / Project / Direct audiences and unread/mention semantics separate.
+- a selected member must not see data from unselected projects;
+- a guest/client only sees explicitly selected projects/shared content and cannot write internal project content;
+- invitations are bound to the invited email and explicit project mappings;
+- Home time signals are personal;
+- file versions are allocated and registered server-side;
+- validation always targets an exact immutable version;
+- Team / Project / Direct message audiences and unread/mention semantics remain distinct;
+- native calls support prejoin, multiple participants, screen sharing, mobile camera switching, reconnect/resume and project/meeting context.
 
-The current pilot supports structured meeting preparation/live/recap and an **external meeting link**. It does not claim built-in video conferencing or native screen sharing.
+## Navigation contract
 
-See `docs/PRE_COLLAB_AUDIT.md` for the readiness checklist.
+Desktop:
+- left sidebar is the persistent primary navigation;
+- topbar contains search, calls, notifications, create and profile actions.
 
-## Branch policy
-- `main` — stable validated source and production branch.
-- `develop` — next validated version.
-- feature branches — short-lived only.
-- `backup/pre-cleanup-v43` — rollback snapshot of the historical experimental structure.
+Mobile:
+- fixed topbar contains the hamburger and contextual global actions;
+- bottom dock contains only the four frequent destinations: Home, Projects, My work and Messages;
+- hamburger drawer contains secondary tools, recent projects, Calendar, Files, Team, Settings, Profile and Sign out;
+- every route navigation starts at the top of the new view;
+- drawer header stays visible while its content scrolls; Profile and Sign out stay at the end of drawer content.
 
-## Quality and deployment
-Every push to `main` or `develop` runs syntax checks plus persistent collaboration contract checks (`scripts/contract-check.mjs`). Production deployment is triggered from `main` and targets the stable Cloudflare Worker named `4b4c` when the repository Cloudflare credentials are configured. Production smoke tests verify the stable URL after deployment.
+## Quality policy
 
-## Local commands
+Run before production:
+
 ```bash
 npm ci
 npm run check
-npm run dev
 ```
 
-Historical Base64 bundles and patch chains are no longer part of the active source tree.
+The dedicated deploy workflow also runs stability checks and production smoke probes before it is considered successful.
+
+Historical one-off migration workflows are archived and intentionally non-executable. They must not be re-enabled without reviewing them against the current runtime.
+
+## Known technical debt
+
+The current runtime is stable, but the repository still contains accumulated historical frontend layers. In particular:
+
+- CSS is split across many legacy files and contains extensive `!important` overrides;
+- `live.js` is a large monolith and should be decomposed by domain;
+- some workflow actions are still bridged by more than one runtime module;
+- historical JS/CSS files remain in the repository although they are not loaded in production.
+
+These items should be reduced incrementally behind stability checks rather than by a large destructive rewrite.
