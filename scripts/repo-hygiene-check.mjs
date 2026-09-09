@@ -43,8 +43,8 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
 
-assert(index.includes('assets/boot.js?build=506'), 'unexpected production boot build in SPA shell');
-assert(index.includes('assets/design-v5.css?v=5.0.2-navigation-flow'), 'unexpected V5 design asset version');
+assert(index.includes('assets/boot.js?build=507'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/design-v5.css?v=5.0.3-nav-cleanup'), 'unexpected V5 design asset version');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
