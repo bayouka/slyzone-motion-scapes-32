@@ -241,7 +241,7 @@ function renderConversation(){
   const c=state.current;if(!c)return `<main class="cw-main cw-no-selection"><div class="cw-empty hero"><strong>Sélectionnez une conversation</strong><span>Les messages restent séparés de la cloche : seuls mentions, annonces et obligations demandent votre attention.</span><button class="btn primary" data-cw-action="new-menu">Nouvelle conversation</button></div></main>`;
   const reply=state.replyTo?state.messages.find(m=>m.id===state.replyTo):null;
   return `<main class="cw-main">
-    <header class="cw-conversation-head"><div class="cw-head-left"><a class="cw-mobile-back" href="#/messages">‹</a><div><span class="cw-eyebrow">${esc(conversationKind(c))}</span><h2>${esc(conversationTitle(c))}</h2><p>${esc(contextLabel(c))} · ${esc(participantSummary(c))}</p></div></div><div class="cw-head-actions">${c.kind==='direct'?'<button class="btn small" data-cw-action="link-project">Lier au projet</button>':''}${c.kind==='context'&&c.context_type==='meeting'?`<a class="btn small" href="#/calendar/meeting/${c.context_id}">Voir la réunion</a>`:''}<button class="btn small" data-cw-action="settings">Réglages</button></div></header>
+    <header class="cw-conversation-head"><div class="cw-head-left"><a class="cw-mobile-back" href="#/messages">‹</a><div><span class="cw-eyebrow">${esc(conversationKind(c))}</span><h2>${esc(conversationTitle(c))}</h2><p>${esc(contextLabel(c))} · ${esc(participantSummary(c))}</p></div></div><div class="cw-head-actions"><button class="btn small cw-call-action-v2" data-cw-action="call-conversation">▣ Appeler</button>${c.kind==='direct'?'<button class="btn small" data-cw-action="link-project">Lier au projet</button>':''}${c.kind==='context'&&c.context_type==='meeting'?`<a class="btn small" href="#/calendar/meeting/${c.context_id}">Voir la réunion</a>`:''}<button class="btn small" data-cw-action="settings">Réglages</button></div></header>
     <section class="cw-message-log">${messageLog()}</section>
     ${reply?`<div class="cw-reply-banner"><span>Réponse à <strong>${esc(displayName(reply.author_id))}</strong> · ${esc(reply.body).slice(0,120)}</span><button data-cw-action="cancel-reply">×</button></div>`:''}
     <form class="cw-composer" data-cw-form="send"><input type="hidden" name="conversationId" value="${c.id}">
@@ -319,6 +319,12 @@ root.addEventListener('click',async(event)=>{
   try{
     if(a==='backdrop'&&event.target!==t)return;
     if(a==='reload')return activate({force:true});
+    if(a==='call-conversation'){
+      const ids=conversationMembers(state.current.id).map(x=>x.user_id).filter(id=>id!==state.user.id);
+      if(!ids.length)throw new Error('Aucun autre participant à appeler.');
+      window.dispatchEvent(new CustomEvent('2b2c:start-call',{detail:{userIds:ids,projectId:projectContextForConversation(state.current)}}));
+      return;
+    }
     if(a==='new-menu'){modal={type:'new-menu'};return render();}
     if(a==='modal-direct'){modal={type:'direct'};return render();}
     if(a==='modal-group'){modal={type:'group'};return render();}
