@@ -85,6 +85,7 @@ assert(!/\.mobile-nav-btn(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile
 assert(!/\.modal\{[^}]*height:100dvh!important/.test(legacyCore), 'legacy full-height mobile modal rule reintroduced');
 assert(!/\.v422-projects(?:\s|[>{:+~.#\[])/.test(liveCss), 'obsolete .v422-projects selector reintroduced');
 assert(!/v41-project-card/.test(liveCss + live), 'obsolete v41 project-card class reintroduced');
+assert(!/roadmap-phase-card/.test(liveCss + read('site/assets/design-v5.css') + live), 'obsolete roadmap-phase-card selector reintroduced');
 
 
 
