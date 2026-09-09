@@ -17,7 +17,7 @@ Canonical source of the 4b4c collaborative workspace. The product is branded **2
 - `wrangler.jsonc` — stable Cloudflare Worker configuration named `4b4c`.
 - Supabase production backend — project `wexfzhegiewhldkugtow`.
 
-Production version: **v4.5.2-navigation-flow / build 502**.
+Production version: **v4.5.3-audit-hygiene / build 502**.
 
 ## Product contract
 
