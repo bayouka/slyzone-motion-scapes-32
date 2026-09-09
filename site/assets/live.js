@@ -395,7 +395,7 @@ function shell(content, route) {
     </aside>
     <main class="live-main">
       <header class="live-topbar v3-topbar v41-topbar v42-topbar">
-        <div class="mobile-topbar-start"><button class="mobile-menu-button" data-action="toggle-mobile-menu" aria-label="Ouvrir le menu" aria-controls="mobile-navigation" aria-expanded="${state.mobileMenuOpen?'true':'false'}"><span></span><span></span><span></span></button><a class="mobile-top-brand" href="#/dashboard">${brandMarkHtml('compact')}<strong>${BRAND_NAME}</strong></a></div>
+        <div class="mobile-topbar-start"><button class="mobile-menu-button" data-action="toggle-mobile-menu" aria-label="${state.mobileMenuOpen?'Fermer le menu':'Ouvrir le menu'}" aria-controls="mobile-navigation" aria-expanded="${state.mobileMenuOpen?'true':'false'}"><span></span><span></span><span></span></button><a class="mobile-top-brand" href="#/dashboard">${brandMarkHtml('compact')}<strong>${BRAND_NAME}</strong></a></div>
         <button class="compact-search" data-action="open-search"><span>${ICONS.search}</span><strong>Rechercher</strong><kbd>Ctrl K</kbd></button>
         ${state.syncError?`<button class="sync-alert-v432" data-action="retry-sync" title="${escAttr(state.syncError)}">Synchronisation interrompue · Réessayer</button>`:''}
         <div class="live-actions">
