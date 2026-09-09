@@ -50,6 +50,19 @@ async function boot() {
   window.addEventListener('hashchange', () => { if(state.modal?.type==='activity') state.modal=null; state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render(); });
   window.addEventListener('resize', () => { if (window.innerWidth > 767 && state.mobileMenuOpen) { state.mobileMenuOpen=false; document.documentElement.classList.remove('mobile-menu-open'); document.body.classList.remove('mobile-menu-open'); render(); } });
   document.addEventListener('click', handleClick);
+  document.addEventListener('click', (event) => {
+    const button=event.target.closest?.('.call-button-v1[data-action="open-call-picker-v1"]');
+    if(!button)return;
+    event.preventDefault();
+    event.stopPropagation();
+    try{
+      if(!state.user||!state.workspace){showToast('La visio sera disponible dès que votre espace est chargé.',true);return;}
+      openCallPickerV1();
+    }catch(error){
+      console.error('[2b2c] call picker open failed',error);
+      showToast('Impossible d’ouvrir les appels. Rechargez la page puis réessayez.',true);
+    }
+  }, true);
   document.addEventListener('submit', handleSubmit);
   document.addEventListener('change', handleChange);
   document.addEventListener('input', handleInput);
@@ -1634,6 +1647,9 @@ function renderCallPickerV1(){
 function openCallPickerV1(){
   if(activeCallV1){callPickerModeV1='add';callPickerSelectedV1=new Set();renderCallPickerV1();return;}
   callPickerModeV1='start';callPickerSelectedV1=new Set();renderCallPickerV1();
+  const root=document.getElementById('call-picker-v1');
+  if(!root)throw new Error('CALL_PICKER_RENDER_FAILED');
+  requestAnimationFrame(()=>root.querySelector('button,select')?.focus?.());
 }
 function openProjectCallV1(projectId){
   if(activeCallV1){openAddPeopleV1();return;}
