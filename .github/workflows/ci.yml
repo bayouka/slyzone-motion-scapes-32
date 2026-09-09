@@ -1,6 +1,6 @@
 name: 4b4c CI
 
-# Cloudflare Workers Builds is the active deployment path. Keep GitHub Actions manual-only.
+# Manual-only by policy. Production deployment uses the dedicated deploy workflow.
 on:
   workflow_dispatch:
 
@@ -10,35 +10,63 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --no-audit --no-fund
       - run: npm run check
-      - name: Product integrity
+
+      - name: Active runtime contract
+        shell: bash
         run: |
           set -euo pipefail
-          grep -Fq 'v43-home-grid' site/assets/live.js
-          grep -Fq 'communication-v2-hub' site/assets/live.js
-          grep -Fq 'register_deliverable_version_v2' site/assets/live.js
-          grep -Fq 'PROJETS ACTIFS' site/assets/live.js
-          grep -Fq "m.created_by===state.user.id||state.meetingAttendees.some" site/assets/live.js
-          ! grep -Fq "kind:'Préparation',title:m.title" site/assets/live.js
-          grep -Fq 'wexfzhegiewhldkugtow.supabase.co' site/runtime-config.js
-          grep -Fq '4b4c V4.3 — personal situation Home' site/assets/live.css
-          grep -Fq '4b4c V4.3.1 — Home UX contract polish' site/assets/home-polish.js
-          grep -Fq '4b4c V4.3.1 — Home UX/UI polish' site/assets/home-polish.css
-          grep -Fq 'assets/home-polish.css' site/index.html
-          grep -Fq "import('./home-polish.js')" site/assets/boot.js
-          grep -Fq "import('./workflow-backend-v2.js')" site/assets/boot.js
-          grep -Fq "import('./project-progress-v2.js')" site/assets/boot.js
-          grep -Fq 'Configuration 2b2c indisponible' site/assets/boot.js
-          ! grep -Fq 'assets/app.js' site/assets/boot.js
+
+          grep -Fq "const VERSION = 'v4.5.2-navigation-flow'" site/assets/boot.js
+          grep -Fq "import(`./live.js?" site/assets/boot.js
+          grep -Fq "delivery-workflow-v1.js" site/assets/boot.js
+          grep -Fq "workflow-backend-safe-v1.js" site/assets/boot.js
+          grep -Fq "communication-workspace-v1.js" site/assets/boot.js
+          grep -Fq "resources-workspace-v2.js" site/assets/boot.js
+          grep -Fq "library-workspace-v1.js" site/assets/boot.js
+
+          ! grep -Fq "home-polish.js" site/assets/boot.js
+          ! grep -Fq "workflow-backend-v2.js" site/assets/boot.js
+          ! grep -Fq "project-progress-v2.js" site/assets/boot.js
+          ! grep -Fq "call-native-v1.js" site/assets/boot.js
+          ! grep -Fq "MutationObserver(" site/assets/boot.js
+
+          grep -Fq "assets/design-v5.css?v=5.0.2-navigation-flow" site/index.html
+          grep -Fq "assets/boot.js?build=502" site/index.html
+          grep -Fq "resetViewScrollV52" site/assets/live.js
+          grep -Fq "v52-mobile-primary" site/assets/live.js
+          grep -Fq "open-call-picker-v1" site/assets/live.js
+          grep -Fq "heartbeat_call_v1" site/assets/live.js
+
           grep -Fq "app: '4b4c'" src/worker.js
+          grep -Fq "v4.5.2-navigation-flow" src/worker.js
+
+      - name: Repository safety contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if find .github -maxdepth 1 -type f -name 'deploy-once-*' | grep -q .; then
+            echo 'Temporary deploy marker left in repository' >&2
+            exit 1
+          fi
+
           if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
             echo 'Secret-like material found in public application' >&2
             exit 1
           fi
+
+          # Historical migration workflows must never deploy automatically.
+          for wf in             .github/workflows/native-access-migrate.yml             .github/workflows/native-progress-migrate.yml             .github/workflows/native-progress-migrate-v2.yml
+          do
+            grep -Fq 'workflow_dispatch:' "$wf"
+            ! grep -Eq '^[[:space:]]+push:' "$wf"
+          done
