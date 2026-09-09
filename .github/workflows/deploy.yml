@@ -3,6 +3,11 @@ name: Deploy 4b4c production
 # Production deployment is explicit/manual by default.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/deploy-once-call-tools-v1.txt
 
 permissions:
   contents: read
@@ -54,8 +59,8 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.4.22-call-ux-complete"'
-          probe /assets/boot.js "v4.4.22-call-ux-complete"
+          probe /health '"version":"v4.4.23-call-tools"'
+          probe /assets/boot.js "v4.4.23-call-tools"
           probe /assets/boot.js "communication-workspace-v1.js"
           probe /assets/live.js "open-call-picker-v1"
           probe /assets/live.js "start_private_call_v2"
@@ -77,6 +82,10 @@ jobs:
           probe /assets/live.js "requestEndActiveCallV1"
           probe /assets/live.js "call-prejoin-context-v5"
           probe /assets/live.js "call-presence-chip-v5"
+          probe /assets/live.js "updateCallNetworkQualityV1"
+          probe /assets/live.js "openCallDevicesV1"
+          probe /assets/live.js "call-sharing-banner-v6"
+          probe /assets/call-native-v1.css "essential call tools"
           probe /assets/call-native-v1.css "call UX completeness"
           probe /assets/call-native-v1.css "professional call chrome"
           probe /assets/live.js "open-project-call-v1"
@@ -89,5 +98,5 @@ jobs:
           probe /assets/live.js "call-button-v1[data-action=\"open-call-picker-v1\"]"
           probe /assets/call-native-v1.css "call-prejoin-card-v1"
           probe /assets/call-native-v1.css "call-screen-priority-v1"
-          probe / "assets/boot.js?build=462"
+          probe / "assets/boot.js?build=463"
           probe / '2b2c — Projets qui avancent ensemble'
