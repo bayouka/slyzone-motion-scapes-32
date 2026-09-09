@@ -114,7 +114,7 @@ body{background:
 .live-content :is(
   .card,.project-head-v3,.project-room-card,.project-overview-card,.project-summary-card,
   .work-group,.work-table,.calendar-shell,.library-toolbar,.conversation-panel,
-  .welcome-card,.meeting-stage-panel,.roadmap-phase-card,.detail-block,.archive-card,
+  .welcome-card,.meeting-stage-panel,.detail-block,.archive-card,
   .v43-attention-card,.v43-catchup-card,.v43-upcoming-card,.project-resume-card-v43,
   .communication-layout>.card,.notification-panel
 ){
@@ -230,7 +230,7 @@ body{background:
 }
 
 /* Roadmap / Kanban / Calendar */
-.roadmap-phase,.roadmap-phase-card{
+.roadmap-phase{
   overflow:hidden;
   box-shadow:var(--v5-shadow-1)!important
 }
@@ -283,7 +283,7 @@ body{background:
 
 /* Desktop hover depth only where pointer supports it */
 @media(hover:hover) and (pointer:fine){
-  .live-content :is(.card,.project-room-card,.project-overview-card,.roadmap-phase-card,.calendar-shell,.conversation-panel){
+  .live-content :is(.card,.project-room-card,.project-overview-card,.calendar-shell,.conversation-panel){
     transition:transform .22s var(--v5-spring),box-shadow .22s ease,border-color .22s ease
   }
   .live-content :is(.card,.project-room-card,.project-overview-card):hover{
@@ -353,7 +353,7 @@ body{background:
   .live-content :is(
     .card,.project-head-v3,.project-room-card,.project-overview-card,.work-group,.work-table,
     .calendar-shell,.library-toolbar,.conversation-panel,.welcome-card,.meeting-stage-panel,
-    .roadmap-phase-card,.v43-attention-card,.v43-catchup-card,.v43-upcoming-card,.project-resume-card-v43
+    .v43-attention-card,.v43-catchup-card,.v43-upcoming-card,.project-resume-card-v43
   ){
     border-radius:20px!important;
     backdrop-filter:blur(12px) saturate(110%)!important;
