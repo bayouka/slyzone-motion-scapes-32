@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: 4b4c-production
@@ -26,6 +27,16 @@ jobs:
       PRODUCTION_URL: https://4b4c.bayoukadesbois.workers.dev
     steps:
       - uses: actions/checkout@v5
+      - name: Mark deployment pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -d '{"state":"pending","context":"4b4c-production-deploy","description":"Deploying v4.4.14 native calls"}'
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -65,3 +76,15 @@ jobs:
           probe /assets/live.js "start_direct_call_v1"
           probe / "assets/boot.js?build=454"
           probe / '2b2c — Projets qui avancent ensemble'
+
+      - name: Mark deployment success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -d '{"state":"success","context":"4b4c-production-deploy","description":"v4.4.14 native calls live on Cloudflare"}'
