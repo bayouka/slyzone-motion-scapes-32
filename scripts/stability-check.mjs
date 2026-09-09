@@ -28,14 +28,14 @@ const communicationDeleteDb=read('supabase/migrations/20260908221034_communicati
 function assert(ok,msg){if(!ok){console.error(`STABILITY CHECK FAILED: ${msg}`);process.exit(1);}}
 function all(text,items,label){for(const item of items)assert(text.includes(item),`${label}: ${item}`);}
 
-assert(worker.includes('v4.4.13-communication-v3'),'worker health version');
-assert(index.includes('assets/boot.js?build=453'),'cache bust 453');
-all(index,['assets/resources-workspace-v1.css','assets/resources-workspace-v2.css','assets/delivery-workflow-v1.css','assets/library-workspace-v1.css','assets/communication-workspace-v1.css'],'stylesheet missing');
-all(boot,["const VERSION = 'v4.4.13-communication-v3'",'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','delivery-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','library-workspace-v1.js'],'boot contract missing');
+assert(worker.includes('v4.4.14-native-calls'),'worker health version');
+assert(index.includes('assets/boot.js?build=454'),'cache bust 454');
+all(index,['assets/call-native-v1.css','assets/resources-workspace-v1.css','assets/resources-workspace-v2.css','assets/delivery-workflow-v1.css','assets/library-workspace-v1.css','assets/communication-workspace-v1.css'],'stylesheet missing');
+all(boot,["const VERSION = 'v4.4.14-native-calls'",'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','delivery-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','library-workspace-v1.js'],'boot contract missing');
 assert(boot.indexOf('delivery-workflow-v1.js')<boot.indexOf('workflow-backend-safe-v1.js'),'delivery must register before safe bridge');
 for(const forbidden of ['resources-workspace-v1.js?','resources-workspace-form-guard-v1.js','invite-prelive-v2.js','auth-recovery-v1.js','home-polish.js','team-access-v1.js','team-access-safety-v2.js','team-access-submit-safety-v3.js','invite-lifecycle-v1.js','approval-flow-safety-v1.js','product-coherence-v1.js','daily-work-v1.js','planning-clarity-v1.js','project-lifecycle-safety-v1.js','project-flow-v1.js','communication-memory-v1.js','meeting-agenda-v1.js','resource-model-v1.js','workflow-backend-v2.js','project-progress-v2.js','ui-quality-v1.js','dialog-focus-safety-v2.js']) assert(!boot.includes(forbidden),`forbidden enhancer loaded: ${forbidden}`);
 
-all(live,['create_workspace_invite_v2','set_workspace_member_access_v1','get_project_summaries_v1','get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise'],'core native contract missing');
+all(live,['open-call-picker-v1','start_direct_call_v1','start_workspace_call_v1','send_call_signal_v1','getDisplayMedia','RTCPeerConnection','create_workspace_invite_v2','set_workspace_member_access_v1','get_project_summaries_v1','get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise'],'core native contract missing');
 assert(!live.includes('Number(config.pollIntervalMs || 15000)'),'legacy full polling remains');
 assert(!live.includes('new MutationObserver'),'core MutationObserver');
 
