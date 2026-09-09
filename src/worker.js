@@ -22,7 +22,7 @@ export default {
 
     if (url.pathname === '/health') {
       return withHeaders(
-        Response.json({ ok: true, app: '4b4c', backend: 'supabase', version: 'v4.5.2-navigation-flow' }),
+        Response.json({ ok: true, app: '4b4c', backend: 'supabase', version: 'v4.5.3-audit-hygiene' }),
         { 'cache-control': 'no-store' },
       );
     }
