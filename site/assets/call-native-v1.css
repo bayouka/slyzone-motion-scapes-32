@@ -147,3 +147,52 @@
 #call-picker-v1 .call-picker-card-v1{position:relative;z-index:5001}
 
 .call-prejoin-error-v1{margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff0f1;color:#a23c51;font-size:12px;font-weight:700;border:1px solid #f2c9cf}
+
+
+/* v4.4.21 — professional call chrome */
+.call-shell-pro-v4{background:#0f141b;color:#fff}
+.call-pro-header-v4{min-height:68px;background:rgba(15,20,27,.96)!important;border-bottom:1px solid rgba(255,255,255,.08)!important;color:#fff}
+.call-pro-title-v4{display:grid;gap:2px}
+.call-pro-title-v4 strong{font-size:15px!important;color:#fff}
+.call-pro-title-v4 small{color:#9aa6b4!important;font-size:11px}
+.call-live-status-v4{display:inline-flex;align-items:center;gap:6px;width:max-content;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9dd9b3}
+.call-live-status-v4 i{width:7px;height:7px;border-radius:50%;background:#42c77a;box-shadow:0 0 0 4px rgba(66,199,122,.12)}
+.call-head-button-v4{display:inline-grid;place-items:center;min-width:38px;height:36px;padding:0 10px;border:1px solid rgba(255,255,255,.10);border-radius:12px;background:rgba(255,255,255,.06);color:#fff;font-size:12px;font-weight:800}
+.call-head-button-v4.danger-soft{color:#ffb7c2;border-color:rgba(255,122,145,.18);background:rgba(177,52,77,.14)}
+.call-stage-pro-v4{background:radial-gradient(circle at 50% 35%,#26303b 0,#171d25 42%,#0f141b 100%);padding:12px}
+.call-stage-pro-v4 .call-tile-v1{border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.07);background:#141a22;box-shadow:0 14px 34px rgba(0,0,0,.18)}
+.call-stage-pro-v4 .call-tile-v1>span{left:10px;bottom:10px;padding:5px 8px;border-radius:999px;background:rgba(5,8,12,.58);backdrop-filter:blur(10px);font-size:10px;font-weight:800}
+.call-stage-pro-v4 .call-avatar-fallback-v1{background:radial-gradient(circle at 50% 35%,#4b5667,#202630)}
+.call-stage-pro-v4 .call-pip-v2{border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 50px rgba(0,0,0,.38)}
+.call-stage-pro-v4 .call-ringing-v2{bottom:14px;border:1px solid rgba(255,255,255,.08);background:rgba(15,20,27,.76)}
+.call-stage-pro-v4 .call-participant-status-v2{position:absolute;left:12px;top:10px;z-index:7;padding:0;max-width:calc(100% - 24px)}
+.call-stage-pro-v4 .call-participant-status-v2 span{background:rgba(15,20,27,.72);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px)}
+.call-controls-pro-v4{position:relative;justify-content:center;gap:10px;padding:10px 14px 12px;background:rgba(15,20,27,.96);border-top:1px solid rgba(255,255,255,.08)}
+.call-controls-pro-v4 .call-control-v2{min-width:62px;min-height:56px;border-radius:16px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.06);color:#fff}
+.call-controls-pro-v4 .call-control-v2 small{color:#b5bfca}
+.call-controls-pro-v4 .call-control-v2:hover{background:rgba(255,255,255,.10)}
+.call-controls-pro-v4 .call-control-v2.danger{background:#b93d56;border-color:#b93d56;color:#fff}
+.call-controls-pro-v4 .call-control-v2.danger small{color:#fff}
+.call-screen-priority-v1>.call-tile-v1{border-radius:18px}
+.call-screen-priority-v1>.call-tile-v1 video{object-fit:contain!important}
+.call-filmstrip-v3{padding-top:2px}
+.call-filmstrip-v3>button{border:1px solid rgba(255,255,255,.08)}
+@media(max-width:767px){
+  .call-pro-header-v4{min-height:58px!important;padding:9px 10px!important}
+  .call-pro-title-v4 strong{font-size:13px!important}
+  .call-pro-title-v4 small{font-size:9.5px}
+  .call-live-status-v4{font-size:8px}
+  .call-head-actions-v2{gap:6px}
+  .call-head-button-v4{min-width:34px;height:34px;padding:0 8px;border-radius:11px}
+  .call-head-button-v4.danger-soft{display:none}
+  .call-stage-pro-v4{padding:6px}
+  .call-stage-pro-v4 .call-stage-focus-v2>.call-tile-v1{border-radius:18px}
+  .call-stage-pro-v4 .call-pip-v2{right:8px;bottom:8px;width:30vw;max-width:118px;border-radius:15px}
+  .call-stage-pro-v4 .call-participant-status-v2{left:8px;right:8px;top:8px;max-width:none}
+  .call-controls-pro-v4{gap:7px;justify-content:flex-start;padding:8px max(8px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));overflow-x:auto}
+  .call-controls-pro-v4 .call-control-v2{min-width:58px;min-height:52px;border-radius:15px}
+  .call-controls-pro-v4 .call-control-v2 span{font-size:16px}
+  .call-controls-pro-v4 .call-control-v2 small{font-size:8px}
+  .call-stage-speaker-v3{gap:6px}
+  .call-filmstrip-v3>button{flex-basis:96px;height:70px}
+}
