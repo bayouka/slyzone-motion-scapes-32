@@ -315,6 +315,7 @@ function shell(content, route) {
         <button class="compact-search" data-action="open-search"><span>${ICONS.search}</span><strong>Rechercher</strong><kbd>Ctrl K</kbd></button>
         ${state.syncError?`<button class="sync-alert-v432" data-action="retry-sync" title="${escAttr(state.syncError)}">Synchronisation interrompue · Réessayer</button>`:''}
         <div class="live-actions">
+          ${external?'':`<button class="top-action-label call-button-v1" data-action="open-call-picker-v1" aria-label="Appeler"><span class="top-action-icon">${lineIcon('<rect x="4" y="6" width="12" height="12" rx="2"/><path d="m16 10 4-2v8l-4-2z"/>')}</span><span class="top-action-text">Appeler</span></button>`}
           <button class="top-action-label notification-button" data-action="toggle-notifications" aria-label="Notifications"><span class="top-action-icon">${ICONS.bell}</span><span class="top-action-text">Notifications</span>${unread?`<span class="badge inline-badge">${unread>99?'99+':unread}</span>`:''}</button>
           ${external?'':`<button class="btn primary quick-create-label" data-action="quick-add" aria-label="Créer">＋ Créer</button>`}
           <button class="top-profile top-profile-button" data-action="toggle-user-menu">${avatarHtml(state.user.id)}<span>${esc(firstName(displayName(state.user.id)))}</span><span class="chevron">⌄</span></button>
@@ -901,6 +902,17 @@ async function handleClick(event) {
     else if (action==='signout') { state.userMenuOpen=false; await api.signOut(); resetState(); history.replaceState({},'',location.pathname); render(); }
     else if (action==='toggle-user-menu') { state.userMenuOpen=!state.userMenuOpen; state.notificationOpen=false; state.mobileMenuOpen=false; render(); }
     else if (action==='toggle-mobile-menu') { event.preventDefault(); state.mobileMenuOpen=!state.mobileMenuOpen; state.userMenuOpen=false; state.notificationOpen=false; render(); if(state.mobileMenuOpen) requestAnimationFrame(()=>document.querySelector('.mobile-drawer-close')?.focus()); }
+    else if (action==='open-call-picker-v1') openCallPickerV1();
+    else if (action==='call-picker-close-v1') closeCallPickerV1();
+    else if (action==='call-person-v1') await startDirectCallV1(target.dataset.user);
+    else if (action==='call-team-v1') await startTeamCallV1();
+    else if (action==='call-accept-v1') await acceptIncomingCallV1(target.dataset.call);
+    else if (action==='call-decline-v1') await declineIncomingCallV1(target.dataset.call);
+    else if (action==='call-mic-v1') await toggleMicV1();
+    else if (action==='call-camera-v1') await toggleCameraV1();
+    else if (action==='call-screen-v1') await toggleScreenV1();
+    else if (action==='call-leave-v1') await leaveActiveCallV1();
+    else if (action==='call-end-v1') await endActiveCallV1();
     else if (action==='refresh') await refreshWorkspace();
     else if (action==='quick-add') openModal({type:'quick-add'});
     else if (action==='open-activity') openModal({type:'activity'});
@@ -1556,3 +1568,142 @@ function inviteStatus(s){return({pending:'En attente',accepted:'Acceptée',revok
 async function copyText(text){try{await navigator.clipboard.writeText(text);showToast('Lien copié')}catch{prompt('Copiez ce lien :',text)}}
 
 // communication-v2-hub · create_group_direct_v2 · get_message_badges_v2 · send_message_with_mentions_v2
+
+
+/* 2b2c native calls v1 — in-module */
+let activeCallV1=null;
+let incomingCallV1=null;
+let callPollTimerV1=null;
+
+function callProjectContextV1(){
+  return String(document.getElementById('call-project-v1')?.value||'')||null;
+}
+function closeCallPickerV1(){document.getElementById('call-picker-v1')?.remove();}
+function openCallPickerV1(){
+  closeCallPickerV1();
+  if(activeCallV1){renderActiveCallV1();return;}
+  const teammates=state.members.filter(m=>m.user_id!==state.user.id&&m.status==='active'&&m.role!=='guest');
+  const root=document.createElement('div');root.id='call-picker-v1';
+  root.innerHTML=`<div class="call-modal-backdrop-v1"><section class="call-picker-card-v1" role="dialog" aria-modal="true" aria-label="Appeler">
+    <header><div><span class="eyebrow">Communication</span><h2>Appeler</h2><p>Appelez une personne maintenant. Le projet est facultatif.</p></div><button class="icon-button" data-action="call-picker-close-v1" aria-label="Fermer">✕</button></header>
+    <label class="field"><span>Contexte facultatif</span><select id="call-project-v1"><option value="">Sans projet</option>${state.projects.filter(p=>p.status==='active').map(p=>`<option value="${escAttr(p.id)}">${esc(p.name)}</option>`).join('')}</select></label>
+    <div class="call-people-v1">${teammates.length?teammates.map(m=>`<button data-action="call-person-v1" data-user="${escAttr(m.user_id)}"><span class="avatar">${initials(displayName(m.user_id))}</span><span><strong>${esc(displayName(m.user_id))}</strong><small>Appel privé</small></span><b>Appeler</b></button>`).join(''):'<div class="notice">Aucun autre membre interne actif.</div>'}</div>
+    <div class="call-team-row-v1"><div><strong>Appel d’équipe</strong><small>Salle libre accessible aux membres de l’espace.</small></div><button class="btn" data-action="call-team-v1">Ouvrir</button></div>
+  </section></div>`;
+  document.body.appendChild(root);
+}
+
+async function callIceServersV1(){
+  try{
+    const session=api.getSession();if(!session?.access_token)throw new Error('Session expirée');
+    const response=await fetch(`${config.supabaseUrl}/functions/v1/call-ice-v1`,{method:'POST',headers:{apikey:config.supabasePublishableKey,authorization:`Bearer ${session.access_token}`,'content-type':'application/json'},body:'{}'});
+    if(response.ok){const payload=await response.json();if(Array.isArray(payload?.iceServers)&&payload.iceServers.length)return payload.iceServers;}
+  }catch(error){console.warn('ICE fallback',error);}
+  return [{urls:['stun:stun.cloudflare.com:3478','stun:stun.cloudflare.com:53']}];
+}
+async function localMediaV1(){
+  const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
+  try{return await navigator.mediaDevices.getUserMedia({audio,video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24,max:30}}});}
+  catch(cameraError){try{return await navigator.mediaDevices.getUserMedia({audio,video:false});}catch{throw cameraError;}}
+}
+async function sendCallSignalV1(ctx,toUser,type,payload){
+  await api.rpc('send_call_signal_v1',{p_call_id:ctx.call.id,p_to_user:toUser,p_signal_type:type,p_payload:payload});
+}
+async function ensureCallPeerV1(ctx,remoteUserId){
+  if(ctx.peers.has(remoteUserId))return ctx.peers.get(remoteUserId);
+  const pc=new RTCPeerConnection({iceServers:ctx.iceServers,bundlePolicy:'max-bundle'});pc.__pendingIceV1=[];
+  ctx.peers.set(remoteUserId,pc);
+  ctx.localStream.getTracks().forEach(track=>pc.addTrack(track,ctx.localStream));
+  pc.onicecandidate=e=>{if(e.candidate)void sendCallSignalV1(ctx,remoteUserId,'ice',e.candidate.toJSON()).catch(console.warn);};
+  pc.ontrack=e=>{ctx.remoteStreams.set(remoteUserId,e.streams?.[0]||new MediaStream([e.track]));renderActiveCallV1();};
+  pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState)){ctx.remoteStreams.delete(remoteUserId);ctx.peers.delete(remoteUserId);renderActiveCallV1();}};
+  return pc;
+}
+async function maybeOfferCallV1(ctx,remoteUserId){
+  if(String(state.user.id)>=String(remoteUserId)||ctx.offered.has(remoteUserId))return;
+  const pc=await ensureCallPeerV1(ctx,remoteUserId);if(pc.signalingState!=='stable')return;
+  ctx.offered.add(remoteUserId);const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+  await sendCallSignalV1(ctx,remoteUserId,'offer',{type:offer.type,sdp:offer.sdp});
+}
+async function processCallSignalV1(ctx,signal){
+  if(ctx.signalIds.has(String(signal.id))||signal.from_user===state.user.id)return;
+  ctx.signalIds.add(String(signal.id));const pc=await ensureCallPeerV1(ctx,signal.from_user);
+  if(signal.signal_type==='offer'){await pc.setRemoteDescription(signal.payload);for(const x of pc.__pendingIceV1.splice(0)){try{await pc.addIceCandidate(x)}catch{}}const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await sendCallSignalV1(ctx,signal.from_user,'answer',{type:answer.type,sdp:answer.sdp});}
+  else if(signal.signal_type==='answer'&&pc.signalingState==='have-local-offer'){await pc.setRemoteDescription(signal.payload);for(const x of pc.__pendingIceV1.splice(0)){try{await pc.addIceCandidate(x)}catch{}}}
+  else if(signal.signal_type==='ice'){if(!pc.remoteDescription)pc.__pendingIceV1.push(signal.payload);else try{await pc.addIceCandidate(signal.payload)}catch{}}
+}
+async function syncCallMediaV1(ctx){
+  await api.rpc('set_call_media_state_v1',{p_call_id:ctx.call.id,p_mic:Boolean(ctx.micTrack?.enabled),p_camera:Boolean(ctx.cameraTrack?.enabled),p_screen:Boolean(ctx.screenTrack)});
+}
+async function connectCallV1(call,targetUserId=null){
+  closeCallPickerV1();
+  const localStream=await localMediaV1();
+  await api.rpc('join_call_v1',{p_call_id:call.id});
+  activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:localStream.getVideoTracks()[0]||null,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),closed:false};
+  incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();await syncCallMediaV1(activeCallV1);renderActiveCallV1();void pollCallV1(activeCallV1);
+}
+async function startDirectCallV1(targetUserId){
+  const call=first(await api.rpc('start_direct_call_v1',{p_workspace_id:state.workspace.id,p_target_user_id:targetUserId,p_project_id:callProjectContextV1()}));
+  await connectCallV1(call,targetUserId);
+}
+async function startTeamCallV1(){
+  const call=first(await api.rpc('start_workspace_call_v1',{p_workspace_id:state.workspace.id}));await connectCallV1(call,null);
+}
+async function acceptIncomingCallV1(callId){
+  const call=first(await api.select('call_sessions',`select=*&id=eq.${callId}&ended_at=is.null&limit=1`));if(!call)throw new Error('Cet appel n’est plus disponible.');await connectCallV1(call,call.started_by);
+}
+async function declineIncomingCallV1(callId){
+  await api.rpc('decline_direct_call_v1',{p_call_id:callId});incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();
+}
+async function pollCallV1(ctx){
+  if(ctx.closed||activeCallV1!==ctx)return;
+  try{
+    const [participants,signals,calls]=await Promise.all([
+      api.select('call_participants',`select=*&call_session_id=eq.${ctx.call.id}&left_at=is.null&order=joined_at.asc`),
+      api.select('call_signals',`select=*&call_session_id=eq.${ctx.call.id}&to_user=eq.${state.user.id}&order=id.asc&limit=200`),
+      api.select('call_sessions',`select=*&id=eq.${ctx.call.id}&limit=1`)
+    ]);
+    const activeIds=new Set(participants.map(p=>p.user_id));for(const p of participants)if(p.user_id!==state.user.id)await maybeOfferCallV1(ctx,p.user_id);
+    for(const [id,pc] of [...ctx.peers])if(!activeIds.has(id)){pc.close();ctx.peers.delete(id);ctx.remoteStreams.delete(id);ctx.offered.delete(id);}
+    for(const signal of signals)await processCallSignalV1(ctx,signal);
+    if(!calls[0]||calls[0].ended_at){cleanupCallV1(ctx);activeCallV1=null;document.getElementById('active-call-v1')?.remove();showToast('L’appel est terminé');return;}
+    ctx.call=calls[0];renderActiveCallV1();
+  }catch(error){console.warn('call poll',error);}
+  callPollTimerV1=setTimeout(()=>void pollCallV1(ctx),900);
+}
+function videoTileCallV1(id,stream,label,muted=false){
+  return `<div class="call-tile-v1"><video id="${id}" autoplay playsinline ${muted?'muted':''}></video><div class="call-avatar-fallback-v1">${initials(label)}</div><span>${esc(label)}</span></div>`;
+}
+function attachCallVideosV1(ctx){
+  const local=document.getElementById('call-local-v1');if(local){local.srcObject=ctx.localPreviewStream;local.muted=true;void local.play().catch(()=>{});}
+  for(const [id,stream] of ctx.remoteStreams){const v=document.getElementById(`call-remote-${id}`);if(v){v.srcObject=stream;void v.play().catch(()=>{});}}
+}
+function renderActiveCallV1(){
+  const ctx=activeCallV1;if(!ctx)return;
+  let root=document.getElementById('active-call-v1');if(!root){root=document.createElement('div');root.id='active-call-v1';document.body.appendChild(root);}
+  const remotes=[...ctx.remoteStreams.entries()];
+  root.innerHTML=`<section class="call-shell-v1"><header><div><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):'Appel d’équipe')}</strong><small>${remotes.length+1} participant${remotes.length?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div></header><div class="call-grid-v1">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>videoTileCallV1(`call-remote-${id}`,stream,displayName(id))).join('')}${remotes.length?'':'<div class="call-wait-v1"><strong>En attente de l’autre participant…</strong></div>'}</div><footer><button class="btn" data-action="call-mic-v1">${ctx.micTrack?.enabled?'🎙 Micro':'🔇 Micro'}</button><button class="btn" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}>${ctx.cameraTrack?.enabled?'📹 Caméra':'🚫 Caméra'}</button><button class="btn" data-action="call-screen-v1">${ctx.screenTrack?'▣ Arrêter partage':'▣ Partager écran'}</button><button class="btn danger" data-action="call-leave-v1">Quitter</button>${ctx.call.started_by===state.user.id?'<button class="btn danger" data-action="call-end-v1">Terminer pour tous</button>':''}</footer></section>`;
+  attachCallVideosV1(ctx);
+}
+async function toggleMicV1(){if(!activeCallV1?.micTrack)return;activeCallV1.micTrack.enabled=!activeCallV1.micTrack.enabled;await syncCallMediaV1(activeCallV1);renderActiveCallV1();}
+async function toggleCameraV1(){if(!activeCallV1?.cameraTrack)return;activeCallV1.cameraTrack.enabled=!activeCallV1.cameraTrack.enabled;await syncCallMediaV1(activeCallV1);renderActiveCallV1();}
+async function toggleScreenV1(){
+  const ctx=activeCallV1;if(!ctx)return;
+  if(ctx.screenTrack){const old=ctx.screenTrack;ctx.screenTrack=null;old.onended=null;old.stop();if(ctx.cameraTrack){for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(ctx.cameraTrack);}}ctx.localPreviewStream=ctx.localStream;await syncCallMediaV1(ctx);renderActiveCallV1();return;}
+  const screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});const track=screen.getVideoTracks()[0];if(!track)return;ctx.screenTrack=track;for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(track);}ctx.localPreviewStream=new MediaStream([track,...ctx.localStream.getAudioTracks()]);track.onended=()=>{if(ctx.screenTrack?.id===track.id)void toggleScreenV1()};await syncCallMediaV1(ctx);renderActiveCallV1();
+}
+function cleanupCallV1(ctx){ctx.closed=true;if(callPollTimerV1)clearTimeout(callPollTimerV1);ctx.screenTrack?.stop();ctx.localStream?.getTracks().forEach(t=>t.stop());for(const pc of ctx.peers.values())pc.close();}
+async function leaveActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;cleanupCallV1(ctx);try{await api.rpc('leave_call_v1',{p_call_id:ctx.call.id})}catch{}activeCallV1=null;document.getElementById('active-call-v1')?.remove();}
+async function endActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;await api.rpc('end_call_v1',{p_call_id:ctx.call.id,p_expected_version:ctx.call.version});cleanupCallV1(ctx);activeCallV1=null;document.getElementById('active-call-v1')?.remove();}
+async function checkIncomingCallV1(){
+  if(!state.user||!state.workspace||activeCallV1)return;
+  try{
+    const since=new Date(Date.now()-90000).toISOString();
+    const rows=await api.select('call_sessions',`select=*&workspace_id=eq.${state.workspace.id}&direct_user_id=eq.${state.user.id}&ended_at=is.null&started_at=gte.${encodeURIComponent(since)}&order=started_at.desc&limit=1`);
+    const call=rows[0]||null;if(!call){incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();return;}
+    if(incomingCallV1?.id===call.id&&document.getElementById('incoming-call-v1'))return;incomingCallV1=call;
+    let root=document.getElementById('incoming-call-v1');if(!root){root=document.createElement('div');root.id='incoming-call-v1';document.body.appendChild(root);}
+    root.innerHTML=`<section class="incoming-call-card-v1"><div class="incoming-call-icon-v1">▣</div><div><small>Appel entrant</small><strong>${esc(displayName(call.started_by))}</strong><span>${esc(projectName(call.project_id)||'Sans projet')}</span></div><div class="incoming-call-actions-v1"><button class="btn danger" data-action="call-decline-v1" data-call="${escAttr(call.id)}">Refuser</button><button class="btn primary" data-action="call-accept-v1" data-call="${escAttr(call.id)}">Accepter</button></div></section>`;
+  }catch(error){console.warn('incoming call',error);}
+}
+setInterval(()=>void checkIncomingCallV1(),1800);
