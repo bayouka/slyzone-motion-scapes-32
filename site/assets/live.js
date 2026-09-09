@@ -909,6 +909,9 @@ async function handleClick(event) {
     else if (action==='call-confirm-start-v1') await confirmStartCallV1();
     else if (action==='call-confirm-add-v1') await confirmAddPeopleV1();
     else if (action==='call-add-v1') openAddPeopleV1();
+    else if (action==='call-minimize-v1') minimizeActiveCallV1();
+    else if (action==='call-restore-v1') restoreActiveCallV1();
+    else if (action==='call-focus-v1') { callFocusUserV1=target.dataset.user||null; renderActiveCallV1(); }
     else if (action==='call-accept-v1') await acceptIncomingCallV1(target.dataset.call);
     else if (action==='call-decline-v1') await declineIncomingCallV1(target.dataset.call);
     else if (action==='call-mic-v1') await toggleMicV1();
@@ -1580,6 +1583,8 @@ let incomingCallV1=null;
 let callPollTimerV1=null;
 let callPickerSelectedV1=new Set();
 let callPickerModeV1='start';
+let callDockedV1=false;
+let callFocusUserV1=null;
 
 function callProjectContextV1(){
   return String(document.getElementById('call-project-v1')?.value||'')||null;
@@ -1732,6 +1737,15 @@ function attachCallVideosV1(ctx){
   const local=document.getElementById('call-local-v1');if(local){local.srcObject=ctx.localPreviewStream;local.muted=true;void local.play().catch(()=>{});}
   for(const [id,stream] of ctx.remoteStreams){const v=document.getElementById(`call-remote-${id}`);if(v){v.srcObject=stream;void v.play().catch(()=>{});}}
 }
+function minimizeActiveCallV1(){if(!activeCallV1)return;callDockedV1=true;renderActiveCallV1();}
+function restoreActiveCallV1(){if(!activeCallV1)return;callDockedV1=false;renderActiveCallV1();}
+window.addEventListener('2b2c:start-call',event=>{
+  if(!state.user||!state.workspace||activeCallV1)return;
+  const ids=Array.isArray(event.detail?.userIds)?event.detail.userIds.filter(Boolean):[];
+  const projectId=event.detail?.projectId||null;
+  callPickerModeV1='start';callPickerSelectedV1=new Set(ids);renderCallPickerV1();
+  if(projectId){const select=document.getElementById('call-project-v1');if(select)select.value=projectId;}
+});
 function callInviteStatusLabelV1(invite){
   if(invite.status==='accepted')return 'A rejoint';
   if(invite.status==='declined')return 'A refusé';
@@ -1742,19 +1756,30 @@ function renderActiveCallV1(){
   let root=document.getElementById('active-call-v1');if(!root){root=document.createElement('div');root.id='active-call-v1';document.body.appendChild(root);}
   const remotes=[...ctx.remoteStreams.entries()];
   const pending=(ctx.invites||[]).filter(i=>i.status==='pending');
-  const accepted=(ctx.invites||[]).filter(i=>i.status==='accepted');
   const participantCount=1+remotes.length;
+  if(callDockedV1){
+    const other=remotes[0];
+    root.className='call-docked-v3';
+    root.innerHTML=`<section class="call-mini-v3"><div class="call-mini-video-v3">${other?videoTileCallV1(`call-remote-${other[0]}`,other[1],displayName(other[0])):videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Vous',true)}</div><div class="call-mini-meta-v3"><strong>${other?esc(displayName(other[0])):'Visio en cours'}</strong><small>${participantCount} participant${participantCount>1?'s':''}</small></div><button class="call-mini-action-v3" data-action="call-restore-v1">Agrandir</button><button class="call-mini-hang-v3" data-action="call-leave-v1" aria-label="Quitter">☎</button></section>`;
+    attachCallVideosV1(ctx);return;
+  }
+  root.className='';
   let stage='';
   if(remotes.length===0){
-    stage=`<div class="call-stage-solo-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${pending.length?`<div class="call-ringing-v2"><strong>En attente de ${pending.map(i=>esc(displayName(i.invited_user_id))).join(', ')}</strong><small>La visio commencera automatiquement dès qu’une personne accepte.</small></div>`:''}</div>`;
+    stage=`<div class="call-stage-solo-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${pending.length?`<div class="call-ringing-v2"><strong>En attente de ${pending.map(i=>esc(displayName(i.invited_user_id))).join(', ')}</strong><small>Vous pouvez continuer à travailler en réduisant la visio.</small></div>`:''}</div>`;
   }else if(remotes.length===1){
     const [id,stream]=remotes[0];
     stage=`<div class="call-stage-focus-v2">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}<div class="call-pip-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}</div></div>`;
   }else{
-    stage=`<div class="call-grid-v1 call-grid-many-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>videoTileCallV1(`call-remote-${id}`,stream,displayName(id))).join('')}</div>`;
+    const focusId=callFocusUserV1&&ctx.remoteStreams.has(callFocusUserV1)?callFocusUserV1:null;
+    if(focusId){
+      stage=`<div class="call-stage-speaker-v3">${videoTileCallV1(`call-remote-${focusId}`,ctx.remoteStreams.get(focusId),displayName(focusId))}<div class="call-filmstrip-v3"><button data-action="call-focus-v1" data-user="">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Vous',true)}</button>${remotes.filter(([id])=>id!==focusId).map(([id,stream])=>`<button data-action="call-focus-v1" data-user="${escAttr(id)}">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}</button>`).join('')}</div></div>`;
+    }else{
+      stage=`<div class="call-grid-v1 call-grid-many-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>`<button class="call-focus-tile-v3" data-action="call-focus-v1" data-user="${escAttr(id)}">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}</button>`).join('')}</div>`;
+    }
   }
   const statusHtml=(ctx.invites||[]).length?`<div class="call-participant-status-v2">${ctx.invites.map(i=>`<span class="${i.status}"><b>${esc(displayName(i.invited_user_id))}</b> · ${callInviteStatusLabelV1(i)}</span>`).join('')}</div>`:'';
-  root.innerHTML=`<section class="call-shell-v1 call-shell-v2"><header><div><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):(ctx.projectId?projectName(ctx.projectId):'Visio'))}</strong><small>${participantCount} participant${participantCount>1?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div><div class="call-head-actions-v2"><button class="btn small" data-action="call-add-v1">＋ Ajouter</button>${ctx.call.started_by===state.user.id?'<button class="text-action call-end-all-v2" data-action="call-end-v1">Terminer</button>':''}</div></header><div class="call-stage-wrap-v2">${stage}${statusHtml}</div><footer class="call-controls-v2"><button class="call-control-v2" data-action="call-mic-v1"><span>${ctx.micTrack?.enabled?'🎙':'🔇'}</span><small>Micro</small></button><button class="call-control-v2" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}><span>${ctx.cameraTrack?.enabled?'📹':'🚫'}</span><small>Caméra</small></button>${ctx.canFlipCamera?'<button class="call-control-v2" data-action="call-switch-camera-v1"><span>↻</span><small>Retourner</small></button>':''}${navigator.mediaDevices?.getDisplayMedia?'<button class="call-control-v2" data-action="call-screen-v1"><span>▣</span><small>'+ (ctx.screenTrack?'Arrêter écran':'Partager') +'</small></button>':''}<button class="call-control-v2" data-action="call-add-v1"><span>＋</span><small>Ajouter</small></button><button class="call-control-v2 danger" data-action="call-leave-v1"><span>☎</span><small>Quitter</small></button></footer></section>`;
+  root.innerHTML=`<section class="call-shell-v1 call-shell-v2"><header><div><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):(ctx.projectId?projectName(ctx.projectId):'Visio'))}</strong><small>${participantCount} participant${participantCount>1?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div><div class="call-head-actions-v2"><button class="btn small" data-action="call-minimize-v1">— Réduire</button><button class="btn small" data-action="call-add-v1">＋ Ajouter</button>${ctx.call.started_by===state.user.id?'<button class="text-action call-end-all-v2" data-action="call-end-v1">Terminer</button>':''}</div></header><div class="call-stage-wrap-v2">${stage}${statusHtml}</div><footer class="call-controls-v2"><button class="call-control-v2" data-action="call-mic-v1"><span>${ctx.micTrack?.enabled?'🎙':'🔇'}</span><small>Micro</small></button><button class="call-control-v2" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}><span>${ctx.cameraTrack?.enabled?'📹':'🚫'}</span><small>Caméra</small></button>${ctx.canFlipCamera?'<button class="call-control-v2" data-action="call-switch-camera-v1"><span>↻</span><small>Retourner</small></button>':''}${navigator.mediaDevices?.getDisplayMedia?'<button class="call-control-v2" data-action="call-screen-v1"><span>▣</span><small>'+ (ctx.screenTrack?'Arrêter écran':'Partager') +'</small></button>':''}<button class="call-control-v2" data-action="call-add-v1"><span>＋</span><small>Ajouter</small></button><button class="call-control-v2 danger" data-action="call-leave-v1"><span>☎</span><small>Quitter</small></button></footer></section>`;
   attachCallVideosV1(ctx);
 }
 async function toggleMicV1(){if(!activeCallV1?.micTrack)return;activeCallV1.micTrack.enabled=!activeCallV1.micTrack.enabled;await syncCallMediaV1(activeCallV1);renderActiveCallV1();}
@@ -1793,7 +1818,7 @@ async function toggleScreenV1(){
   if(ctx.screenTrack){const old=ctx.screenTrack;ctx.screenTrack=null;old.onended=null;old.stop();if(ctx.cameraTrack){for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(ctx.cameraTrack);}}ctx.localPreviewStream=ctx.localStream;await syncCallMediaV1(ctx);renderActiveCallV1();return;}
   const screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});const track=screen.getVideoTracks()[0];if(!track)return;ctx.screenTrack=track;for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(track);}ctx.localPreviewStream=new MediaStream([track,...ctx.localStream.getAudioTracks()]);track.onended=()=>{if(ctx.screenTrack?.id===track.id)void toggleScreenV1()};await syncCallMediaV1(ctx);renderActiveCallV1();
 }
-function cleanupCallV1(ctx){ctx.closed=true;if(callPollTimerV1)clearTimeout(callPollTimerV1);ctx.screenTrack?.stop();ctx.localStream?.getTracks().forEach(t=>t.stop());for(const pc of ctx.peers.values())pc.close();}
+function cleanupCallV1(ctx){callDockedV1=false;callFocusUserV1=null;ctx.closed=true;if(callPollTimerV1)clearTimeout(callPollTimerV1);ctx.screenTrack?.stop();ctx.localStream?.getTracks().forEach(t=>t.stop());for(const pc of ctx.peers.values())pc.close();}
 async function leaveActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;cleanupCallV1(ctx);try{await api.rpc('leave_call_v1',{p_call_id:ctx.call.id})}catch{}activeCallV1=null;document.getElementById('active-call-v1')?.remove();}
 async function endActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;await api.rpc('end_call_v1',{p_call_id:ctx.call.id,p_expected_version:ctx.call.version});cleanupCallV1(ctx);activeCallV1=null;document.getElementById('active-call-v1')?.remove();}
 async function checkIncomingCallV1(){
