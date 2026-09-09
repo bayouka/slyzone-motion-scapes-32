@@ -1,11 +1,7 @@
 name: Native team access migration
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/native-team-access-migrate.py'
-      - '.github/workflows/native-access-migrate.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
