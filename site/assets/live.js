@@ -340,7 +340,7 @@ function shell(content, route) {
   const mobileTabs = external
     ? [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['calendar','Calendrier',ICONS.calendar,'#/calendar'],['library','Fichiers',ICONS.library,'#/library']]
     : [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['work','Mon travail',ICONS.work,'#/work'],['messages','Messages',ICONS.messages,'#/messages']];
-  const mobileTabbar=`<nav class="v43-mobile-tabbar" aria-label="Navigation principale mobile">${mobileTabs.map(([key,label,icon,href])=>`<a href="${href}" class="${active(key)?'active':''}"><span>${icon}</span><small>${esc(label)}</small>${key==='work'&&attentionCount()?`<b>${attentionCount()}</b>`:''}${key==='messages'&&state.unreadMessages?`<b>${state.unreadMessages>99?'99+':state.unreadMessages}</b>`:''}</a>`).join('')}<button data-action="toggle-mobile-menu" aria-label="Plus"><span class="more-glyph">•••</span><small>Plus</small></button></nav>`;
+  const mobileTabbar=`<nav class="v43-mobile-tabbar v52-mobile-primary" aria-label="Navigation principale mobile">${mobileTabs.map(([key,label,icon,href])=>`<a href="${href}" class="${active(key)?'active':''}"><span>${icon}</span><small>${esc(label)}</small>${key==='work'&&attentionCount()?`<b>${attentionCount()}</b>`:''}${key==='messages'&&state.unreadMessages?`<b>${state.unreadMessages>99?'99+':state.unreadMessages}</b>`:''}</a>`).join('')}</nav>`;
   return `<div class="live-app live-shell v3-shell v41-shell v42-shell v421-shell v422-shell ${external?'external-shell':''}">
     <aside class="live-sidebar v41-sidebar v42-sidebar v421-sidebar">
       ${brandHtml()}
