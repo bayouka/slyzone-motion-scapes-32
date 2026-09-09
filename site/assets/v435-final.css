@@ -37,7 +37,6 @@
   .modal-backdrop{padding:0!important;align-items:stretch!important}
   .modal{width:100%!important;max-width:none!important;max-height:100dvh!important;height:100dvh!important;border-radius:0!important;padding:18px 16px calc(90px + env(safe-area-inset-bottom))!important}
   .modal-actions{position:sticky!important;bottom:0!important;background:rgba(250,252,255,.94)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:12px 0 calc(6px + env(safe-area-inset-bottom))!important;z-index:4}
-  body:has(.modal-backdrop) .mobile-nav{display:none!important}
   .v43-catchup-card.is-empty{min-height:0!important}
 }
 @media(max-width:767px) and (max-height:740px){.auth-visual{padding:26px 24px!important}.auth-visual h1{font-size:40px!important}.auth-panel{padding:12px 14px 18px!important}.auth-card{padding:20px!important}}
