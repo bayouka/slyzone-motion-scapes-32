@@ -950,6 +950,9 @@ async function handleClick(event) {
     else if (action==='call-camera-v1') await toggleCameraV1();
     else if (action==='call-switch-camera-v1') await switchCameraV1();
     else if (action==='call-screen-v1') await toggleScreenV1();
+    else if (action==='call-devices-v1') await openCallDevicesV1();
+    else if (action==='call-devices-close-v1') document.getElementById('call-devices-v1')?.remove();
+    else if (action==='call-devices-apply-v1') await applyCallDevicesV1();
     else if (action==='call-leave-v1') await leaveActiveCallV1();
     else if (action==='call-end-v1') await requestEndActiveCallV1();
     else if (action==='refresh') await refreshWorkspace();
@@ -1814,11 +1817,61 @@ async function processCallSignalV1(ctx,signal){
 async function syncCallMediaV1(ctx){
   await api.rpc('set_call_media_state_v1',{p_call_id:ctx.call.id,p_mic:Boolean(ctx.micTrack?.enabled),p_camera:Boolean(ctx.cameraTrack?.enabled),p_screen:Boolean(ctx.screenTrack)});
 }
+async function updateCallNetworkQualityV1(ctx){
+  if(!ctx||ctx.closed)return;
+  const pcs=[...ctx.peers.values()];
+  if(!pcs.length){ctx.networkQuality='Connexion…';ctx.networkDetail='En attente des participants';return;}
+  let connected=0,failed=0,rtt=[];
+  for(const pc of pcs){
+    if(pc.connectionState==='connected')connected++;
+    if(['failed','disconnected'].includes(pc.connectionState))failed++;
+    try{
+      const stats=await pc.getStats();
+      stats.forEach(report=>{
+        if(report.type==='candidate-pair'&&report.state==='succeeded'&&report.currentRoundTripTime!=null)rtt.push(Number(report.currentRoundTripTime)*1000);
+      });
+    }catch{}
+  }
+  const avg=rtt.length?rtt.reduce((a,b)=>a+b,0)/rtt.length:null;
+  if(failed){ctx.networkQuality='Reconnexion…';ctx.networkDetail='Connexion instable';}
+  else if(!connected){ctx.networkQuality='Connexion…';ctx.networkDetail='Connexion aux participants';}
+  else if(avg!=null&&avg>450){ctx.networkQuality='Faible';ctx.networkDetail='Réseau lent';}
+  else if(avg!=null&&avg>220){ctx.networkQuality='Moyenne';ctx.networkDetail='Connexion correcte';}
+  else{ctx.networkQuality='Bonne';ctx.networkDetail='Connexion stable';}
+}
+async function openCallDevicesV1(){
+  const ctx=activeCallV1;if(!ctx||!navigator.mediaDevices?.enumerateDevices)return;
+  let devices=[];try{devices=await navigator.mediaDevices.enumerateDevices();}catch(error){showToast('Impossible de lire les périphériques.',true);return;}
+  const microphones=devices.filter(d=>d.kind==='audioinput'),cameras=devices.filter(d=>d.kind==='videoinput');
+  const currentMic=ctx.micTrack?.getSettings?.().deviceId||'',currentCamera=ctx.cameraTrack?.getSettings?.().deviceId||'';
+  document.getElementById('call-devices-v1')?.remove();
+  const root=document.createElement('div');root.id='call-devices-v1';root.innerHTML=`<div class="call-modal-backdrop-v1"><section class="call-devices-card-v6"><header><div><small>Paramètres de l’appel</small><h3>Micro et caméra</h3></div><button class="call-picker-close-v1" data-action="call-devices-close-v1" aria-label="Fermer">×</button></header><label><span>Microphone</span><select id="call-mic-device-v6">${microphones.map((d,i)=>`<option value="${escAttr(d.deviceId)}" ${d.deviceId===currentMic?'selected':''}>${esc(d.label||'Microphone '+(i+1))}</option>`).join('')}</select></label><label><span>Caméra</span><select id="call-camera-device-v6">${cameras.map((d,i)=>`<option value="${escAttr(d.deviceId)}" ${d.deviceId===currentCamera?'selected':''}>${esc(d.label||'Caméra '+(i+1))}</option>`).join('')}</select></label><p>Les changements s’appliquent immédiatement à la visio.</p><footer><button class="btn" data-action="call-devices-close-v1">Annuler</button><button class="btn primary" data-action="call-devices-apply-v1">Appliquer</button></footer></section></div>`;document.body.appendChild(root);
+}
+async function applyCallDevicesV1(){
+  const ctx=activeCallV1;if(!ctx)return;
+  const micId=document.getElementById('call-mic-device-v6')?.value||'',cameraId=document.getElementById('call-camera-device-v6')?.value||'';
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:micId?{deviceId:{exact:micId}}:true,video:cameraId?{deviceId:{exact:cameraId},width:{ideal:1280},height:{ideal:720}}:true});
+    const newMic=stream.getAudioTracks()[0]||null,newCam=stream.getVideoTracks()[0]||null;
+    if(newMic){
+      newMic.enabled=ctx.micTrack?.enabled!==false;
+      for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='audio');if(s)await s.replaceTrack(newMic);}
+      ctx.micTrack?.stop();if(ctx.micTrack)ctx.localStream.removeTrack(ctx.micTrack);ctx.localStream.addTrack(newMic);ctx.micTrack=newMic;
+    }
+    if(newCam){
+      newCam.enabled=ctx.cameraTrack?.enabled!==false;
+      if(!ctx.screenTrack)for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(newCam);}
+      ctx.cameraTrack?.stop();if(ctx.cameraTrack)ctx.localStream.removeTrack(ctx.cameraTrack);ctx.localStream.addTrack(newCam);ctx.cameraTrack=newCam;ctx.cameraFacing=newCam.getSettings?.().facingMode||ctx.cameraFacing;
+    }
+    if(!ctx.screenTrack)ctx.localPreviewStream=ctx.localStream;
+    document.getElementById('call-devices-v1')?.remove();await syncCallMediaV1(ctx);renderActiveCallV1();showToast('Périphériques mis à jour');
+  }catch(error){console.warn('device switch',error);showToast('Impossible de changer de périphérique.',true);}
+}
 async function connectCallV1(call,targetUserId=null,preparedStream=null){
   closeCallPickerV1();
   const localStream=preparedStream||await localMediaV1();
   await api.rpc('join_call_v1',{p_call_id:call.id});
-  const initialCameraTrack=localStream.getVideoTracks()[0]||null;let canFlipCamera=false;try{const devices=await navigator.mediaDevices.enumerateDevices();canFlipCamera=devices.filter(d=>d.kind==='videoinput').length>1;}catch{}activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:initialCameraTrack,cameraFacing:initialCameraTrack?.getSettings?.().facingMode||'user',canFlipCamera,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),invites:[],participants:[],lastHeartbeatAt:0,closed:false};
+  const initialCameraTrack=localStream.getVideoTracks()[0]||null;let canFlipCamera=false;try{const devices=await navigator.mediaDevices.enumerateDevices();canFlipCamera=devices.filter(d=>d.kind==='videoinput').length>1;}catch{}activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:initialCameraTrack,cameraFacing:initialCameraTrack?.getSettings?.().facingMode||'user',canFlipCamera,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),invites:[],participants:[],lastHeartbeatAt:0,networkQuality:'Connexion…',networkDetail:'Établissement de la connexion',closed:false};
   incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();await syncCallMediaV1(activeCallV1);renderActiveCallV1();void pollCallV1(activeCallV1);
 }
 async function startDirectCallV1(targetUserId){
@@ -1850,7 +1903,7 @@ async function pollCallV1(ctx){
       api.select('call_sessions',`select=*&id=eq.${ctx.call.id}&limit=1`),
       api.select('call_invites',`select=*&call_session_id=eq.${ctx.call.id}&order=created_at.asc`)
     ]);
-    ctx.invites=invites||[];ctx.participants=participants||[];
+    ctx.invites=invites||[];ctx.participants=participants||[];if(!ctx.lastNetworkCheck||Date.now()-ctx.lastNetworkCheck>4000){ctx.lastNetworkCheck=Date.now();void updateCallNetworkQualityV1(ctx);}
     const activeIds=new Set(participants.map(p=>p.user_id));for(const p of participants)if(p.user_id!==state.user.id)await maybeOfferCallV1(ctx,p.user_id);
     for(const [id,pc] of [...ctx.peers])if(!activeIds.has(id)){pc.close();ctx.peers.delete(id);ctx.remoteStreams.delete(id);ctx.offered.delete(id);}
     for(const signal of signals)await processCallSignalV1(ctx,signal);
@@ -1957,8 +2010,19 @@ async function switchCameraV1(){
 }
 async function toggleScreenV1(){
   const ctx=activeCallV1;if(!ctx)return;
-  if(ctx.screenTrack){const old=ctx.screenTrack;ctx.screenTrack=null;old.onended=null;old.stop();if(ctx.cameraTrack){for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(ctx.cameraTrack);}}ctx.localPreviewStream=ctx.localStream;await syncCallMediaV1(ctx);renderActiveCallV1();return;}
-  const screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});const track=screen.getVideoTracks()[0];if(!track)return;ctx.screenTrack=track;for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(track);}ctx.localPreviewStream=new MediaStream([track,...ctx.localStream.getAudioTracks()]);track.onended=()=>{if(ctx.screenTrack?.id===track.id)void toggleScreenV1()};await syncCallMediaV1(ctx);renderActiveCallV1();
+  if(ctx.screenTrack){
+    const old=ctx.screenTrack;ctx.screenTrack=null;old.onended=null;old.stop();
+    if(ctx.cameraTrack){for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(ctx.cameraTrack);}}
+    ctx.localPreviewStream=ctx.localStream;await syncCallMediaV1(ctx);renderActiveCallV1();showToast('Partage d’écran arrêté');return;
+  }
+  try{
+    const screen=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:15,max:30}},audio:false});
+    const track=screen.getVideoTracks()[0];if(!track)return;
+    ctx.screenTrack=track;for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(track);}
+    ctx.localPreviewStream=new MediaStream([track,...ctx.localStream.getAudioTracks()]);
+    track.onended=()=>{if(ctx.screenTrack?.id===track.id)void toggleScreenV1()};
+    await syncCallMediaV1(ctx);renderActiveCallV1();showToast('Votre écran est partagé');
+  }catch(error){if(error?.name!=='NotAllowedError')console.warn('screen share',error);showToast(error?.name==='NotAllowedError'?'Partage d’écran annulé.':'Le partage d’écran n’est pas disponible.',true);}
 }
 function cleanupCallV1(ctx){callDockedV1=false;callFocusUserV1=null;ctx.closed=true;if(callPollTimerV1)clearTimeout(callPollTimerV1);ctx.screenTrack?.stop();ctx.localStream?.getTracks().forEach(t=>t.stop());for(const pc of ctx.peers.values())pc.close();}
 async function leaveActiveCallV1(){const ctx=activeCallV1;if(!ctx)return;cleanupCallV1(ctx);try{await api.rpc('leave_call_v1',{p_call_id:ctx.call.id})}catch{}activeCallV1=null;document.getElementById('active-call-v1')?.remove();}
