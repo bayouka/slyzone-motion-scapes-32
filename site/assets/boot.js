@@ -33,6 +33,7 @@
     // Delivery is registered before the legacy-safe bridge so it owns project closure clicks.
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
+    .then(() => import(`./call-native-v1.js?${VERSION}`).catch((error) => { console.error('[2b2c] native calls unavailable', error); }))
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] communication workspace unavailable; native messages view kept', error);
     }))
