@@ -85,6 +85,7 @@ assert(!/\.mobile-nav-btn(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile
 assert(!/\.modal\{[^}]*height:100dvh!important/.test(legacyCore), 'legacy full-height mobile modal rule reintroduced');
 assert(!/\.v422-projects(?:\s|[>{:+~.#\[])/.test(liveCss), 'obsolete .v422-projects selector reintroduced');
 assert(!/\.v41-project-card(?:\s|[>{:+~.#\[])/.test(liveCss), 'obsolete .v41-project-card selector reintroduced');
+assert(!/\.project-card-v3\{[^}]*?(?:background|border-radius|padding|box-shadow|min-height):/.test(liveCss), 'obsolete project-card-v3 legacy surface properties reintroduced');
 
 
 
