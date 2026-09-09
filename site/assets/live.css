@@ -176,7 +176,7 @@ html,body{background:var(--v42-canvas)}
 .signal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.signal-summary>div{padding:10px 8px;border-radius:11px;background:linear-gradient(145deg,#f6f8fc,#fbfcfe);border:1px solid #edf0f5}.signal-summary strong,.signal-summary span{display:block}.signal-summary strong{font-size:18px}.signal-summary span{font-size:8px;color:#8994a6;margin-top:2px}
 
 /* Project cards */
-.v42-project-grid{gap:14px!important}.v42-project-card{padding:16px 16px 14px!important;transition:.18s ease}
+.v42-project-grid{gap:14px!important}.v42-project-card{padding:16px 16px 14px!important}
 .v42-project-card .project-symbol{border-radius:12px;background:linear-gradient(145deg,#f0f4ff,#e7edff);box-shadow:4px 5px 13px rgba(78,97,159,.08),inset 1px 1px 0 rgba(255,255,255,.9);border:1px solid #dce5fb}
 .project-title-line{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:11px 0 10px}.project-title-line h3{margin:0!important;font-size:17px}.project-title-line>span{font-size:8px;color:#8a96a8;font-weight:800;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
 .project-phase-v42{display:grid;gap:2px;margin-bottom:9px}.project-phase-v42 span,.project-personal span{font-size:8px!important;text-transform:uppercase;letter-spacing:.075em;color:#8b96a8!important;font-weight:800}.project-phase-v42 strong{font-size:11px;color:#34425a}
@@ -650,7 +650,7 @@ html.mobile-menu-open,body.mobile-menu-open{overflow:hidden!important;overscroll
 .card:hover{border-color:#d9e1ee}
 .project-card-v3{position:relative;isolation:isolate}
 .project-card-v3:before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(125deg,rgba(255,255,255,.0) 35%,rgba(101,132,255,.055),rgba(92,205,190,.035));opacity:0;transition:opacity var(--motion-ui) ease;pointer-events:none;z-index:-1}
-.project-card-v3:hover{transform:translateY(-4px);border-color:#d5def0;box-shadow:var(--surface-glow)}
+.project-card-v3:hover{border-color:#d5def0}
 .project-card-v3:hover:before{opacity:1}
 .project-card-v3:hover .project-symbol{transform:scale(1.06) rotate(-2deg)}
 .project-symbol{transition:transform var(--motion-ui) var(--motion-spring)}
