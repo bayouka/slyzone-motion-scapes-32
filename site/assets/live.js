@@ -570,7 +570,7 @@ function renderProject(id, tab='overview', view='list') {
   const people=projectPeople(id);
   const canManageProject = canWriteProject(id);
   const derivedHealth = projectHealthInfo(project);
-  const head = `<div class="project-head-v3"><div class="project-breadcrumb"><a href="#/projects">Projets</a><span>›</span><span>${esc(project.name)}</span></div><div class="project-title-row"><div class="project-title-main"><div class="project-icon">${esc(project.name.slice(0,1).toUpperCase())}</div><div><div class="project-title-line"><h1>${esc(project.name)}</h1><span class="pill ${derivedHealth.tone}" title="${escAttr(derivedHealth.reason)}">${derivedHealth.label}</span>${external?'<span class="pill blue">Vue partenaire</span>':''}</div><p>${esc(project.objective || 'Aucun objectif renseigné.')}</p><div class="project-people">${people.length?people.slice(0,5).map(pm=>avatarHtml(pm.user_id)).join(''):''}${people.length>5?`<span class="avatar more">+${people.length-5}</span>`:''}<span>${people.length?`${people.length} participant${people.length>1?'s':''}`:'Aucun participant assigné'}</span></div></div></div><div class="project-head-actions">${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn" data-action="invite-member" data-project="${project.id}">Partager</button>`:''}${canManageProject&&!external?`<button class="btn" data-action="edit-project" data-project="${project.id}">Modifier</button>`:''}${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn icon-only" data-action="manage-project" data-project="${project.id}" aria-label="Gérer le projet">•••</button>`:''}</div></div><div class="tabs project-tabs">${tabs.map(([key,label])=>`<a href="#/projects/${id}/${key}" class="${tab===key?'active':''}">${label}</a>`).join('')}</div></div>`;
+  const head = `<div class="project-head-v3"><div class="project-breadcrumb"><a href="#/projects">Projets</a><span>›</span><span>${esc(project.name)}</span></div><div class="project-title-row"><div class="project-title-main"><div class="project-icon">${esc(project.name.slice(0,1).toUpperCase())}</div><div><div class="project-title-line"><h1>${esc(project.name)}</h1><span class="pill ${derivedHealth.tone}" title="${escAttr(derivedHealth.reason)}">${derivedHealth.label}</span>${external?'<span class="pill blue">Vue partenaire</span>':''}</div><p>${esc(project.objective || 'Aucun objectif renseigné.')}</p><div class="project-people">${people.length?people.slice(0,5).map(pm=>avatarHtml(pm.user_id)).join(''):''}${people.length>5?`<span class="avatar more">+${people.length-5}</span>`:''}<span>${people.length?`${people.length} participant${people.length>1?'s':''}`:'Aucun participant assigné'}</span></div></div></div><div class="project-head-actions">${!external?`<button class="btn" data-action="open-project-call-v1" data-project="${project.id}">▣ Visio</button>`:''}${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn" data-action="invite-member" data-project="${project.id}">Partager</button>`:''}${canManageProject&&!external?`<button class="btn" data-action="edit-project" data-project="${project.id}">Modifier</button>`:''}${!external&&['owner','admin'].includes(state.workspaceRole)?`<button class="btn icon-only" data-action="manage-project" data-project="${project.id}" aria-label="Gérer le projet">•••</button>`:''}</div></div><div class="tabs project-tabs">${tabs.map(([key,label])=>`<a href="#/projects/${id}/${key}" class="${tab===key?'active':''}">${label}</a>`).join('')}</div></div>`;
   if (tab==='work'&&!external) return head + projectWork(project, actions, milestones, view);
   if (tab==='messages'&&!external) return head + projectMessages(project);
   if (tab==='meetings') return head + projectMeetings(project);
@@ -903,6 +903,12 @@ async function handleClick(event) {
     else if (action==='toggle-user-menu') { state.userMenuOpen=!state.userMenuOpen; state.notificationOpen=false; state.mobileMenuOpen=false; render(); }
     else if (action==='toggle-mobile-menu') { event.preventDefault(); state.mobileMenuOpen=!state.mobileMenuOpen; state.userMenuOpen=false; state.notificationOpen=false; render(); if(state.mobileMenuOpen) requestAnimationFrame(()=>document.querySelector('.mobile-drawer-close')?.focus()); }
     else if (action==='open-call-picker-v1') openCallPickerV1();
+    else if (action==='open-project-call-v1') openProjectCallV1(target.dataset.project);
+    else if (action==='call-prejoin-mic-v1') togglePrejoinTrackV1('audio');
+    else if (action==='call-prejoin-camera-v1') togglePrejoinTrackV1('video');
+    else if (action==='call-prejoin-switch-v1') await switchPrejoinCameraV1();
+    else if (action==='call-prejoin-cancel-v1') closeCallPrejoinV1();
+    else if (action==='call-prejoin-confirm-v1') await confirmPrejoinCallV1();
     else if (action==='call-picker-close-v1') closeCallPickerV1();
     else if (action==='call-toggle-person-v1') toggleCallPersonV1(target.dataset.user);
     else if (action==='call-select-all-v1') selectAllCallPeopleV1();
@@ -1583,6 +1589,7 @@ let incomingCallV1=null;
 let callPollTimerV1=null;
 let callPickerSelectedV1=new Set();
 let callPickerModeV1='start';
+let callPrejoinV1=null;
 let callDockedV1=false;
 let callFocusUserV1=null;
 
@@ -1599,20 +1606,27 @@ function callUnavailableIdsV1(){
   }
   return ids;
 }
+function callPickerCapacityV1(){
+  if(callPickerModeV1!=='add')return 5;
+  const unavailable=callUnavailableIdsV1();
+  return Math.max(0,6-unavailable.size);
+}
 function renderCallPickerV1(){
   closeCallPickerV1();
   const adding=callPickerModeV1==='add';
   const unavailable=adding?callUnavailableIdsV1():new Set([state.user.id]);
   const teammates=state.members.filter(m=>m.status==='active'&&m.role!=='guest'&&!unavailable.has(m.user_id));
   const projectValue=adding?(activeCallV1?.projectId||''):(callProjectContextV1()||'');
+  const capacity=callPickerCapacityV1();
+  if(callPickerSelectedV1.size>capacity)callPickerSelectedV1=new Set([...callPickerSelectedV1].slice(0,capacity));
   const selectedCount=callPickerSelectedV1.size;
   const root=document.createElement('div');root.id='call-picker-v1';
   root.innerHTML=`<div class="call-modal-backdrop-v1"><section class="call-picker-card-v1" role="dialog" aria-modal="true" aria-label="${adding?'Ajouter des participants':'Nouvel appel'}">
     <header><div><span class="eyebrow">Communication</span><h2>${adding?'Ajouter des participants':'Nouvel appel'}</h2><p>${adding?'Invitez d’autres membres sans couper l’appel.':'Choisissez une ou plusieurs personnes à appeler.'}</p></div><button class="icon-button" data-action="call-picker-close-v1" aria-label="Fermer">✕</button></header>
     ${adding?'':`<label class="field"><span>Contexte facultatif</span><select id="call-project-v1"><option value="">Sans projet</option>${state.projects.filter(p=>p.status==='active').map(p=>`<option value="${escAttr(p.id)}" ${p.id===projectValue?'selected':''}>${esc(p.name)}</option>`).join('')}</select></label>`}
-    <div class="call-picker-tools-v1"><strong>${adding?'Personnes disponibles':'Qui voulez-vous appeler ?'}</strong>${teammates.length>1?`<button class="text-action" data-action="call-select-all-v1">${selectedCount===teammates.length?'Tout désélectionner':'Tout sélectionner'}</button>`:''}</div>
-    <div class="call-people-v1">${teammates.length?teammates.map(m=>{const on=callPickerSelectedV1.has(m.user_id);return `<button class="${on?'selected':''}" data-action="call-toggle-person-v1" data-user="${escAttr(m.user_id)}"><span class="avatar">${initials(displayName(m.user_id))}</span><span><strong>${esc(displayName(m.user_id))}</strong><small>${on?'Sélectionné':'Disponible'}</small></span><b>${on?'✓':'+'}</b></button>`}).join(''):'<div class="notice">Aucune autre personne disponible à inviter.</div>'}</div>
-    <footer class="call-picker-actions-v1"><button class="btn" data-action="call-picker-close-v1">Annuler</button><button class="btn primary" data-action="${adding?'call-confirm-add-v1':'call-confirm-start-v1'}" ${selectedCount?'':'disabled'}>${adding?'Ajouter':'Appeler'}${selectedCount?` (${selectedCount})`:''}</button></footer>
+    <div class="call-picker-tools-v1"><strong>${adding?'Personnes disponibles':'Qui voulez-vous appeler ?'} <small>· ${selectedCount}/${capacity}</small></strong>${teammates.length>1&&capacity>1?`<button class="text-action" data-action="call-select-all-v1">${selectedCount===Math.min(teammates.length,capacity)?'Tout désélectionner':'Sélectionner au maximum'}</button>`:''}</div>
+    <div class="call-people-v1">${teammates.length?teammates.map(m=>{const on=callPickerSelectedV1.has(m.user_id);const full=!on&&selectedCount>=capacity;return `<button class="${on?'selected':''}" data-action="call-toggle-person-v1" data-user="${escAttr(m.user_id)}" ${full?'disabled':''}><span class="avatar">${initials(displayName(m.user_id))}</span><span><strong>${esc(displayName(m.user_id))}</strong><small>${on?'Sélectionné':full?'Capacité atteinte':'Disponible'}</small></span><b>${on?'✓':'+'}</b></button>`}).join(''):'<div class="notice">Aucune autre personne disponible à inviter.</div>'}</div>
+    <footer class="call-picker-actions-v1"><span class="metric-label">6 participants maximum par visio</span><button class="btn" data-action="call-picker-close-v1">Annuler</button><button class="btn primary" data-action="${adding?'call-confirm-add-v1':'call-confirm-start-v1'}" ${selectedCount?'':'disabled'}>${adding?'Ajouter':'Continuer'}${selectedCount?` (${selectedCount})`:''}</button></footer>
   </section></div>`;
   document.body.appendChild(root);
 }
@@ -1620,31 +1634,82 @@ function openCallPickerV1(){
   if(activeCallV1){callPickerModeV1='add';callPickerSelectedV1=new Set();renderCallPickerV1();return;}
   callPickerModeV1='start';callPickerSelectedV1=new Set();renderCallPickerV1();
 }
+function openProjectCallV1(projectId){
+  if(activeCallV1){openAddPeopleV1();return;}
+  callPickerModeV1='start';callPickerSelectedV1=new Set();renderCallPickerV1();
+  const select=document.getElementById('call-project-v1');if(select)select.value=projectId||'';
+}
 function openAddPeopleV1(){if(!activeCallV1)return;callPickerModeV1='add';callPickerSelectedV1=new Set();renderCallPickerV1();}
 function toggleCallPersonV1(userId){
   const currentProject=callProjectContextV1();
-  if(callPickerSelectedV1.has(userId))callPickerSelectedV1.delete(userId);else callPickerSelectedV1.add(userId);
+  if(callPickerSelectedV1.has(userId))callPickerSelectedV1.delete(userId);
+  else{
+    const capacity=callPickerCapacityV1();
+    if(callPickerSelectedV1.size>=capacity){showToast('La visio peut accueillir 6 personnes maximum.',true);return;}
+    callPickerSelectedV1.add(userId);
+  }
   renderCallPickerV1();
   if(currentProject&&!document.getElementById('call-project-v1')?.value){const select=document.getElementById('call-project-v1');if(select)select.value=currentProject;}
 }
 function selectAllCallPeopleV1(){
   const adding=callPickerModeV1==='add';
   const unavailable=adding?callUnavailableIdsV1():new Set([state.user.id]);
-  const ids=state.members.filter(m=>m.status==='active'&&m.role!=='guest'&&!unavailable.has(m.user_id)).map(m=>m.user_id);
+  const capacity=callPickerCapacityV1();
+  const ids=state.members.filter(m=>m.status==='active'&&m.role!=='guest'&&!unavailable.has(m.user_id)).map(m=>m.user_id).slice(0,capacity);
   callPickerSelectedV1=callPickerSelectedV1.size===ids.length?new Set():new Set(ids);
   renderCallPickerV1();
 }
 async function confirmStartCallV1(){
   const targets=[...callPickerSelectedV1];if(!targets.length)return;
   const projectId=callProjectContextV1();
-  const call=first(await api.rpc('start_private_call_v2',{p_workspace_id:state.workspace.id,p_target_user_ids:targets,p_project_id:projectId}));
-  await connectCallV1(call,null);
+  const localStream=await localMediaV1();
+  closeCallPickerV1();
+  callPrejoinV1={targets,projectId,localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:localStream.getVideoTracks()[0]||null,cameraFacing:localStream.getVideoTracks()[0]?.getSettings?.().facingMode||'user'};
+  renderCallPrejoinV1();
 }
 async function confirmAddPeopleV1(){
   const ctx=activeCallV1;const targets=[...callPickerSelectedV1];if(!ctx||!targets.length)return;
   await api.rpc('invite_to_call_v1',{p_call_id:ctx.call.id,p_target_user_ids:targets});
   closeCallPickerV1();callPickerSelectedV1=new Set();showToast(targets.length>1?`${targets.length} invitations envoyées`:'Invitation envoyée');
   await refreshCallInvitesV1(ctx);renderActiveCallV1();
+}
+
+function renderCallPrejoinV1(){
+  const p=callPrejoinV1;if(!p)return;
+  let root=document.getElementById('call-prejoin-v1');if(!root){root=document.createElement('div');root.id='call-prejoin-v1';document.body.appendChild(root);}
+  root.innerHTML=`<div class="call-modal-backdrop-v1"><section class="call-prejoin-card-v1" role="dialog" aria-modal="true" aria-label="Prévisualisation visio">
+    <header><div><span class="eyebrow">Avant de rejoindre</span><h2>Vérifiez votre caméra et votre micro</h2><p>${p.targets.length} personne${p.targets.length>1?'s':''} sera${p.targets.length>1?'ont':''} appelée${p.targets.length>1?'s':''} après confirmation.</p></div><button class="icon-button" data-action="call-prejoin-cancel-v1" aria-label="Fermer">✕</button></header>
+    <div class="call-prejoin-preview-v1"><video id="call-prejoin-video-v1" autoplay playsinline muted></video><span>${p.cameraFacing==='environment'?'Caméra arrière':'Caméra frontale'}</span></div>
+    <div class="call-prejoin-controls-v1">
+      <button class="call-control-v2" data-action="call-prejoin-mic-v1"><span>${p.micTrack?.enabled?'🎙':'🔇'}</span><small>Micro</small></button>
+      <button class="call-control-v2" data-action="call-prejoin-camera-v1" ${p.cameraTrack?'':'disabled'}><span>${p.cameraTrack?.enabled?'📹':'🚫'}</span><small>Caméra</small></button>
+      ${p.cameraTrack?'<button class="call-control-v2" data-action="call-prejoin-switch-v1"><span>↻</span><small>Retourner</small></button>':''}
+    </div>
+    <footer class="call-picker-actions-v1"><button class="btn" data-action="call-prejoin-cancel-v1">Annuler</button><button class="btn primary" data-action="call-prejoin-confirm-v1">Appeler maintenant</button></footer>
+  </section></div>`;
+  const video=document.getElementById('call-prejoin-video-v1');if(video){video.srcObject=p.localStream;video.muted=true;void video.play().catch(()=>{});}
+}
+function togglePrejoinTrackV1(kind){
+  const p=callPrejoinV1;if(!p)return;const track=kind==='audio'?p.micTrack:p.cameraTrack;if(!track)return;track.enabled=!track.enabled;renderCallPrejoinV1();
+}
+async function switchPrejoinCameraV1(){
+  const p=callPrejoinV1;if(!p?.cameraTrack)return;
+  const nextFacing=p.cameraFacing==='environment'?'user':'environment';const previousEnabled=p.cameraTrack.enabled!==false;const old=p.cameraTrack;
+  try{
+    let stream;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:nextFacing},width:{ideal:1280},height:{ideal:720}},audio:false});}
+    catch{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:nextFacing},width:{ideal:1280},height:{ideal:720}},audio:false});}
+    const next=stream.getVideoTracks()[0];if(!next)throw new Error('Caméra indisponible');next.enabled=previousEnabled;
+    p.localStream.removeTrack(old);old.stop();p.localStream.addTrack(next);p.cameraTrack=next;p.cameraFacing=next.getSettings?.().facingMode||nextFacing;renderCallPrejoinV1();
+  }catch(error){console.warn('prejoin camera switch',error);showToast('Impossible de changer de caméra sur cet appareil.',true);}
+}
+function closeCallPrejoinV1(){
+  const p=callPrejoinV1;if(p)p.localStream?.getTracks().forEach(t=>t.stop());callPrejoinV1=null;document.getElementById('call-prejoin-v1')?.remove();
+}
+async function confirmPrejoinCallV1(){
+  const p=callPrejoinV1;if(!p)return;
+  const call=first(await api.rpc('start_private_call_v2',{p_workspace_id:state.workspace.id,p_target_user_ids:p.targets,p_project_id:p.projectId}));
+  const stream=p.localStream;callPrejoinV1=null;document.getElementById('call-prejoin-v1')?.remove();
+  await connectCallV1(call,null,stream);
 }
 
 async function callIceServersV1(){
@@ -1689,11 +1754,11 @@ async function processCallSignalV1(ctx,signal){
 async function syncCallMediaV1(ctx){
   await api.rpc('set_call_media_state_v1',{p_call_id:ctx.call.id,p_mic:Boolean(ctx.micTrack?.enabled),p_camera:Boolean(ctx.cameraTrack?.enabled),p_screen:Boolean(ctx.screenTrack)});
 }
-async function connectCallV1(call,targetUserId=null){
+async function connectCallV1(call,targetUserId=null,preparedStream=null){
   closeCallPickerV1();
-  const localStream=await localMediaV1();
+  const localStream=preparedStream||await localMediaV1();
   await api.rpc('join_call_v1',{p_call_id:call.id});
-  const initialCameraTrack=localStream.getVideoTracks()[0]||null;let canFlipCamera=false;try{const devices=await navigator.mediaDevices.enumerateDevices();canFlipCamera=devices.filter(d=>d.kind==='videoinput').length>1;}catch{}activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:initialCameraTrack,cameraFacing:initialCameraTrack?.getSettings?.().facingMode||'user',canFlipCamera,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),invites:[],closed:false};
+  const initialCameraTrack=localStream.getVideoTracks()[0]||null;let canFlipCamera=false;try{const devices=await navigator.mediaDevices.enumerateDevices();canFlipCamera=devices.filter(d=>d.kind==='videoinput').length>1;}catch{}activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:initialCameraTrack,cameraFacing:initialCameraTrack?.getSettings?.().facingMode||'user',canFlipCamera,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),invites:[],participants:[],closed:false};
   incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();await syncCallMediaV1(activeCallV1);renderActiveCallV1();void pollCallV1(activeCallV1);
 }
 async function startDirectCallV1(targetUserId){
@@ -1721,7 +1786,7 @@ async function pollCallV1(ctx){
       api.select('call_sessions',`select=*&id=eq.${ctx.call.id}&limit=1`),
       api.select('call_invites',`select=*&call_session_id=eq.${ctx.call.id}&order=created_at.asc`)
     ]);
-    ctx.invites=invites||[];
+    ctx.invites=invites||[];ctx.participants=participants||[];
     const activeIds=new Set(participants.map(p=>p.user_id));for(const p of participants)if(p.user_id!==state.user.id)await maybeOfferCallV1(ctx,p.user_id);
     for(const [id,pc] of [...ctx.peers])if(!activeIds.has(id)){pc.close();ctx.peers.delete(id);ctx.remoteStreams.delete(id);ctx.offered.delete(id);}
     for(const signal of signals)await processCallSignalV1(ctx,signal);
@@ -1765,17 +1830,24 @@ function renderActiveCallV1(){
   }
   root.className='';
   let stage='';
-  if(remotes.length===0){
-    stage=`<div class="call-stage-solo-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${pending.length?`<div class="call-ringing-v2"><strong>En attente de ${pending.map(i=>esc(displayName(i.invited_user_id))).join(', ')}</strong><small>Vous pouvez continuer à travailler en réduisant la visio.</small></div>`:''}</div>`;
+  const localScreen=Boolean(ctx.screenTrack);
+  const remoteScreenId=(ctx.participants||[]).find(p=>p.user_id!==state.user.id&&p.screen_enabled&&ctx.remoteStreams.has(p.user_id))?.user_id||null;
+  if(localScreen){
+    stage=`<div class="call-stage-speaker-v3 call-screen-priority-v1">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Votre écran',true)}<div class="call-filmstrip-v3">${remotes.map(([id,stream])=>`<button data-action="call-focus-v1" data-user="${escAttr(id)}">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}</button>`).join('')}</div></div>`;
+  }else if(remoteScreenId){
+    const screenStream=ctx.remoteStreams.get(remoteScreenId);
+    stage=`<div class="call-stage-speaker-v3 call-screen-priority-v1">${videoTileCallV1(`call-remote-${remoteScreenId}`,screenStream,`${displayName(remoteScreenId)} · écran partagé`)}<div class="call-filmstrip-v3"><button data-action="call-focus-v1" data-user="">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Vous',true)}</button>${remotes.filter(([id])=>id!==remoteScreenId).map(([id,stream])=>`<button data-action="call-focus-v1" data-user="${escAttr(id)}">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}</button>`).join('')}</div></div>`;
+  }else if(remotes.length===0){
+    stage=`<div class="call-stage-solo-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Vous',true)}${pending.length?`<div class="call-ringing-v2"><strong>En attente de ${pending.map(i=>esc(displayName(i.invited_user_id))).join(', ')}</strong><small>Vous pouvez continuer à travailler en réduisant la visio.</small></div>`:''}</div>`;
   }else if(remotes.length===1){
     const [id,stream]=remotes[0];
-    stage=`<div class="call-stage-focus-v2">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}<div class="call-pip-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}</div></div>`;
+    stage=`<div class="call-stage-focus-v2">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}<div class="call-pip-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Vous',true)}</div></div>`;
   }else{
     const focusId=callFocusUserV1&&ctx.remoteStreams.has(callFocusUserV1)?callFocusUserV1:null;
     if(focusId){
       stage=`<div class="call-stage-speaker-v3">${videoTileCallV1(`call-remote-${focusId}`,ctx.remoteStreams.get(focusId),displayName(focusId))}<div class="call-filmstrip-v3"><button data-action="call-focus-v1" data-user="">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Vous',true)}</button>${remotes.filter(([id])=>id!==focusId).map(([id,stream])=>`<button data-action="call-focus-v1" data-user="${escAttr(id)}">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}</button>`).join('')}</div></div>`;
     }else{
-      stage=`<div class="call-grid-v1 call-grid-many-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>`<button class="call-focus-tile-v3" data-action="call-focus-v1" data-user="${escAttr(id)}">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}</button>`).join('')}</div>`;
+      stage=`<div class="call-grid-v1 call-grid-many-v2">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,'Vous',true)}${remotes.map(([id,stream])=>`<button class="call-focus-tile-v3" data-action="call-focus-v1" data-user="${escAttr(id)}">${videoTileCallV1(`call-remote-${id}`,stream,displayName(id))}</button>`).join('')}</div>`;
     }
   }
   const statusHtml=(ctx.invites||[]).length?`<div class="call-participant-status-v2">${ctx.invites.map(i=>`<span class="${i.status}"><b>${esc(displayName(i.invited_user_id))}</b> · ${callInviteStatusLabelV1(i)}</span>`).join('')}</div>`:'';
