@@ -55,6 +55,11 @@ function resetViewScrollV52(){
     const content=document.querySelector('.live-content');
     if(main)main.scrollTop=0;
     if(content)content.scrollTop=0;
+    const heading=content?.querySelector('h1');
+    if(heading){
+      heading.setAttribute('tabindex','-1');
+      try{heading.focus({preventScroll:true});}catch{}
+    }
   });
 }
 
@@ -97,9 +102,22 @@ async function boot() {
       event.preventDefault();
       if (state.user && state.workspace) { state.modal={type:'search'}; state.searchQuery=''; render(); setTimeout(()=>document.getElementById('global-search-input')?.focus(),0); }
     }
+    if(event.key==='Tab'&&state.mobileMenuOpen){
+      const drawer=document.querySelector('.mobile-drawer');
+      const focusable=drawer?[...drawer.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]:[];
+      if(focusable.length){
+        const first=focusable[0],last=focusable[focusable.length-1];
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+      }
+    }
     if (event.key==='Escape') {
       if (state.modal) { state.modal=null; state.searchQuery=''; render(); }
-      else if (state.mobileMenuOpen || state.userMenuOpen || state.notificationOpen) { state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render(); }
+      else if (state.mobileMenuOpen || state.userMenuOpen || state.notificationOpen) {
+        const menuWasOpen=state.mobileMenuOpen;
+        state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render();
+        if(menuWasOpen)requestAnimationFrame(()=>document.querySelector('.mobile-menu-button')?.focus());
+      }
     }
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user && !state.modal) smartSync({ force: true }); });
@@ -357,12 +375,12 @@ function shell(content, route) {
     : [['team','Équipe',ICONS.team,'#/team'],['settings','Paramètres',ICONS.settings,'#/settings']];
   const active = key => route.name===key || (route.name==='project'&&key==='projects');
   const navHtml = primaryNav.map(([key,label,icon,href]) => `<a href="${href}" class="${active(key)?'active':''}" ${active(key)?'aria-current="page"':''}><span class="nav-icon">${icon}</span><span class="nav-label">${esc(label)}</span>${key==='work'&&attentionCount()?`<span class="nav-count">${attentionCount()}</span>`:''}</a>`).join('');
-  const secondaryHtml = secondaryNav.map(([key,label,icon,href]) => `<a href="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="nav-label">${esc(label)}</span></a>`).join('');
+  const secondaryHtml = secondaryNav.map(([key,label,icon,href]) => `<a href="${href}" class="${active(key)?'active':''}" ${active(key)?'aria-current="page"':''}><span class="nav-icon">${icon}</span><span class="nav-label">${esc(label)}</span></a>`).join('');
   const recentProjects=state.projects.slice(0,3);
   const recentHtml=recentProjects.length?`<div class="sidebar-context"><div class="sidebar-section-label">PROJETS ACTIFS</div><div class="sidebar-projects">${recentProjects.map(p=>{const h=projectHealthInfo(p);return `<a href="#/projects/${p.id}/overview"><span class="project-dot ${h.tone}"></span><span>${esc(p.name)}</span></a>`}).join('')}${state.projects.length>3?`<a class="sidebar-all-projects" href="#/projects">Tous les projets <span>→</span></a>`:''}</div></div>`:'';
   const userMenu=state.userMenuOpen?`<div class="user-menu-panel"><div class="user-menu-head">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${esc(state.user.email||'')}</small></div></div><a href="#/profile">Mon profil</a>${external?'':`<a href="#/settings">Paramètres de l’espace</a>`}<button data-action="signout">Se déconnecter</button></div>`:'';
   const mobilePrimary=primaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}" ${active(key)?'aria-current="page"':''}><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span>${key==='work'&&attentionCount()?`<b>${attentionCount()}</b>`:''}</a>`).join('');
-  const mobileSecondary=secondaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span></a>`).join('');
+  const mobileSecondary=secondaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}" ${active(key)?'aria-current="page"':''}><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span></a>`).join('');
   const mobileDrawer=state.mobileMenuOpen?`<div class="mobile-menu-backdrop" data-action="toggle-mobile-menu" aria-hidden="true"></div><aside class="mobile-drawer" id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation 2b2c"><div class="mobile-drawer-head">${brandHtml()}<button class="mobile-drawer-close" data-action="toggle-mobile-menu" aria-label="Fermer le menu"><span aria-hidden="true">×</span></button></div><div class="mobile-drawer-scroll"><div class="mobile-drawer-workspace"><small>${external?'Espace partagé':'Espace actif'}</small><strong>${esc(state.workspace.name)}</strong></div><button class="mobile-drawer-search" data-action="open-search"><span>${ICONS.search}</span><span>Rechercher dans ${BRAND_NAME}</span><kbd>Ctrl K</kbd></button>${recentProjects.length?`<div class="mobile-drawer-projects"><span class="sidebar-section-label">PROJETS ACTIFS</span>${recentProjects.map(p=>`<a href="#/projects/${p.id}/overview" data-nav="#/projects/${p.id}/overview"><span class="project-dot ${projectHealthInfo(p).tone}"></span>${esc(p.name)}</a>`).join('')}</div>`:''}<div class="mobile-drawer-secondary"><span class="sidebar-section-label">${external?'PARTAGE':'OUTILS & ESPACE'}</span><nav class="mobile-drawer-nav">${mobileSecondary}</nav></div></div><div class="mobile-drawer-foot"><a href="#/profile" data-nav="#/profile">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button data-action="signout"><span aria-hidden="true">↪</span> Se déconnecter</button></div></aside>`:'';
   const mobileTabs = external
     ? [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['calendar','Calendrier',ICONS.calendar,'#/calendar'],['library','Fichiers',ICONS.library,'#/library']]
@@ -373,7 +391,7 @@ function shell(content, route) {
       ${brandHtml()}
       <div class="live-workspace"><small>${external?'Espace partagé':'Espace actif'}</small><strong>${esc(state.workspace.name)}</strong>${external?'<span class="external-badge">Vue partenaire</span>':''}</div>
       <div class="sidebar-scroll-area"><nav class="live-nav primary-nav">${navHtml}</nav>${recentHtml}<div class="sidebar-space-section"><div class="sidebar-section-label">${external?'PARTAGE':'ESPACE'}</div><nav class="live-nav secondary">${secondaryHtml}</nav></div></div>
-      <div class="live-sidebar-foot"><a class="live-user" href="#/profile">${avatarHtml(state.user.id,true)}<div class="live-user-meta"><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button class="sidebar-user-more" data-action="toggle-user-menu" aria-label="Menu utilisateur">•••</button></div>
+      <div class="live-sidebar-foot"><a class="live-user" href="#/profile">${avatarHtml(state.user.id,true)}<div class="live-user-meta"><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button class="sidebar-user-more" data-action="toggle-user-menu" aria-label="Menu utilisateur" aria-expanded="${state.userMenuOpen?'true':'false'}">•••</button></div>
     </aside>
     <main class="live-main">
       <header class="live-topbar v3-topbar v41-topbar v42-topbar">
@@ -382,9 +400,9 @@ function shell(content, route) {
         ${state.syncError?`<button class="sync-alert-v432" data-action="retry-sync" title="${escAttr(state.syncError)}">Synchronisation interrompue · Réessayer</button>`:''}
         <div class="live-actions">
           ${external?'':`<button class="top-action-label call-button-v1" data-action="open-call-picker-v1" aria-label="Appeler"><span class="top-action-icon">${lineIcon('<rect x="4" y="6" width="12" height="12" rx="2"/><path d="m16 10 4-2v8l-4-2z"/>')}</span><span class="top-action-text">Appeler</span></button>`}
-          <button class="top-action-label notification-button" data-action="toggle-notifications" aria-label="Notifications"><span class="top-action-icon">${ICONS.bell}</span><span class="top-action-text">Notifications</span>${unread?`<span class="badge inline-badge">${unread>99?'99+':unread}</span>`:''}</button>
+          <button class="top-action-label notification-button" data-action="toggle-notifications" aria-label="Notifications" aria-expanded="${state.notificationOpen?'true':'false'}"><span class="top-action-icon">${ICONS.bell}</span><span class="top-action-text">Notifications</span>${unread?`<span class="badge inline-badge">${unread>99?'99+':unread}</span>`:''}</button>
           ${external?'':`<button class="btn primary quick-create-label" data-action="quick-add" aria-label="Créer">＋ Créer</button>`}
-          <button class="top-profile top-profile-button" data-action="toggle-user-menu">${avatarHtml(state.user.id)}<span>${esc(firstName(displayName(state.user.id)))}</span><span class="chevron">⌄</span></button>
+          <button class="top-profile top-profile-button" data-action="toggle-user-menu" aria-label="Menu du profil" aria-expanded="${state.userMenuOpen?'true':'false'}">${avatarHtml(state.user.id)}<span>${esc(firstName(displayName(state.user.id)))}</span><span class="chevron">⌄</span></button>
         </div>
         ${state.notificationOpen ? renderNotificationPanel() : ''}
         ${userMenu}
@@ -954,7 +972,7 @@ function renderModal(modal) {
   return '';
 }
 
-function modalFrame(title, subtitle, body) { const contextual=/request-detail-v4|approval-detail-v4|meeting-workflow-v4|attention-action-form-v43|activity-detail-v43/.test(body);return `<div class="modal-backdrop ${contextual?'context-drawer-backdrop-v43':''}" data-action="backdrop"><div class="modal ${contextual?'context-drawer-v43':''}" role="dialog" aria-modal="true"><div class="card-head"><div><h2>${esc(title)}</h2><p style="margin:4px 0 0;color:var(--live-muted)">${esc(subtitle||'')}</p></div><button class="icon-button" data-action="close-modal" style="color:#667085">✕</button></div>${body}</div></div>`; }
+function modalFrame(title, subtitle, body) { const contextual=/request-detail-v4|approval-detail-v4|meeting-workflow-v4|attention-action-form-v43|activity-detail-v43/.test(body);const titleId='modal-title-'+Math.random().toString(36).slice(2,9);return `<div class="modal-backdrop ${contextual?'context-drawer-backdrop-v43':''}" data-action="backdrop"><div class="modal ${contextual?'context-drawer-v43':''}" role="dialog" aria-modal="true" aria-labelledby="${titleId}"><div class="card-head"><div><h2 id="${titleId}">${esc(title)}</h2><p style="margin:4px 0 0;color:var(--live-muted)">${esc(subtitle||'')}</p></div><button class="icon-button" type="button" data-action="close-modal" aria-label="Fermer" style="color:#667085">✕</button></div>${body}</div></div>`; }
 
 async function handleClick(event) {
   const target = event.target.closest('[data-action],[data-nav]');
