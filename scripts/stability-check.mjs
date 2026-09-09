@@ -28,14 +28,14 @@ const communicationDeleteDb=read('supabase/migrations/20260908221034_communicati
 function assert(ok,msg){if(!ok){console.error(`STABILITY CHECK FAILED: ${msg}`);process.exit(1);}}
 function all(text,items,label){for(const item of items)assert(text.includes(item),`${label}: ${item}`);}
 
-assert(worker.includes('v4.4.16-multiparty-calls'),'worker health version');
-assert(index.includes('assets/boot.js?build=456'),'cache bust 456');
+assert(worker.includes('v4.4.17-call-continuity'),'worker health version');
+assert(index.includes('assets/boot.js?build=457'),'cache bust 457');
 all(index,['assets/call-native-v1.css','assets/resources-workspace-v1.css','assets/resources-workspace-v2.css','assets/delivery-workflow-v1.css','assets/library-workspace-v1.css','assets/communication-workspace-v1.css'],'stylesheet missing');
-all(boot,["const VERSION = 'v4.4.16-multiparty-calls'",'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','delivery-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','library-workspace-v1.js'],'boot contract missing');
+all(boot,["const VERSION = 'v4.4.17-call-continuity'",'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','delivery-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','library-workspace-v1.js'],'boot contract missing');
 assert(boot.indexOf('delivery-workflow-v1.js')<boot.indexOf('workflow-backend-safe-v1.js'),'delivery must register before safe bridge');
 for(const forbidden of ['resources-workspace-v1.js?','resources-workspace-form-guard-v1.js','invite-prelive-v2.js','auth-recovery-v1.js','home-polish.js','team-access-v1.js','team-access-safety-v2.js','team-access-submit-safety-v3.js','invite-lifecycle-v1.js','approval-flow-safety-v1.js','product-coherence-v1.js','daily-work-v1.js','planning-clarity-v1.js','project-lifecycle-safety-v1.js','project-flow-v1.js','communication-memory-v1.js','meeting-agenda-v1.js','resource-model-v1.js','workflow-backend-v2.js','project-progress-v2.js','ui-quality-v1.js','dialog-focus-safety-v2.js']) assert(!boot.includes(forbidden),`forbidden enhancer loaded: ${forbidden}`);
 
-all(live,['open-call-picker-v1','start_private_call_v2','invite_to_call_v1','respond_call_invite_v1','send_call_signal_v1','call-stage-focus-v2','call-pip-v2','getDisplayMedia','RTCPeerConnection','call-switch-camera-v1','facingMode:{ideal:\'user\'}','create_workspace_invite_v2','set_workspace_member_access_v1','get_project_summaries_v1','get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise'],'core native contract missing');
+all(live,['open-call-picker-v1','start_private_call_v2','invite_to_call_v1','respond_call_invite_v1','send_call_signal_v1','call-stage-focus-v2','call-pip-v2','call-minimize-v1','2b2c:start-call','call-stage-speaker-v3','getDisplayMedia','RTCPeerConnection','call-switch-camera-v1','facingMode:{ideal:\'user\'}','create_workspace_invite_v2','set_workspace_member_access_v1','get_project_summaries_v1','get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise'],'core native contract missing');
 assert(!live.includes('Number(config.pollIntervalMs || 15000)'),'legacy full polling remains');
 assert(!live.includes('new MutationObserver'),'core MutationObserver');
 
@@ -59,7 +59,7 @@ all(library,["api.select('project_resources'","api.select('deliverables'","api.s
 assert(!library.includes('new MutationObserver'),'library MutationObserver');
 assert(libraryCss.includes('.library-workspace-v1'),'library css');
 
-all(communication,['send_message_v3','edit_message_v2','delete_message_v3','mark_conversation_read_v3','search_messages_v1','get_conversation_capabilities_v1','get_or_create_direct_v2','create_group_direct_v2','create_team_topic_v2','create_project_topic_v2','get_or_create_meeting_conversation_v1','link_direct_to_project_v3','set_conversation_notifications_v2','set_conversation_status_v2','create_action_from_message_v2','create_request_from_message_v2','create_decision_from_message_v2','get_workspace_sync_digest_v1',"window.addEventListener('hashchange'",'#/messages/','MAX_FILES=10','MAX_FILE_SIZE=25*1024*1024','composerHasDraft',"api.upload('workspace-files'"],'communication contract missing');
+all(communication,['send_message_v3','edit_message_v2','delete_message_v3','mark_conversation_read_v3','search_messages_v1','get_conversation_capabilities_v1','get_or_create_direct_v2','create_group_direct_v2','create_team_topic_v2','create_project_topic_v2','get_or_create_meeting_conversation_v1','link_direct_to_project_v3','set_conversation_notifications_v2','set_conversation_status_v2','create_action_from_message_v2','create_request_from_message_v2','create_decision_from_message_v2','get_workspace_sync_digest_v1',"window.addEventListener('hashchange'",'#/messages/','MAX_FILES=10','data-cw-action="call-conversation"','2b2c:start-call','MAX_FILE_SIZE=25*1024*1024','composerHasDraft',"api.upload('workspace-files'"],'communication contract missing');
 assert(!communication.includes('new MutationObserver'),'communication MutationObserver');
 assert(!communication.includes("api.insert('messages'"),'direct message insert');
 assert(!communication.includes("api.insert('mentions'"),'direct mention insert');
