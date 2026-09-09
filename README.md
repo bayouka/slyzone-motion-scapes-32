@@ -17,7 +17,7 @@ Canonical source of the 4b4c collaborative workspace. The product is branded **2
 - `wrangler.jsonc` — stable Cloudflare Worker configuration named `4b4c`.
 - Supabase production backend — project `wexfzhegiewhldkugtow`.
 
-Production version: **v4.5.8-nav-dead-css / build 507**.
+Production version: **v4.5.8-nav-dead-css / build 508**.
 
 ## Product contract
 
@@ -67,7 +67,7 @@ npm ci
 npm run check
 ```
 
-The dedicated deploy workflow also runs stability checks and production smoke probes before it is considered successful.
+GitHub Actions must not be used for production deployments while Actions credits are unavailable. Production releases must use a direct Cloudflare deployment path and must still run the same stability checks and production smoke probes before they are considered successful.
 
 Historical one-off migration workflows are archived and intentionally non-executable. They must not be re-enabled without reviewing them against the current runtime.
 
