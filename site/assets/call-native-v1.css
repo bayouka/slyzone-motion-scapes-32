@@ -100,3 +100,20 @@
   .call-control-v2{min-width:60px;min-height:54px;border-radius:15px}
   .call-control-v2 span{font-size:17px}.call-control-v2 small{font-size:8.5px}
 }
+
+/* v3 continuity: work while calling + focused multiparty */
+#active-call-v1.call-docked-v3{pointer-events:none;inset:auto;right:16px;bottom:84px;width:min(360px,calc(100vw - 32px));height:auto;z-index:1290}
+.call-mini-v3{pointer-events:auto;display:grid;grid-template-columns:92px 1fr auto auto;align-items:center;gap:10px;padding:8px;border:1px solid rgba(255,255,255,.85);border-radius:20px;background:rgba(250,248,244,.96);box-shadow:0 18px 55px rgba(16,24,40,.28);backdrop-filter:blur(18px)}
+.call-mini-video-v3{width:92px;height:68px;overflow:hidden;border-radius:14px;background:#252c38}.call-mini-video-v3 .call-tile-v1{width:100%;height:100%;min-height:0;aspect-ratio:auto;border-radius:0}.call-mini-video-v3 .call-tile-v1 span{display:none}
+.call-mini-meta-v3{min-width:0}.call-mini-meta-v3 strong,.call-mini-meta-v3 small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.call-mini-meta-v3 strong{font-size:12px}.call-mini-meta-v3 small{margin-top:2px;color:#747d89;font-size:10px}
+.call-mini-action-v3,.call-mini-hang-v3{border:0;border-radius:12px;min-height:38px;padding:0 10px;background:#ebe8ff;color:#5549b8;font-weight:800}.call-mini-hang-v3{width:40px;padding:0;background:#a94f60;color:white}
+.call-focus-tile-v3{display:block;min-width:0;padding:0;border:0;border-radius:22px;background:transparent;overflow:hidden}.call-focus-tile-v3>.call-tile-v1{width:100%;height:100%}
+.call-stage-speaker-v3{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%;gap:8px}.call-stage-speaker-v3>.call-tile-v1{width:100%;height:100%;min-height:300px;aspect-ratio:auto}
+.call-filmstrip-v3{display:flex;justify-content:center;gap:8px;overflow-x:auto}.call-filmstrip-v3>button{flex:0 0 140px;height:90px;padding:0;border:0;border-radius:14px;overflow:hidden;background:#252c38}.call-filmstrip-v3 .call-tile-v1{width:100%;height:100%;min-height:0;aspect-ratio:auto;border-radius:0}
+@media(max-width:767px){
+ #active-call-v1.call-docked-v3{right:10px;bottom:78px;width:calc(100vw - 20px)}
+ .call-mini-v3{grid-template-columns:74px 1fr auto auto;border-radius:18px}.call-mini-video-v3{width:74px;height:56px}
+ .call-mini-action-v3{font-size:10px;padding:0 8px}.call-mini-hang-v3{width:38px}
+ .call-stage-speaker-v3>.call-tile-v1{min-height:0}.call-filmstrip-v3{justify-content:flex-start}.call-filmstrip-v3>button{flex-basis:105px;height:76px}
+ .call-head-actions-v2 .call-end-all-v2{display:none}
+}
