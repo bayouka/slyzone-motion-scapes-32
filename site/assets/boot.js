@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.0-soft-spatial';
+  const VERSION = 'v4.5.1-mobile-nav';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
