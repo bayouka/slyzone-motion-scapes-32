@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.4.13-communication-v3';
+  const VERSION = 'v4.4.14-native-calls';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -33,7 +33,6 @@
     // Delivery is registered before the legacy-safe bridge so it owns project closure clicks.
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
-    .then(() => import(`./call-native-v1.js?${VERSION}`).catch((error) => { console.error('[2b2c] native calls unavailable', error); }))
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] communication workspace unavailable; native messages view kept', error);
     }))
