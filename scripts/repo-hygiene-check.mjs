@@ -44,7 +44,9 @@ assert(worker.includes("'permissions-policy'"), 'missing Permissions-Policy');
 const markerDir = '.github';
 if (fs.existsSync(markerDir)) {
   const markers = fs.readdirSync(markerDir).filter(name => name.startsWith('deploy-once-'));
-  assert(markers.length === 0, `temporary deploy markers left behind: ${markers.join(', ')}`);
+  const markerAllowed = process.env.ALLOW_DEPLOY_ONCE_MARKER === '1';
+  assert(markerAllowed || markers.length === 0, `temporary deploy markers left behind: ${markers.join(', ')}`);
+  assert(!markerAllowed || markers.length <= 1, `more than one temporary deploy marker present: ${markers.join(', ')}`);
 }
 
 const archivedWorkflows = [
