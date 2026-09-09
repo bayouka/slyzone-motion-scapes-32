@@ -1,11 +1,7 @@
 name: Native project progress migration v2
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/native-project-progress-run.py'
-      - '.github/workflows/native-progress-migrate-v2.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
