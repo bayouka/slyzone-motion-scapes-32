@@ -910,6 +910,7 @@ async function handleClick(event) {
     else if (action==='call-decline-v1') await declineIncomingCallV1(target.dataset.call);
     else if (action==='call-mic-v1') await toggleMicV1();
     else if (action==='call-camera-v1') await toggleCameraV1();
+    else if (action==='call-switch-camera-v1') await switchCameraV1();
     else if (action==='call-screen-v1') await toggleScreenV1();
     else if (action==='call-leave-v1') await leaveActiveCallV1();
     else if (action==='call-end-v1') await endActiveCallV1();
@@ -1603,7 +1604,7 @@ async function callIceServersV1(){
 }
 async function localMediaV1(){
   const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
-  try{return await navigator.mediaDevices.getUserMedia({audio,video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24,max:30}}});}
+  try{return await navigator.mediaDevices.getUserMedia({audio,video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24,max:30}}});}
   catch(cameraError){try{return await navigator.mediaDevices.getUserMedia({audio,video:false});}catch{throw cameraError;}}
 }
 async function sendCallSignalV1(ctx,toUser,type,payload){
@@ -1639,7 +1640,7 @@ async function connectCallV1(call,targetUserId=null){
   closeCallPickerV1();
   const localStream=await localMediaV1();
   await api.rpc('join_call_v1',{p_call_id:call.id});
-  activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:localStream.getVideoTracks()[0]||null,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),closed:false};
+  const initialCameraTrack=localStream.getVideoTracks()[0]||null;let canFlipCamera=false;try{const devices=await navigator.mediaDevices.enumerateDevices();canFlipCamera=devices.filter(d=>d.kind==='videoinput').length>1;}catch{}activeCallV1={call,targetUserId,projectId:call.project_id||null,localStream,localPreviewStream:localStream,micTrack:localStream.getAudioTracks()[0]||null,cameraTrack:initialCameraTrack,cameraFacing:initialCameraTrack?.getSettings?.().facingMode||'user',canFlipCamera,screenTrack:null,iceServers:await callIceServersV1(),peers:new Map(),remoteStreams:new Map(),offered:new Set(),signalIds:new Set(),closed:false};
   incomingCallV1=null;document.getElementById('incoming-call-v1')?.remove();await syncCallMediaV1(activeCallV1);renderActiveCallV1();void pollCallV1(activeCallV1);
 }
 async function startDirectCallV1(targetUserId){
@@ -1682,11 +1683,40 @@ function renderActiveCallV1(){
   const ctx=activeCallV1;if(!ctx)return;
   let root=document.getElementById('active-call-v1');if(!root){root=document.createElement('div');root.id='active-call-v1';document.body.appendChild(root);}
   const remotes=[...ctx.remoteStreams.entries()];
-  root.innerHTML=`<section class="call-shell-v1"><header><div><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):'Appel d’équipe')}</strong><small>${remotes.length+1} participant${remotes.length?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div></header><div class="call-grid-v1">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>videoTileCallV1(`call-remote-${id}`,stream,displayName(id))).join('')}${remotes.length?'':'<div class="call-wait-v1"><strong>En attente de l’autre participant…</strong></div>'}</div><footer><button class="btn" data-action="call-mic-v1">${ctx.micTrack?.enabled?'🎙 Micro':'🔇 Micro'}</button><button class="btn" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}>${ctx.cameraTrack?.enabled?'📹 Caméra':'🚫 Caméra'}</button><button class="btn" data-action="call-screen-v1">${ctx.screenTrack?'▣ Arrêter partage':'▣ Partager écran'}</button><button class="btn danger" data-action="call-leave-v1">Quitter</button>${ctx.call.started_by===state.user.id?'<button class="btn danger" data-action="call-end-v1">Terminer pour tous</button>':''}</footer></section>`;
+  root.innerHTML=`<section class="call-shell-v1"><header><div><strong>${esc(ctx.targetUserId?displayName(ctx.targetUserId):'Appel d’équipe')}</strong><small>${remotes.length+1} participant${remotes.length?'s':''}${ctx.projectId?` · ${esc(projectName(ctx.projectId))}`:''}</small></div></header><div class="call-grid-v1">${videoTileCallV1('call-local-v1',ctx.localPreviewStream,ctx.screenTrack?'Votre écran':'Vous',true)}${remotes.map(([id,stream])=>videoTileCallV1(`call-remote-${id}`,stream,displayName(id))).join('')}${remotes.length?'':'<div class="call-wait-v1"><strong>En attente de l’autre participant…</strong></div>'}</div><footer><button class="btn" data-action="call-mic-v1">${ctx.micTrack?.enabled?'🎙 Micro':'🔇 Micro'}</button><button class="btn" data-action="call-camera-v1" ${ctx.cameraTrack?'':'disabled'}>${ctx.cameraTrack?.enabled?'📹 Caméra':'🚫 Caméra'}</button>${ctx.canFlipCamera?'<button class="btn" data-action="call-switch-camera-v1">↻ Retourner</button>':''}<button class="btn" data-action="call-screen-v1">${ctx.screenTrack?'▣ Arrêter partage':'▣ Partager écran'}</button><button class="btn danger" data-action="call-leave-v1">Quitter</button>${ctx.call.started_by===state.user.id?'<button class="btn danger" data-action="call-end-v1">Terminer pour tous</button>':''}</footer></section>`;
   attachCallVideosV1(ctx);
 }
 async function toggleMicV1(){if(!activeCallV1?.micTrack)return;activeCallV1.micTrack.enabled=!activeCallV1.micTrack.enabled;await syncCallMediaV1(activeCallV1);renderActiveCallV1();}
 async function toggleCameraV1(){if(!activeCallV1?.cameraTrack)return;activeCallV1.cameraTrack.enabled=!activeCallV1.cameraTrack.enabled;await syncCallMediaV1(activeCallV1);renderActiveCallV1();}
+async function switchCameraV1(){
+  const ctx=activeCallV1;if(!ctx||!navigator.mediaDevices?.getUserMedia)return;
+  const oldTrack=ctx.cameraTrack;const previousEnabled=oldTrack?.enabled!==false;
+  const nextFacing=ctx.cameraFacing==='environment'?'user':'environment';
+  let nextTrack=null;
+  try{
+    if(oldTrack)oldTrack.stop();
+    let stream;
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:nextFacing},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24,max:30}},audio:false});}
+    catch{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:nextFacing},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24,max:30}},audio:false});}
+    nextTrack=stream.getVideoTracks()[0]||null;if(!nextTrack)throw new Error('Aucune autre caméra disponible.');
+    nextTrack.enabled=previousEnabled;
+    if(oldTrack)ctx.localStream.removeTrack(oldTrack);
+    ctx.localStream.addTrack(nextTrack);
+    ctx.cameraTrack=nextTrack;
+    ctx.cameraFacing=nextTrack.getSettings?.().facingMode||nextFacing;
+    if(!ctx.screenTrack){
+      for(const pc of ctx.peers.values()){
+        const sender=pc.getSenders().find(x=>x.track?.kind==='video');
+        if(sender)await sender.replaceTrack(nextTrack);
+      }
+      ctx.localPreviewStream=ctx.localStream;
+    }
+    await syncCallMediaV1(ctx);renderActiveCallV1();showToast(ctx.cameraFacing==='environment'?'Caméra arrière activée':'Caméra frontale activée');
+  }catch(error){
+    console.warn('camera switch failed',error);
+    showToast('Impossible de changer de caméra sur cet appareil.',true);
+  }
+}
 async function toggleScreenV1(){
   const ctx=activeCallV1;if(!ctx)return;
   if(ctx.screenTrack){const old=ctx.screenTrack;ctx.screenTrack=null;old.onended=null;old.stop();if(ctx.cameraTrack){for(const pc of ctx.peers.values()){const s=pc.getSenders().find(x=>x.track?.kind==='video');if(s)await s.replaceTrack(ctx.cameraTrack);}}ctx.localPreviewStream=ctx.localStream;await syncCallMediaV1(ctx);renderActiveCallV1();return;}
