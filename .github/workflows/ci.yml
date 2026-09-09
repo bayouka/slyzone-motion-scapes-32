@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          grep -Fq "const VERSION = 'v4.5.6-css-prune'" site/assets/boot.js
+          grep -Fq "const VERSION = 'v4.5.7-nav-cleanup'" site/assets/boot.js
           grep -Fq "import(`./live.js?" site/assets/boot.js
           grep -Fq "delivery-workflow-v1.js" site/assets/boot.js
           grep -Fq "workflow-backend-safe-v1.js" site/assets/boot.js
@@ -39,15 +39,15 @@ jobs:
           ! grep -Fq "call-native-v1.js" site/assets/boot.js
           ! grep -Fq "MutationObserver(" site/assets/boot.js
 
-          grep -Fq "assets/design-v5.css?v=5.0.2-navigation-flow" site/index.html
-          grep -Fq "assets/boot.js?build=506" site/index.html
+          grep -Fq "assets/design-v5.css?v=5.0.3-nav-cleanup" site/index.html
+          grep -Fq "assets/boot.js?build=507" site/index.html
           grep -Fq "resetViewScrollV52" site/assets/live.js
           grep -Fq "v52-mobile-primary" site/assets/live.js
           grep -Fq "open-call-picker-v1" site/assets/live.js
           grep -Fq "heartbeat_call_v1" site/assets/live.js
 
           grep -Fq "app: '4b4c'" src/worker.js
-          grep -Fq "v4.5.6-css-prune" src/worker.js
+          grep -Fq "v4.5.7-nav-cleanup" src/worker.js
 
       - name: Repository safety contract
         shell: bash
