@@ -55,8 +55,8 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.5.7-nav-cleanup"'
-          probe /assets/boot.js "v4.5.7-nav-cleanup"
+          probe /health '"version":"v4.5.8-nav-dead-css"'
+          probe /assets/boot.js "v4.5.8-nav-dead-css"
           probe /assets/boot.js "communication-workspace-v1.js"
           probe /assets/live.js "open-call-picker-v1"
           probe /assets/live.js "start_private_call_v2"
@@ -108,7 +108,7 @@ jobs:
           probe /assets/design-v5.css "V5.0.2 — mobile navigation architecture & scroll behavior"
           probe /assets/design-v5.css "mobile navigation architecture & scroll behavior"
           probe /assets/design-v5.css "position:fixed!important"
-          probe / "assets/design-v5.css?v=5.0.3-nav-cleanup"
+          probe / "assets/design-v5.css?v=5.0.4-nav-dead-css"
           probe /assets/call-native-v1.css "call UX completeness"
           probe /assets/call-native-v1.css "professional call chrome"
           probe /assets/live.js "open-project-call-v1"
@@ -121,5 +121,5 @@ jobs:
           probe /assets/live.js "call-button-v1[data-action=\"open-call-picker-v1\"]"
           probe /assets/call-native-v1.css "call-prejoin-card-v1"
           probe /assets/call-native-v1.css "call-screen-priority-v1"
-          probe / "assets/boot.js?build=507"
+          probe / "assets/boot.js?build=508"
           probe / '2b2c — Projets qui avancent ensemble'
