@@ -36,7 +36,10 @@ const cssRefs = [...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)
 assert(cssRefs.length > 0, 'no stylesheets found in index');
 assert(cssRefs.at(-1)?.startsWith('assets/design-v5.css?'), 'design-v5.css must be the final stylesheet');
 assert(cssRefs.filter(x => x.startsWith('assets/design-v5.css?')).length === 1, 'design-v5.css must be loaded exactly once');
-assert(cssRefs.indexOf('assets/v434-polish.css') < cssRefs.indexOf('assets/v435-final.css'), 'legacy CSS must preserve chronological cascade: v434 before v435');
+assert(cssRefs.includes('assets/core-legacy-v455.css?v=4.5.5'), 'consolidated legacy core CSS bundle missing');
+for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-polish.css','assets/v434-polish.css','assets/v435-final.css','assets/home-mobile-layout-v1.css']) {
+  assert(!cssRefs.includes(obsoleteCss), `legacy CSS must not be loaded directly: ${obsoleteCss}`);
+}
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
 
