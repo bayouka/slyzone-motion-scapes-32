@@ -51,16 +51,25 @@ async function boot() {
   window.addEventListener('resize', () => { if (window.innerWidth > 767 && state.mobileMenuOpen) { state.mobileMenuOpen=false; document.documentElement.classList.remove('mobile-menu-open'); document.body.classList.remove('mobile-menu-open'); render(); } });
   document.addEventListener('click', handleClick);
   document.addEventListener('click', (event) => {
-    const button=event.target.closest?.('.call-button-v1[data-action="open-call-picker-v1"]');
-    if(!button)return;
-    event.preventDefault();
-    event.stopPropagation();
-    try{
-      if(!state.user||!state.workspace){showToast('La visio sera disponible dès que votre espace est chargé.',true);return;}
-      openCallPickerV1();
-    }catch(error){
-      console.error('[2b2c] call picker open failed',error);
-      showToast('Impossible d’ouvrir les appels. Rechargez la page puis réessayez.',true);
+    const launcher=event.target.closest?.('.call-button-v1[data-action="open-call-picker-v1"]');
+    if(launcher){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      try{
+        if(!state.user||!state.workspace){showToast('La visio sera disponible dès que votre espace est chargé.',true);return;}
+        openCallPickerV1();
+      }catch(error){
+        console.error('[2b2c] call picker open failed',error);
+        showToast('Impossible d’ouvrir les appels. Rechargez la page puis réessayez.',true);
+      }
+      return;
+    }
+
+    const confirm=event.target.closest?.('[data-action="call-prejoin-confirm-v1"]');
+    if(confirm){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void confirmPrejoinCallV1(confirm);
     }
   }, true);
   document.addEventListener('submit', handleSubmit);
@@ -1728,11 +1737,32 @@ async function switchPrejoinCameraV1(){
 function closeCallPrejoinV1(){
   const p=callPrejoinV1;if(p)p.localStream?.getTracks().forEach(t=>t.stop());callPrejoinV1=null;document.getElementById('call-prejoin-v1')?.remove();
 }
-async function confirmPrejoinCallV1(){
+async function confirmPrejoinCallV1(button=null){
   const p=callPrejoinV1;if(!p)return;
-  const call=first(await api.rpc('start_private_call_v2',{p_workspace_id:state.workspace.id,p_target_user_ids:p.targets,p_project_id:p.projectId}));
-  const stream=p.localStream;callPrejoinV1=null;document.getElementById('call-prejoin-v1')?.remove();
-  await connectCallV1(call,null,stream);
+  if(p.connecting)return;
+  p.connecting=true;
+  const actionButton=button||document.querySelector('[data-action="call-prejoin-confirm-v1"]');
+  if(actionButton){actionButton.disabled=true;actionButton.dataset.previousLabel=actionButton.textContent||'';actionButton.textContent='Connexion…';}
+  try{
+    const call=first(await api.rpc('start_private_call_v2',{p_workspace_id:state.workspace.id,p_target_user_ids:p.targets,p_project_id:p.projectId}));
+    if(!call?.id)throw new Error('CALL_START_FAILED');
+    const stream=p.localStream;
+    await connectCallV1(call,null,stream);
+    callPrejoinV1=null;
+    document.getElementById('call-prejoin-v1')?.remove();
+  }catch(error){
+    p.connecting=false;
+    if(actionButton){actionButton.disabled=false;actionButton.textContent=actionButton.dataset.previousLabel||'Appeler maintenant';}
+    console.error('[2b2c] call start failed',error);
+    const message=humanError(error);
+    const card=document.querySelector('#call-prejoin-v1 .call-prejoin-card-v1');
+    if(card){
+      let status=card.querySelector('.call-prejoin-error-v1');
+      if(!status){status=document.createElement('div');status.className='call-prejoin-error-v1';card.querySelector('.call-picker-actions-v1')?.before(status);}
+      status.textContent=message||'Impossible de démarrer l’appel.';
+    }
+    showToast(message||'Impossible de démarrer l’appel.',true);
+  }
 }
 
 async function callIceServersV1(){
