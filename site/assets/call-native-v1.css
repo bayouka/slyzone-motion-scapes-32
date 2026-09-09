@@ -145,3 +145,5 @@
 #call-picker-v1{position:fixed;inset:0;z-index:5000;pointer-events:auto}
 #call-picker-v1 .call-modal-backdrop-v1{z-index:5000;pointer-events:auto}
 #call-picker-v1 .call-picker-card-v1{position:relative;z-index:5001}
+
+.call-prejoin-error-v1{margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff0f1;color:#a23c51;font-size:12px;font-weight:700;border:1px solid #f2c9cf}
