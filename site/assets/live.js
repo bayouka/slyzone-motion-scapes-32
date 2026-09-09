@@ -1979,6 +1979,34 @@ async function toggleCallFullscreenV1(){
     else if(shell.requestFullscreen)await shell.requestFullscreen();
   }catch(error){console.warn('call fullscreen',error);}
 }
+function renderResumableCallV1(){
+  let root=document.getElementById('resume-call-v1');
+  if(!resumableCallV1){root?.remove();return;}
+  if(!root){root=document.createElement('div');root.id='resume-call-v1';document.body.appendChild(root);}
+  const call=resumableCallV1;
+  root.innerHTML=`<section class="resume-call-card-v5"><div class="resume-call-icon-v5">▣</div><div><small>Visio en cours</small><strong>${esc(call.project_id?projectName(call.project_id):'Appel en cours')}</strong><span>Vous étiez connecté à cette visio.</span></div><div class="resume-call-actions-v5"><button class="btn" data-action="call-resume-leave-v1" data-call="${escAttr(call.id)}">Quitter</button><button class="btn primary" data-action="call-resume-v1" data-call="${escAttr(call.id)}">Reprendre</button></div></section>`;
+}
+async function checkResumableCallV1(){
+  if(!state.user||!state.workspace||activeCallV1||callPrejoinV1)return;
+  try{
+    const participants=await api.select('call_participants',`select=call_session_id,last_seen_at,joined_at&user_id=eq.${state.user.id}&left_at=is.null&order=joined_at.desc&limit=1`);
+    const p=participants[0];
+    if(!p){resumableCallV1=null;renderResumableCallV1();return;}
+    const call=first(await api.select('call_sessions',`select=*&id=eq.${p.call_session_id}&ended_at=is.null&limit=1`));
+    if(!call){resumableCallV1=null;renderResumableCallV1();return;}
+    resumableCallV1=call;renderResumableCallV1();
+  }catch(error){console.warn('resumable call',error);}
+}
+async function resumeLiveCallV1(callId){
+  const call=first(await api.select('call_sessions',`select=*&id=eq.${callId}&ended_at=is.null&limit=1`));
+  if(!call){resumableCallV1=null;renderResumableCallV1();showToast('Cette visio est terminée.',true);return;}
+  resumableCallV1=null;renderResumableCallV1();await connectCallV1(call,null);
+}
+async function leaveResumableCallV1(callId){
+  try{await api.rpc('leave_call_v1',{p_call_id:callId});}catch{}
+  resumableCallV1=null;renderResumableCallV1();
+}
+
 async function checkIncomingCallV1(){
   if(!state.user||!state.workspace||activeCallV1)return;
   try{
@@ -1991,4 +2019,5 @@ async function checkIncomingCallV1(){
     root.innerHTML=`<section class="incoming-call-card-v1"><div class="incoming-call-icon-v1">▣</div><div><small>Appel entrant</small><strong>${esc(displayName(invite.invited_by||call.started_by))}</strong><span>${esc(projectName(call.project_id)||'Sans projet')}</span></div><div class="incoming-call-actions-v1"><button class="btn danger" data-action="call-decline-v1" data-call="${escAttr(call.id)}">Refuser</button><button class="btn primary" data-action="call-accept-v1" data-call="${escAttr(call.id)}">Accepter</button></div></section>`;
   }catch(error){console.warn('incoming call',error);}
 }
-setInterval(()=>void checkIncomingCallV1(),1800);
+setInterval(()=>{void checkResumableCallV1();void checkIncomingCallV1();},1800);
+setTimeout(()=>void checkResumableCallV1(),1200);
