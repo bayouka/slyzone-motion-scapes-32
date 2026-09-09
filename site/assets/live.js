@@ -46,8 +46,25 @@ const ICONS = {
 
 boot();
 
+function resetViewScrollV52(){
+  requestAnimationFrame(()=>{
+    try{window.scrollTo({top:0,left:0,behavior:'auto'});}catch{window.scrollTo(0,0);}
+    document.documentElement.scrollTop=0;
+    document.body.scrollTop=0;
+    const main=document.querySelector('.live-main');
+    const content=document.querySelector('.live-content');
+    if(main)main.scrollTop=0;
+    if(content)content.scrollTop=0;
+  });
+}
+
 async function boot() {
-  window.addEventListener('hashchange', () => { if(state.modal?.type==='activity') state.modal=null; state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false; render(); });
+  window.addEventListener('hashchange', () => {
+    if(state.modal?.type==='activity') state.modal=null;
+    state.mobileMenuOpen=false; state.userMenuOpen=false; state.notificationOpen=false;
+    render();
+    resetViewScrollV52();
+  });
   window.addEventListener('resize', () => { if (window.innerWidth > 767 && state.mobileMenuOpen) { state.mobileMenuOpen=false; document.documentElement.classList.remove('mobile-menu-open'); document.body.classList.remove('mobile-menu-open'); render(); } });
   document.addEventListener('click', handleClick);
   document.addEventListener('click', (event) => {
@@ -319,7 +336,7 @@ function shell(content, route) {
   const userMenu=state.userMenuOpen?`<div class="user-menu-panel"><div class="user-menu-head">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${esc(state.user.email||'')}</small></div></div><a href="#/profile">Mon profil</a>${external?'':`<a href="#/settings">Paramètres de l’espace</a>`}<button data-action="signout">Se déconnecter</button></div>`:'';
   const mobilePrimary=primaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span>${key==='work'&&attentionCount()?`<b>${attentionCount()}</b>`:''}</a>`).join('');
   const mobileSecondary=secondaryNav.map(([key,label,icon,href])=>`<a href="${href}" data-nav="${href}" class="${active(key)?'active':''}"><span class="nav-icon">${icon}</span><span class="mobile-nav-label">${esc(label)}</span></a>`).join('');
-  const mobileDrawer=state.mobileMenuOpen?`<div class="mobile-menu-backdrop" data-action="toggle-mobile-menu" aria-hidden="true"></div><aside class="mobile-drawer" id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation 2b2c"><div class="mobile-drawer-head">${brandHtml()}<button class="mobile-drawer-close" data-action="toggle-mobile-menu" aria-label="Fermer le menu"><span aria-hidden="true">×</span></button></div><div class="mobile-drawer-scroll"><div class="mobile-drawer-workspace"><small>${external?'Espace partagé':'Espace actif'}</small><strong>${esc(state.workspace.name)}</strong></div><button class="mobile-drawer-search" data-action="open-search"><span>${ICONS.search}</span><span>Rechercher dans ${BRAND_NAME}</span><kbd>Ctrl K</kbd></button><nav class="mobile-drawer-nav">${mobilePrimary}</nav>${recentProjects.length?`<div class="mobile-drawer-projects"><span class="sidebar-section-label">PROJETS ACTIFS</span>${recentProjects.map(p=>`<a href="#/projects/${p.id}/overview" data-nav="#/projects/${p.id}/overview"><span class="project-dot ${projectHealthInfo(p).tone}"></span>${esc(p.name)}</a>`).join('')}</div>`:''}<div class="mobile-drawer-secondary"><span class="sidebar-section-label">${external?'PARTAGE':'ESPACE'}</span><nav class="mobile-drawer-nav">${mobileSecondary}</nav></div></div><div class="mobile-drawer-foot"><a href="#/profile" data-nav="#/profile">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button data-action="signout"><span aria-hidden="true">↪</span> Se déconnecter</button></div></aside>`:'';
+  const mobileDrawer=state.mobileMenuOpen?`<div class="mobile-menu-backdrop" data-action="toggle-mobile-menu" aria-hidden="true"></div><aside class="mobile-drawer" id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation 2b2c"><div class="mobile-drawer-head">${brandHtml()}<button class="mobile-drawer-close" data-action="toggle-mobile-menu" aria-label="Fermer le menu"><span aria-hidden="true">×</span></button></div><div class="mobile-drawer-scroll"><div class="mobile-drawer-workspace"><small>${external?'Espace partagé':'Espace actif'}</small><strong>${esc(state.workspace.name)}</strong></div><button class="mobile-drawer-search" data-action="open-search"><span>${ICONS.search}</span><span>Rechercher dans ${BRAND_NAME}</span><kbd>Ctrl K</kbd></button>${recentProjects.length?`<div class="mobile-drawer-projects"><span class="sidebar-section-label">PROJETS ACTIFS</span>${recentProjects.map(p=>`<a href="#/projects/${p.id}/overview" data-nav="#/projects/${p.id}/overview"><span class="project-dot ${projectHealthInfo(p).tone}"></span>${esc(p.name)}</a>`).join('')}</div>`:''}<div class="mobile-drawer-secondary"><span class="sidebar-section-label">${external?'PARTAGE':'OUTILS & ESPACE'}</span><nav class="mobile-drawer-nav">${mobileSecondary}</nav></div></div><div class="mobile-drawer-foot"><a href="#/profile" data-nav="#/profile">${avatarHtml(state.user.id)}<div><strong>${esc(displayName(state.user.id))}</strong><small>${external?'Accès externe':'Mon profil'}</small></div></a><button data-action="signout"><span aria-hidden="true">↪</span> Se déconnecter</button></div></aside>`:'';
   const mobileTabs = external
     ? [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['calendar','Calendrier',ICONS.calendar,'#/calendar'],['library','Fichiers',ICONS.library,'#/library']]
     : [['dashboard','Accueil',ICONS.dashboard,'#/dashboard'],['projects','Projets',ICONS.projects,'#/projects'],['work','Mon travail',ICONS.work,'#/work'],['messages','Messages',ICONS.messages,'#/messages']];
