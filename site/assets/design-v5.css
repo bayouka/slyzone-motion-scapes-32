@@ -673,3 +673,98 @@ body{background:
   .mobile-menu-backdrop,.mobile-drawer{animation:none!important}
   .mobile-menu-button>span{transition:none!important}
 }
+
+
+/* V5.0.2 — mobile navigation architecture & scroll behavior */
+@media(max-width:767px){
+  /* Top application bar stays physically fixed while the document scrolls. */
+  .v42-topbar,.v421-shell .v42-topbar,.v422-shell .v42-topbar{
+    position:fixed!important;
+    top:0!important;left:0!important;right:0!important;
+    width:100%!important;
+    z-index:920!important;
+    transform:translateZ(0)!important;
+    -webkit-transform:translateZ(0)!important;
+    backface-visibility:hidden!important;
+    will-change:transform!important;
+  }
+  .live-main{
+    padding-top:58px!important;
+  }
+
+  /* Drawer itself scrolls; header remains pinned, footer belongs to content flow. */
+  .mobile-drawer{
+    display:block!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  .mobile-drawer-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:4!important;
+    min-height:76px!important;
+    background:
+      linear-gradient(180deg,rgba(21,34,58,.985),rgba(18,31,53,.96))!important;
+    backdrop-filter:blur(18px) saturate(120%)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(120%)!important;
+    box-shadow:0 10px 22px rgba(5,12,25,.12)!important;
+  }
+  .mobile-drawer-scroll{
+    overflow:visible!important;
+    min-height:auto!important;
+    padding-bottom:0!important;
+  }
+  .mobile-drawer-foot{
+    position:static!important;
+    inset:auto!important;
+    margin:18px 12px 14px!important;
+    padding:14px 0 calc(8px + env(safe-area-inset-bottom))!important;
+    background:transparent!important;
+    border-top:1px solid rgba(255,255,255,.075)!important;
+    box-shadow:none!important;
+  }
+
+  /* Bottom bar is now primary navigation only: four destinations, no duplicate "Plus". */
+  .v43-mobile-tabbar.v52-mobile-primary{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    left:10px!important;right:10px!important;
+    bottom:max(8px,env(safe-area-inset-bottom))!important;
+    min-height:62px!important;
+    padding:6px!important;
+    border-radius:20px!important;
+    background:rgba(16,28,47,.92)!important;
+    border:1px solid rgba(255,255,255,.09)!important;
+    box-shadow:0 18px 44px rgba(9,20,37,.28),inset 0 1px 0 rgba(255,255,255,.07)!important;
+    backdrop-filter:blur(22px) saturate(125%)!important;
+    -webkit-backdrop-filter:blur(22px) saturate(125%)!important;
+  }
+  .v43-mobile-tabbar.v52-mobile-primary a{
+    min-height:50px!important;
+    padding:5px 3px!important;
+    border-radius:14px!important;
+    color:#9fb0c8!important;
+    transition:background .16s ease,color .16s ease,transform .16s var(--v5-spring)!important;
+  }
+  .v43-mobile-tabbar.v52-mobile-primary a.active{
+    color:#fff!important;
+    background:linear-gradient(145deg,rgba(88,128,248,.30),rgba(111,89,229,.22))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 7px 17px rgba(4,11,25,.18)!important;
+  }
+  .v43-mobile-tabbar.v52-mobile-primary a:active{transform:scale(.95)!important}
+  .v43-mobile-tabbar.v52-mobile-primary small{
+    font-size:8.5px!important;
+    font-weight:700!important;
+  }
+
+  /* Content always clears fixed topbar and bottom primary dock. */
+  .live-content{
+    padding-top:16px!important;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom))!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .v43-mobile-tabbar.v52-mobile-primary a{transition:none!important}
+}
