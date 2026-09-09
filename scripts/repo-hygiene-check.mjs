@@ -81,6 +81,7 @@ assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(v5), 'obsolete .mobile-nav selecto
 const legacyCore = read('site/assets/core-legacy-v455.css');
 assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile-nav selector reintroduced in legacy bundle');
 assert(!/\.mobile-nav-btn(?:\s|[>{:+~.#\[])/.test(legacyCore), 'obsolete .mobile-nav-btn selector reintroduced in legacy bundle');
+assert(!/\.modal\{[^}]*height:100dvh!important/.test(legacyCore), 'legacy full-height mobile modal rule reintroduced');
 
 
 
