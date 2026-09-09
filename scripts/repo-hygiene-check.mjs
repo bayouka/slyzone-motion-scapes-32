@@ -40,7 +40,7 @@ assert(cssRefs.indexOf('assets/v434-polish.css') < cssRefs.indexOf('assets/v435-
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
 
-assert(index.includes('assets/boot.js?build=503'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=504'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.2-navigation-flow'), 'unexpected V5 design asset version');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
