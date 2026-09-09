@@ -27,6 +27,15 @@ export default {
       );
     }
 
+    // Deployment transport probe: harmless diagnostic endpoint used to verify
+    // Cloudflare Workers Builds from main without GitHub Actions.
+    if (url.pathname === '/transport-probe') {
+      return withHeaders(
+        Response.json({ ok: true, app: '4b4c', transport: 'cloudflare-workers-builds', marker: '2026-09-09T13:24+02:00' }),
+        { 'cache-control': 'no-store' },
+      );
+    }
+
     const isRoot = url.pathname === '/';
     const assetPath = isRoot ? '/index.html' : url.pathname;
     const assetRequest = new Request(new URL(assetPath, url.origin), request);
