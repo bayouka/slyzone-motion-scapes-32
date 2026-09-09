@@ -74,6 +74,10 @@ for (const form of live.matchAll(/<form\b[\s\S]*?<\/form>/g)) {
 assert(live.includes('auditRenderedSemanticsV454'), 'runtime semantic guard missing');
 assert(live.includes('aria-current="page"'), 'active navigation must expose aria-current');
 assert(live.includes("event.key==='Tab'&&state.mobileMenuOpen"), 'mobile drawer keyboard focus trap missing');
+assert(live.includes("state.mobileMenuOpen?'Fermer le menu':'Ouvrir le menu'"), 'hamburger accessible label must follow open state');
+const v5 = read('site/assets/design-v5.css');
+assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
+
 
 
 const markerDir = '.github';
