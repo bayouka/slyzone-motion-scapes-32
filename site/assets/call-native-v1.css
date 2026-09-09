@@ -227,3 +227,21 @@
   #incoming-call-v1{left:10px!important;right:10px!important;bottom:max(10px,env(safe-area-inset-bottom))!important;top:auto!important;width:auto!important}
   .incoming-call-card-v1{border-radius:20px!important}
 }
+
+/* v4.4.23 — essential call tools */
+.call-network-v6{display:inline-flex;align-items:center;gap:5px;width:max-content;margin-top:2px;font-size:9px;font-weight:700;color:#aab4c0}
+.call-network-v6 i{width:6px;height:6px;border-radius:50%;background:#84909d}.call-network-v6.good i{background:#42c77a}.call-network-v6.medium i{background:#e1aa45}.call-network-v6.weak i{background:#ef667d}
+.call-sharing-banner-v6{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:12;display:flex;align-items:center;gap:12px;padding:7px 8px 7px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(12,17,23,.82);backdrop-filter:blur(12px);box-shadow:0 8px 28px rgba(0,0,0,.24)}
+.call-sharing-banner-v6 span{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:#fff;white-space:nowrap}.call-sharing-banner-v6 span i{width:7px;height:7px;border-radius:50%;background:#42c77a;box-shadow:0 0 0 3px rgba(66,199,122,.15)}
+.call-sharing-banner-v6 button{border:0;border-radius:999px;padding:6px 9px;background:#fff;color:#18202a;font-size:9px;font-weight:800}
+.call-controls-pro-v4 .active-share-v6{background:rgba(66,199,122,.18)!important;border-color:rgba(66,199,122,.4)!important}
+#call-devices-v1{position:fixed;inset:0;z-index:5100}
+.call-devices-card-v6{position:relative;z-index:5101;width:min(440px,calc(100vw - 28px));margin:auto;padding:18px;border-radius:22px;background:#fbfaf7;box-shadow:0 28px 80px rgba(16,24,40,.28);color:#172033}
+.call-devices-card-v6 header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}.call-devices-card-v6 header small{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#7c8591;font-weight:800}.call-devices-card-v6 h3{margin:3px 0 0;font-size:20px}
+.call-devices-card-v6 label{display:grid;gap:6px;margin-top:12px}.call-devices-card-v6 label span{font-size:11px;font-weight:800}.call-devices-card-v6 select{width:100%;min-height:44px;border:1px solid #ded9d2;border-radius:12px;background:#fff;padding:0 11px;font:inherit}
+.call-devices-card-v6 p{margin:12px 0 0;font-size:10px;color:#7c8591}.call-devices-card-v6 footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+@media(max-width:767px){
+ .call-sharing-banner-v6{top:8px;max-width:calc(100% - 16px);gap:7px}.call-sharing-banner-v6 span{font-size:9px}.call-sharing-banner-v6 button{padding:5px 7px}
+ .call-device-control-v6{display:none!important}
+ .call-network-v6{font-size:8px}
+}
