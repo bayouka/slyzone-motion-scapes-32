@@ -196,3 +196,34 @@
   .call-stage-speaker-v3{gap:6px}
   .call-filmstrip-v3>button{flex-basis:96px;height:70px}
 }
+
+
+/* v4.4.22 — call UX completeness */
+.call-current-v5{margin:14px 0 2px;padding:12px;border:1px solid #ece7e0;border-radius:16px;background:#faf9f7}
+.call-current-v5>.metric-label{display:block;margin-bottom:8px}
+.call-current-v5>div{display:flex;flex-wrap:wrap;gap:7px}
+.call-presence-chip-v5{display:grid;grid-template-columns:auto;gap:1px;padding:7px 10px;border-radius:12px;background:#f0f2f5;border:1px solid #e4e7eb}
+.call-presence-chip-v5 b{font-size:11px}.call-presence-chip-v5 small{font-size:9px;color:#7d8793}
+.call-presence-chip-v5.present{background:#ecf8f0;border-color:#cfead8}.call-presence-chip-v5.present small{color:#3f7f58}
+.call-presence-chip-v5.pending{background:#fff8e9;border-color:#f1dfb8}.call-presence-chip-v5.pending small{color:#8b6a22}
+.call-presence-chip-v5.declined,.call-presence-chip-v5.cancelled{background:#f7f1f2;border-color:#eadcdf}
+.call-prejoin-context-v5{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.call-prejoin-context-v5>div{display:grid;gap:2px;padding:9px 11px;border:1px solid #ebe6df;border-radius:14px;background:#faf9f7;min-width:0}
+.call-prejoin-context-v5 strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.call-head-button-v4.confirming{background:#b93d56!important;border-color:#b93d56!important;color:#fff!important}
+#resume-call-v1{position:fixed;right:18px;bottom:18px;z-index:4900;width:min(430px,calc(100vw - 36px))}
+.resume-call-card-v5{display:grid;grid-template-columns:auto 1fr;gap:11px;padding:13px;border:1px solid rgba(255,255,255,.9);border-radius:20px;background:rgba(250,248,244,.98);box-shadow:0 18px 55px rgba(16,24,40,.24);backdrop-filter:blur(18px)}
+.resume-call-icon-v5{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#ebe8ff;color:#5549b8;font-size:19px}
+.resume-call-card-v5>div:nth-child(2){min-width:0}.resume-call-card-v5 small,.resume-call-card-v5 strong,.resume-call-card-v5 span{display:block}.resume-call-card-v5 small{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#7f8894;font-weight:800}.resume-call-card-v5 strong{margin-top:2px;font-size:13px}.resume-call-card-v5 span{margin-top:2px;font-size:10px;color:#7b8490}
+.resume-call-actions-v5{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+.incoming-call-card-v1{border:1px solid rgba(255,255,255,.9);box-shadow:0 22px 65px rgba(16,24,40,.28);backdrop-filter:blur(18px)}
+@media(max-width:767px){
+  .call-prejoin-context-v5{grid-template-columns:1fr;margin-bottom:8px}
+  .call-prejoin-context-v5>div{padding:8px 10px}
+  .call-prejoin-card-v1{max-height:94dvh}
+  .call-prejoin-preview-v1{max-height:44dvh}
+  #resume-call-v1{left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));width:auto}
+  .resume-call-card-v5{border-radius:18px}
+  #incoming-call-v1{left:10px!important;right:10px!important;bottom:max(10px,env(safe-area-inset-bottom))!important;top:auto!important;width:auto!important}
+  .incoming-call-card-v1{border-radius:20px!important}
+}
