@@ -940,6 +940,9 @@ async function handleClick(event) {
     else if (action==='call-add-v1') openAddPeopleV1();
     else if (action==='call-minimize-v1') minimizeActiveCallV1();
     else if (action==='call-restore-v1') restoreActiveCallV1();
+    else if (action==='call-resume-v1') await resumeLiveCallV1(target.dataset.call);
+    else if (action==='call-resume-leave-v1') await leaveResumableCallV1(target.dataset.call);
+    else if (action==='call-fullscreen-v1') await toggleCallFullscreenV1();
     else if (action==='call-focus-v1') { callFocusUserV1=target.dataset.user||null; renderActiveCallV1(); }
     else if (action==='call-accept-v1') await acceptIncomingCallV1(target.dataset.call);
     else if (action==='call-decline-v1') await declineIncomingCallV1(target.dataset.call);
@@ -948,7 +951,7 @@ async function handleClick(event) {
     else if (action==='call-switch-camera-v1') await switchCameraV1();
     else if (action==='call-screen-v1') await toggleScreenV1();
     else if (action==='call-leave-v1') await leaveActiveCallV1();
-    else if (action==='call-end-v1') await endActiveCallV1();
+    else if (action==='call-end-v1') await requestEndActiveCallV1();
     else if (action==='refresh') await refreshWorkspace();
     else if (action==='quick-add') openModal({type:'quick-add'});
     else if (action==='open-activity') openModal({type:'activity'});
@@ -1615,6 +1618,7 @@ let callPickerModeV1='start';
 let callPrejoinV1=null;
 let callDockedV1=false;
 let callFocusUserV1=null;
+let resumableCallV1=null;
 
 function callProjectContextV1(){
   return String(document.getElementById('call-project-v1')?.value||'')||null;
@@ -1871,7 +1875,13 @@ window.addEventListener('2b2c:start-call',event=>{
 function callInviteStatusLabelV1(invite){
   if(invite.status==='accepted')return 'A rejoint';
   if(invite.status==='declined')return 'A refusé';
+  if(invite.status==='cancelled')return 'Sans réponse';
   return 'Sonnerie…';
+}
+function formatCallDurationV1(startedAt){
+  const seconds=Math.max(0,Math.floor((Date.now()-new Date(startedAt||Date.now()).getTime())/1000));
+  const m=Math.floor(seconds/60),s=seconds%60,h=Math.floor(m/60);
+  return h?String(h).padStart(2,'0')+':'+String(m%60).padStart(2,'0')+':'+String(s).padStart(2,'0'):String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 function renderActiveCallV1(){
   const ctx=activeCallV1;if(!ctx)return;
