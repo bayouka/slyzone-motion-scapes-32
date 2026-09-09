@@ -55,8 +55,8 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.5.4-semantic-hygiene"'
-          probe /assets/boot.js "v4.5.4-semantic-hygiene"
+          probe /health '"version":"v4.5.5-css-consolidation"'
+          probe /assets/boot.js "v4.5.5-css-consolidation"
           probe /assets/boot.js "communication-workspace-v1.js"
           probe /assets/live.js "open-call-picker-v1"
           probe /assets/live.js "start_private_call_v2"
@@ -116,5 +116,5 @@ jobs:
           probe /assets/live.js "call-button-v1[data-action=\"open-call-picker-v1\"]"
           probe /assets/call-native-v1.css "call-prejoin-card-v1"
           probe /assets/call-native-v1.css "call-screen-priority-v1"
-          probe / "assets/boot.js?build=504"
+          probe / "assets/boot.js?build=505"
           probe / '2b2c — Projets qui avancent ensemble'
