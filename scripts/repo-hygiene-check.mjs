@@ -33,7 +33,7 @@ assert(cssRefs.length > 0, 'no stylesheets found in index');
 assert(cssRefs.at(-1)?.startsWith('assets/design-v5.css?'), 'design-v5.css must be the final stylesheet');
 assert(cssRefs.filter(x => x.startsWith('assets/design-v5.css?')).length === 1, 'design-v5.css must be loaded exactly once');
 
-assert(index.includes('assets/boot.js?build=502'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=503'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.2-navigation-flow'), 'unexpected V5 design asset version');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
