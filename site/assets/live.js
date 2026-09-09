@@ -1717,6 +1717,7 @@ function renderCallPrejoinV1(){
   let root=document.getElementById('call-prejoin-v1');if(!root){root=document.createElement('div');root.id='call-prejoin-v1';document.body.appendChild(root);}
   root.innerHTML=`<div class="call-modal-backdrop-v1"><section class="call-prejoin-card-v1" role="dialog" aria-modal="true" aria-label="Prévisualisation visio">
     <header><div><span class="eyebrow">Avant de rejoindre</span><h2>Vérifiez votre caméra et votre micro</h2><p>${p.targets.length} personne${p.targets.length>1?'s':''} sera${p.targets.length>1?'ont':''} appelée${p.targets.length>1?'s':''} après confirmation.</p></div><button class="icon-button" data-action="call-prejoin-cancel-v1" aria-label="Fermer">✕</button></header>
+    <div class="call-prejoin-context-v5"><div><span class="metric-label">Appel</span><strong>${p.targets.map(id=>esc(displayName(id))).join(', ')}</strong></div><div><span class="metric-label">Contexte</span><strong>${p.projectId?esc(projectName(p.projectId)):'Sans projet'}</strong></div></div>
     <div class="call-prejoin-preview-v1"><video id="call-prejoin-video-v1" autoplay playsinline muted></video><span>${p.cameraFacing==='environment'?'Caméra arrière':'Caméra frontale'}</span></div>
     <div class="call-prejoin-controls-v1">
       <button class="call-control-v2" data-action="call-prejoin-mic-v1"><span>${p.micTrack?.enabled?'🎙':'🔇'}</span><small>Micro</small></button>
