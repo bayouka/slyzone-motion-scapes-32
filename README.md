@@ -1,6 +1,19 @@
 # 4b4c
 
-Canonical source of the 4b4c collaborative workspace. The product is branded **2b2c** in the user interface.
+Canonical product source for the 4b4c collaborative workspace. The product is branded **2b2c** in the user interface.
+
+## Authority and current release
+
+Use this hierarchy when recovering, auditing or releasing 4b4c:
+
+1. `bayouka/slyzone-motion-scapes-32` `main` — canonical product/runtime source.
+2. Supabase project `wexfzhegiewhldkugtow` — authoritative live backend state and migration history while repository migration recovery is incomplete.
+3. `bayouka/2b2c/4b4c/` — transport mirror only; never treat it as the development source.
+4. `4b4c-pilot` and the root React/Vite track in `bayouka/2b2c` — historical tracks; never infer current 4b4c product state from them.
+
+Current release target: **v4.5.12-roadmap-p2 / build 512**.
+
+A release is not considered production-verified until the real Worker `/health` endpoint reports the intended version and the production smoke checks pass.
 
 ## Current production architecture
 
@@ -17,7 +30,9 @@ Canonical source of the 4b4c collaborative workspace. The product is branded **2
 - `wrangler.jsonc` — stable Cloudflare Worker configuration named `4b4c`.
 - Supabase production backend — project `wexfzhegiewhldkugtow`.
 
-Production version: **v4.5.8-nav-dead-css / build 508**.
+## Backend recovery warning
+
+The Supabase production migration history contains migrations that are not yet all represented in this repository. Do not reconstruct, reorder or re-apply production migrations from memory. Recover missing SQL from `supabase_migrations.schema_migrations`, preserve the original production version/name, compare it with the runtime contract, then version it into the canonical source. Do not mutate the production schema merely to make repository history look aligned.
 
 ## Product contract
 
@@ -67,17 +82,19 @@ npm ci
 npm run check
 ```
 
-GitHub Actions must not be used for production deployments while Actions credits are unavailable. Production releases must use a direct Cloudflare deployment path and must still run the same stability checks and production smoke probes before they are considered successful.
+GitHub Actions must not be used for production deployments while Actions credits are unavailable. Production releases must use the validated direct Cloudflare deployment path and must still run the same stability checks and production smoke probes before they are considered successful.
 
 Historical one-off migration workflows are archived and intentionally non-executable. They must not be re-enabled without reviewing them against the current runtime.
 
 ## Known technical debt
 
-The current runtime is stable, but the repository still contains accumulated historical frontend layers. In particular:
+The current runtime contains accumulated historical frontend layers. In particular:
 
-- CSS is split across many legacy files and contains extensive `!important` overrides;
+- CSS is consolidated for loading but still originates from many legacy layers and contains extensive `!important` overrides;
 - `live.js` is a large monolith and should be decomposed by domain;
 - some workflow actions are still bridged by more than one runtime module;
-- historical JS/CSS files remain in the repository although they are not loaded in production.
+- historical JS/CSS files remain in the repository although they are not loaded in production;
+- browser-level multi-user E2E coverage is still insufficient;
+- repository migration history still needs reconciliation against the live Supabase history.
 
-These items should be reduced incrementally behind stability checks rather than by a large destructive rewrite.
+Reduce these items incrementally behind stability checks rather than through a destructive rewrite.
