@@ -6,6 +6,8 @@ const worker=read('src/worker.js');
 const index=read('site/index.html');
 const live=read('site/assets/live.js');
 const safeBridge=read('site/assets/workflow-backend-safe-v1.js');
+const projectAccess=read('site/assets/project-access-v1.js');
+const projectMessagesRoute=read('site/assets/project-messages-route-v1.js');
 const resources=read('site/assets/resources-workspace-v2.js');
 const resourcesCss=read('site/assets/resources-workspace-v1.css');
 const resourcesCssV2=read('site/assets/resources-workspace-v2.css');
@@ -28,19 +30,24 @@ const communicationDeleteDb=read('supabase/migrations/20260908221034_communicati
 function assert(ok,msg){if(!ok){console.error(`STABILITY CHECK FAILED: ${msg}`);process.exit(1);}}
 function all(text,items,label){for(const item of items)assert(text.includes(item),`${label}: ${item}`);}
 
-assert(worker.includes('v4.5.12-roadmap-p2'),'worker health version');
-assert(index.includes('assets/boot.js?build=512'),'cache bust 508');
+assert(worker.includes('v4.5.12-delivery-p1'),'worker health version');
+assert(index.includes('assets/boot.js?build=516'),'cache bust 516');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'),'V5 design system loaded last');
 all(index,['assets/call-native-v1.css','assets/resources-workspace-v1.css','assets/resources-workspace-v2.css','assets/delivery-workflow-v1.css','assets/library-workspace-v1.css','assets/communication-workspace-v1.css'],'stylesheet missing');
-all(boot,["const VERSION = 'v4.5.12-roadmap-p2'",'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','delivery-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','library-workspace-v1.js'],'boot contract missing');
+all(boot,["const VERSION = 'v4.5.12-delivery-p1'",'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','project-access-v1.js','project-messages-route-v1.js','delivery-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','library-workspace-v1.js'],'boot contract missing');
 assert(boot.indexOf('delivery-workflow-v1.js')<boot.indexOf('workflow-backend-safe-v1.js'),'delivery must register before safe bridge');
+assert(!boot.includes('communication workspace unavailable; native messages view kept'),'Communication V3 fallback reintroduced');
+assert(!boot.includes('resources v2 unavailable; native resources view kept'),'Resources V2 fallback reintroduced');
 for(const forbidden of ['resources-workspace-v1.js?','resources-workspace-form-guard-v1.js','invite-prelive-v2.js','auth-recovery-v1.js','home-polish.js','team-access-v1.js','team-access-safety-v2.js','team-access-submit-safety-v3.js','invite-lifecycle-v1.js','approval-flow-safety-v1.js','product-coherence-v1.js','daily-work-v1.js','planning-clarity-v1.js','project-lifecycle-safety-v1.js','project-flow-v1.js','communication-memory-v1.js','meeting-agenda-v1.js','resource-model-v1.js','workflow-backend-v2.js','project-progress-v2.js','ui-quality-v1.js','dialog-focus-safety-v2.js']) assert(!boot.includes(forbidden),`forbidden enhancer loaded: ${forbidden}`);
+
+all(projectAccess,['create_project_with_access_setup_v1','Projet d’équipe','Projet restreint'],'project access owner missing');
+all(projectMessagesRoute,['kind=eq.project','routingContextReady','#/messages/'],'project message route owner missing');
 
 all(live,['open-call-picker-v1','start_private_call_v2','invite_to_call_v1','respond_call_invite_v1','send_call_signal_v1','call-stage-focus-v2','call-pip-v2','call-minimize-v1','2b2c:start-call','call-stage-speaker-v3','getDisplayMedia','RTCPeerConnection','call-switch-camera-v1','facingMode:{ideal:\'user\'}','call-prejoin-confirm-v1','open-project-call-v1','open-meeting-call-v1','callPickerCapacityV1','call-screen-priority-v1','heartbeat_call_v1','call-shell-pro-v4','requestEndActiveCallV1','call-fullscreen-v1','call-presence-chip-v5','call-prejoin-context-v5','resumableCallV1','formatCallDurationV1','create_workspace_invite_v2','set_workspace_member_access_v1','get_project_summaries_v1','get_workspace_sync_digest_v1','smartSync','workspaceRefreshPromise'],'core native contract missing');
 assert(!live.includes('Number(config.pollIntervalMs || 15000)'),'legacy full polling remains');
 assert(!live.includes('new MutationObserver'),'core MutationObserver');
 
-all(safeBridge,['register_deliverable_version_v3','request_deliverable_approval_v1','decide_deliverable_approval_v1','DELIVERABLE_VERSION_IMMUTABLE'],'deliverable bridge missing');
+all(safeBridge,['register_deliverable_version_v3','request_deliverable_approval_v1','decide_deliverable_approval_v1','DELIVERABLE_VERSION_IMMUTABLE'],'legacy-safe deliverable fallback missing');
 assert(!safeBridge.includes("api.insert('approvals'"),'direct approval insert');
 assert(!safeBridge.includes("api.update('approvals'"),'direct approval update');
 assert(!safeBridge.includes('new MutationObserver'),'safe bridge MutationObserver');
@@ -80,4 +87,4 @@ assert(communicationDeleteDb.includes("body='Message supprimé'"),'deleted body 
 assert(communicationDeleteDb.includes('m.deleted_at is null'),'deleted attachment privacy');
 assert(runtime.includes('https://wexfzhegiewhldkugtow.supabase.co'),'wrong Supabase backend');
 
-console.log('stability/communication-v3 production contract: ok');
+console.log('stability/delivery-p1 production contract: ok');
