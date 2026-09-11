@@ -10,8 +10,8 @@ const fail = (message) => {
   process.exit(1);
 };
 
-const RELEASE = 'v4.5.12-v6-polish-p1';
-const BUILD = '521';
+const RELEASE = 'v4.5.12-v6-polish-p2';
+const BUILD = '522';
 
 const v5 = index.indexOf('assets/design-v5.css');
 const v6 = index.indexOf('assets/design-v6.css');
@@ -38,5 +38,6 @@ if (css.includes('supabase') || css.includes('create_action_v1') || css.includes
 if (!index.includes(`assets/boot.js?build=${BUILD}`)) fail(`release candidate must expose build ${BUILD}`);
 if (!boot.includes(`const VERSION = '${RELEASE}'`)) fail(`boot must expose ${RELEASE}`);
 if (!worker.includes(`version: '${RELEASE}'`)) fail(`worker health must expose ${RELEASE}`);
+if (!boot.includes('./shell-polish-v6.js?')) fail('shell polish V6 module is missing from boot');
 
 console.log(`v6 shell: OK (${RELEASE} / build ${BUILD})`);
