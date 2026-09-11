@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.12-delivery-p1';
+  const VERSION = 'v4.5.12-delivery-p2';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -23,24 +23,19 @@
     return;
   }
 
-  // Stability mode: core app + explicit event/route driven modules only.
-  // No MutationObserver is allowed in the production runtime.
   window.__4B4C_CONFIG__ = Object.freeze({ ...config, syncProbeIntervalMs: Math.max(15000, Number(config.syncProbeIntervalMs || 20000)), fullRefreshFallbackMs: Math.max(300000, Number(config.fullRefreshFallbackMs || 300000)) });
   window.__4B4C_LIVE_MODE__ = true;
   window.__4B4C_STABILITY_MODE__ = VERSION;
 
   import(`./live.js?${VERSION}`)
-    // Project access is mandatory: do not silently fall back to legacy Team-only creation semantics.
     .then(() => import(`./project-access-v1.js?${VERSION}`))
-    // Project message routes are mandatory: project chat must resolve to the same Communication V3 renderer.
     .then(() => import(`./project-messages-route-v1.js?${VERSION}`))
-    // Delivery owns project closure before the legacy-safe bridge sees historical actions.
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
-    // Communication V3 is mandatory now that both global and project messages depend on one renderer.
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`))
-    // Resources V2 is mandatory: it is the effective owner for resources, deliverables, versions and approvals.
     .then(() => import(`./resources-workspace-v2.js?${VERSION}`))
+    // All validation entry points now resolve into the Resources V2 approval modal.
+    .then(() => import(`./approval-route-v1.js?${VERSION}`))
     .then(() => import(`./library-workspace-v1.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] library workspace unavailable; native library view kept', error);
     }))
