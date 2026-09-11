@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.12-access-p1';
+  const VERSION = 'v4.5.12-communication-p1';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -32,6 +32,8 @@
   import(`./live.js?${VERSION}`)
     // Project access is mandatory: do not silently fall back to legacy Team-only creation semantics.
     .then(() => import(`./project-access-v1.js?${VERSION}`))
+    // Project message routes are mandatory: project chat must resolve to the same Communication V3 renderer.
+    .then(() => import(`./project-messages-route-v1.js?${VERSION}`))
     // Delivery is registered before the legacy-safe bridge so it owns project closure clicks.
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
