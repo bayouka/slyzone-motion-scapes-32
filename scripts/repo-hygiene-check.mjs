@@ -8,8 +8,8 @@ const assert = (condition, message) => {
   }
 };
 
-const RELEASE = 'v4.5.12-v6-core-p1';
-const BUILD = '520';
+const RELEASE = 'v4.5.12-v6-polish-p1';
+const BUILD = '521';
 const boot = read('site/assets/boot.js');
 const index = read('site/index.html');
 const worker = read('src/worker.js');
@@ -20,6 +20,7 @@ const lock = JSON.parse(read('package-lock.json'));
 
 const requiredBootModules = [
   'live.js',
+  'call-incoming-v2.js',
   'home-v6.js',
   'projects-v6.js',
   'work-v6.js',
@@ -49,9 +50,9 @@ assert(cssRefs.at(-1)?.startsWith('assets/design-v5.css?'), 'design-v5.css must 
 assert(cssRefs.filter(x => x.startsWith('assets/design-v5.css?')).length === 1, 'design-v5.css must be loaded exactly once');
 assert(cssRefs.includes('assets/core-legacy-v455.css?v=4.5.12-roadmap-p2'), 'consolidated legacy core CSS bundle missing');
 assert(index.includes('assets/design-v6.css?v=6.0.0-shell-p1'), 'V6 shell layer missing');
-assert(index.includes('assets/home-v6.css?v=6.0.0-home-p1'), 'V6 Home layer missing');
-assert(index.includes('assets/projects-v6.css?v=6.0.0-project-p1'), 'V6 Projects layer missing');
-assert(index.includes('assets/work-v6.css?v=6.0.0-work-p1'), 'V6 Work layer missing');
+assert(index.includes('assets/home-v6.css?v=6.0.1-home-polish'), 'V6 Home polish layer missing');
+assert(index.includes('assets/projects-v6.css?v=6.0.1-project-polish'), 'V6 Projects polish layer missing');
+assert(index.includes('assets/work-v6.css?v=6.0.1-work-polish'), 'V6 Work polish layer missing');
 for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-polish.css','assets/v434-polish.css','assets/v435-final.css','assets/home-mobile-layout-v1.css']) {
   assert(!cssRefs.includes(obsoleteCss), `legacy CSS must not be loaded directly: ${obsoleteCss}`);
 }
@@ -60,6 +61,9 @@ assert(pkg.scripts?.check?.includes('site/assets/work-workflow-v1.js'), 'npm che
 assert(pkg.scripts?.check?.includes('site/assets/home-v6.js'), 'npm check must syntax-check Home V6 owner');
 assert(pkg.scripts?.check?.includes('site/assets/projects-v6.js'), 'npm check must syntax-check Projects V6 owner');
 assert(pkg.scripts?.check?.includes('site/assets/work-v6.js'), 'npm check must syntax-check Work V6 presentation owner');
+assert(pkg.scripts?.check?.includes('site/assets/call-incoming-v2.js'), 'npm check must syntax-check incoming call receiver');
+assert(pkg.scripts?.check?.includes('call-incoming-v2-check.mjs'), 'npm check must include incoming call contract');
+assert(pkg.scripts?.check?.includes('communication-v3-check.mjs'), 'npm check must include communication contract');
 
 assert(index.includes(`assets/boot.js?build=${BUILD}`), `unexpected production boot build; expected ${BUILD}`);
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design baseline asset version');
@@ -140,14 +144,18 @@ assert(!work.includes("api.update('milestones'"), 'Work owner must not directly 
 assert(!work.includes('MutationObserver'), 'Work owner must not use MutationObserver');
 assert(boot.indexOf('work-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js'), 'Work owner must load before compatibility bridge');
 
+const incomingCallV2 = read('site/assets/call-incoming-v2.js');
 const homeV6 = read('site/assets/home-v6.js');
 const projectsV6 = read('site/assets/projects-v6.js');
 const workV6 = read('site/assets/work-v6.js');
+assert(incomingCallV2.includes("api.rpc('get_pending_call_invite_v2')"), 'Incoming call receiver must use secure pending-call RPC');
+assert(!incomingCallV2.includes('RTCPeerConnection'), 'Incoming call receiver must reuse native WebRTC owner');
 for (const [name, code] of [['Home V6',homeV6],['Projects V6',projectsV6],['Work V6',workV6]]) {
   assert(!code.includes('MutationObserver'), `${name} must not use MutationObserver`);
   assert(!code.includes('SupabaseBrowserClient'), `${name} must remain presentation-only`);
 }
-assert(boot.indexOf('live.js') < boot.indexOf('home-v6.js'), 'Home V6 must load after live');
+assert(boot.indexOf('live.js') < boot.indexOf('call-incoming-v2.js'), 'Incoming call receiver must load after live');
+assert(boot.indexOf('call-incoming-v2.js') < boot.indexOf('home-v6.js'), 'Incoming call receiver must load before presentation owners');
 assert(boot.indexOf('home-v6.js') < boot.indexOf('projects-v6.js'), 'Projects V6 must load after Home V6');
 assert(boot.indexOf('projects-v6.js') < boot.indexOf('work-v6.js'), 'Work V6 must load after Projects V6');
 assert(boot.indexOf('work-v6.js') < boot.indexOf('project-access-v1.js'), 'V6 presentation owners must load before domain owners');

@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.12-v6-core-p1';
+  const VERSION = 'v4.5.12-v6-polish-p1';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -28,6 +28,7 @@
   window.__4B4C_STABILITY_MODE__ = VERSION;
 
   import(`./live.js?${VERSION}`)
+    .then(() => import(`./call-incoming-v2.js?${VERSION}`))
     .then(() => import(`./home-v6.js?${VERSION}`))
     .then(() => import(`./projects-v6.js?${VERSION}`))
     .then(() => import(`./work-v6.js?${VERSION}`))

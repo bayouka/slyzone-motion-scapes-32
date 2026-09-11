@@ -1,12 +1,14 @@
 import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(p,'utf8');
-const RELEASE='v4.5.12-v6-core-p1';
-const BUILD='520';
+const RELEASE='v4.5.12-v6-polish-p1';
+const BUILD='521';
 const boot=read('site/assets/boot.js');
 const worker=read('src/worker.js');
 const index=read('site/index.html');
 const live=read('site/assets/live.js');
+const incomingCallV2=read('site/assets/call-incoming-v2.js');
+const incomingCallV2Css=read('site/assets/call-incoming-v2.css');
 const homeV6=read('site/assets/home-v6.js');
 const projectsV6=read('site/assets/projects-v6.js');
 const workV6=read('site/assets/work-v6.js');
@@ -38,6 +40,7 @@ const meetingOwnerDb=read('supabase/migrations/20260908214017_communication_v3_m
 const communicationLegacyDb=read('supabase/migrations/20260908220327_communication_v3_legacy_rpc_hardening.sql');
 const communicationStorageDb=read('supabase/migrations/20260908220806_communication_v3_message_storage_paths.sql');
 const communicationDeleteDb=read('supabase/migrations/20260908221034_communication_v3_deleted_message_privacy.sql');
+const incomingCallDb=read('supabase/migrations/20260911225000_pending_call_invite_v2.sql');
 
 function assert(ok,msg){if(!ok){console.error(`STABILITY CHECK FAILED: ${msg}`);process.exit(1);}}
 function all(text,items,label){for(const item of items)assert(text.includes(item),`${label}: ${item}`);}
@@ -45,10 +48,11 @@ function all(text,items,label){for(const item of items)assert(text.includes(item
 assert(worker.includes(RELEASE),'worker health version');
 assert(index.includes(`assets/boot.js?build=${BUILD}`),`cache bust ${BUILD}`);
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'),'V5 design baseline retained');
-all(index,['assets/design-v6.css?v=6.0.0-shell-p1','assets/home-v6.css?v=6.0.0-home-p1','assets/projects-v6.css?v=6.0.0-project-p1','assets/work-v6.css?v=6.0.0-work-p1'],'V6 stylesheet missing');
+all(index,['assets/design-v6.css?v=6.0.0-shell-p1','assets/home-v6.css?v=6.0.1-home-polish','assets/projects-v6.css?v=6.0.1-project-polish','assets/work-v6.css?v=6.0.1-work-polish'],'V6 stylesheet missing');
 all(index,['assets/call-native-v1.css','assets/resources-workspace-v1.css','assets/resources-workspace-v2.css','assets/delivery-workflow-v1.css','assets/library-workspace-v1.css','assets/communication-workspace-v1.css'],'stylesheet missing');
-all(boot,[`const VERSION = '${RELEASE}'`,'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','home-v6.js','projects-v6.js','work-v6.js','project-access-v1.js','project-messages-route-v1.js','delivery-workflow-v1.js','meeting-workflow-v1.js','work-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','approval-route-v1.js','library-workspace-v1.js'],'boot contract missing');
-assert(boot.indexOf('live.js')<boot.indexOf('home-v6.js'),'Home V6 must load after live');
+all(boot,[`const VERSION = '${RELEASE}'`,'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','call-incoming-v2.js','home-v6.js','projects-v6.js','work-v6.js','project-access-v1.js','project-messages-route-v1.js','delivery-workflow-v1.js','meeting-workflow-v1.js','work-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','approval-route-v1.js','library-workspace-v1.js'],'boot contract missing');
+assert(boot.indexOf('live.js')<boot.indexOf('call-incoming-v2.js'),'incoming receiver must load after live');
+assert(boot.indexOf('call-incoming-v2.js')<boot.indexOf('home-v6.js'),'incoming receiver must load before Home V6');
 assert(boot.indexOf('home-v6.js')<boot.indexOf('projects-v6.js'),'Projects V6 must load after Home V6');
 assert(boot.indexOf('projects-v6.js')<boot.indexOf('work-v6.js'),'Work V6 must load after Projects V6');
 assert(boot.indexOf('work-v6.js')<boot.indexOf('project-access-v1.js'),'V6 presentation owners must load before domain owners');
@@ -60,18 +64,24 @@ assert(!boot.includes('communication workspace unavailable; native messages view
 assert(!boot.includes('resources v2 unavailable; native resources view kept'),'Resources V2 fallback reintroduced');
 for(const forbidden of ['resources-workspace-v1.js?','resources-workspace-form-guard-v1.js','invite-prelive-v2.js','auth-recovery-v1.js','home-polish.js','team-access-v1.js','team-access-safety-v2.js','team-access-submit-safety-v3.js','invite-lifecycle-v1.js','approval-flow-safety-v1.js','product-coherence-v1.js','daily-work-v1.js','planning-clarity-v1.js','project-lifecycle-safety-v1.js','project-flow-v1.js','communication-memory-v1.js','meeting-agenda-v1.js','resource-model-v1.js','workflow-backend-v2.js','project-progress-v2.js','ui-quality-v1.js','dialog-focus-safety-v2.js']) assert(!boot.includes(forbidden),`forbidden enhancer loaded: ${forbidden}`);
 
+all(incomingCallV2,['__4B4C_INCOMING_CALL_V2_OWNER__',"api.rpc('get_pending_call_invite_v2')",'data-action="call-accept-v1"','data-action="call-decline-v1"','POLL_MS = 1400'],'incoming call receiver missing');
+for(const forbidden of ['RTCPeerConnection','send_call_signal_v1','join_call_v1','start_private_call_v2','api.insert(','api.update(','api.remove(']) assert(!incomingCallV2.includes(forbidden),`incoming receiver duplicated workflow: ${forbidden}`);
+assert(incomingCallV2Css.includes('#incoming-call-v2')&&incomingCallV2Css.includes('@media(max-width:640px)'),'incoming call responsive CSS');
+all(incomingCallDb,['get_pending_call_invite_v2','ci.invited_user_id = auth.uid()',"ci.status = 'pending'", "cs.status = 'live'", "wm.status = 'active'", "cp.user_id = cs.started_by", "interval '25 seconds'",'grant execute on function public.get_pending_call_invite_v2() to authenticated'],'incoming call db missing');
+
 for(const [name,code] of [['Home V6',homeV6],['Projects V6',projectsV6],['Work V6',workV6]]){
   assert(!code.includes('MutationObserver'),`${name} MutationObserver`);
   assert(!code.includes('SupabaseBrowserClient'),`${name} must remain presentation-only`);
   for(const forbidden of ['api.rpc','api.insert','api.update','api.remove']) assert(!code.includes(forbidden),`${name} backend mutation/reference reintroduced: ${forbidden}`);
 }
-all(homeV6,['__4B4C_HOME_V6_OWNER__','Mets-moi à jour','trapDialogFocus'],'Home V6 contract missing');
-all(projectsV6,['__4B4C_PROJECTS_V6_OWNER__','Maintenant','Pourquoi','Ensuite','projectCardRank'],'Projects V6 contract missing');
-all(workV6,['__4B4C_WORK_V6_PRESENTATION_OWNER__','work-v6-primary-view','work-v6-secondary-view','Cause du blocage','roadmap-v6-focus-strip'],'Work V6 presentation contract missing');
+all(homeV6,['__4B4C_HOME_V6_OWNER__','Mets-moi à jour','trapDialogFocus','heroFacts','normalizedTitle'],'Home V6 contract missing');
+assert(!homeV6.includes('est en difficulté'),'Home opaque health copy reintroduced');
+all(projectsV6,['__4B4C_PROJECTS_V6_OWNER__','Maintenant','Pourquoi','Ensuite','projectCardRank','personalBlocked','blockedCount'],'Projects V6 contract missing');
+all(workV6,['__4B4C_WORK_V6_PRESENTATION_OWNER__','work-v6-primary-view','work-v6-secondary-view','work-v6-more-views','Cause du blocage','roadmap-v6-focus-strip','decorateRoadmapPhases'],'Work V6 presentation contract missing');
 all(designV6,['--v6-bg:','--v6-surface:',':focus-visible','prefers-reduced-motion:reduce'],'Design V6 contract missing');
-assert(homeV6Css.includes('.home-v6-focus-strip')&&homeV6Css.includes('@media(max-width:767px)'),'Home V6 responsive css');
-assert(projectsV6Css.includes('.project-v6-focus-strip')&&projectsV6Css.includes('@media(max-width:767px)'),'Projects V6 responsive css');
-assert(workV6Css.includes('.work-v6-focus-strip')&&workV6Css.includes('.roadmap-v6-focus-strip')&&workV6Css.includes('@media(max-width:767px)'),'Work V6 responsive css');
+assert(homeV6Css.includes('.home-v6-focus-strip')&&homeV6Css.includes('.home-v6-hero-facts')&&homeV6Css.includes('@media(max-width:767px)'),'Home V6 responsive css');
+assert(projectsV6Css.includes('.project-v6-focus-strip')&&projectsV6Css.includes('>.project-context-rail{display:none!important}')&&projectsV6Css.includes('@media(max-width:767px)'),'Projects V6 responsive css');
+assert(workV6Css.includes('.work-v6-focus-strip')&&workV6Css.includes('.roadmap-v6-focus-strip')&&workV6Css.includes('.work-v6-more-views')&&workV6Css.includes('.roadmap-v6-phase-empty-completed')&&workV6Css.includes('@media(max-width:767px)'),'Work V6 responsive css');
 
 all(projectAccess,['create_project_with_access_setup_v1','Projet d’équipe','Projet restreint'],'project access owner missing');
 all(projectMessagesRoute,['kind=eq.project','routingContextReady','#/messages/'],'project message route owner missing');

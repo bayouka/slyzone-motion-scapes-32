@@ -20,39 +20,27 @@ if (!(livePos < homePos && homePos < accessPos)) fail('Home V6 presentation owne
 const v6CssPos = index.indexOf('assets/design-v6.css');
 const homeCssPos = index.indexOf('assets/home-v6.css');
 if (v6CssPos < 0 || homeCssPos < 0 || homeCssPos <= v6CssPos) fail('Home V6 CSS must load after Design V6');
-if (!index.includes('assets/boot.js?build=520')) fail('Home V6 release candidate must expose build 520');
+if (!index.includes('assets/boot.js?build=521')) fail('Home V6 release candidate must expose build 521');
 
 const requiredJs = [
-  '__4B4C_HOME_V6_OWNER__',
-  '.v43-home-head',
-  '.v43-home-grid',
-  '.v43-attention-row',
-  '.v43-catchup-card .catchup-event-v41',
-  '.project-resume-card-v43',
-  '.v43-upcoming-row',
-  'data-home-v6-action="catchup"',
-  'role="dialog"',
-  'aria-modal="true"',
-  "event.key === 'Escape'",
-  'trapDialogFocus',
-  'setInterval',
-  '2500',
+  '__4B4C_HOME_V6_OWNER__', '.v43-home-head', '.v43-home-grid', '.v43-attention-row',
+  '.v43-catchup-card .catchup-event-v41', '.project-resume-card-v43', '.v43-upcoming-row',
+  'data-home-v6-action="catchup"', 'role="dialog"', 'aria-modal="true"', "event.key === 'Escape'",
+  'trapDialogFocus', 'heroFacts', 'home-v6-hero-fact', 'normalizedTitle',
+  'Reprendre la trajectoire du projet', 'setInterval', '2500',
 ];
 for (const marker of requiredJs) if (!js.includes(marker)) fail(`missing Home V6 contract: ${marker}`);
+if (js.includes('est en difficulté')) fail('Home V6 must not expose opaque project-health copy');
 
 for (const forbidden of ['MutationObserver', 'SupabaseBrowserClient', 'api.rpc', 'api.insert', 'api.update', 'api.remove', 'fetch(']) {
   if (js.includes(forbidden)) fail(`presentation owner must not contain backend/observer behavior: ${forbidden}`);
 }
 
 const requiredCss = [
-  '.home-v6-hero-actions',
-  '.home-v6-focus-strip',
-  '.home-v6-focus-card',
-  '.home-v6-dialog-backdrop',
-  '.home-v6-causal-step',
-  '@media(max-width:767px)',
-  'prefers-reduced-motion:reduce',
+  '.home-v6-hero-facts', '.home-v6-hero-fact', '.home-v6-hero-actions', '.home-v6-focus-strip',
+  '.home-v6-focus-card', '.home-v6-dialog-backdrop', '.home-v6-causal-step',
+  '@media(max-width:767px)', 'prefers-reduced-motion:reduce',
 ];
 for (const marker of requiredCss) if (!css.includes(marker)) fail(`missing Home V6 style contract: ${marker}`);
 
-console.log('home v6: OK (build 520)');
+console.log('home v6: OK (build 521)');

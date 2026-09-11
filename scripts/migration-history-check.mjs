@@ -24,6 +24,7 @@ const requiredProductionTail = [
   '20260909073012_expire_unanswered_call_invites.sql',
   '20260909092310_revoke_anon_call_heartbeat.sql',
   '20260909093700_revoke_public_call_heartbeat.sql',
+  '20260911225000_pending_call_invite_v2.sql',
 ];
 
 const missing = requiredProductionTail.filter((name) => !fs.existsSync(`${migrationDir}/${name}`));
@@ -32,16 +33,32 @@ if (missing.length) {
   process.exit(1);
 }
 
-const latest = fs.readFileSync(`${migrationDir}/20260909093700_revoke_public_call_heartbeat.sql`, 'utf8');
+const heartbeat = fs.readFileSync(`${migrationDir}/20260909093700_revoke_public_call_heartbeat.sql`, 'utf8');
 for (const required of [
   'revoke all on function public.heartbeat_call_v1(uuid) from public',
   'revoke all on function public.heartbeat_call_v1(uuid) from anon',
   'grant execute on function public.heartbeat_call_v1(uuid) to authenticated',
 ]) {
-  if (!latest.includes(required)) {
+  if (!heartbeat.includes(required)) {
     console.error(`MIGRATION HISTORY CHECK FAILED: final heartbeat ACL guard missing: ${required}`);
     process.exit(1);
   }
 }
 
-console.log(`migration history: OK (${requiredProductionTail.length} recovered production migrations guarded)`);
+const incoming = fs.readFileSync(`${migrationDir}/20260911225000_pending_call_invite_v2.sql`, 'utf8');
+for (const required of [
+  'create or replace function public.get_pending_call_invite_v2()',
+  'ci.invited_user_id = auth.uid()',
+  "ci.status = 'pending'",
+  "cp.user_id = cs.started_by",
+  "interval '25 seconds'",
+  'revoke all on function public.get_pending_call_invite_v2() from anon',
+  'grant execute on function public.get_pending_call_invite_v2() to authenticated',
+]) {
+  if (!incoming.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: incoming call guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+console.log(`migration history: OK (${requiredProductionTail.length} production migrations guarded)`);

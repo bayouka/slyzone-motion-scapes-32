@@ -27,21 +27,13 @@ const homeCssPos = index.indexOf('assets/home-v6.css');
 const projectsCssPos = index.indexOf('assets/projects-v6.css');
 const workCssPos = index.indexOf('assets/work-v6.css');
 if (!(designPos >= 0 && designPos < homeCssPos && homeCssPos < projectsCssPos && projectsCssPos < workCssPos)) fail('Work V6 CSS must load after prior V6 layers');
-if (!index.includes('assets/boot.js?build=520')) fail('Tranche D release candidate must expose build 520');
+if (!index.includes('assets/boot.js?build=521')) fail('Work V6 release candidate must expose build 521');
 
 const requiredJs = [
-  '__4B4C_WORK_V6_PRESENTATION_OWNER__',
-  '.work-view-tabs',
-  '.action-row-v4',
-  '.roadmap-phase',
-  '.roadmap-toolbar',
-  'work-v6-primary-view',
-  'work-v6-secondary-view',
-  'Cause du blocage',
-  'roadmap-v6-focus-strip',
-  "['board','calendar']",
-  'setInterval',
-  '2500',
+  '__4B4C_WORK_V6_PRESENTATION_OWNER__', '.work-view-tabs', '.action-row-v4', '.roadmap-phase', '.roadmap-toolbar',
+  'work-v6-primary-view', 'work-v6-secondary-view', 'work-v6-more-views', 'Autres vues',
+  'Cause du blocage', 'Priorité de la file', 'roadmap-v6-focus-strip', 'decorateRoadmapPhases',
+  'roadmap-v6-phase-empty-completed', "['board','calendar']", 'setInterval', '2500',
 ];
 for (const marker of requiredJs) if (!js.includes(marker)) fail(`missing Work V6 presentation contract: ${marker}`);
 
@@ -50,23 +42,15 @@ for (const forbidden of ['MutationObserver', 'SupabaseBrowserClient', 'api.rpc',
 }
 
 const requiredCss = [
-  '.work-v6-focus-strip',
-  '.roadmap-v6-focus-strip',
-  '.work-v6-block-reason',
-  '.work-v6-secondary-notice',
-  '.roadmap-v6-trajectory',
-  '@media(max-width:767px)',
-  'prefers-reduced-motion:reduce',
+  '.work-v6-focus-strip', '.roadmap-v6-focus-strip', '.work-v6-block-reason', '.work-v6-secondary-notice',
+  '.work-v6-more-views', '.work-v6-more-menu', '.work-v6-secondary-view{display:none!important}',
+  '.roadmap-v6-trajectory', '.roadmap-v6-phase-empty-completed', '@media(max-width:767px)', 'prefers-reduced-motion:reduce',
 ];
 for (const marker of requiredCss) if (!css.includes(marker)) fail(`missing Work V6 CSS contract: ${marker}`);
 
 for (const sourceContract of [
   "const views=[['list','Liste'],['roadmap','Roadmap'],['board','Tableau'],['calendar','Calendrier']]",
-  'function projectRoadmap',
-  'function actionRow',
-  'blocked_reason',
-  'source_type',
-  'source_id',
+  'function projectRoadmap', 'function actionRow', 'blocked_reason', 'source_type', 'source_id',
 ]) if (!live.includes(sourceContract)) fail(`runtime source contract missing: ${sourceContract}`);
 
 for (const ownerContract of ['__4B4C_WORK_WORKFLOW_OWNER__','create_action_v1','update_action_v1','set_action_status_v1','create_milestone_v1','update_milestone_v1']) {
@@ -74,4 +58,4 @@ for (const ownerContract of ['__4B4C_WORK_WORKFLOW_OWNER__','create_action_v1','
 }
 if (js.includes('source_type') || js.includes('source_id')) fail('presentation layer must not infer provenance not exposed in DOM');
 
-console.log('work v6 presentation: OK (build 520)');
+console.log('work v6 presentation: OK (build 521)');

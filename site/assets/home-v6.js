@@ -11,6 +11,11 @@
   }[char]));
   const text = (node) => String(node?.textContent || '').replace(/\s+/g, ' ').trim();
   const homeActive = () => HOME_ROUTES.has(location.hash || '');
+  const normalizedTitle = (value) => String(value || '').toLowerCase().replace(/^traiter\s*:\s*/i, '').replace(/\s+/g, ' ').trim();
+
+  function attentionRows() {
+    return [...document.querySelectorAll('.v43-attention-row')];
+  }
 
   function attentionSnapshot() {
     const row = document.querySelector('.v43-attention-row.primary-row, .v43-attention-row');
@@ -21,7 +26,7 @@
       kind: text(row.querySelector('.attention-kind')) || 'Action',
       meta,
       projectName: meta.split('·')[0]?.trim() || '',
-      danger: Boolean(row.querySelector('.danger')),
+      danger: Boolean(row.querySelector('.danger')) || /blocage/i.test(text(row.querySelector('.attention-kind'))),
     };
   }
 
@@ -60,27 +65,60 @@
     }));
   }
 
-  function whyText(attention, project) {
+  function whyText(attention) {
     if (!attention) return 'Aucune intervention personnelle n’est actuellement en attente.';
-    let base = 'Cet élément est le premier de votre file d’interventions ouvertes.';
     const kind = attention.kind.toLowerCase();
-    if (kind.includes('validation')) base = 'Une validation vous est attribuée et reste en attente.';
-    else if (kind.includes('demande')) base = 'Une réponse est attendue de votre part.';
-    else if (kind.includes('décision') || kind.includes('decision')) base = 'Une décision de votre part est attendue.';
-    else if (attention.danger) base = 'Une action qui vous concerne est actuellement bloquée.';
-    if (project?.reason) return `${base} ${project.reason}`;
-    return base;
+    if (kind.includes('validation')) return 'Une validation vous est attribuée et reste en attente de votre décision.';
+    if (kind.includes('demande')) return 'Une réponse est explicitement attendue de votre part.';
+    if (kind.includes('décision') || kind.includes('decision')) return 'Une décision vous est attribuée et bloque la suite tant qu’elle n’est pas prise.';
+    if (attention.danger || kind.includes('blocage')) return 'Cette action est signalée comme bloquée et vous concerne directement.';
+    return 'Cet élément est actuellement le premier de votre file d’interventions ouvertes.';
   }
 
-  function nextSnapshot(project, upcoming) {
-    if (project?.nextTitle) {
+  function nextSnapshot(project, upcoming, attention) {
+    const current = normalizedTitle(attention?.title);
+    const projectNext = normalizedTitle(project?.nextTitle);
+    if (project?.nextTitle && projectNext && projectNext !== current) {
       return {
         title: project.nextTitle,
         meta: [project.nextLabel, project.nextWhen].filter(Boolean).join(' · '),
       };
     }
-    if (upcoming?.title) return { title: upcoming.title, meta: [upcoming.when, upcoming.meta].filter(Boolean).join(' · ') };
+    if (upcoming?.title && normalizedTitle(upcoming.title) !== current) {
+      return { title: upcoming.title, meta: [upcoming.when, upcoming.meta].filter(Boolean).join(' · ') };
+    }
+    if (attention) {
+      return {
+        title: 'Reprendre la trajectoire du projet',
+        meta: 'La prochaine étape sera déterminée après le traitement de l’intervention actuelle.',
+      };
+    }
     return { title: 'Aucune prochaine étape urgente identifiée', meta: 'Le projet peut être repris depuis votre portefeuille.' };
+  }
+
+  function heroFacts() {
+    const rows = attentionRows();
+    const facts = [];
+    if (rows.length) facts.push({ tone: 'attention', label: `${rows.length} intervention${rows.length > 1 ? 's' : ''} à traiter` });
+    else facts.push({ tone: 'ok', label: 'Aucune intervention en attente' });
+
+    const blocked = rows.filter((row) => Boolean(row.querySelector('.danger')) || /blocage/i.test(text(row.querySelector('.attention-kind'))));
+    if (blocked.length) {
+      const meta = text(blocked[0].querySelector('small'));
+      const project = meta.split('·')[0]?.trim();
+      facts.push({ tone: 'danger', label: `${blocked.length} blocage${blocked.length > 1 ? 's' : ''}${project ? ` · ${project}` : ''}` });
+    }
+
+    const upcoming = upcomingSnapshot();
+    if (upcoming?.title) facts.push({ tone: 'time', label: `Réunion ${upcoming.when || 'à venir'}` });
+    return facts.slice(0, 3);
+  }
+
+  function rewriteHeroSummary(hero) {
+    const summary = hero.querySelector('p');
+    if (!summary) return;
+    summary.classList.add('home-v6-hero-facts');
+    summary.innerHTML = heroFacts().map((fact) => `<span class="home-v6-hero-fact ${esc(fact.tone)}">${esc(fact.label)}</span>`).join('');
   }
 
   function ensureHeroActions(hero) {
@@ -104,7 +142,7 @@
     const attention = attentionSnapshot();
     const project = projectSnapshot(attention?.projectName);
     const upcoming = upcomingSnapshot();
-    const next = nextSnapshot(project, upcoming);
+    const next = nextSnapshot(project, upcoming, attention);
     strip.innerHTML = `
       <article class="home-v6-focus-card is-now">
         <span>Maintenant</span>
@@ -114,7 +152,7 @@
       <article class="home-v6-focus-card is-why">
         <span>Pourquoi</span>
         <strong>${esc(attention ? attention.kind : 'Situation calme')}</strong>
-        <small>${esc(whyText(attention, project))}</small>
+        <small>${esc(whyText(attention))}</small>
       </article>
       <article class="home-v6-focus-card is-next">
         <span>Ensuite</span>
@@ -142,17 +180,24 @@
       </a>`).join('');
   }
 
+  function consequenceText(attention, project) {
+    if (!attention) return 'Aucun blocage personnel n’est visible sur votre Home.';
+    const kind = attention.kind.toLowerCase();
+    if (attention.danger || kind.includes('blocage')) return `Le traitement de « ${attention.title} » est nécessaire avant de pouvoir considérer cette intervention comme débloquée.`;
+    if (kind.includes('validation')) return `Le projet attend votre validation de « ${attention.title} » avant de poursuivre ce point.`;
+    if (kind.includes('demande')) return `Une réponse sur « ${attention.title} » est attendue avant la suite de ce point.`;
+    return project ? `Cette intervention concerne directement ${project.name}.` : 'Cette intervention reste ouverte dans votre file de travail.';
+  }
+
   function openCatchupDialog(trigger) {
     closeDialog({ restoreFocus: false });
     lastFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
     const attention = attentionSnapshot();
     const project = projectSnapshot(attention?.projectName);
     const upcoming = upcomingSnapshot();
-    const next = nextSnapshot(project, upcoming);
+    const next = nextSnapshot(project, upcoming, attention);
     const recent = recentSnapshots();
-    const consequence = project?.reason || (attention
-      ? 'Cette intervention est actuellement classée en tête de vos éléments à traiter.'
-      : 'Aucun blocage personnel n’est visible sur votre Home.');
+    const consequence = consequenceText(attention, project);
 
     dialog = document.createElement('div');
     dialog.className = 'home-v6-dialog-backdrop';
@@ -174,7 +219,7 @@
           </section>
           <section class="home-v6-causal-step is-consequence">
             <span>3 · Conséquence</span>
-            <strong>${esc(project ? `${project.name} · ${project.health || 'Projet actif'}` : 'Situation de l’espace')}</strong>
+            <strong>${esc(project ? `Impact sur ${project.name}` : 'Situation de l’espace')}</strong>
             <small>${esc(consequence)}</small>
           </section>
           <section class="home-v6-causal-step is-next">
@@ -199,6 +244,7 @@
     const hero = document.querySelector('.v43-home-head');
     const grid = document.querySelector('.v43-home-grid');
     if (!hero || !grid) return;
+    rewriteHeroSummary(hero);
     ensureHeroActions(hero);
     ensureFocusStrip(hero, grid);
   }
@@ -255,7 +301,6 @@
   window.addEventListener('focus', () => scheduleEnhance());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleEnhance(); });
 
-  // Lightweight reconciliation for Home re-renders caused by smart sync. No DOM observer is used.
   setInterval(() => {
     if (homeActive() && !document.querySelector('.v43-home-head.home-v6-ready')) scheduleEnhance();
   }, 2500);
