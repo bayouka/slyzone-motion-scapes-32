@@ -1,12 +1,17 @@
 import fs from 'node:fs';
 
 const index = fs.readFileSync('site/index.html', 'utf8');
+const boot = fs.readFileSync('site/assets/boot.js', 'utf8');
+const worker = fs.readFileSync('src/worker.js', 'utf8');
 const css = fs.readFileSync('site/assets/design-v6.css', 'utf8');
 
 const fail = (message) => {
   console.error(`V6 SHELL CHECK FAILED: ${message}`);
   process.exit(1);
 };
+
+const RELEASE = 'v4.5.12-v6-core-p1';
+const BUILD = '520';
 
 const v5 = index.indexOf('assets/design-v5.css');
 const v6 = index.indexOf('assets/design-v6.css');
@@ -44,8 +49,8 @@ if (css.includes('supabase') || css.includes('create_action_v1') || css.includes
   fail('design layer must not contain backend/workflow ownership');
 }
 
-if (!index.includes('assets/boot.js?build=519')) {
-  fail('Tranche A draft must not claim a new certified runtime build before quality certification');
-}
+if (!index.includes(`assets/boot.js?build=${BUILD}`)) fail(`release candidate must expose build ${BUILD}`);
+if (!boot.includes(`const VERSION = '${RELEASE}'`)) fail(`boot must expose ${RELEASE}`);
+if (!worker.includes(`version: '${RELEASE}'`)) fail(`worker health must expose ${RELEASE}`);
 
-console.log('v6 shell: OK');
+console.log(`v6 shell: OK (${RELEASE} / build ${BUILD})`);
