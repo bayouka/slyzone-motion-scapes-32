@@ -8,6 +8,8 @@ const assert = (condition, message) => {
   }
 };
 
+const RELEASE = 'v4.5.12-v6-core-p1';
+const BUILD = '520';
 const boot = read('site/assets/boot.js');
 const index = read('site/index.html');
 const worker = read('src/worker.js');
@@ -18,6 +20,9 @@ const lock = JSON.parse(read('package-lock.json'));
 
 const requiredBootModules = [
   'live.js',
+  'home-v6.js',
+  'projects-v6.js',
+  'work-v6.js',
   'project-access-v1.js',
   'project-messages-route-v1.js',
   'delivery-workflow-v1.js',
@@ -40,18 +45,26 @@ assert(!/MutationObserver\s*\(/.test(boot), 'MutationObserver reintroduced in bo
 
 const cssRefs = [...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(m => m[1]);
 assert(cssRefs.length > 0, 'no stylesheets found in index');
-assert(cssRefs.at(-1)?.startsWith('assets/design-v5.css?'), 'design-v5.css must be the final stylesheet');
+assert(cssRefs.at(-1)?.startsWith('assets/design-v5.css?'), 'design-v5.css must remain the final linked baseline stylesheet');
 assert(cssRefs.filter(x => x.startsWith('assets/design-v5.css?')).length === 1, 'design-v5.css must be loaded exactly once');
 assert(cssRefs.includes('assets/core-legacy-v455.css?v=4.5.12-roadmap-p2'), 'consolidated legacy core CSS bundle missing');
+assert(index.includes('assets/design-v6.css?v=6.0.0-shell-p1'), 'V6 shell layer missing');
+assert(index.includes('assets/home-v6.css?v=6.0.0-home-p1'), 'V6 Home layer missing');
+assert(index.includes('assets/projects-v6.css?v=6.0.0-project-p1'), 'V6 Projects layer missing');
+assert(index.includes('assets/work-v6.css?v=6.0.0-work-p1'), 'V6 Work layer missing');
 for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-polish.css','assets/v434-polish.css','assets/v435-final.css','assets/home-mobile-layout-v1.css']) {
   assert(!cssRefs.includes(obsoleteCss), `legacy CSS must not be loaded directly: ${obsoleteCss}`);
 }
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 assert(pkg.scripts?.check?.includes('site/assets/work-workflow-v1.js'), 'npm check must syntax-check work workflow owner');
+assert(pkg.scripts?.check?.includes('site/assets/home-v6.js'), 'npm check must syntax-check Home V6 owner');
+assert(pkg.scripts?.check?.includes('site/assets/projects-v6.js'), 'npm check must syntax-check Projects V6 owner');
+assert(pkg.scripts?.check?.includes('site/assets/work-v6.js'), 'npm check must syntax-check Work V6 presentation owner');
 
-assert(index.includes('assets/boot.js?build=519'), 'unexpected production boot build in SPA shell');
-assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
-assert(worker.includes("version: 'v4.5.12-work-p1'"), 'unexpected production worker release marker');
+assert(index.includes(`assets/boot.js?build=${BUILD}`), `unexpected production boot build; expected ${BUILD}`);
+assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design baseline asset version');
+assert(boot.includes(`const VERSION = '${RELEASE}'`), `unexpected boot release marker; expected ${RELEASE}`);
+assert(worker.includes(`version: '${RELEASE}'`), `unexpected worker release marker; expected ${RELEASE}`);
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
@@ -127,6 +140,18 @@ assert(!work.includes("api.update('milestones'"), 'Work owner must not directly 
 assert(!work.includes('MutationObserver'), 'Work owner must not use MutationObserver');
 assert(boot.indexOf('work-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js'), 'Work owner must load before compatibility bridge');
 
+const homeV6 = read('site/assets/home-v6.js');
+const projectsV6 = read('site/assets/projects-v6.js');
+const workV6 = read('site/assets/work-v6.js');
+for (const [name, code] of [['Home V6',homeV6],['Projects V6',projectsV6],['Work V6',workV6]]) {
+  assert(!code.includes('MutationObserver'), `${name} must not use MutationObserver`);
+  assert(!code.includes('SupabaseBrowserClient'), `${name} must remain presentation-only`);
+}
+assert(boot.indexOf('live.js') < boot.indexOf('home-v6.js'), 'Home V6 must load after live');
+assert(boot.indexOf('home-v6.js') < boot.indexOf('projects-v6.js'), 'Projects V6 must load after Home V6');
+assert(boot.indexOf('projects-v6.js') < boot.indexOf('work-v6.js'), 'Work V6 must load after Projects V6');
+assert(boot.indexOf('work-v6.js') < boot.indexOf('project-access-v1.js'), 'V6 presentation owners must load before domain owners');
+
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
 assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(v5), 'obsolete .mobile-nav selector reintroduced in V5');
@@ -159,5 +184,5 @@ for (const path of archivedWorkflows) {
   assert(yaml.includes('if: ${{ false }}'), `${path} must remain archived/non-executable`);
 }
 
-console.log('repo hygiene: OK');
+console.log(`repo hygiene: OK (${RELEASE} / build ${BUILD})`);
 if (process.exitCode) process.exit(process.exitCode);
