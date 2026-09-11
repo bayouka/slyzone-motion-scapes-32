@@ -34,6 +34,7 @@ function message(error) {
     ['MEETING_ATTENDEE_NOT_ACTIVE', 'Un participant sélectionné n’est plus membre actif de cet espace.'],
     ['MEETING_ATTENDEE_NO_PROJECT_ACCESS', 'Un participant sélectionné n’a pas accès à ce projet.'],
     ['GUEST_MEETING_REQUIRES_SHARED_PROJECT', 'Une réunion avec un invité externe doit être liée à un projet partagé.'],
+    ['WORKSPACE_MEETING_INTERNAL_ONLY', 'Une réunion de tout l’espace doit rester interne. Pour inviter un externe, liez-la à un projet partagé.'],
     ['MEETING_MANAGE_DENIED', 'Vous ne pouvez pas modifier cette réunion.'],
     ['MEETING_ACCESS_DENIED', 'Cette réunion n’est plus accessible.'],
     ['MEETING_FINALIZED_STATUS_IMMUTABLE', 'Une réunion terminée ou annulée ne peut plus être réouverte par cette action.'],
@@ -56,7 +57,6 @@ function feedback(form, text, error = false) {
   if (!node) {
     node = document.createElement('div');
     node.dataset.meetingWorkflowFeedback = '1';
-    node.setAttribute('role', error ? 'alert' : 'status');
     const actions = form.querySelector('.modal-actions');
     (actions || form).insertAdjacentElement(actions ? 'beforebegin' : 'afterbegin', node);
   }
@@ -101,9 +101,7 @@ async function updateMeeting(form) {
   const fd = new FormData(form);
   const meetingId = value(fd, 'meetingId');
   if (!meetingId) throw new Error('Réunion introuvable.');
-  const meeting = one(await api.select('meetings', `select=id,title,starts_at,ends_at,video_room,status,visibility&event_id=is.null&id=eq.${meetingId}&limit=1`).catch(async () =>
-    api.select('meetings', `select=id,title,starts_at,ends_at,video_room,status,visibility&id=eq.${meetingId}&limit=1`)
-  ));
+  const meeting = one(await api.select('meetings', `select=id,title,starts_at,ends_at,video_room,status,visibility&id=eq.${meetingId}&limit=1`));
   if (!meeting) throw new Error('Réunion introuvable ou inaccessible.');
   const attendees = await api.select('meeting_attendees', `select=user_id&meeting_id=eq.${meetingId}`);
   const attendeeIds = [...new Set(attendees.map((row) => row.user_id).filter(Boolean))];
