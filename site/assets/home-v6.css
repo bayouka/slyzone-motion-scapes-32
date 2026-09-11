@@ -1,6 +1,17 @@
-/* 2b2c V6 — Home presentation layer. Real 519 data, no workflow ownership. */
+/* 2b2c V6 — Home presentation layer. Real runtime data, no workflow ownership. */
 
-.home-v6-hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.v43-home-head.home-v6-ready{position:relative;min-height:0!important;padding:22px 24px 20px!important;overflow:hidden}
+.v43-home-head.home-v6-ready>div{max-width:980px;padding-left:4px}
+.v43-home-head.home-v6-ready .eyebrow{display:block;margin:0 0 6px;line-height:1.2}
+.v43-home-head.home-v6-ready h1{margin:0 0 8px!important;line-height:1.05}
+.home-v6-hero-facts{display:flex!important;align-items:center;gap:8px!important;flex-wrap:wrap;margin:0!important;color:inherit!important}
+.home-v6-hero-fact{display:inline-flex;align-items:center;min-height:28px;padding:5px 9px;border:1px solid #dce5f1;border-radius:999px;background:rgba(255,255,255,.72);color:#53627a;font-size:12px;font-weight:750;line-height:1.2}
+.home-v6-hero-fact::before{content:"";width:6px;height:6px;margin-right:7px;border-radius:50%;background:#7f8da4;flex:0 0 auto}
+.home-v6-hero-fact.attention::before{background:var(--v6-blue)}
+.home-v6-hero-fact.danger::before{background:var(--v6-danger)}
+.home-v6-hero-fact.time::before{background:var(--v6-violet)}
+.home-v6-hero-fact.ok::before{background:var(--v6-success)}
+.home-v6-hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
 .home-v6-hero-actions .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 
 .home-v6-focus-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
@@ -46,7 +57,11 @@
 }
 
 @media(max-width:767px){
-  .home-v6-hero-actions{display:grid;grid-template-columns:1fr 1fr}
+  .v43-home-head.home-v6-ready{padding:18px 17px 16px!important}
+  .v43-home-head.home-v6-ready>div{padding-left:3px}
+  .home-v6-hero-facts{display:grid!important;grid-template-columns:1fr;gap:6px!important}
+  .home-v6-hero-fact{width:max-content;max-width:100%}
+  .home-v6-hero-actions{display:grid;grid-template-columns:1fr 1fr;margin-top:13px}
   .home-v6-hero-actions .btn{width:100%;padding-inline:9px}
   .home-v6-focus-strip{gap:8px;margin:12px 0}
   .home-v6-focus-card{padding:13px 14px}
