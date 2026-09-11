@@ -25,36 +25,26 @@ Current source release target: **v4.5.12-roadmap-p2 / build 512**.
 - README release/authority information was updated so old `4b4c-pilot` and root `2b2c` tracks cannot be mistaken for current product source.
 - Direct production HTTP probing is unavailable from the current execution environment, so live Worker verification still requires a reachable browser/network path before production certification.
 
-## Backend history gap
+## Backend migration history — recovered
 
-The live Supabase migration history is authoritative while recovery is incomplete.
+The migration gap identified during the 2026-09-09 recovery audit is now closed in the canonical source.
 
-The canonical source currently has no `20260909*` migration files. Production contains **22 migrations after `20260908221655`** that still need to be recovered into version control without re-applying them to production:
+The **22 production migrations after `20260908221655`** have been restored as version-controlled SQL files, through the final production ACL hardening migration `20260909093700_revoke_public_call_heartbeat.sql`. Production Supabase migration history was treated as the authority; no migration was replayed or applied to production as part of this repository recovery.
 
-1. `20260908224237_agenda_meeting_workflows_v1`
-2. `20260908224452_agenda_meeting_manager_scope_v1`
-3. `20260909010327_communication_live_calls_v1`
-4. `20260909010513_call_signalling_v1`
-5. `20260909011410_call_prejoin_hardening_v1`
-6. `20260909012029_temporary_enable_http_for_communication_preview_check`
-7. `20260909012709_temporary_disable_http_after_communication_preview_check`
-8. `20260909032519_global_quick_calls_v1`
-9. `20260909033553_private_direct_calls_v1`
-10. `20260909042226_temporary_enable_http_for_cf_probe`
-11. `20260909042243_temporary_disable_http_after_cf_probe`
-12. `20260909050314_multi_party_call_invites_v1`
-13. `20260909053817_add_missing_fk_indexes_4b4c`
-14. `20260909053900_align_call_invites_with_room_capacity`
-15. `20260909053925_fix_call_invites_rls_scope_and_initplan`
-16. `20260909054358_enable_http_for_asset_audit`
-17. `20260909054556_clean_call_invite_lifecycle`
-18. `20260909055328_align_call_capacity_errors_with_prod_ui`
-19. `20260909071845_call_presence_heartbeat_and_room_reuse`
-20. `20260909073012_expire_unanswered_call_invites`
-21. `20260909092310_revoke_anon_call_heartbeat`
-22. `20260909093700_revoke_public_call_heartbeat`
+The recovered tail covers:
 
-The original SQL is recoverable from `supabase_migrations.schema_migrations.statements`; do not reconstruct these migrations from memory and do not run them again against production merely to repair Git history.
+- agenda and meeting workflows;
+- native call sessions and WebRTC signalling;
+- prejoin hardening;
+- workspace and direct calls;
+- multi-party call invitations;
+- call capacity and RLS fixes;
+- invitation lifecycle cleanup;
+- presence heartbeat and stale-room reuse;
+- unanswered invite expiry;
+- final anonymous/public heartbeat privilege revocation.
+
+`scripts/migration-history-check.mjs` now guards the complete 22-file production tail and the final heartbeat ACL. It is part of `npm run check`, preventing the recovered history from silently disappearing again.
 
 ## Security classification
 
@@ -71,17 +61,24 @@ Authenticated `SECURITY DEFINER` RPCs must be reviewed by API intent rather than
 ## Product/runtime debt confirmed
 
 - `live.js` remains a large multi-domain monolith.
-- Some legacy workflow implementations still exist inside `live.js` while newer loaded bridge modules own the safe runtime path.
-- Message, deliverable/version and approval code therefore still has duplicate historical ownership that could regress if event/import order changes.
+- Some legacy workflow implementations still exist inside `live.js` while newer loaded bridge modules own the safer runtime path.
+- Global Messages and project Messages currently use two different active presentation/runtime paths. Legacy message RPCs are server-routed through Communication V3, so this is primarily a product/maintenance ownership problem rather than an identified authorization bypass.
+- Deliverable/version/approval safety still partly depends on capture-phase interception by `workflow-backend-safe-v1.js`; this must be simplified behind tests rather than removed abruptly.
 - Historical V6 PRs in `bayouka/2b2c` are research/backlog material only; they must not be merged into the current runtime without explicit reconciliation.
 
-## Gate before structural product changes
+## Remaining gate before structural product changes
 
-Before large UX/feature work:
+Completed:
 
-1. recover the 22 missing production migration files into the canonical repository;
-2. add a repository check that compares the expected production migration tail with version-controlled history;
-3. remove duplicate runtime ownership domain by domain behind contract tests;
-4. add browser E2E coverage for invitation/access, navigation, roadmap/actions, messaging and native calls;
-5. verify the real production Worker `/health` and critical authenticated flows with at least two user accounts;
-6. only then begin larger product/DA restructuring.
+- [x] recover the 22 missing production migration files into the canonical repository;
+- [x] add a repository guard for the recovered production migration tail;
+- [x] make source/runtime/transport authority explicit;
+- [x] correct the stale v4.5.10 CSS QA assertion.
+
+Still required:
+
+- [ ] define and enforce one runtime owner per workflow domain, then remove duplicate ownership incrementally behind contract tests;
+- [ ] add browser E2E coverage for invitation/access, navigation, roadmap/actions, messaging and native calls;
+- [ ] verify the real production Worker `/health` and critical authenticated flows with at least two user accounts;
+- [ ] classify remaining SECURITY DEFINER RPCs by intended API exposure and remove obsolete grants/functions where appropriate;
+- [ ] only then begin large UX/DA restructuring.
