@@ -28,6 +28,7 @@
   window.__4B4C_STABILITY_MODE__ = VERSION;
 
   import(`./live.js?${VERSION}`)
+    .then(() => import(`./call-incoming-v2.js?${VERSION}`))
     .then(() => import(`./home-v6.js?${VERSION}`))
     .then(() => import(`./projects-v6.js?${VERSION}`))
     .then(() => import(`./work-v6.js?${VERSION}`))
