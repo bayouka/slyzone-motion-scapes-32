@@ -46,6 +46,21 @@ The recovered tail covers:
 
 `scripts/migration-history-check.mjs` now guards the complete 22-file production tail and the final heartbeat ACL. It is part of `npm run check`, preventing the recovered history from silently disappearing again.
 
+## RLS and access probes — verified without persistent test data
+
+Read-only/RLS impersonation probes were executed against the production database using the authenticated Postgres role and explicit test identities.
+
+- An authenticated identity with no workspace membership saw **0 workspaces, 0 projects, 0 conversations, 0 messages and 0 deliverables** from 4b4c.
+- The existing ordinary internal Member saw all **3 Team projects** but not the Owner's private/direct conversation, while the Owner saw the full permitted conversation set. This is consistent with audience isolation.
+- The access-aware project workflow `create_project_with_access_setup_v1` was tested inside rolled-back transactions:
+  - a Team project was visible to the ordinary Member automatically;
+  - a Restricted project excluding that Member was invisible to the Member;
+  - a Restricted project explicitly including that Member was visible;
+  - an ordinary Member can create a Restricted project and becomes its project lead.
+- All project fixtures created for these probes were rolled back. A follow-up check confirmed no `__RLS_PROBE_%` rows remained.
+
+These probes validate the current backend Team/Restricted model; they do not replace browser-level E2E tests of the UI.
+
 ## Security classification
 
 Supabase advisors currently report:
@@ -73,12 +88,17 @@ Completed:
 - [x] recover the 22 missing production migration files into the canonical repository;
 - [x] add a repository guard for the recovered production migration tail;
 - [x] make source/runtime/transport authority explicit;
-- [x] correct the stale v4.5.10 CSS QA assertion.
+- [x] correct the stale v4.5.10 CSS QA assertion;
+- [x] verify baseline RLS isolation and Team/Restricted project semantics with reversible database probes;
+- [x] define the runtime ownership consolidation plan;
+- [x] define the browser E2E regression matrix.
 
 Still required:
 
-- [ ] define and enforce one runtime owner per workflow domain, then remove duplicate ownership incrementally behind contract tests;
-- [ ] add browser E2E coverage for invitation/access, navigation, roadmap/actions, messaging and native calls;
+- [ ] correct the project-creation UI so Team/Restricted access semantics match the backend;
+- [ ] remove Guest-only project management CTAs that cannot succeed;
+- [ ] implement executable browser E2E coverage for invitation/access, navigation, roadmap/actions, messaging and native calls;
+- [ ] define and enforce one runtime owner per workflow domain, then remove duplicate ownership incrementally behind browser/contract tests;
 - [ ] verify the real production Worker `/health` and critical authenticated flows with at least two user accounts;
-- [ ] classify remaining SECURITY DEFINER RPCs by intended API exposure and remove obsolete grants/functions where appropriate;
+- [ ] classify remaining SECURITY DEFININER RPCs by intended API exposure and remove obsolete grants/functions where appropriate;
 - [ ] only then begin large UX/DA restructuring.
