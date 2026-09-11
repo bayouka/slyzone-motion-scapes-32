@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.12-communication-p2';
+  const VERSION = 'v4.5.12-delivery-p1';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -34,14 +34,13 @@
     .then(() => import(`./project-access-v1.js?${VERSION}`))
     // Project message routes are mandatory: project chat must resolve to the same Communication V3 renderer.
     .then(() => import(`./project-messages-route-v1.js?${VERSION}`))
-    // Delivery is registered before the legacy-safe bridge so it owns project closure clicks.
+    // Delivery owns project closure before the legacy-safe bridge sees historical actions.
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
     // Communication V3 is mandatory now that both global and project messages depend on one renderer.
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`))
-    .then(() => import(`./resources-workspace-v2.js?${VERSION}`).catch((error) => {
-      console.error('[2b2c] resources v2 unavailable; native resources view kept', error);
-    }))
+    // Resources V2 is mandatory: it is the effective owner for resources, deliverables, versions and approvals.
+    .then(() => import(`./resources-workspace-v2.js?${VERSION}`))
     .then(() => import(`./library-workspace-v1.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] library workspace unavailable; native library view kept', error);
     }))
