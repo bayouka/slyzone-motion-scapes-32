@@ -22,7 +22,7 @@ export default {
 
     if (url.pathname === '/health') {
       return withHeaders(
-        Response.json({ ok: true, app: '4b4c', backend: 'supabase', version: 'v4.5.12-access-p1' }),
+        Response.json({ ok: true, app: '4b4c', backend: 'supabase', version: 'v4.5.12-communication-p1' }),
         { 'cache-control': 'no-store' },
       );
     }
@@ -37,7 +37,6 @@ export default {
       response = await env.ASSETS.fetch(new Request(new URL('/index.html', url.origin), request));
     }
 
-    // Never let the SPA shell become stale. Versioned JS/CSS assets carry their own cache-busters.
     const servesHtml = isRoot || isNavigation || assetPath === '/index.html';
     return withHeaders(response, servesHtml ? { 'cache-control': 'no-store' } : {});
   },
