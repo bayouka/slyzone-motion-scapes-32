@@ -1,6 +1,6 @@
 # 4b4c — Recovery baseline — 2026-09-11
 
-This document records the verified recovery baseline before further product work. It is not a deployment runbook.
+This document records the verified recovery baseline before further structural product work. It is not a deployment runbook.
 
 ## Identity and authority
 
@@ -12,96 +12,113 @@ This document records the verified recovery baseline before further product work
 - Production Worker identity: `4b4c`
 - Historical/non-authoritative tracks: `4b4c-pilot` and the root React/Vite/V6 tree in `bayouka/2b2c`
 
-Current production runtime: **v4.5.12-access-p1 / build 513**.
+Current production runtime: **v4.5.12-communication-p2 / build 515**.
 
-## Recovery checks performed on 2026-09-11
+## Recovery and repository baseline
 
 - Supabase project is `ACTIVE_HEALTHY`.
-- `package.json` remains `4.5.12`; runtime patching uses an explicit release marker rather than lockfile churn.
-- SPA shell references `boot.js?build=513`.
-- Worker `/health` reports `v4.5.12-access-p1`.
+- `package.json` remains `4.5.12`; runtime patches use explicit release markers rather than lockfile churn.
+- The 22 production migrations missing during the 2026-09-09 recovery were restored in version control through `20260909093700_revoke_public_call_heartbeat.sql` without replaying them on production.
+- `scripts/migration-history-check.mjs` guards that recovered history.
 - Canonical and transport Wrangler configurations target Worker `4b4c`.
-- Repository hygiene checks guard the active boot module list and release markers.
-- README/source authority was clarified so historical `4b4c-pilot` and root `2b2c` tracks cannot be mistaken for the product source.
+- Historical `4b4c-pilot`, root V6 and stale deploy artifacts are not authoritative.
 
-## Backend migration history — recovered
+## RLS/access probes
 
-The migration gap identified during the 2026-09-09 recovery audit is closed in the canonical source.
+Reversible production-database probes confirmed:
 
-The **22 production migrations after `20260908221655`** were restored as version-controlled SQL files through `20260909093700_revoke_public_call_heartbeat.sql`. Production Supabase migration history was treated as the authority; no migration was replayed or applied to production as part of repository recovery.
+- an authenticated identity outside the workspace sees no 4b4c workspace/project/conversation/message/deliverable data;
+- an ordinary Member sees Team projects but not private/direct conversations outside its audience;
+- Team projects automatically include eligible internal members;
+- Restricted projects exclude unselected members and include explicitly selected ones;
+- an ordinary Member may create a Restricted project and becomes its lead;
+- probe fixtures were rolled back and left no persistent rows.
 
-`scripts/migration-history-check.mjs` guards the recovered production tail and is part of `npm run check`.
-
-## RLS and access probes — verified without persistent test data
-
-Read-only/RLS impersonation probes were executed against production using explicit test identities.
-
-- An authenticated identity with no workspace membership saw **0 workspaces, 0 projects, 0 conversations, 0 messages and 0 deliverables** from 4b4c.
-- The existing ordinary internal Member saw all **3 Team projects** but not the Owner's private/direct conversation.
-- `create_project_with_access_setup_v1` was tested inside rolled-back transactions: Team auto-shares to an internal Member; Restricted excludes unless explicitly selected; an ordinary Member can create a Restricted project and becomes its lead.
-- All project fixtures were rolled back and no probe rows remained.
-
-## No-GitHub-Actions production path — verified
+## No-GitHub-Actions production path — VERIFIED
 
 GitHub Actions are not part of the 4b4c production chain.
 
-The verified path is:
+Verified flow:
 
 1. develop and validate in `bayouka/slyzone-motion-scapes-32`;
-2. mirror only the validated runtime into `bayouka/2b2c/4b4c/`;
+2. mirror the validated runtime into `bayouka/2b2c/4b4c/`;
 3. Cloudflare Workers Builds attached to `bayouka/2b2c` runs `scripts/deploy-4b4c-direct.sh`;
-4. that script removes `WRANGLER_CI_OVERRIDE_NAME` / `WRANGLER_CI_MATCH_TAG` from the deployment environment and explicitly runs Wrangler with `wrangler.4b4c.jsonc --name 4b4c`;
-5. the script verifies `https://4b4c.bayoukadesbois.workers.dev/health` and fails the Cloudflare build if the expected release marker is absent.
+4. the script removes `WRANGLER_CI_OVERRIDE_NAME` / `WRANGLER_CI_MATCH_TAG` and explicitly runs Wrangler with `wrangler.4b4c.jsonc --name 4b4c`;
+5. the script fails if syntax, release manifest, Worker target, deployment or runtime smoke checks fail.
 
-The previous transport script could return success even when deployment was skipped because it ended with unconditional `exit 0`. This was corrected on 2026-09-11. Build `29a7328c-619a-4fb4-a61f-de73effa6815` for transport commit `06a0858ab80c15e7c9d1f7889439cb62aa32e208` completed successfully only after the direct Worker deploy and `/health` verification succeeded.
+A durable `4b4c/TRANSPORT_RELEASE.txt` manifest now records runtime, build, canonical source SHA and Worker target. The deploy script verifies the manifest before publishing.
 
-`4b4c-pilot` must not be used as development source or production target.
+The former script could report success even when direct deployment was skipped because it ended with unconditional `exit 0`; this false-green path has been removed.
 
-## Product P1 access correction — deployed
+### Latest certified deployment
 
-`project-access-v1.js` is now a mandatory boot module and owns new-project creation semantics.
+Transport HEAD used for certification: `4b6807d7644e2ec6a275f8ca404ea3ec1652511a`.
 
-- **Projet d’équipe** is the recommended/default choice and grants current/future internal members access automatically.
+Cloudflare build: `a9eee5b5-e4b3-450b-ab4e-da0c68f0f6e3` — **SUCCESS**.
+
+Cloudflare attached-service Version ID: `7cd20358-e9d3-43c7-915a-044244486e8d`.
+
+The direct 4b4c script only exits successfully after verifying all of the following on `https://4b4c.bayoukadesbois.workers.dev`:
+
+- `/health` contains `v4.5.12-communication-p2`;
+- `/` contains `assets/boot.js?build=515`;
+- `project-access-v1.js` is served and contains the access-aware project workflow;
+- `project-messages-route-v1.js` is served and contains project-conversation routing plus auth/workspace readiness handling;
+- `communication-workspace-v1.js` is served and contains Communication V3 message handling.
+
+## Product P1 corrections deployed
+
+### Project creation/access
+
+`project-access-v1.js` is mandatory and owns new-project access semantics.
+
+- **Projet d’équipe** is recommended/default and grants current/future internal members access automatically.
 - **Projet restreint** exposes explicit internal-member selection.
-- The workflow calls `create_project_with_access_setup_v1` directly.
-- Guest users cannot create projects and project-level management CTAs for creation/archive are hidden/defensively blocked.
-- The module is mandatory rather than an optional fallback; failure to load cannot silently reactivate the old Team-only creation form.
+- It calls `create_project_with_access_setup_v1` directly.
+- Guests cannot create projects and project create/archive CTAs are hidden/defensively blocked.
+
+### Project Messages → Communication V3
+
+`project-messages-route-v1.js` is mandatory and converts the historical project Messages route into the project's actual `kind=project` conversation inside the global Communication workspace.
+
+- All three current active projects were checked and each has exactly one active general project conversation.
+- Direct project-message links preserve their project context while authentication/workspace state is still loading, then resolve after the session is ready.
+- `communication-workspace-v1.js` is now mandatory; the boot chain no longer silently falls back to the native global Messages renderer.
+- The old project Messages implementation still physically exists in `live.js`, but it is no longer the intended effective route. Removing that dormant code remains cleanup work behind browser regression coverage.
 
 ## Security classification
 
-Supabase advisors currently report one anonymous `SECURITY DEFINER` endpoint (`workspace_invite_public_preview(uuid)`), authenticated `SECURITY DEFINER` RPC warnings, and leaked-password protection disabled.
+Supabase advisors still require follow-up for authenticated `SECURITY DEFINER` API exposure and leaked-password protection. The anonymous `workspace_invite_public_preview(uuid)` endpoint was inspected and currently exposes masked/minimal data to anonymous callers; private details require the intended authenticated identity or a workspace manager.
 
-The anonymous invite preview was inspected: anonymous callers receive masked/minimal information, while private details require the intended authenticated identity or a workspace manager. It is intentional but remains under review.
-
-## Product/runtime debt confirmed
+## Remaining structural debt
 
 - `live.js` remains a large multi-domain monolith.
-- Some legacy workflow implementations remain while newer bridge modules own safer runtime paths.
-- Global Messages and project Messages are two active frontend experiences; the backend routes legacy calls through Communication V3, so this is primarily an ownership/UX debt rather than an identified authorization bypass.
-- Deliverable/version/approval safety still partly depends on capture-phase interception; simplify only behind tests.
-- Historical V6 PRs in `bayouka/2b2c` are research/backlog material only.
+- Some legacy workflow implementations remain physically present behind newer mandatory/effective owners.
+- Deliverable/version/approval behavior still partly depends on capture-phase interception in `workflow-backend-safe-v1.js`.
+- Browser-level authenticated E2E coverage remains incomplete, especially two-user messaging, invitations, native calls and mobile camera behavior.
+- Historical V6 PRs in `bayouka/2b2c` remain backlog/reference only.
 
-## Remaining gate before structural product changes
+## Gate status
 
 Completed:
 
-- [x] recover the 22 missing production migration files;
-- [x] guard recovered migration history;
+- [x] recover and guard missing migration history;
 - [x] make source/runtime/transport authority explicit;
-- [x] correct stale CSS QA assertion;
-- [x] verify baseline RLS isolation and Team/Restricted project semantics;
-- [x] define runtime ownership consolidation plan;
-- [x] define browser E2E regression matrix;
-- [x] reconcile transport Worker identity to `4b4c` and remove obsolete pilot deployment artifacts;
-- [x] correct project-creation UI so Team/Restricted semantics match the backend;
-- [x] remove Guest-only project create/archive CTAs;
-- [x] verify the no-GitHub-Actions direct deployment path and production `/health` for `v4.5.12-access-p1`.
+- [x] verify baseline RLS isolation and Team/Restricted semantics;
+- [x] remove obsolete pilot deployment artifacts;
+- [x] repair and certify the no-GitHub-Actions direct Cloudflare path;
+- [x] fix Team/Restricted project creation semantics;
+- [x] remove impossible Guest project management CTAs;
+- [x] route project Messages through Communication V3;
+- [x] make Communication V3 mandatory;
+- [x] certify production runtime `v4.5.12-communication-p2 / build 515` with public runtime smoke checks.
 
-Still required:
+Still required before large UX/DA restructuring:
 
-- [ ] implement executable browser E2E coverage for navigation, invitation/access, roadmap/actions, messaging and native calls;
-- [ ] verify critical authenticated flows with at least two browser sessions;
-- [ ] unify project/global messaging under one Communication owner;
-- [ ] enforce one runtime owner per remaining workflow domain and remove duplicate ownership incrementally;
-- [ ] classify remaining SECURITY DEFININER RPCs and remove obsolete grants/functions where appropriate;
-- [ ] only then begin large UX/DA restructuring.
+- [ ] implement executable authenticated browser E2E coverage for access, navigation, roadmap/actions, messaging and native calls;
+- [ ] verify critical workflows with two real browser sessions;
+- [ ] remove dormant/duplicate project-message implementation from `live.js` once covered;
+- [ ] consolidate deliverable/version/approval ownership;
+- [ ] continue extracting domain ownership from `live.js` incrementally;
+- [ ] classify remaining `SECURITY DEFINER` RPCs and obsolete grants/functions;
+- [ ] then perform the large IA/UX/DA redesign.
