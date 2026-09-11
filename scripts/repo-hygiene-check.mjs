@@ -24,6 +24,7 @@ const requiredBootModules = [
   'workflow-backend-safe-v1.js',
   'communication-workspace-v1.js',
   'resources-workspace-v2.js',
+  'approval-route-v1.js',
   'library-workspace-v1.js',
 ];
 for (const module of requiredBootModules) assert(boot.includes(module), `missing active boot module: ${module}`);
@@ -45,9 +46,9 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
 }
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
-assert(index.includes('assets/boot.js?build=516'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=517'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
-assert(worker.includes("version: 'v4.5.12-delivery-p1'"), 'unexpected production worker release marker');
+assert(worker.includes("version: 'v4.5.12-delivery-p2'"), 'unexpected production worker release marker');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
@@ -91,6 +92,13 @@ assert(resources.includes('request_deliverable_approval_v1'), 'Resources V2 must
 assert(resources.includes('decide_deliverable_approval_v1'), 'Resources V2 must own approval decisions');
 assert(resources.includes("window.addEventListener('hashchange'"), 'Resources V2 must own its route lifecycle explicitly');
 assert(!resources.includes('new MutationObserver'), 'Resources V2 must not use MutationObserver');
+
+const approvalRoute = read('site/assets/approval-route-v1.js');
+assert(approvalRoute.includes('[data-action="open-approval"],[data-action="approval-decision"]'), 'legacy approval entry interception missing');
+assert(approvalRoute.includes('/resources?approval='), 'approval entries must route through project Resources V2');
+assert(approvalRoute.includes('data-rw-action="decide-approval"'), 'approval route must open the Resources V2 decision action');
+assert(approvalRoute.includes('focusAttempts >= 40'), 'approval route bounded readiness retry missing');
+assert(!approvalRoute.includes('MutationObserver'), 'approval route must not use MutationObserver');
 
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
