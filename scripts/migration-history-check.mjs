@@ -25,6 +25,7 @@ const requiredProductionTail = [
   '20260909092310_revoke_anon_call_heartbeat.sql',
   '20260909093700_revoke_public_call_heartbeat.sql',
   '20260911225000_pending_call_invite_v2.sql',
+  '20260911235900_call_reliability_v2.sql',
 ];
 
 const missing = requiredProductionTail.filter((name) => !fs.existsSync(`${migrationDir}/${name}`));
@@ -57,6 +58,18 @@ for (const required of [
 ]) {
   if (!incoming.includes(required)) {
     console.error(`MIGRATION HISTORY CHECK FAILED: incoming call guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const reliability = fs.readFileSync(`${migrationDir}/20260911235900_call_reliability_v2.sql`, 'utf8');
+for (const required of [
+  'grant execute on function app_private.can_access_call_v1(uuid) to authenticated',
+  'create or replace function public.get_call_sync_v2(',
+  'grant execute on function public.get_call_sync_v2(uuid,bigint) to authenticated',
+]) {
+  if (!reliability.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: call reliability guard missing: ${required}`);
     process.exit(1);
   }
 }
