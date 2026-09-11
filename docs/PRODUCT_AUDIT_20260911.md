@@ -107,6 +107,26 @@ The product can pass `npm run check` while still failing on:
 
 Introduce a small, deterministic browser suite before structural frontend cleanup. Cover business-critical paths first, visual regression second.
 
+### P1.5 — Guest sees project-management entry actions it cannot use
+
+**Observed**
+
+The external/Guest navigation explicitly includes `Projects`, so an invited external user legitimately reaches the projects portfolio. However `renderProjects()` currently renders `Archives` and `+ Nouveau projet` unconditionally. Other surfaces such as My Work and Calendar already hide creation actions for external users.
+
+**Impact**
+
+A Guest is offered actions that do not match its product role and are expected to fail at the backend. This weakens trust in the permission model even when RLS/RPC authorization correctly blocks the mutation.
+
+**Recommended target**
+
+For external Guests, the Projects portfolio remains accessible but management actions are removed:
+
+- no `Nouveau projet`;
+- no internal `Archives` entry unless a deliberate external archive experience is later designed;
+- page empty states must say that no project has been shared rather than inviting the Guest to create one.
+
+This should be corrected in the same atomic project-access change as P1.1.
+
 ## P2 findings
 
 ### P2.1 — “Calendrier” currently means meetings at workspace level
@@ -185,7 +205,7 @@ The current call model already covers the hard collaboration cases: prejoin, exp
 ## Recommended execution order from this audit
 
 1. **Add browser regression coverage for current behavior.**
-2. **Fix project creation scope/participant semantics** using the already-existing access-aware backend workflow.
+2. **Fix project creation scope/participant semantics and Guest project CTAs** using the already-existing access-aware backend workflow.
 3. **Unify project and global messaging** under Communication V3.
 4. **Remove duplicate event ownership** for deliverables/approvals/project completion.
 5. **Extract domains from `live.js` incrementally**, without a big-bang rewrite.
@@ -194,4 +214,4 @@ The current call model already covers the hard collaboration cases: prejoin, exp
 
 ## Decision gate
 
-Do not treat the current UI as ready for a large visual redesign yet. A DA overhaul before P1.1–P1.4 would make duplicated or misleading workflows more attractive without making them more coherent.
+Do not treat the current UI as ready for a large visual redesign yet. A DA overhaul before P1.1–P1.5 would make duplicated or misleading workflows more attractive without making them more coherent.
