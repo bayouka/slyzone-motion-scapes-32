@@ -12,15 +12,16 @@ const fail = (message) => {
 };
 
 const livePos = boot.indexOf('./live.js?');
+const shellPos = boot.indexOf('./shell-polish-v6.js?');
 const homePos = boot.indexOf('./home-v6.js?');
 const accessPos = boot.indexOf('./project-access-v1.js?');
-if (livePos < 0 || homePos < 0) fail('Home V6 module is not loaded by boot');
-if (!(livePos < homePos && homePos < accessPos)) fail('Home V6 presentation owner must load after live.js and before domain workflow owners');
+if ([livePos,shellPos,homePos,accessPos].some(pos=>pos<0)) fail('Home V6 boot chain is incomplete');
+if (!(livePos < shellPos && shellPos < homePos && homePos < accessPos)) fail('Home V6 presentation owner load order is invalid');
 
 const v6CssPos = index.indexOf('assets/design-v6.css');
 const homeCssPos = index.indexOf('assets/home-v6.css');
 if (v6CssPos < 0 || homeCssPos < 0 || homeCssPos <= v6CssPos) fail('Home V6 CSS must load after Design V6');
-if (!index.includes('assets/boot.js?build=521')) fail('Home V6 release candidate must expose build 521');
+if (!index.includes('assets/boot.js?build=522')) fail('Home V6 release candidate must expose build 522');
 
 const requiredJs = [
   '__4B4C_HOME_V6_OWNER__', '.v43-home-head', '.v43-home-grid', '.v43-attention-row',
@@ -43,4 +44,4 @@ const requiredCss = [
 ];
 for (const marker of requiredCss) if (!css.includes(marker)) fail(`missing Home V6 style contract: ${marker}`);
 
-console.log('home v6: OK (build 521)');
+console.log('home v6: OK (build 522)');
