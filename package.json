@@ -3,7 +3,7 @@
   "version": "4.5.12",
   "private": true,
   "scripts": {
-    "check": "node --check site/assets/live.js && node --check site/assets/supabase-client.js && node --check site/assets/boot.js && node --check site/assets/workflow-backend-safe-v1.js && node --check site/assets/delivery-workflow-v1.js && node --check site/assets/resources-workspace-v2.js && node --check site/assets/library-workspace-v1.js && node --check site/assets/communication-workspace-v1.js && node --check src/worker.js && node scripts/client-concurrency-check.mjs && node scripts/contract-check.mjs && node scripts/stability-check.mjs && node scripts/repo-hygiene-check.mjs && node scripts/migration-history-check.mjs && node scripts/css-bundle-check.mjs",
+    "check": "node --check site/assets/live.js && node --check site/assets/supabase-client.js && node --check site/assets/boot.js && node --check site/assets/project-access-v1.js && node --check site/assets/workflow-backend-safe-v1.js && node --check site/assets/delivery-workflow-v1.js && node --check site/assets/resources-workspace-v2.js && node --check site/assets/library-workspace-v1.js && node --check site/assets/communication-workspace-v1.js && node --check src/worker.js && node scripts/client-concurrency-check.mjs && node scripts/contract-check.mjs && node scripts/stability-check.mjs && node scripts/repo-hygiene-check.mjs && node scripts/migration-history-check.mjs && node scripts/css-bundle-check.mjs",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev"
   },
