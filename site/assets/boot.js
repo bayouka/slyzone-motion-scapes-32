@@ -29,6 +29,7 @@
 
   import(`./live.js?${VERSION}`)
     .then(() => import(`./home-v6.js?${VERSION}`))
+    .then(() => import(`./projects-v6.js?${VERSION}`))
     .then(() => import(`./project-access-v1.js?${VERSION}`))
     .then(() => import(`./project-messages-route-v1.js?${VERSION}`))
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
