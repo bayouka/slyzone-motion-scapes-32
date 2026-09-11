@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.12-communication-p1';
+  const VERSION = 'v4.5.12-communication-p2';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -37,9 +37,8 @@
     // Delivery is registered before the legacy-safe bridge so it owns project closure clicks.
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
-    .then(() => import(`./communication-workspace-v1.js?${VERSION}`).catch((error) => {
-      console.error('[2b2c] communication workspace unavailable; native messages view kept', error);
-    }))
+    // Communication V3 is mandatory now that both global and project messages depend on one renderer.
+    .then(() => import(`./communication-workspace-v1.js?${VERSION}`))
     .then(() => import(`./resources-workspace-v2.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] resources v2 unavailable; native resources view kept', error);
     }))
