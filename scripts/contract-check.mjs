@@ -7,13 +7,17 @@ const runtime=fs.readFileSync('site/runtime-config.js','utf8');
 const projectAccess=fs.readFileSync('site/assets/project-access-v1.js','utf8');
 const projectMessagesRoute=fs.readFileSync('site/assets/project-messages-route-v1.js','utf8');
 const approvalRoute=fs.readFileSync('site/assets/approval-route-v1.js','utf8');
+const meeting=fs.readFileSync('site/assets/meeting-workflow-v1.js','utf8');
 const communication=fs.readFileSync('site/assets/communication-workspace-v1.js','utf8');
 const resources=fs.readFileSync('site/assets/resources-workspace-v2.js','utf8');
 const delivery=fs.readFileSync('site/assets/delivery-workflow-v1.js','utf8');
 
 const checks=[
-  ['RSVP action exists', live.includes("action==='meeting-response'") && live.includes('async function setMeetingResponse')],
-  ['RSVP UI exists', live.includes('meeting-rsvp-v432')],
+  ['meeting RSVP UI still present', live.includes('meeting-rsvp-v432') && live.includes('data-action="meeting-response"')],
+  ['Meeting V2 owns creation', meeting.includes('create_meeting_with_attendees_v2') && !meeting.includes("api.insert('meetings'")],
+  ['Meeting V2 owns detail updates', meeting.includes('update_meeting_v2') && !meeting.includes("api.update('meetings'")],
+  ['Meeting V2 owns RSVP', meeting.includes('set_meeting_response_v2') && !meeting.includes("api.update('meeting_attendees'")],
+  ['Meeting owner loads before compatibility bridge', boot.indexOf('meeting-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js')],
   ['message refresh guard exists', live.includes('messageLoads: new Set()') && live.includes('state.unreadConversations.get(conversation.id)')],
   ['project cache rebuilt on sync', live.includes('state.projectCache = new Map(projects.map(project=>')],
   ['sync failures surfaced', live.includes('sync-alert-v432') && live.includes("action==='retry-sync'")],
@@ -27,7 +31,6 @@ const checks=[
   ['approval attention routes into Resources V2', approvalRoute.includes('[data-action="open-approval"],[data-action="approval-decision"]') && approvalRoute.includes('/resources?approval=') && approvalRoute.includes('data-rw-action="decide-approval"')],
   ['approval routing is bounded and event-driven', approvalRoute.includes('focusAttempts >= 40') && !approvalRoute.includes('MutationObserver')],
   ['Delivery workflow owns closure and reopen', delivery.includes('get_project_closure_preview_v3') && delivery.includes('complete_project_v3') && delivery.includes('reopen_project_v1')],
-  ['guest meeting auto-sharing', live.includes('const includesGuest=attendeeIds.some') && live.includes("visibility=includesGuest?'shared'")],
   ['state reset clears collaboration caches', live.includes('conversationMembers:[]') && live.includes('deliverableVersions:[]') && live.includes('messageLoads:new Set()')],
   ['Home V4.3 contract still present', live.includes('v43-home-grid') && css.includes('4b4c V4.3')],
   ['Supabase backend is correct', runtime.includes('wexfzhegiewhldkugtow.supabase.co')],
