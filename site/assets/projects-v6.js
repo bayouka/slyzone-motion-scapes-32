@@ -13,10 +13,12 @@
   function cardSnapshot(card) {
     const pill = card.querySelector('.pill');
     const phase = text(card.querySelector('.project-phase-v42 strong'));
-    const personalLabel = text(card.querySelector('.project-personal > span'));
-    const personalTitle = text(card.querySelector('.project-personal strong'));
+    const personal = card.querySelector('.project-personal');
+    const personalLabel = text(personal?.querySelector('span'));
+    const personalTitle = text(personal?.querySelector('strong'));
     const target = text(card.querySelector('.project-meta span:last-child'));
-    const blocked = Boolean(card.querySelector('.project-personal.blocked, .blocked-mini'));
+    const personalBlocked = Boolean(personal?.classList.contains('blocked'));
+    const blockedCount = Number((text(card.querySelector('.blocked-mini')).match(/\d+/) || [0])[0]);
     const hasPersonal = personalTitle && !/aucun élément attendu/i.test(personalTitle);
     return {
       name: text(card.querySelector('h3')) || 'Projet',
@@ -26,7 +28,9 @@
       personalLabel,
       personalTitle,
       target,
-      blocked,
+      personalBlocked,
+      blockedCount,
+      blocked: personalBlocked || blockedCount > 0,
       hasPersonal,
     };
   }
@@ -34,14 +38,14 @@
   function nextForCard(snapshot) {
     if (snapshot.blocked) {
       return {
-        title: 'Lever le blocage',
-        meta: 'La progression dépend d’abord de la résolution du blocage signalé.',
+        title: snapshot.phase && !/terminé|roadmap à structurer/i.test(snapshot.phase) ? `Reprendre ${snapshot.phase}` : 'Reprendre la trajectoire',
+        meta: `Après résolution du blocage${snapshot.target ? ` · ${snapshot.target}` : ''}`,
       };
     }
     if (snapshot.hasPersonal) {
       return {
-        title: `Traiter : ${snapshot.personalTitle}`,
-        meta: snapshot.target || 'Puis reprendre la trajectoire du projet.',
+        title: snapshot.phase && !/terminé|roadmap à structurer/i.test(snapshot.phase) ? `Poursuivre ${snapshot.phase}` : 'Poursuivre le projet',
+        meta: `Après votre intervention${snapshot.target ? ` · ${snapshot.target}` : ''}`,
       };
     }
     if (snapshot.phase && !/terminé|roadmap à structurer/i.test(snapshot.phase)) {
@@ -63,10 +67,11 @@
   }
 
   function whyForCard(snapshot) {
+    if (snapshot.personalBlocked) return 'L’intervention qui vous est attribuée est explicitement marquée comme bloquée.';
+    if (snapshot.blockedCount > 0) return `${snapshot.blockedCount} action${snapshot.blockedCount > 1 ? 's sont' : ' est'} bloquée${snapshot.blockedCount > 1 ? 's' : ''} dans ce projet.`;
     if (snapshot.reason) return snapshot.reason;
-    if (snapshot.blocked) return 'Un blocage est signalé sur une action ouverte du projet.';
     if (snapshot.hasPersonal) return `${snapshot.personalLabel || 'Une intervention'} vous concerne directement.`;
-    return `La santé actuelle du projet est « ${snapshot.health} ».`;
+    return 'Aucun blocage ni intervention personnelle prioritaire n’est visible sur cette carte.';
   }
 
   function enhanceProjectCard(card) {
@@ -84,7 +89,7 @@
       </div>
       <div class="project-v6-card-step is-why">
         <span>Pourquoi</span>
-        <strong>${esc(snapshot.health)}</strong>
+        <strong>${esc(snapshot.personalBlocked ? 'Blocage personnel' : snapshot.blockedCount ? `${snapshot.blockedCount} blocage${snapshot.blockedCount > 1 ? 's' : ''}` : snapshot.health)}</strong>
         <small>${esc(whyForCard(snapshot))}</small>
       </div>
       <div class="project-v6-card-step is-next">
@@ -101,11 +106,13 @@
 
   function projectCardRank(card) {
     const pill = card.querySelector('.pill');
-    if (card.querySelector('.project-personal.blocked, .blocked-mini') || pill?.classList.contains('danger')) return 0;
-    if (pill?.classList.contains('warn')) return 1;
+    if (card.querySelector('.project-personal.blocked')) return 0;
+    if (card.querySelector('.blocked-mini')) return 1;
+    if (pill?.classList.contains('danger')) return 2;
     const personal = text(card.querySelector('.project-personal strong'));
-    if (personal && !/aucun élément attendu/i.test(personal)) return 2;
-    return 3;
+    if (personal && !/aucun élément attendu/i.test(personal)) return 3;
+    if (pill?.classList.contains('warn')) return 4;
+    return 5;
   }
 
   function enhanceProjects() {
@@ -173,7 +180,7 @@
       <article class="project-v6-focus-card is-why">
         <span>Pourquoi</span>
         <strong>${esc(snapshot.whyTitle)}</strong>
-        <p>${esc(snapshot.whyBody || 'La situation actuelle est calculée depuis les jalons, actions, blocages et validations visibles.')}</p>
+        <p>${esc(snapshot.whyBody || 'La situation est fondée sur les jalons, actions, blocages et validations visibles.')}</p>
       </article>
       <article class="project-v6-focus-card is-next">
         <span>Ensuite</span>
@@ -213,7 +220,6 @@
   window.addEventListener('focus', () => scheduleEnhance());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleEnhance(); });
 
-  // Reconcile presentation after smart-sync re-renders without observing the DOM.
   setInterval(() => {
     if ((projectsActive() || overviewActive()) && !readyForRoute()) scheduleEnhance();
   }, 2500);
