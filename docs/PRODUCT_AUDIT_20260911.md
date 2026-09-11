@@ -10,37 +10,38 @@ The strongest current concepts should be preserved: Home answers “what needs m
 
 ## P1 findings
 
-### P1.1 — Project creation access model is misleading
+### P1.1 — Project creation access model — RESOLVED in v4.5.12-access-p1
 
-The current “Nouveau projet” form asks for name, objective/result, target date, “Participants dès le départ” and initial roadmap phases, but does **not** ask whether the project is `team` or `restricted`.
+The former “Nouveau projet” form asked for “Participants dès le départ” while calling a Team-only workflow. This was misleading because Team projects automatically synchronize internal members.
 
-The form currently calls `create_project_with_setup`, which creates a Team project and synchronizes eligible internal members. The participant checkboxes therefore do not mean what the UI suggests.
+Production now loads mandatory `project-access-v1.js`, which presents the actual access decision first:
 
-The production backend already exposes `create_project_with_access_setup_v1`, supporting `team` and `restricted` plus an explicit internal participant set for restricted projects. Transactional RLS probes confirmed the intended behavior.
+- **Projet d’équipe** — recommended/default, current and future internal members get access automatically;
+- **Projet restreint** — explicit internal-member selection, while workspace owner/admin retain administrative access.
 
-**Target:** first ask for access scope. `Projet d’équipe` is the recommended/default option and grants all internal members current/future access. `Projet restreint` grants only owner/admin plus selected internal participants. Participant selection is shown only when meaningful.
+The frontend calls `create_project_with_access_setup_v1` directly. Transactional RLS probes had already validated the backend semantics before deployment.
 
-### P1.2 — Global Messages and Project Messages are two active experiences
+### P1.2 — Global Messages and Project Messages are two active experiences — OPEN
 
 Global `#/messages` uses the newer Communication workspace while the project `Messages` tab is still rendered separately. Backend hardening prevents this from being an identified authorization bypass, but it creates inconsistent capabilities and duplicated maintenance.
 
 **Target:** one communication renderer/service; project Messages becomes the same workspace pre-filtered to the project.
 
-### P1.3 — Critical workflows still depend on competing event listeners
+### P1.3 — Critical workflows still depend on competing event listeners — OPEN
 
 `live.js` still contains handlers for versions, approvals, completion and other workflows while later modules intercept some of the same actions/forms.
 
 **Target:** one frontend owner per workflow after browser tests prove the replacement path.
 
-### P1.4 — No real browser regression gate
+### P1.4 — No real browser regression gate — OPEN
 
 Current checks are primarily syntax/static/contract checks. Browser E2E coverage is required for invitation/access, navigation, project workflows, two-account messaging, native calls, camera switching and responsive behavior.
 
-### P1.5 — Guest project page exposes impossible management actions
+### P1.5 — Guest project page exposes impossible management actions — RESOLVED in v4.5.12-access-p1
 
-An external Guest legitimately has `Projets` in primary navigation, but the current Projects page renders `Archives` and `Nouveau projet` unconditionally. Those actions do not belong in the Guest experience and should be hidden rather than failing later at authorization boundaries.
+External Guests legitimately have `Projets` in primary navigation, but the former Projects page exposed `Archives` and `Nouveau projet` unconditionally.
 
-**Target:** Guest sees only projects explicitly shared with them and no workspace-level create/archive management CTA.
+The access module now resolves the authenticated workspace role, hides those Guest-only impossible CTAs and defensively blocks the legacy actions. Authorization remains enforced server-side as the final boundary.
 
 ## P2 findings
 
@@ -90,17 +91,16 @@ Before → Live → After remains a strong mental model linking agenda, live not
 
 Current call model covers prejoin, explicit invitees, multi-party capacity, screen sharing, front-camera preference/mobile switching, reconnect/heartbeat, add-person-during-call and project/meeting context.
 
-## Recommended execution order
+## Recommended execution order — updated after access-p1
 
-1. Add/prepare browser regression coverage for current behavior.
-2. Fix project creation scope/participant semantics with the existing access-aware backend workflow.
-3. Remove Guest-only project-management CTAs.
-4. Unify project and global messaging under Communication V3.
-5. Remove duplicate event ownership for deliverables/approvals/project completion.
-6. Extract domains from `live.js` incrementally, without big-bang rewrite.
-7. Then review information architecture and DA.
-8. Only after that add genuinely differentiating capabilities.
+1. Implement executable browser regression coverage for the stabilized access-p1 baseline.
+2. Verify critical two-session authenticated behavior.
+3. Unify project and global messaging under Communication V3.
+4. Remove duplicate event ownership for deliverables/approvals/project completion.
+5. Extract domains from `live.js` incrementally, without big-bang rewrite.
+6. Review information architecture and DA.
+7. Only after that add genuinely differentiating capabilities.
 
 ## Decision gate
 
-Do not treat the current UI as ready for a large visual redesign yet. A DA overhaul before P1.1–P1.5 would make duplicated or misleading workflows more attractive without making them more coherent.
+The access-model P1 defects are now corrected in production, but the UI should still not receive a large visual redesign until browser coverage and the duplicate communication/workflow ownership are addressed. Otherwise the redesign would harden inconsistent runtime paths into the new visual system.
