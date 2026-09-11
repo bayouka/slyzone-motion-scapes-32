@@ -1,3 +1,5 @@
+import { handleCallSfuV3 } from './call-sfu-v3.js';
+
 const SECURITY_HEADERS = {
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'strict-origin-when-cross-origin',
@@ -16,13 +18,27 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    const callV3Response = await handleCallSfuV3(request, env, url);
+    if (callV3Response) return withHeaders(callV3Response);
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return withHeaders(new Response('Method Not Allowed', { status: 405 }), { allow: 'GET, HEAD' });
     }
 
     if (url.pathname === '/health') {
       return withHeaders(
-        Response.json({ ok: true, app: '4b4c', backend: 'supabase', version: 'v4.5.12-v6-polish-p2', call_engine: '2.0.0' }),
+        Response.json({
+          ok: true,
+          app: '4b4c',
+          backend: 'supabase',
+          version: 'v4.5.12-v6-polish-p2',
+          call_engine: '2.0.0',
+          call_engine_v3: {
+            code: '3.0.0-sfu-preview',
+            default: false,
+            configured: Boolean(env.CF_REALTIME_APP_ID && env.CF_REALTIME_APP_SECRET),
+          },
+        }),
         { 'cache-control': 'no-store' },
       );
     }
