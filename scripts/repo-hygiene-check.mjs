@@ -22,6 +22,7 @@ const requiredBootModules = [
   'project-messages-route-v1.js',
   'delivery-workflow-v1.js',
   'meeting-workflow-v1.js',
+  'work-workflow-v1.js',
   'workflow-backend-safe-v1.js',
   'communication-workspace-v1.js',
   'resources-workspace-v2.js',
@@ -46,10 +47,11 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
   assert(!cssRefs.includes(obsoleteCss), `legacy CSS must not be loaded directly: ${obsoleteCss}`);
 }
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
+assert(pkg.scripts?.check?.includes('site/assets/work-workflow-v1.js'), 'npm check must syntax-check work workflow owner');
 
-assert(index.includes('assets/boot.js?build=518'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=519'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
-assert(worker.includes("version: 'v4.5.12-meeting-p1'"), 'unexpected production worker release marker');
+assert(worker.includes("version: 'v4.5.12-work-p1'"), 'unexpected production worker release marker');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
@@ -112,6 +114,18 @@ assert(!meeting.includes("api.update('meetings'"), 'Meeting owner must not direc
 assert(!meeting.includes("api.update('meeting_attendees'"), 'Meeting owner must not directly update RSVP rows');
 assert(!meeting.includes('MutationObserver'), 'Meeting owner must not use MutationObserver');
 assert(boot.indexOf('meeting-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js'), 'Meeting owner must load before compatibility bridge');
+
+const work = read('site/assets/work-workflow-v1.js');
+assert(work.includes('__4B4C_WORK_WORKFLOW_OWNER__'), 'Work owner marker missing');
+assert(work.includes('create_action_v1') && work.includes('update_action_v1') && work.includes('set_action_status_v1'), 'Work owner action RPC contract missing');
+assert(work.includes('create_milestone_v1') && work.includes('update_milestone_v1'), 'Work owner milestone RPC contract missing');
+assert(work.includes('[data-action="delete-action"]') && work.includes('[data-status-action]'), 'Work owner action interaction coverage missing');
+assert(work.includes('stopImmediatePropagation'), 'Work owner must intercept legacy handlers deterministically');
+assert(!work.includes("api.insert('actions'"), 'Work owner must not directly insert actions');
+assert(!work.includes("api.insert('milestones'"), 'Work owner must not directly insert milestones');
+assert(!work.includes("api.update('milestones'"), 'Work owner must not directly update milestones');
+assert(!work.includes('MutationObserver'), 'Work owner must not use MutationObserver');
+assert(boot.indexOf('work-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js'), 'Work owner must load before compatibility bridge');
 
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
