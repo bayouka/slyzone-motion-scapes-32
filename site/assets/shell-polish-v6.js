@@ -48,10 +48,10 @@
     if (!badge) {
       badge = document.createElement('span');
       badge.className = 'nav-count shell-v6-message-count';
-      badge.setAttribute('aria-label', `${count} message${count === '1' ? '' : 's'} non lu${count === '1' ? '' : 's'}`);
       desktop.appendChild(badge);
     }
     badge.textContent = count;
+    badge.setAttribute('aria-label', `${count} message${count === '1' ? '' : 's'} non lu${count === '1' ? '' : 's'}`);
   }
 
   function enhance() {
