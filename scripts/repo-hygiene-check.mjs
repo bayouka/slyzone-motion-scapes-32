@@ -19,6 +19,7 @@ const lock = JSON.parse(read('package-lock.json'));
 
 const requiredBootModules = [
   'live.js',
+  'project-access-v1.js',
   'delivery-workflow-v1.js',
   'workflow-backend-safe-v1.js',
   'communication-workspace-v1.js',
@@ -44,8 +45,9 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
 
-assert(index.includes('assets/boot.js?build=512'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=513'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
+assert(worker.includes("version: 'v4.5.12-access-p1'"), 'unexpected production worker release marker');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
