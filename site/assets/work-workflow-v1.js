@@ -2,6 +2,7 @@ import { SupabaseBrowserClient } from './supabase-client.js';
 
 const config = window.__4B4C_CONFIG__ || {};
 const api = new SupabaseBrowserClient({ url: config.supabaseUrl, publishableKey: config.supabasePublishableKey });
+window.__4B4C_WORK_WORKFLOW_OWNER__ = true;
 let busy = false;
 
 const value = (fd, key, fallback = '') => String(fd.get(key) ?? fallback).trim();
@@ -163,6 +164,25 @@ async function deleteAction(target) {
   setTimeout(() => location.reload(), 100);
 }
 
+async function setQuickActionStatus(select) {
+  const status = select.value || '';
+  if (!['todo', 'in_progress', 'blocked', 'done', 'cancelled'].includes(status)) throw new Error('ACTION_STATUS_INVALID');
+  let blockedReason = null;
+  if (status === 'blocked') {
+    blockedReason = window.prompt('Pourquoi cette action est-elle bloquée ?')?.trim() || '';
+    if (!blockedReason) {
+      location.reload();
+      return;
+    }
+  }
+  await api.rpc('set_action_status_v1', {
+    p_action_id: select.dataset.statusAction || '',
+    p_status: status,
+    p_blocked_reason: blockedReason,
+  });
+  setTimeout(() => location.reload(), 80);
+}
+
 function isOwnedForm(form) {
   return ['action', 'action-edit', 'milestone', 'milestone-edit'].includes(form?.dataset?.form || '');
 }
@@ -209,5 +229,26 @@ document.addEventListener('click', async (event) => {
   } finally {
     busy = false;
     target.disabled = false;
+  }
+}, true);
+
+document.addEventListener('change', async (event) => {
+  const select = event.target.closest?.('[data-status-action]');
+  if (!select) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (busy) return;
+  busy = true;
+  select.disabled = true;
+  try {
+    if (!api.getSession()) throw new Error('AUTH_REQUIRED');
+    await setQuickActionStatus(select);
+  } catch (error) {
+    console.error('[2b2c] action status workflow failed', error);
+    window.alert(message(error));
+    location.reload();
+  } finally {
+    busy = false;
+    select.disabled = false;
   }
 }, true);
