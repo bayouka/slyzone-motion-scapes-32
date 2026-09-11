@@ -16,10 +16,10 @@ const liveCss = read('site/assets/live.css');
 const pkg = JSON.parse(read('package.json'));
 const lock = JSON.parse(read('package-lock.json'));
 
-
 const requiredBootModules = [
   'live.js',
   'project-access-v1.js',
+  'project-messages-route-v1.js',
   'delivery-workflow-v1.js',
   'workflow-backend-safe-v1.js',
   'communication-workspace-v1.js',
@@ -44,10 +44,9 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
 }
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
-
-assert(index.includes('assets/boot.js?build=513'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=514'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
-assert(worker.includes("version: 'v4.5.12-access-p1'"), 'unexpected production worker release marker');
+assert(worker.includes("version: 'v4.5.12-communication-p1'"), 'unexpected production worker release marker');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
@@ -78,6 +77,11 @@ assert(live.includes('auditRenderedSemanticsV454'), 'runtime semantic guard miss
 assert(live.includes('aria-current="page"'), 'active navigation must expose aria-current');
 assert(live.includes("event.key==='Tab'&&state.mobileMenuOpen"), 'mobile drawer keyboard focus trap missing');
 assert(live.includes("state.mobileMenuOpen?'Fermer le menu':'Ouvrir le menu'"), 'hamburger accessible label must follow open state');
+
+const projectMessagesRoute = read('site/assets/project-messages-route-v1.js');
+assert(projectMessagesRoute.includes("#/messages/${conversationId}"), 'project messages route must resolve into Communication workspace');
+assert(projectMessagesRoute.includes("kind=eq.project"), 'project messages route must resolve project conversations only');
+
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
 assert(!/\.mobile-nav(?:\s|[>{:+~.#\[])/.test(v5), 'obsolete .mobile-nav selector reintroduced in V5');
@@ -89,8 +93,6 @@ assert(!/\.v422-projects(?:\s|[>{:+~.#\[])/.test(liveCss), 'obsolete .v422-proje
 assert(!/v41-project-card/.test(liveCss + live), 'obsolete v41 project-card class reintroduced');
 assert(!/roadmap-phase-card/.test(liveCss + read('site/assets/design-v5.css') + live), 'obsolete roadmap-phase-card selector reintroduced');
 assert(!/\.roadmap-index\{[^}]*font-size:/.test(liveCss), 'roadmap index legacy font-size reintroduced');
-
-
 
 const markerDir = '.github';
 if (fs.existsSync(markerDir)) {
