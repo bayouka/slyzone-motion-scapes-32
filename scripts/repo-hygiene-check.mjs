@@ -32,6 +32,7 @@ for (const obsolete of ['home-polish.js','workflow-backend-v2.js','project-progr
   assert(!boot.includes(obsolete), `obsolete runtime module reintroduced: ${obsolete}`);
 }
 assert(!boot.includes('communication workspace unavailable; native messages view kept'), 'Communication V3 must not silently fall back to native global messages');
+assert(!boot.includes('resources v2 unavailable; native resources view kept'), 'Resources V2 must not silently fall back to native resources/delivery');
 assert(!/MutationObserver\s*\(/.test(boot), 'MutationObserver reintroduced in boot runtime');
 
 const cssRefs = [...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(m => m[1]);
@@ -44,9 +45,9 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
 }
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
-assert(index.includes('assets/boot.js?build=515'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=516'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
-assert(worker.includes("version: 'v4.5.12-communication-p2'"), 'unexpected production worker release marker');
+assert(worker.includes("version: 'v4.5.12-delivery-p1'"), 'unexpected production worker release marker');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
@@ -82,6 +83,14 @@ assert(projectMessagesRoute.includes("#/messages/${conversationId}"), 'project m
 assert(projectMessagesRoute.includes('kind=eq.project'), 'project messages route must resolve project conversations only');
 assert(projectMessagesRoute.includes('routingContextReady()'), 'project message deep link must wait for auth/workspace context');
 assert(projectMessagesRoute.includes('pendingTimer'), 'project message deep link pending resolution guard missing');
+
+const resources = read('site/assets/resources-workspace-v2.js');
+assert(resources.includes('create_deliverable_with_first_version_v1'), 'Resources V2 must own first deliverable version creation');
+assert(resources.includes('register_deliverable_version_v3'), 'Resources V2 must own immutable version registration');
+assert(resources.includes('request_deliverable_approval_v1'), 'Resources V2 must own approval requests');
+assert(resources.includes('decide_deliverable_approval_v1'), 'Resources V2 must own approval decisions');
+assert(resources.includes("window.addEventListener('hashchange'"), 'Resources V2 must own its route lifecycle explicitly');
+assert(!resources.includes('new MutationObserver'), 'Resources V2 must not use MutationObserver');
 
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
