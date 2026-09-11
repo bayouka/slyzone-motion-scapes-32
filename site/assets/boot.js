@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.12-delivery-p2';
+  const VERSION = 'v4.5.12-meeting-p1';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -31,10 +31,11 @@
     .then(() => import(`./project-access-v1.js?${VERSION}`))
     .then(() => import(`./project-messages-route-v1.js?${VERSION}`))
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
+    // Meeting V2 owns create/edit/RSVP before the compatibility safe bridge sees historical forms.
+    .then(() => import(`./meeting-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`))
     .then(() => import(`./resources-workspace-v2.js?${VERSION}`))
-    // All validation entry points now resolve into the Resources V2 approval modal.
     .then(() => import(`./approval-route-v1.js?${VERSION}`))
     .then(() => import(`./library-workspace-v1.js?${VERSION}`).catch((error) => {
       console.error('[2b2c] library workspace unavailable; native library view kept', error);
