@@ -21,6 +21,7 @@ const requiredBootModules = [
   'project-access-v1.js',
   'project-messages-route-v1.js',
   'delivery-workflow-v1.js',
+  'meeting-workflow-v1.js',
   'workflow-backend-safe-v1.js',
   'communication-workspace-v1.js',
   'resources-workspace-v2.js',
@@ -46,9 +47,9 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
 }
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
-assert(index.includes('assets/boot.js?build=517'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=518'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
-assert(worker.includes("version: 'v4.5.12-delivery-p2'"), 'unexpected production worker release marker');
+assert(worker.includes("version: 'v4.5.12-meeting-p1'"), 'unexpected production worker release marker');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
@@ -99,6 +100,18 @@ assert(approvalRoute.includes('/resources?approval='), 'approval entries must ro
 assert(approvalRoute.includes('data-rw-action="decide-approval"'), 'approval route must open the Resources V2 decision action');
 assert(approvalRoute.includes('focusAttempts >= 40'), 'approval route bounded readiness retry missing');
 assert(!approvalRoute.includes('MutationObserver'), 'approval route must not use MutationObserver');
+
+const meeting = read('site/assets/meeting-workflow-v1.js');
+assert(meeting.includes('create_meeting_with_attendees_v2'), 'Meeting owner must use atomic create V2');
+assert(meeting.includes('update_meeting_v2'), 'Meeting owner must use update_meeting_v2');
+assert(meeting.includes('set_meeting_response_v2'), 'Meeting owner must use RSVP V2');
+assert(meeting.includes("['meeting', 'meeting-detail']"), 'Meeting owner must capture create/detail forms');
+assert(meeting.includes('[data-action="meeting-response"]'), 'Meeting owner must capture RSVP actions');
+assert(!meeting.includes("api.insert('meetings'"), 'Meeting owner must not directly insert meetings');
+assert(!meeting.includes("api.update('meetings'"), 'Meeting owner must not directly update meetings');
+assert(!meeting.includes("api.update('meeting_attendees'"), 'Meeting owner must not directly update RSVP rows');
+assert(!meeting.includes('MutationObserver'), 'Meeting owner must not use MutationObserver');
+assert(boot.indexOf('meeting-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js'), 'Meeting owner must load before compatibility bridge');
 
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
