@@ -20,7 +20,7 @@ if (!(livePos < homePos && homePos < accessPos)) fail('Home V6 presentation owne
 const v6CssPos = index.indexOf('assets/design-v6.css');
 const homeCssPos = index.indexOf('assets/home-v6.css');
 if (v6CssPos < 0 || homeCssPos < 0 || homeCssPos <= v6CssPos) fail('Home V6 CSS must load after Design V6');
-if (!index.includes('assets/boot.js?build=519')) fail('Home V6 draft must not claim a certified new build');
+if (!index.includes('assets/boot.js?build=520')) fail('Home V6 release candidate must expose build 520');
 
 const requiredJs = [
   '__4B4C_HOME_V6_OWNER__',
@@ -55,4 +55,4 @@ const requiredCss = [
 ];
 for (const marker of requiredCss) if (!css.includes(marker)) fail(`missing Home V6 style contract: ${marker}`);
 
-console.log('home v6: OK');
+console.log('home v6: OK (build 520)');
