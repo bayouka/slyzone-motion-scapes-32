@@ -8,6 +8,7 @@ const projectAccess=fs.readFileSync('site/assets/project-access-v1.js','utf8');
 const projectMessagesRoute=fs.readFileSync('site/assets/project-messages-route-v1.js','utf8');
 const approvalRoute=fs.readFileSync('site/assets/approval-route-v1.js','utf8');
 const meeting=fs.readFileSync('site/assets/meeting-workflow-v1.js','utf8');
+const work=fs.readFileSync('site/assets/work-workflow-v1.js','utf8');
 const communication=fs.readFileSync('site/assets/communication-workspace-v1.js','utf8');
 const resources=fs.readFileSync('site/assets/resources-workspace-v2.js','utf8');
 const delivery=fs.readFileSync('site/assets/delivery-workflow-v1.js','utf8');
@@ -18,6 +19,12 @@ const checks=[
   ['Meeting V2 owns detail updates', meeting.includes('update_meeting_v2') && !meeting.includes("api.update('meetings'")],
   ['Meeting V2 owns RSVP', meeting.includes('set_meeting_response_v2') && !meeting.includes("api.update('meeting_attendees'")],
   ['Meeting owner loads before compatibility bridge', boot.indexOf('meeting-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js')],
+  ['Work owner owns action create/edit', work.includes('create_action_v1') && work.includes('update_action_v1')],
+  ['Work owner owns action status and block flow', work.includes('set_action_status_v1') && work.includes('[data-status-action]') && work.includes('ACTION_BLOCK_REASON_REQUIRED')],
+  ['Work owner owns action deletion under RLS', work.includes('[data-action="delete-action"]') && work.includes("api.remove('actions'" )],
+  ['Work owner owns roadmap create/edit', work.includes('create_milestone_v1') && work.includes('update_milestone_v1')],
+  ['Work owner captures historical forms', work.includes("['action', 'action-edit', 'milestone', 'milestone-edit']") && work.includes('stopImmediatePropagation')],
+  ['Work owner loads before compatibility bridge', boot.indexOf('work-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js')],
   ['message refresh guard exists', live.includes('messageLoads: new Set()') && live.includes('state.unreadConversations.get(conversation.id)')],
   ['project cache rebuilt on sync', live.includes('state.projectCache = new Map(projects.map(project=>')],
   ['sync failures surfaced', live.includes('sync-alert-v432') && live.includes("action==='retry-sync'")],
