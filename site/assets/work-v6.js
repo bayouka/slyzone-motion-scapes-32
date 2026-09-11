@@ -14,17 +14,35 @@
   function decorateTabs() {
     const tabs = document.querySelector('.work-view-tabs');
     if (!tabs || tabs.classList.contains('work-v6-tabs-ready')) return;
+    const current = route();
     const links = [...tabs.querySelectorAll('a')];
+    const primary = [];
+    const secondary = [];
     links.forEach((link) => {
       const href = link.getAttribute('href') || '';
-      if (/\/work\/(list|roadmap)$/.test(href)) link.classList.add('work-v6-primary-view');
-      else link.classList.add('work-v6-secondary-view');
+      if (/\/work\/(list|roadmap)$/.test(href)) {
+        link.classList.add('work-v6-primary-view');
+        primary.push(link);
+      } else {
+        link.classList.add('work-v6-secondary-view');
+        secondary.push(link);
+      }
     });
-    const label = document.createElement('span');
-    label.className = 'work-v6-secondary-label';
-    label.textContent = 'Vues secondaires';
-    const firstSecondary = links.find((link) => link.classList.contains('work-v6-secondary-view'));
-    if (firstSecondary) tabs.insertBefore(label, firstSecondary);
+    if (secondary.length) {
+      const details = document.createElement('details');
+      details.className = 'work-v6-more-views';
+      if (current && ['board','calendar'].includes(current.view)) details.open = true;
+      const currentSecondary = current?.view === 'board' ? 'Tableau' : current?.view === 'calendar' ? 'Calendrier' : '';
+      details.innerHTML = `<summary>Autres vues${currentSecondary ? ` · ${currentSecondary}` : ''}</summary><div class="work-v6-more-menu"></div>`;
+      const menu = details.querySelector('.work-v6-more-menu');
+      secondary.forEach((link) => {
+        const clone = link.cloneNode(true);
+        clone.classList.remove('work-v6-secondary-view');
+        clone.classList.add('work-v6-more-link');
+        menu.append(clone);
+      });
+      tabs.append(details);
+    }
     tabs.classList.add('work-v6-tabs-ready');
   }
 
@@ -61,8 +79,10 @@
   function workWhy(snapshot) {
     if (!snapshot) return 'Aucune action ouverte n’est visible dans cette vue.';
     if (snapshot.blockedReason) return `Cause réelle du blocage : ${snapshot.blockedReason}`;
-    if (snapshot.blocked) return 'Cette action est marquée comme bloquée dans le workflow actuel.';
-    return [snapshot.status, snapshot.priority ? `priorité ${snapshot.priority.toLowerCase()}` : ''].filter(Boolean).join(' · ') || 'Cette action est la première intervention visible dans la vue active.';
+    if (snapshot.blocked) return 'Cette action est explicitement marquée comme bloquée dans le workflow.';
+    if (/urgente?/i.test(snapshot.priority)) return 'Cette action est la première action ouverte visible et porte une priorité urgente.';
+    if (/haute?/i.test(snapshot.priority)) return 'Cette action est la première action ouverte visible et porte une priorité haute.';
+    return 'Cette action est la première action ouverte visible dans la phase de travail actuelle.';
   }
 
   function enhanceActionRows() {
@@ -87,13 +107,14 @@
     const row = firstAction();
     const now = actionSnapshot(row);
     const next = actionSnapshot(nextAction(row));
+    const whyTitle = now?.blocked ? 'La progression est empêchée' : now ? 'Priorité de la file' : 'Situation du travail';
     const strip = document.createElement('section');
     strip.className = 'work-v6-focus-strip';
     strip.setAttribute('aria-label', 'Priorité du travail');
     strip.innerHTML = `
       <article class="work-v6-focus-card is-now"><span>Maintenant</span><strong>${esc(now?.title || 'Aucune action prioritaire')}</strong><small>${esc(now?.meta || 'Le projet ne présente pas de travail ouvert dans cette vue.')}</small></article>
-      <article class="work-v6-focus-card is-why"><span>Pourquoi</span><strong>${esc(now?.blocked ? 'La progression est empêchée' : now?.status || 'Situation du travail')}</strong><small>${esc(workWhy(now))}</small></article>
-      <article class="work-v6-focus-card is-next"><span>Ensuite</span><strong>${esc(next?.title || 'Revenir à la trajectoire')}</strong><small>${esc(next?.meta || 'La Roadmap indique la prochaine étape du projet.')}</small></article>`;
+      <article class="work-v6-focus-card is-why"><span>Pourquoi</span><strong>${esc(whyTitle)}</strong><small>${esc(workWhy(now))}</small></article>
+      <article class="work-v6-focus-card is-next"><span>Ensuite</span><strong>${esc(next?.title || 'Revenir à la trajectoire')}</strong><small>${esc(next?.meta || 'La Roadmap indique la prochaine étape après l’action actuelle.')}</small></article>`;
     toolbar.insertAdjacentElement('afterend', strip);
   }
 
@@ -105,6 +126,20 @@
     const blockedRow = [...phase.querySelectorAll('.action-row-v4')].find((row) => row.classList.contains('blocked') || blockedReason(row));
     const blocked = actionSnapshot(blockedRow);
     return { title, status, meta, blocked };
+  }
+
+  function decorateRoadmapPhases() {
+    const roadmap = document.querySelector('.roadmap');
+    if (!roadmap) return;
+    const phases = [...roadmap.querySelectorAll('.roadmap-phase')];
+    const active = phases.find((phase) => /en cours|active/i.test(text(phase.querySelector('.roadmap-title-line .pill')))) || phases.find((phase) => !/terminé/i.test(text(phase.querySelector('.roadmap-title-line .pill')))) || null;
+    phases.forEach((phase) => {
+      const status = text(phase.querySelector('.roadmap-title-line .pill'));
+      phase.classList.toggle('roadmap-v6-phase-completed', /terminé/i.test(status));
+      phase.classList.toggle('roadmap-v6-phase-current', phase === active);
+      phase.classList.toggle('roadmap-v6-phase-future', phase !== active && !/terminé/i.test(status));
+      if (/terminé/i.test(status) && phase.querySelector('.roadmap-actions .empty')) phase.classList.add('roadmap-v6-phase-empty-completed');
+    });
   }
 
   function ensureRoadmapFocus() {
@@ -123,17 +158,18 @@
       ? `Cause réelle : ${now.blocked.blockedReason}`
       : now?.blocked
         ? `Une action de « ${now.title} » est bloquée.`
-        : `Cette phase est la première étape non terminée de la trajectoire visible.`;
+        : 'Cette phase est la première étape non terminée de la trajectoire visible.';
 
     const strip = document.createElement('section');
     strip.className = 'roadmap-v6-focus-strip';
     strip.setAttribute('aria-label', 'Trajectoire du projet');
     strip.innerHTML = `
       <article class="roadmap-v6-focus-card is-now"><span>Maintenant</span><strong>${esc(now?.title || 'Roadmap à structurer')}</strong><small>${esc(now?.meta || 'Définissez la phase active et son résultat attendu.')}</small></article>
-      <article class="roadmap-v6-focus-card is-why"><span>Pourquoi</span><strong>${esc(now?.blocked ? 'Un blocage conditionne la suite' : now?.status || 'Phase actuelle')}</strong><small>${esc(why)}</small></article>
+      <article class="roadmap-v6-focus-card is-why"><span>Pourquoi</span><strong>${esc(now?.blocked ? 'Un blocage conditionne la suite' : 'Étape active de la trajectoire')}</strong><small>${esc(why)}</small></article>
       <article class="roadmap-v6-focus-card is-next"><span>Ensuite</span><strong>${esc(next?.title || 'Clôturer ou définir la prochaine phase')}</strong><small>${esc(next?.meta || 'Aucune phase suivante non terminée n’est visible.')}</small></article>`;
     toolbar.insertAdjacentElement('afterend', strip);
     roadmap.classList.add('roadmap-v6-trajectory');
+    decorateRoadmapPhases();
   }
 
   function addSecondaryViewNotice() {
@@ -162,6 +198,7 @@
     enhanceActionRows();
     ensureWorkFocus();
     ensureRoadmapFocus();
+    decorateRoadmapPhases();
     addSecondaryViewNotice();
   }
 
