@@ -14,20 +14,21 @@ const fail = (message) => {
 };
 
 const livePos = boot.indexOf('./live.js?');
+const shellPos = boot.indexOf('./shell-polish-v6.js?');
 const homePos = boot.indexOf('./home-v6.js?');
 const projectsPos = boot.indexOf('./projects-v6.js?');
 const presentPos = boot.indexOf('./work-v6.js?');
 const accessPos = boot.indexOf('./project-access-v1.js?');
 const domainWorkPos = boot.indexOf('./work-workflow-v1.js?');
-if ([livePos, homePos, projectsPos, presentPos, accessPos, domainWorkPos].some((pos) => pos < 0)) fail('boot chain incomplete');
-if (!(livePos < homePos && homePos < projectsPos && projectsPos < presentPos && presentPos < accessPos && presentPos < domainWorkPos)) fail('Work V6 presentation owner load order is invalid');
+if ([livePos, shellPos, homePos, projectsPos, presentPos, accessPos, domainWorkPos].some((pos) => pos < 0)) fail('boot chain incomplete');
+if (!(livePos < shellPos && shellPos < homePos && homePos < projectsPos && projectsPos < presentPos && presentPos < accessPos && presentPos < domainWorkPos)) fail('Work V6 presentation owner load order is invalid');
 
 const designPos = index.indexOf('assets/design-v6.css');
 const homeCssPos = index.indexOf('assets/home-v6.css');
 const projectsCssPos = index.indexOf('assets/projects-v6.css');
 const workCssPos = index.indexOf('assets/work-v6.css');
 if (!(designPos >= 0 && designPos < homeCssPos && homeCssPos < projectsCssPos && projectsCssPos < workCssPos)) fail('Work V6 CSS must load after prior V6 layers');
-if (!index.includes('assets/boot.js?build=521')) fail('Work V6 release candidate must expose build 521');
+if (!index.includes('assets/boot.js?build=522')) fail('Work V6 release candidate must expose build 522');
 
 const requiredJs = [
   '__4B4C_WORK_V6_PRESENTATION_OWNER__', '.work-view-tabs', '.action-row-v4', '.roadmap-phase', '.roadmap-toolbar',
@@ -58,4 +59,4 @@ for (const ownerContract of ['__4B4C_WORK_WORKFLOW_OWNER__','create_action_v1','
 }
 if (js.includes('source_type') || js.includes('source_id')) fail('presentation layer must not infer provenance not exposed in DOM');
 
-console.log('work v6 presentation: OK (build 521)');
+console.log('work v6 presentation: OK (build 522)');
