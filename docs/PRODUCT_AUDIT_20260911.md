@@ -8,44 +8,67 @@ Purpose: audit the current product as it actually exists before adding features 
 
 The strongest concepts should be preserved: Home answers “what needs me now?”, workspace role/project visibility/project responsibility remain separate, messages have explicit audiences, requests are distinct from messages, deliverables are versioned and approvable, meetings follow Before → Live → After, project closure records actual results, and native calls stay contextual.
 
+Current certified production runtime: **v4.5.12-delivery-p2 / build 517**.
+
 ## P1 findings
 
 ### P1.1 — Project creation access model — RESOLVED
 
-Production uses mandatory `project-access-v1.js` and exposes the real access decision:
+Mandatory `project-access-v1.js` exposes the actual access decision:
 
-- **Projet d’équipe** — recommended/default, current and future internal members get access automatically;
-- **Projet restreint** — explicit internal-member selection, while owner/admin retain administrative access.
+- **Projet d’équipe** — recommended/default, current and future eligible internal members get access automatically;
+- **Projet restreint** — explicit internal-member selection while workspace administration retains the required administrative access.
 
-The frontend calls `create_project_with_access_setup_v1` directly. Transactional RLS probes validated the backend semantics before deployment.
+Creation calls `create_project_with_access_setup_v1` directly. Transactional RLS probes validated the intended backend semantics before deployment.
 
 ### P1.2 — Global Messages and Project Messages — EFFECTIVE RUNTIME RESOLVED
 
-The former project Messages tab had a separate renderer from global Communication.
+Mandatory `project-messages-route-v1.js` resolves the historical project Messages route into the project's `kind=project` general conversation inside mandatory Communication V3.
 
-Production `v4.5.12-communication-p2 / build 515` now loads mandatory `project-messages-route-v1.js`: the historical project Messages route resolves the project's actual `kind=project` general conversation and opens it in the same Communication V3 workspace used by global Messages.
+Global and project messaging therefore use one intended effective renderer. Deep links preserve project context through auth/workspace initialization. The old renderer still physically exists in `live.js`, but it is cleanup debt rather than the intended UX path.
 
-Direct/deep project-message routes preserve the project context while authentication/workspace state is loading. `communication-workspace-v1.js` is now mandatory; the boot chain no longer silently falls back to the old global renderer if Communication V3 fails to load.
+### P1.3 — Resources, deliverables and approvals had competing owners — EFFECTIVE RUNTIME RESOLVED
 
-All three active production projects were checked and each has exactly one active general project conversation, so the route is deterministic on current data.
+The previous runtime contained three overlapping layers:
 
-The old project renderer still physically exists in `live.js`; removing dormant code remains structural cleanup behind browser regression coverage. The UX now has one intended effective Messages renderer, but source cleanup is not yet complete.
+- historical resource/deliverable UI and handlers in `live.js`;
+- capture-phase compatibility handling in `workflow-backend-safe-v1.js`;
+- the newer `resources-workspace-v2.js` renderer.
 
-### P1.3 — Critical workflows still depend on competing event listeners — OPEN
+Production now makes `resources-workspace-v2.js` mandatory. It is the intended effective owner for work resources, deliverable creation, immutable version registration, approval requests and approval decisions.
 
-`live.js` still contains handlers for actions, milestones, meetings, versions, approvals and completion while later modules intercept some of the same actions/forms.
+All active validation entry points outside Resources — Home attention, My Work, project overview/external view and historical approval actions — are intercepted by mandatory `approval-route-v1.js`, resolved under the current user's RLS visibility and opened in the Resources V2 approval decision flow.
 
-**Target:** one frontend owner per workflow after regression coverage proves the replacement path.
+`delivery-workflow-v1.js` remains the effective owner for closure preview, `complete_project_v3`, delivery history and reopen.
+
+Historical handlers remain physically present for compatibility/safety until browser coverage allows their deletion. This is now structural debt, not intended duplicate UX ownership.
 
 ### P1.4 — Authenticated browser regression gate — PARTIAL
 
-The Cloudflare production deploy now performs executable public runtime smoke checks for the Worker release, shell build and mandatory modules. This materially improves deployment verification but does not replace authenticated browser E2E.
+The direct Cloudflare deployment now performs executable public runtime smoke checks for:
 
-Two-session browser tests remain required for invitation/access, project workflows, messaging and native calls. The current Supabase connector does not expose Auth-admin operations to create/delete safe temporary E2E identities, so production identities will not be fabricated through SQL or borrowed from user credentials.
+- Worker release/version;
+- SPA shell build;
+- project access module;
+- project Messages route;
+- Communication V3;
+- Resources V2;
+- approval routing;
+- Delivery closure/reopen module.
 
-### P1.5 — Guest project page management actions — RESOLVED
+This materially improves release verification but does not replace authenticated multi-user browser E2E.
 
-External Guests no longer get effective project create/archive management actions. Authorization remains server-side as the final boundary.
+The connected Supabase tooling does not expose an Auth-admin lifecycle suitable for safely creating/deleting temporary E2E identities. Production identities will not be fabricated through SQL or borrowed from user credentials.
+
+### P1.5 — Guest project management actions — RESOLVED
+
+External Guests no longer get effective project create/archive management actions. Server authorization remains the final boundary.
+
+### P1.6 — Action / milestone / meeting ownership — OPEN
+
+`live.js` still renders these workflows while `workflow-backend-safe-v1.js` captures several of their forms and calls the safer RPC workflows. Some quick actions still execute directly from `live.js`.
+
+**Target:** establish explicit effective ownership per operation, preserve current UX and server-side authorization, then remove duplicate event ownership only when the corresponding scenario is covered.
 
 ## P2 findings
 
@@ -59,19 +82,28 @@ Global Calendar is effectively shared meeting time, while action deadlines live 
 
 Lifecycle management handles pause/completion/reopen/archive/delete but not Team/Restricted access.
 
-**Direction:** add a separate Access & participants entry with an explicit impact preview before any scope change.
+**Direction:** add a separate Access & participants entry with explicit impact preview before any scope change.
 
 ### P2.3 — Controlled vocabulary
 
 - `Membre` = internal workspace member;
 - `Invité externe` = explicit project/shared-content access;
-- `Participant projet` = explicit participant in a restricted project/project team context;
+- `Participant projet` = explicit participant in a restricted project/project-team context;
 - `Responsable` = accountable person for action/jalon/project lead role;
 - `Ressource de travail` ≠ `Livrable`;
 - `Message` ≠ `Demande` ≠ `Décision`;
 - `Réunion` = synchronous event; `Appel` = communication session.
 
 Avoid using “participant” as a synonym for “can access”.
+
+## Quality-system correction
+
+The audit found that repository checks themselves had become stale:
+
+- `stability-check.mjs` still expected build 512 / `v4.5.12-roadmap-p2`;
+- `contract-check.mjs` required legacy Messages V2 and legacy deliverable/version code to remain present.
+
+Those assertions were replaced by checks against effective runtime owners. Quality gates must protect product invariants, not preserve obsolete implementation details.
 
 ## Current strengths to preserve
 
@@ -95,16 +127,16 @@ Before → Live → After remains a strong mental model linking agenda, live not
 
 Current call model covers prejoin, explicit invitees, multi-party capacity, screen sharing, front-camera preference/mobile switching, reconnect/heartbeat, add-person-during-call and project/meeting context.
 
-## Recommended execution order — updated after communication-p2
+## Recommended execution order
 
-1. Prepare/implement authenticated browser regression coverage without weakening Auth or using personal credentials.
-2. Consolidate deliverable/version/approval ownership behind the existing server-safe workflows.
-3. Consolidate remaining action/milestone/meeting event ownership.
-4. Remove dormant legacy renderer/handlers from `live.js` only when their replacement scenario is covered.
-5. Continue extracting domains from `live.js` incrementally, without big-bang rewrite.
+1. Map and consolidate action/milestone/meeting event ownership without deleting the covered fallback paths yet.
+2. Prepare authenticated browser regression coverage without weakening Auth or using personal credentials.
+3. Remove dormant legacy Messages/Resources/approval handlers only after their corresponding E2E scenarios are executable.
+4. Extract remaining domains from `live.js` incrementally, without big-bang rewrite.
+5. Classify remaining Supabase `SECURITY DEFINER` functions/grants by intended API contract and least privilege.
 6. Review information architecture and DA.
 7. Only after that add genuinely differentiating capabilities.
 
 ## Decision gate
 
-Project access and the effective Messages renderer are now coherent in production. A large visual redesign should still wait until the remaining double-ownership workflows and authenticated regression gap are reduced; otherwise the new visual system would be built on runtime paths that are still unnecessarily coupled.
+Access, Messages and the effective Resources/Delivery/Approval path are now coherent in production. A large visual redesign should still wait until action/milestone/meeting ownership and the authenticated regression gap are reduced, otherwise the new visual system would be built around runtime coupling that is still scheduled for removal.
