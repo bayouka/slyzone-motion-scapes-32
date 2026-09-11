@@ -8,8 +8,8 @@ const assert = (condition, message) => {
   }
 };
 
-const RELEASE = 'v4.5.12-v6-polish-p1';
-const BUILD = '521';
+const RELEASE = 'v4.5.12-v6-polish-p2';
+const BUILD = '522';
 const boot = read('site/assets/boot.js');
 const index = read('site/index.html');
 const worker = read('src/worker.js');
@@ -21,6 +21,7 @@ const lock = JSON.parse(read('package-lock.json'));
 const requiredBootModules = [
   'live.js',
   'call-incoming-v2.js',
+  'shell-polish-v6.js',
   'home-v6.js',
   'projects-v6.js',
   'work-v6.js',
@@ -62,6 +63,8 @@ assert(pkg.scripts?.check?.includes('site/assets/home-v6.js'), 'npm check must s
 assert(pkg.scripts?.check?.includes('site/assets/projects-v6.js'), 'npm check must syntax-check Projects V6 owner');
 assert(pkg.scripts?.check?.includes('site/assets/work-v6.js'), 'npm check must syntax-check Work V6 presentation owner');
 assert(pkg.scripts?.check?.includes('site/assets/call-incoming-v2.js'), 'npm check must syntax-check incoming call receiver');
+assert(pkg.scripts?.check?.includes('site/assets/shell-polish-v6.js'), 'npm check must syntax-check shell polish owner');
+assert(pkg.scripts?.check?.includes('shell-polish-v6-check.mjs'), 'npm check must include shell polish contract');
 assert(pkg.scripts?.check?.includes('call-incoming-v2-check.mjs'), 'npm check must include incoming call contract');
 assert(pkg.scripts?.check?.includes('communication-v3-check.mjs'), 'npm check must include communication contract');
 
@@ -145,17 +148,22 @@ assert(!work.includes('MutationObserver'), 'Work owner must not use MutationObse
 assert(boot.indexOf('work-workflow-v1.js') < boot.indexOf('workflow-backend-safe-v1.js'), 'Work owner must load before compatibility bridge');
 
 const incomingCallV2 = read('site/assets/call-incoming-v2.js');
+const shellPolishV6 = read('site/assets/shell-polish-v6.js');
 const homeV6 = read('site/assets/home-v6.js');
 const projectsV6 = read('site/assets/projects-v6.js');
 const workV6 = read('site/assets/work-v6.js');
 assert(incomingCallV2.includes("api.rpc('get_pending_call_invite_v2')"), 'Incoming call receiver must use secure pending-call RPC');
 assert(!incomingCallV2.includes('RTCPeerConnection'), 'Incoming call receiver must reuse native WebRTC owner');
-for (const [name, code] of [['Home V6',homeV6],['Projects V6',projectsV6],['Work V6',workV6]]) {
+assert(shellPolishV6.includes('__4B4C_SHELL_POLISH_V6_OWNER__'), 'Shell polish owner marker missing');
+assert(shellPolishV6.includes('Agenda'), 'Shell polish Agenda vocabulary missing');
+assert(shellPolishV6.includes('.shell-v6-message-count'), 'Shell polish desktop message badge missing');
+for (const [name, code] of [['Shell polish V6',shellPolishV6],['Home V6',homeV6],['Projects V6',projectsV6],['Work V6',workV6]]) {
   assert(!code.includes('MutationObserver'), `${name} must not use MutationObserver`);
   assert(!code.includes('SupabaseBrowserClient'), `${name} must remain presentation-only`);
 }
 assert(boot.indexOf('live.js') < boot.indexOf('call-incoming-v2.js'), 'Incoming call receiver must load after live');
-assert(boot.indexOf('call-incoming-v2.js') < boot.indexOf('home-v6.js'), 'Incoming call receiver must load before presentation owners');
+assert(boot.indexOf('call-incoming-v2.js') < boot.indexOf('shell-polish-v6.js'), 'Shell polish must load after incoming call receiver');
+assert(boot.indexOf('shell-polish-v6.js') < boot.indexOf('home-v6.js'), 'Shell polish must load before Home V6');
 assert(boot.indexOf('home-v6.js') < boot.indexOf('projects-v6.js'), 'Projects V6 must load after Home V6');
 assert(boot.indexOf('projects-v6.js') < boot.indexOf('work-v6.js'), 'Work V6 must load after Projects V6');
 assert(boot.indexOf('work-v6.js') < boot.indexOf('project-access-v1.js'), 'V6 presentation owners must load before domain owners');
