@@ -7,8 +7,8 @@
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[char]));
   const route = () => {
-    const match = (location.hash || '').match(/^#\/projects\/([^/]+)\/work\/(list|roadmap|board|calendar)(?:\?.*)?$/);
-    return match ? { projectId: match[1], view: match[2] } : null;
+    const match = (location.hash || '').match(/^#\/projects\/([^/]+)\/work(?:\/(list|roadmap|board|calendar))?(?:\?.*)?$/);
+    return match ? { projectId: match[1], view: match[2] || 'list' } : null;
   };
 
   function decorateTabs() {
