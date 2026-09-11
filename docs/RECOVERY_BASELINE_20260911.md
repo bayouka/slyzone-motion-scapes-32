@@ -31,74 +31,65 @@ The migration gap identified during the 2026-09-09 recovery audit is now closed 
 
 The **22 production migrations after `20260908221655`** have been restored as version-controlled SQL files, through the final production ACL hardening migration `20260909093700_revoke_public_call_heartbeat.sql`. Production Supabase migration history was treated as the authority; no migration was replayed or applied to production as part of this repository recovery.
 
-The recovered tail covers:
+The recovered tail covers agenda/meeting workflows, native calls/WebRTC, prejoin hardening, multi-party invitations, capacity/RLS fixes, heartbeat, stale-room reuse, unanswered-invite expiry and final heartbeat ACL hardening.
 
-- agenda and meeting workflows;
-- native call sessions and WebRTC signalling;
-- prejoin hardening;
-- workspace and direct calls;
-- multi-party call invitations;
-- call capacity and RLS fixes;
-- invitation lifecycle cleanup;
-- presence heartbeat and stale-room reuse;
-- unanswered invite expiry;
-- final anonymous/public heartbeat privilege revocation.
-
-`scripts/migration-history-check.mjs` now guards the complete 22-file production tail and the final heartbeat ACL. It is part of `npm run check`, preventing the recovered history from silently disappearing again.
+`scripts/migration-history-check.mjs` guards the recovered production tail and is part of `npm run check`.
 
 ## RLS and access probes — verified without persistent test data
 
-Read-only/RLS impersonation probes were executed against the production database using the authenticated Postgres role and explicit test identities.
+Read-only/RLS impersonation probes were executed against the production database using explicit test identities.
 
 - An authenticated identity with no workspace membership saw **0 workspaces, 0 projects, 0 conversations, 0 messages and 0 deliverables** from 4b4c.
-- The existing ordinary internal Member saw all **3 Team projects** but not the Owner's private/direct conversation, while the Owner saw the full permitted conversation set. This is consistent with audience isolation.
-- The access-aware project workflow `create_project_with_access_setup_v1` was tested inside rolled-back transactions:
-  - a Team project was visible to the ordinary Member automatically;
-  - a Restricted project excluding that Member was invisible to the Member;
-  - a Restricted project explicitly including that Member was visible;
-  - an ordinary Member can create a Restricted project and becomes its project lead.
-- All project fixtures created for these probes were rolled back. A follow-up check confirmed no `__RLS_PROBE_%` rows remained.
+- The existing ordinary internal Member saw all **3 Team projects** but not the Owner's private/direct conversation.
+- `create_project_with_access_setup_v1` was tested inside rolled-back transactions: Team auto-shares to an internal Member; Restricted excludes unless explicitly selected; an ordinary Member can create a Restricted project and becomes its lead.
+- All project fixtures were rolled back and no probe rows remained.
 
-These probes validate the current backend Team/Restricted model; they do not replace browser-level E2E tests of the UI.
+## No-GitHub-Actions production path — corrected
+
+GitHub Actions are not part of the 4b4c production chain.
+
+The proven path is:
+
+1. develop and validate in `bayouka/slyzone-motion-scapes-32`;
+2. mirror only the validated runtime into `bayouka/2b2c/4b4c/`;
+3. use the authenticated Cloudflare Workers Builds environment connected to `bayouka/2b2c` to execute Wrangler explicitly against Worker `4b4c`;
+4. verify production `/health` before declaring success.
+
+On 2026-09-11 the transport mirror's stale `wrangler.jsonc` target was corrected from `4b4c-pilot` to `4b4c`. The obsolete `4b4c/deploy-prod.ps1`, which still required the historical pilot branch, and two obsolete direct-deploy trigger artifacts were removed. `4b4c-pilot` must not be used as development source or production target.
 
 ## Security classification
 
-Supabase advisors currently report:
+Supabase advisors currently report one anonymous `SECURITY DEFINER` endpoint (`workspace_invite_public_preview(uuid)`), authenticated `SECURITY DEFINER` RPC warnings, and leaked-password protection disabled.
 
-- one anonymous `SECURITY DEFINER` endpoint: `workspace_invite_public_preview(uuid)`;
-- authenticated `SECURITY DEFINER` RPC warnings for the application API surface;
-- leaked-password protection disabled.
-
-The anonymous invite preview was inspected. Its public output intentionally supports the pre-login invitation screen. For anonymous callers it masks the invited email and does not expose project names; full private details are only returned to the intended authenticated email or a workspace manager. Keep it under review, but it is not classified as an accidental public-data leak at this baseline.
-
-Authenticated `SECURITY DEFINER` RPCs must be reviewed by API intent rather than blindly converted to invoker functions, because many are deliberately guarded transaction/workflow endpoints.
+The anonymous invite preview was inspected: anonymous callers receive masked/minimal information, while private details require the intended authenticated identity or a workspace manager. It is intentional but remains under review.
 
 ## Product/runtime debt confirmed
 
 - `live.js` remains a large multi-domain monolith.
-- Some legacy workflow implementations still exist inside `live.js` while newer loaded bridge modules own the safer runtime path.
-- Global Messages and project Messages currently use two different active presentation/runtime paths. Legacy message RPCs are server-routed through Communication V3, so this is primarily a product/maintenance ownership problem rather than an identified authorization bypass.
-- Deliverable/version/approval safety still partly depends on capture-phase interception by `workflow-backend-safe-v1.js`; this must be simplified behind tests rather than removed abruptly.
-- Historical V6 PRs in `bayouka/2b2c` are research/backlog material only; they must not be merged into the current runtime without explicit reconciliation.
+- Some legacy workflow implementations remain while newer bridge modules own safer runtime paths.
+- Global Messages and project Messages are two active frontend experiences; the backend routes legacy calls through Communication V3, so this is primarily an ownership/UX debt rather than an identified authorization bypass.
+- Deliverable/version/approval safety still partly depends on capture-phase interception; simplify only behind tests.
+- Historical V6 PRs in `bayouka/2b2c` are research/backlog material only.
 
 ## Remaining gate before structural product changes
 
 Completed:
 
-- [x] recover the 22 missing production migration files into the canonical repository;
-- [x] add a repository guard for the recovered production migration tail;
+- [x] recover the 22 missing production migration files;
+- [x] guard recovered migration history;
 - [x] make source/runtime/transport authority explicit;
-- [x] correct the stale v4.5.10 CSS QA assertion;
-- [x] verify baseline RLS isolation and Team/Restricted project semantics with reversible database probes;
-- [x] define the runtime ownership consolidation plan;
-- [x] define the browser E2E regression matrix.
+- [x] correct stale CSS QA assertion;
+- [x] verify baseline RLS isolation and Team/Restricted project semantics;
+- [x] define runtime ownership consolidation plan;
+- [x] define browser E2E regression matrix;
+- [x] reconcile the transport Worker identity to `4b4c` and remove obsolete pilot deployment artifacts.
 
 Still required:
 
-- [ ] correct the project-creation UI so Team/Restricted access semantics match the backend;
+- [ ] correct project-creation UI so Team/Restricted semantics match the backend;
 - [ ] remove Guest-only project management CTAs that cannot succeed;
 - [ ] implement executable browser E2E coverage for invitation/access, navigation, roadmap/actions, messaging and native calls;
-- [ ] define and enforce one runtime owner per workflow domain, then remove duplicate ownership incrementally behind browser/contract tests;
-- [ ] verify the real production Worker `/health` and critical authenticated flows with at least two user accounts;
-- [ ] classify remaining SECURITY DEFININER RPCs by intended API exposure and remove obsolete grants/functions where appropriate;
+- [ ] enforce one runtime owner per workflow domain and remove duplicate ownership incrementally;
+- [ ] verify real production `/health` and critical authenticated flows with at least two accounts;
+- [ ] classify remaining SECURITY DEFININER RPCs and remove obsolete grants/functions where appropriate;
 - [ ] only then begin large UX/DA restructuring.
