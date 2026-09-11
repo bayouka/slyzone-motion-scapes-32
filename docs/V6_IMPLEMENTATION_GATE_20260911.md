@@ -2,9 +2,11 @@
 
 ## Statut
 
-Plan d’implémentation préparatoire. **Non déployé**.
+**Prototype UX/produit validé. Préparation et implémentation source isolée autorisées. Non déployé.**
 
 Baseline de production à préserver pendant la transition : **v4.5.12-work-p1 / build 519**.
+
+La Gate navigateur du prototype V6 est passée le 11 septembre 2026 sur `v6-prototype`. Le delta technique détaillé est désormais documenté dans `V6_TECHNICAL_DELTA_519_TO_V6_20260911.md`.
 
 Objectif : traduire la V6 validée en changements techniques progressifs sans réécriture destructive, sans casser les contrats backend déjà fiables, sans mélanger source canonique et transport, et sans déclarer une version production avant certification complète.
 
@@ -240,8 +242,8 @@ La V6 peut être considérée prête à remplacer l’expérience 519 lorsque :
 
 ---
 
-# 10. Prochaine action d’ingénierie après validation visuelle
+# 10. Prochaine action d’ingénierie
 
-Créer **Tranche A — Shell + Design System V6** dans la source canonique, sans changer le backend, puis certifier localement avant tout miroir transport.
+La validation visuelle étant désormais passée, la prochaine action est autorisée : **créer Tranche A — Shell + Design System V6 dans une branche source isolée depuis le `main` courant, sans changer le backend et sans miroir transport**.
 
-Ce document autorise la préparation technique mais **n’autorise pas encore un déploiement V6** tant que les maquettes/prototype ne sont pas considérés suffisamment cohérents.
+Le passage en production reste une Gate séparée.
