@@ -31,7 +31,7 @@ for (const module of requiredBootModules) assert(boot.includes(module), `missing
 for (const obsolete of ['home-polish.js','workflow-backend-v2.js','project-progress-v2.js','call-native-v1.js']) {
   assert(!boot.includes(obsolete), `obsolete runtime module reintroduced: ${obsolete}`);
 }
-
+assert(!boot.includes('communication workspace unavailable; native messages view kept'), 'Communication V3 must not silently fall back to native global messages');
 assert(!/MutationObserver\s*\(/.test(boot), 'MutationObserver reintroduced in boot runtime');
 
 const cssRefs = [...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(m => m[1]);
@@ -44,9 +44,9 @@ for (const obsoleteCss of ['assets/styles.css','assets/live.css','assets/home-po
 }
 assert(pkg.version === lock.version && pkg.version === lock.packages?.['']?.version, 'package.json and package-lock.json versions must match');
 
-assert(index.includes('assets/boot.js?build=514'), 'unexpected production boot build in SPA shell');
+assert(index.includes('assets/boot.js?build=515'), 'unexpected production boot build in SPA shell');
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'), 'unexpected V5 design asset version');
-assert(worker.includes("version: 'v4.5.12-communication-p1'"), 'unexpected production worker release marker');
+assert(worker.includes("version: 'v4.5.12-communication-p2'"), 'unexpected production worker release marker');
 
 assert(worker.includes("'cache-control': 'no-store'"), 'SPA shell must explicitly disable caching');
 assert(worker.includes("'x-content-type-options': 'nosniff'"), 'missing X-Content-Type-Options');
@@ -57,8 +57,7 @@ const routeRenderers = [
   'renderDashboard','renderProjects','renderProject','renderMyWork','renderMessages',
   'renderCalendar','renderLibrary','renderTeam','renderProfile','renderSettings','renderWelcome','renderArchives',
 ];
-for (let i = 0; i < routeRenderers.length; i++) {
-  const name = routeRenderers[i];
+for (const name of routeRenderers) {
   const start = live.indexOf('function ' + name + '(');
   assert(start >= 0, `missing route renderer: ${name}`);
   if (start < 0) continue;
@@ -80,7 +79,9 @@ assert(live.includes("state.mobileMenuOpen?'Fermer le menu':'Ouvrir le menu'"), 
 
 const projectMessagesRoute = read('site/assets/project-messages-route-v1.js');
 assert(projectMessagesRoute.includes("#/messages/${conversationId}"), 'project messages route must resolve into Communication workspace');
-assert(projectMessagesRoute.includes("kind=eq.project"), 'project messages route must resolve project conversations only');
+assert(projectMessagesRoute.includes('kind=eq.project'), 'project messages route must resolve project conversations only');
+assert(projectMessagesRoute.includes('routingContextReady()'), 'project message deep link must wait for auth/workspace context');
+assert(projectMessagesRoute.includes('pendingTimer'), 'project message deep link pending resolution guard missing');
 
 const v5 = read('site/assets/design-v5.css');
 assert(v5.includes('/* V5.0.2 — mobile navigation architecture & scroll behavior */'), 'V5.0.2 mobile navigation ownership block missing');
