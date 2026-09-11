@@ -1,216 +1,105 @@
 # 4b4c / 2b2c — Product coherence audit — 2026-09-11
 
-Purpose: audit the current product as it actually exists before adding features or applying a large visual redesign. Findings distinguish observed behavior from recommended product changes.
+Purpose: audit the current product as it actually exists before adding features or applying a large visual redesign.
 
 ## Executive assessment
 
-2b2c already has a substantial collaboration model: personal attention Home, projects, actions/roadmap, requests, decisions, meetings, messaging, resources/livrables, approvals, team access and native calls. The main product risk is **not lack of features**. It is that some domains are exposed through multiple overlapping mental models or frontend implementations.
+2b2c already has a substantial collaboration model: personal attention Home, projects, actions/roadmap, requests, decisions, meetings, messaging, resources/livrables, approvals, team access and native calls. The main product risk is **not lack of features**. It is overlapping mental models and duplicate frontend ownership.
 
-The strongest current product concepts should be preserved:
-
-- Home answers “what needs me now?” rather than acting as a generic widget dashboard;
-- workspace role, project visibility and project responsibility are separate;
-- messages have explicit audiences;
-- requests are distinct from ordinary messages because they expect a response;
-- deliverables are distinct from working resources because official outputs are versioned and can be approved;
-- meetings follow Before → Live → After and can generate actions/decisions;
-- project closure records the result and exact delivery references;
-- native calls support project/meeting/message contexts rather than being a separate bolted-on tool.
+The strongest current concepts should be preserved: Home answers “what needs me now?”, workspace role/project visibility/project responsibility remain separate, messages have explicit audiences, requests are distinct from messages, deliverables are versioned and approvable, meetings follow Before → Live → After, project closure records actual results, and native calls stay contextual.
 
 ## P1 findings
 
 ### P1.1 — Project creation access model is misleading
 
-**Observed**
+The current “Nouveau projet” form asks for name, objective/result, target date, “Participants dès le départ” and initial roadmap phases, but does **not** ask whether the project is `team` or `restricted`.
 
-The current “Nouveau projet” form asks for:
+The form currently calls `create_project_with_setup`, which creates a Team project and synchronizes eligible internal members. The participant checkboxes therefore do not mean what the UI suggests.
 
-- name;
-- objective/result;
-- target date;
-- “Participants dès le départ”;
-- initial roadmap phases.
+The production backend already exposes `create_project_with_access_setup_v1`, supporting `team` and `restricted` plus an explicit internal participant set for restricted projects. Transactional RLS probes confirmed the intended behavior.
 
-It does **not** ask whether the project is `team` or `restricted`.
-
-The form submits through `create_project_with_setup`, whose backend implementation always creates the project with `visibility='team'` and calls `sync_team_project_members_v1`. Therefore all eligible internal members receive access to a Team project regardless of the participant checkboxes shown in the form.
-
-The production backend already exposes `create_project_with_access_setup_v1`, which supports both `team` and `restricted` visibility and an explicit participant set for restricted projects.
-
-**Impact**
-
-The interface suggests that the creator controls project participation at creation time, while the actual access model says “all internal members” for a Team project. This creates avoidable confusion precisely where users form their mental model of permissions.
-
-**Recommended target**
-
-The creation flow should first ask for the project's access scope:
-
-- **Projet d’équipe — recommended/default:** every internal member can access it now and in the future. Do not present participant checkboxes as access control.
-- **Projet restreint:** only selected internal participants plus workspace admins/owner get project access. Participant selection becomes mandatory/meaningful here.
-
-External guests remain invited/shared explicitly through Team/access management; they should not be silently included by a generic internal-participant field.
-
-Use the current access-aware backend workflow rather than creating a second access mechanism.
+**Target:** first ask for access scope. `Projet d’équipe` is the recommended/default option and grants all internal members current/future access. `Projet restreint` grants only owner/admin plus selected internal participants. Participant selection is shown only when meaningful.
 
 ### P1.2 — Global Messages and Project Messages are two active experiences
 
-**Observed**
+Global `#/messages` uses the newer Communication workspace while the project `Messages` tab is still rendered separately. Backend hardening prevents this from being an identified authorization bypass, but it creates inconsistent capabilities and duplicated maintenance.
 
-Global `#/messages` is enhanced by `communication-workspace-v1.js` and uses Communication V3 workflows. The project `Messages` tab is still rendered by `live.js` and submits through legacy-named message functions.
-
-The backend hardens those legacy functions by routing them into the V3 message workflows, so this is not currently identified as an authorization bypass. It is nevertheless two active frontend ownership paths for the same user concept.
-
-**Impact**
-
-- inconsistent capabilities and presentation depending on where the conversation is opened;
-- duplicated maintenance and regression surface;
-- future features can land in one messaging surface and not the other;
-- users must learn whether “Messages” means project chat or the global communication workspace.
-
-**Recommended target**
-
-One communication model and one renderer/service. The project Messages tab becomes the same Communication workspace pre-filtered to that project, with project context visually persistent. Global Messages shows all permitted audiences.
+**Target:** one communication renderer/service; project Messages becomes the same workspace pre-filtered to the project.
 
 ### P1.3 — Critical workflows still depend on competing event listeners
 
-**Observed**
+`live.js` still contains handlers for versions, approvals, completion and other workflows while later modules intercept some of the same actions/forms.
 
-`live.js` still contains native handlers for versions, approvals, completion and other workflows. Later loaded modules intercept some of the same actions/forms in capture phase and call `stopImmediatePropagation()` to ensure the safer backend workflow wins.
-
-**Impact**
-
-Correct behavior partly depends on module/listener ordering. A future import-order change can reactivate an older implementation without a compile error.
-
-**Recommended target**
-
-One frontend owner per workflow. Keep server-side RPC/RLS invariants, but remove competing DOM listeners once browser tests prove the replacement path.
+**Target:** one frontend owner per workflow after browser tests prove the replacement path.
 
 ### P1.4 — No real browser regression gate
 
-**Observed**
+Current checks are primarily syntax/static/contract checks. Browser E2E coverage is required for invitation/access, navigation, project workflows, two-account messaging, native calls, camera switching and responsive behavior.
 
-Current repository checks are primarily syntax/static/contract checks. No Playwright/Cypress E2E suite is present in the canonical source.
+### P1.5 — Guest project page exposes impossible management actions
 
-**Impact**
+An external Guest legitimately has `Projets` in primary navigation, but the current Projects page renders `Archives` and `Nouveau projet` unconditionally. Those actions do not belong in the Guest experience and should be hidden rather than failing later at authorization boundaries.
 
-The product can pass `npm run check` while still failing on:
-
-- mobile drawer/focus/scroll;
-- project navigation;
-- modal behavior;
-- invitation flows;
-- two-account messaging;
-- WebRTC prejoin/incoming-call lifecycle;
-- camera switching and responsive call controls.
-
-**Recommended target**
-
-Introduce a small, deterministic browser suite before structural frontend cleanup. Cover business-critical paths first, visual regression second.
-
-### P1.5 — Guest sees project-management entry actions it cannot use
-
-**Observed**
-
-The external/Guest navigation explicitly includes `Projects`, so an invited external user legitimately reaches the projects portfolio. However `renderProjects()` currently renders `Archives` and `+ Nouveau projet` unconditionally. Other surfaces such as My Work and Calendar already hide creation actions for external users.
-
-**Impact**
-
-A Guest is offered actions that do not match its product role and are expected to fail at the backend. This weakens trust in the permission model even when RLS/RPC authorization correctly blocks the mutation.
-
-**Recommended target**
-
-For external Guests, the Projects portfolio remains accessible but management actions are removed:
-
-- no `Nouveau projet`;
-- no internal `Archives` entry unless a deliberate external archive experience is later designed;
-- page empty states must say that no project has been shared rather than inviting the Guest to create one.
-
-This should be corrected in the same atomic project-access change as P1.1.
+**Target:** Guest sees only projects explicitly shared with them and no workspace-level create/archive management CTA.
 
 ## P2 findings
 
 ### P2.1 — “Calendrier” currently means meetings at workspace level
 
-**Observed**
+Global Calendar is effectively shared meeting time, while action deadlines live under My Work and project Work/Calendar. This is internally coherent but the label can imply all dated commitments.
 
-The global Calendar explicitly lists meetings and describes itself as “temps partagé”, while action deadlines live under My Work and project Work/Calendar.
+**Direction:** evolve toward an Agenda model with optional layers for meetings, personal due dates and project milestones/targets without turning it into a duplicate task manager.
 
-**Product question**
+### P2.2 — Project management does not expose access scope
 
-This separation is coherent internally, but the label “Calendrier” conventionally suggests all dated commitments. A user may reasonably expect project deadlines/actions there.
+Lifecycle management handles pause/completion/reopen/archive/delete but not Team/Restricted access.
 
-**Recommended direction**
+**Direction:** add a separate Access & participants entry, with explicit impact preview before any scope change.
 
-Do not simply dump every task into the calendar. Consider an Agenda model with filters/layers:
-
-- meetings;
-- personal due dates;
-- project milestones/targets;
-- optional assigned actions.
-
-Preserve My Work as the action/attention surface. Calendar/Agenda should answer “when?”, not become a second task manager.
-
-### P2.2 — Project management entry point does not expose access scope
-
-**Observed**
-
-The Project “Manage” modal handles pause, completion, reopen, archive and delete. It does not expose the project's Team/Restricted scope or participant access.
-
-**Recommended direction**
-
-Add a dedicated **Access & participants** entry rather than mixing permissions into lifecycle controls. Changing Team ↔ Restricted is a consequential operation and should explain exactly who gains/loses access before confirmation.
-
-### P2.3 — Terminology needs one controlled vocabulary
-
-Current concepts are mostly good, but terminology should be frozen across surfaces:
+### P2.3 — Freeze controlled vocabulary
 
 - `Membre` = internal workspace member;
 - `Invité externe` = explicit project/shared-content access;
-- `Participant projet` = person explicitly involved in a restricted project or shown as project team context;
-- `Responsable` = person accountable for an action/jalon/project lead role;
+- `Participant projet` = explicit participant in a restricted project/project team context;
+- `Responsable` = accountable person for action/jalon/project lead role;
 - `Ressource de travail` ≠ `Livrable`;
 - `Message` ≠ `Demande` ≠ `Décision`;
-- `Réunion` = synchronous event; `Appel` = communication session that may or may not belong to a meeting.
+- `Réunion` = synchronous event; `Appel` = communication session.
 
-Avoid reusing “participant” as a synonym for “can access”.
+Avoid using “participant” as a synonym for “can access”.
 
-## Current strengths verified in product logic
+## Current strengths to preserve
 
 ### Home
 
-The Home prioritizes personal attention, changes since last visit, upcoming time commitments and the project to resume. This is differentiated and should remain the product's primary entry point.
+Prioritizes personal attention, changes since last visit, upcoming time commitments and the project to resume.
 
 ### Team/access
 
-Current member management clearly states:
-
-- Owner/Admin: workspace-wide access;
-- Member: automatic access to current/future Team projects, plus explicit Restricted projects;
-- Guest: explicit projects only, no automatic future project access.
-
-This model is materially better than a generic “admin/member/guest” dropdown with no project semantics.
+Owner/Admin have workspace-wide access; Member gets current/future Team projects plus explicit Restricted projects; Guest gets explicit projects only, never automatic future project access.
 
 ### Resources/delivery
 
-The enhanced Resources workspace correctly separates working resources from official deliverables. Deliverable versions are immutable, approvals target an exact version and closure history preserves what was actually delivered.
+Working resources are separated from official deliverables; deliverable versions are immutable, approvals target exact versions and closure history preserves what was delivered.
 
 ### Meetings
 
-Before → Live → After is a strong mental model. Agenda, live notes, summary, actions, decisions and native call entry belong together.
+Before → Live → After remains a strong mental model linking agenda, live notes, summary, actions and decisions.
 
 ### Calls
 
-The current call model already covers the hard collaboration cases: prejoin, explicit invitees, multi-party capacity, screen sharing, front-camera preference/mobile switching, reconnect/heartbeat, add-person-during-call and project/meeting context. Product work should focus on interaction quality and reliability rather than adding another calling concept.
+Current call model covers prejoin, explicit invitees, multi-party capacity, screen sharing, front-camera preference/mobile switching, reconnect/heartbeat, add-person-during-call and project/meeting context.
 
-## Recommended execution order from this audit
+## Recommended execution order
 
-1. **Add browser regression coverage for current behavior.**
-2. **Fix project creation scope/participant semantics and Guest project CTAs** using the already-existing access-aware backend workflow.
-3. **Unify project and global messaging** under Communication V3.
-4. **Remove duplicate event ownership** for deliverables/approvals/project completion.
-5. **Extract domains from `live.js` incrementally**, without a big-bang rewrite.
-6. **Then review information architecture and DA**, using the stabilized workflows as the substrate.
-7. **Only after that add genuinely differentiating product capabilities.**
+1. Add/prepare browser regression coverage for current behavior.
+2. Fix project creation scope/participant semantics with the existing access-aware backend workflow.
+3. Remove Guest-only project-management CTAs.
+4. Unify project and global messaging under Communication V3.
+5. Remove duplicate event ownership for deliverables/approvals/project completion.
+6. Extract domains from `live.js` incrementally, without big-bang rewrite.
+7. Then review information architecture and DA.
+8. Only after that add genuinely differentiating capabilities.
 
 ## Decision gate
 
