@@ -11,7 +11,7 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current certified production runtime: **v4.5.12-delivery-p2 / build 517**.
+Current certified production runtime: **v4.5.12-work-p1 / build 519**.
 
 A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and the production runtime smoke checks pass.
 
@@ -22,16 +22,20 @@ A release is production-verified only when the transport manifest matches the in
 - `site/assets/live.js` — application shell, auth, routing, shared state and legacy/core screens.
 - `site/assets/project-access-v1.js` — effective project-creation/access owner.
 - `site/assets/project-messages-route-v1.js` — routes project Messages into Communication V3.
+- `site/assets/delivery-workflow-v1.js` — project closure, delivery history and reopen workflow.
+- `site/assets/meeting-workflow-v1.js` — effective meeting create/edit/RSVP owner using server RPC V2 workflows.
+- `site/assets/work-workflow-v1.js` — effective Actions/Roadmap owner for action create/edit/status/delete and milestone create/edit.
+- `site/assets/workflow-backend-safe-v1.js` — compatibility/safety bridge for remaining historical paths; not a target long-term owner.
 - `site/assets/communication-workspace-v1.js` — effective messaging/communication renderer; mandatory.
 - `site/assets/resources-workspace-v2.js` — effective resources, deliverables, immutable versions and approval workflow renderer; mandatory.
 - `site/assets/approval-route-v1.js` — routes validation entry points from Home/My Work/project views into Resources V2.
-- `site/assets/delivery-workflow-v1.js` — project closure, delivery history and reopen workflow.
-- `site/assets/workflow-backend-safe-v1.js` — compatibility/safety bridge for remaining legacy form paths; not the target long-term owner.
 - `site/assets/library-workspace-v1.js` — global file library enhancement.
 - `site/assets/design-v5.css` — current global V5 Soft Spatial Workspace design layer, loaded last.
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
 - `src/worker.js` — Cloudflare Worker, health endpoint, SPA fallback and response hardening.
 - `wrangler.jsonc` — canonical Worker configuration named `4b4c`.
+
+Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their capture-phase handlers stop the historical handlers from executing, while the old code remains physically present until authenticated browser coverage permits safe deletion.
 
 ## Backend baseline
 
@@ -60,6 +64,8 @@ Do not add decorative dashboard gadgets that do not improve collaboration or dec
 - Restricted projects expose only explicitly selected participants plus administrative access required by the workspace model;
 - a guest/client sees only explicitly shared projects/content and cannot write internal project content;
 - invitations remain bound to the invited email and explicit access model;
+- Actions and Roadmap writes use the server workflow APIs; action deletion remains a direct REST delete protected by `actions_delete` RLS / `can_manage_action_v1`;
+- Meeting creation/edit/RSVP use `create_meeting_with_attendees_v2`, `update_meeting_v2` and `set_meeting_response_v2`;
 - file versions are allocated and registered server-side and remain immutable;
 - validation targets an exact version, not an abstract file;
 - Team / Project / Direct message audiences and unread/mention semantics remain distinct;
@@ -104,8 +110,9 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 ## Known technical debt
 
 - `live.js` remains a large multi-domain monolith;
-- dormant legacy Messages and Resources/approval paths still physically exist in `live.js`, although mandatory route/renderer owners now supersede them in the effective runtime;
-- `workflow-backend-safe-v1.js` still intercepts action, milestone, meeting and some historical delivery forms and should be reduced only after corresponding browser coverage exists;
+- dormant legacy Messages, Resources/approval, Meeting and Work handlers still physically exist although mandatory owners now supersede their effective runtime paths;
+- `workflow-backend-safe-v1.js` still contains compatibility implementations for several superseded forms and historical delivery/project paths;
+- action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
 - authenticated multi-user browser E2E coverage remains incomplete because a safe dedicated E2E Auth identity lifecycle is not yet available through the connected tooling;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
