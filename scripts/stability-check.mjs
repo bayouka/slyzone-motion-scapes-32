@@ -1,14 +1,15 @@
 import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(p,'utf8');
-const RELEASE='v4.5.12-v6-polish-p1';
-const BUILD='521';
+const RELEASE='v4.5.12-v6-polish-p2';
+const BUILD='522';
 const boot=read('site/assets/boot.js');
 const worker=read('src/worker.js');
 const index=read('site/index.html');
 const live=read('site/assets/live.js');
 const incomingCallV2=read('site/assets/call-incoming-v2.js');
 const incomingCallV2Css=read('site/assets/call-incoming-v2.css');
+const shellPolishV6=read('site/assets/shell-polish-v6.js');
 const homeV6=read('site/assets/home-v6.js');
 const projectsV6=read('site/assets/projects-v6.js');
 const workV6=read('site/assets/work-v6.js');
@@ -50,9 +51,10 @@ assert(index.includes(`assets/boot.js?build=${BUILD}`),`cache bust ${BUILD}`);
 assert(index.includes('assets/design-v5.css?v=5.0.5-roadmap-p1'),'V5 design baseline retained');
 all(index,['assets/design-v6.css?v=6.0.0-shell-p1','assets/home-v6.css?v=6.0.1-home-polish','assets/projects-v6.css?v=6.0.1-project-polish','assets/work-v6.css?v=6.0.1-work-polish'],'V6 stylesheet missing');
 all(index,['assets/call-native-v1.css','assets/resources-workspace-v1.css','assets/resources-workspace-v2.css','assets/delivery-workflow-v1.css','assets/library-workspace-v1.css','assets/communication-workspace-v1.css'],'stylesheet missing');
-all(boot,[`const VERSION = '${RELEASE}'`,'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','call-incoming-v2.js','home-v6.js','projects-v6.js','work-v6.js','project-access-v1.js','project-messages-route-v1.js','delivery-workflow-v1.js','meeting-workflow-v1.js','work-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','approval-route-v1.js','library-workspace-v1.js'],'boot contract missing');
+all(boot,[`const VERSION = '${RELEASE}'`,'syncProbeIntervalMs: Math.max(15000','fullRefreshFallbackMs: Math.max(300000','call-incoming-v2.js','shell-polish-v6.js','home-v6.js','projects-v6.js','work-v6.js','project-access-v1.js','project-messages-route-v1.js','delivery-workflow-v1.js','meeting-workflow-v1.js','work-workflow-v1.js','workflow-backend-safe-v1.js','communication-workspace-v1.js','resources-workspace-v2.js','approval-route-v1.js','library-workspace-v1.js'],'boot contract missing');
 assert(boot.indexOf('live.js')<boot.indexOf('call-incoming-v2.js'),'incoming receiver must load after live');
-assert(boot.indexOf('call-incoming-v2.js')<boot.indexOf('home-v6.js'),'incoming receiver must load before Home V6');
+assert(boot.indexOf('call-incoming-v2.js')<boot.indexOf('shell-polish-v6.js'),'shell polish must load after incoming receiver');
+assert(boot.indexOf('shell-polish-v6.js')<boot.indexOf('home-v6.js'),'shell polish must load before Home V6');
 assert(boot.indexOf('home-v6.js')<boot.indexOf('projects-v6.js'),'Projects V6 must load after Home V6');
 assert(boot.indexOf('projects-v6.js')<boot.indexOf('work-v6.js'),'Work V6 must load after Projects V6');
 assert(boot.indexOf('work-v6.js')<boot.indexOf('project-access-v1.js'),'V6 presentation owners must load before domain owners');
@@ -68,6 +70,10 @@ all(incomingCallV2,['__4B4C_INCOMING_CALL_V2_OWNER__',"api.rpc('get_pending_call
 for(const forbidden of ['RTCPeerConnection','send_call_signal_v1','join_call_v1','start_private_call_v2','api.insert(','api.update(','api.remove(']) assert(!incomingCallV2.includes(forbidden),`incoming receiver duplicated workflow: ${forbidden}`);
 assert(incomingCallV2Css.includes('#incoming-call-v2')&&incomingCallV2Css.includes('@media(max-width:640px)'),'incoming call responsive CSS');
 all(incomingCallDb,['get_pending_call_invite_v2','ci.invited_user_id = auth.uid()',"ci.status = 'pending'", "cs.status = 'live'", "wm.status = 'active'", "cp.user_id = cs.started_by", "interval '25 seconds'",'grant execute on function public.get_pending_call_invite_v2() to authenticated'],'incoming call db missing');
+
+all(shellPolishV6,['__4B4C_SHELL_POLISH_V6_OWNER__','a[href="#/calendar"]','Agenda','.shell-v6-message-count','.v52-mobile-primary a[href="#/messages"] b','2500'],'shell polish contract missing');
+for(const forbidden of ['MutationObserver','SupabaseBrowserClient','api.rpc','api.insert','api.update','api.remove','fetch(']) assert(!shellPolishV6.includes(forbidden),`shell polish backend/observer regression: ${forbidden}`);
+all(live,['get_message_badges_v2','get_workspace_sync_digest_v1','unreadMessages','#/calendar'],'shell polish runtime prerequisite missing');
 
 for(const [name,code] of [['Home V6',homeV6],['Projects V6',projectsV6],['Work V6',workV6]]){
   assert(!code.includes('MutationObserver'),`${name} MutationObserver`);
