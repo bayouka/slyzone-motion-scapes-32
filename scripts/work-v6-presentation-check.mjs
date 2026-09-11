@@ -27,7 +27,7 @@ const homeCssPos = index.indexOf('assets/home-v6.css');
 const projectsCssPos = index.indexOf('assets/projects-v6.css');
 const workCssPos = index.indexOf('assets/work-v6.css');
 if (!(designPos >= 0 && designPos < homeCssPos && homeCssPos < projectsCssPos && projectsCssPos < workCssPos)) fail('Work V6 CSS must load after prior V6 layers');
-if (!index.includes('assets/boot.js?build=519')) fail('Tranche D draft must not claim a certified new build');
+if (!index.includes('assets/boot.js?build=520')) fail('Tranche D release candidate must expose build 520');
 
 const requiredJs = [
   '__4B4C_WORK_V6_PRESENTATION_OWNER__',
@@ -74,4 +74,4 @@ for (const ownerContract of ['__4B4C_WORK_WORKFLOW_OWNER__','create_action_v1','
 }
 if (js.includes('source_type') || js.includes('source_id')) fail('presentation layer must not infer provenance not exposed in DOM');
 
-console.log('work v6 presentation: OK');
+console.log('work v6 presentation: OK (build 520)');
