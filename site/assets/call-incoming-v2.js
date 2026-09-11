@@ -8,6 +8,7 @@ if (!window.__4B4C_INCOMING_CALL_V2_OWNER__) {
   const POLL_MS = 1400;
   let timer = null;
   let activeCallId = '';
+  let suppressUntil = 0;
   let originalTitle = document.title;
 
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -72,6 +73,7 @@ if (!window.__4B4C_INCOMING_CALL_V2_OWNER__) {
   }
 
   async function pollIncoming() {
+    if (Date.now() < suppressUntil) return;
     if (!api.getSession()?.access_token) { clearIncoming(); return; }
     try {
       const rows = await api.rpc('get_pending_call_invite_v2');
@@ -103,9 +105,12 @@ if (!window.__4B4C_INCOMING_CALL_V2_OWNER__) {
     if (!button) return;
     const callId = button.dataset.call || '';
     if (callId && callId === activeCallId) {
+      suppressUntil = Date.now() + 2500;
       const node = document.getElementById('incoming-call-v2');
       if (node) node.hidden = true;
-      setTimeout(() => void pollIncoming(), 700);
+      document.getElementById('incoming-call-v1')?.remove();
+      if (document.title.startsWith('📞 ')) document.title = originalTitle;
+      setTimeout(() => void pollIncoming(), 2600);
     }
   });
 }
