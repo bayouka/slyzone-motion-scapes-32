@@ -27,7 +27,7 @@ const projectsCssPos = index.indexOf('assets/projects-v6.css');
 if (!(designCssPos >= 0 && designCssPos < homeCssPos && homeCssPos < projectsCssPos)) {
   fail('Projects V6 CSS must load after Design V6 and Home V6');
 }
-if (!index.includes('assets/boot.js?build=519')) fail('Projects V6 draft must not claim a certified new build');
+if (!index.includes('assets/boot.js?build=520')) fail('Projects V6 release candidate must expose build 520');
 
 const requiredLive = [
   'function projectCardV3',
@@ -71,4 +71,4 @@ const requiredCss = [
 ];
 for (const marker of requiredCss) if (!css.includes(marker)) fail(`missing Projects V6 style contract: ${marker}`);
 
-console.log('projects v6: OK');
+console.log('projects v6: OK (build 520)');
