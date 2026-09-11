@@ -6,6 +6,7 @@ const boot=fs.readFileSync('site/assets/boot.js','utf8');
 const runtime=fs.readFileSync('site/runtime-config.js','utf8');
 const projectAccess=fs.readFileSync('site/assets/project-access-v1.js','utf8');
 const projectMessagesRoute=fs.readFileSync('site/assets/project-messages-route-v1.js','utf8');
+const approvalRoute=fs.readFileSync('site/assets/approval-route-v1.js','utf8');
 const communication=fs.readFileSync('site/assets/communication-workspace-v1.js','utf8');
 const resources=fs.readFileSync('site/assets/resources-workspace-v2.js','utf8');
 const delivery=fs.readFileSync('site/assets/delivery-workflow-v1.js','utf8');
@@ -23,6 +24,8 @@ const checks=[
   ['Resources V2 owns deliverable creation', resources.includes('create_deliverable_with_first_version_v1')],
   ['Resources V2 owns immutable version allocation', resources.includes('register_deliverable_version_v3')],
   ['Resources V2 owns approval request and decision', resources.includes('request_deliverable_approval_v1') && resources.includes('decide_deliverable_approval_v1')],
+  ['approval attention routes into Resources V2', approvalRoute.includes('[data-action="open-approval"],[data-action="approval-decision"]') && approvalRoute.includes('/resources?approval=') && approvalRoute.includes('data-rw-action="decide-approval"')],
+  ['approval routing is bounded and event-driven', approvalRoute.includes('focusAttempts >= 40') && !approvalRoute.includes('MutationObserver')],
   ['Delivery workflow owns closure and reopen', delivery.includes('get_project_closure_preview_v3') && delivery.includes('complete_project_v3') && delivery.includes('reopen_project_v1')],
   ['guest meeting auto-sharing', live.includes('const includesGuest=attendeeIds.some') && live.includes("visibility=includesGuest?'shared'")],
   ['state reset clears collaboration caches', live.includes('conversationMembers:[]') && live.includes('deliverableVersions:[]') && live.includes('messageLoads:new Set()')],
@@ -31,6 +34,7 @@ const checks=[
   ['boot fallback stays canonical', boot.includes('Configuration 2b2c indisponible') && !boot.includes('assets/app.js')],
   ['Communication V3 is mandatory', boot.includes('communication-workspace-v1.js') && !boot.includes('communication workspace unavailable; native messages view kept')],
   ['Resources V2 is mandatory', boot.includes('resources-workspace-v2.js') && !boot.includes('resources v2 unavailable; native resources view kept')],
+  ['approval routing loads after Resources V2', boot.indexOf('resources-workspace-v2.js') < boot.indexOf('approval-route-v1.js')],
 ];
 
 const failed=checks.filter(([,ok])=>!ok);
