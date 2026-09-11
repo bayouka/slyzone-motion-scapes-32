@@ -2,7 +2,7 @@
   const config = window.__4B4C_CONFIG__ || {};
   const app = document.getElementById('app');
   const hasLiveConfig = config.mode === 'live' && config.supabaseUrl && config.supabasePublishableKey;
-  const VERSION = 'v4.5.12-meeting-p1';
+  const VERSION = 'v4.5.12-work-p1';
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   const renderStartupError = (title, message, detail = '') => {
@@ -31,8 +31,9 @@
     .then(() => import(`./project-access-v1.js?${VERSION}`))
     .then(() => import(`./project-messages-route-v1.js?${VERSION}`))
     .then(() => import(`./delivery-workflow-v1.js?${VERSION}`))
-    // Meeting V2 owns create/edit/RSVP before the compatibility safe bridge sees historical forms.
+    // Domain workflow owners must register before the compatibility safe bridge.
     .then(() => import(`./meeting-workflow-v1.js?${VERSION}`))
+    .then(() => import(`./work-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`))
     .then(() => import(`./resources-workspace-v2.js?${VERSION}`))
