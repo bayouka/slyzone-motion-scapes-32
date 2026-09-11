@@ -12,7 +12,7 @@ This document records the verified recovery baseline before further structural p
 - Production Worker identity: `4b4c`
 - Historical/non-authoritative tracks: `4b4c-pilot` and the root React/Vite/V6 tree in `bayouka/2b2c`
 
-Current production runtime: **v4.5.12-communication-p2 / build 515**.
+Current certified production runtime: **v4.5.12-delivery-p2 / build 517**.
 
 ## Recovery and repository baseline
 
@@ -42,49 +42,77 @@ Verified flow:
 
 1. develop and validate in `bayouka/slyzone-motion-scapes-32`;
 2. mirror the validated runtime into `bayouka/2b2c/4b4c/`;
-3. Cloudflare Workers Builds attached to `bayouka/2b2c` runs `scripts/deploy-4b4c-direct.sh`;
-4. the script removes `WRANGLER_CI_OVERRIDE_NAME` / `WRANGLER_CI_MATCH_TAG` and explicitly runs Wrangler with `wrangler.4b4c.jsonc --name 4b4c`;
-5. the script fails if syntax, release manifest, Worker target, deployment or runtime smoke checks fail.
+3. record runtime/build/source SHA/Worker in `4b4c/TRANSPORT_RELEASE.txt`;
+4. Cloudflare Workers Builds attached to `bayouka/2b2c` runs `scripts/deploy-4b4c-direct.sh`;
+5. the script removes `WRANGLER_CI_OVERRIDE_NAME` / `WRANGLER_CI_MATCH_TAG` and explicitly runs Wrangler with `wrangler.4b4c.jsonc --name 4b4c`;
+6. syntax, manifest, deploy and production smoke failures return non-zero and therefore fail the Cloudflare build.
 
-A durable `4b4c/TRANSPORT_RELEASE.txt` manifest now records runtime, build, canonical source SHA and Worker target. The deploy script verifies the manifest before publishing.
-
-The former script could report success even when direct deployment was skipped because it ended with unconditional `exit 0`; this false-green path has been removed.
+The historical false-green path caused by unconditional `exit 0` has been removed.
 
 ### Latest certified deployment
 
-Transport HEAD used for certification: `4b6807d7644e2ec6a275f8ca404ea3ec1652511a`.
+- Canonical runtime source recorded in transport manifest: `3186c3df8082e28cd63b06f6300d4317aa077e16`.
+- Transport deployment commit: `18511d1712f8bb94f5c13ced610d0d35ac099737`.
+- Cloudflare build: `3b27b7bc-d7de-461c-bf69-06d16d7b5d10` — **SUCCESS**.
+- Cloudflare attached-service Version ID: `76532c72-5ed2-4e4f-ba09-3fdc66b4e407`.
 
-Cloudflare build: `a9eee5b5-e4b3-450b-ab4e-da0c68f0f6e3` — **SUCCESS**.
+The direct 4b4c script only exits successfully after verifying production contains:
 
-Cloudflare attached-service Version ID: `7cd20358-e9d3-43c7-915a-044244486e8d`.
+- `/health` → `v4.5.12-delivery-p2`;
+- shell → `assets/boot.js?build=517`;
+- access-aware project creation module;
+- project→Communication V3 route module;
+- Communication V3 renderer;
+- Resources V2 renderer with first-version creation, immutable version registration and approval RPCs;
+- approval route module connecting legacy/global validation entry points to the Resources V2 decision action;
+- Delivery workflow with closure preview, `complete_project_v3` and reopen.
 
-The direct 4b4c script only exits successfully after verifying all of the following on `https://4b4c.bayoukadesbois.workers.dev`:
-
-- `/health` contains `v4.5.12-communication-p2`;
-- `/` contains `assets/boot.js?build=515`;
-- `project-access-v1.js` is served and contains the access-aware project workflow;
-- `project-messages-route-v1.js` is served and contains project-conversation routing plus auth/workspace readiness handling;
-- `communication-workspace-v1.js` is served and contains Communication V3 message handling.
-
-## Product P1 corrections deployed
+## Product P1 effective owners deployed
 
 ### Project creation/access
 
-`project-access-v1.js` is mandatory and owns new-project access semantics.
+`project-access-v1.js` is mandatory and owns project-creation access semantics:
 
-- **Projet d’équipe** is recommended/default and grants current/future internal members access automatically.
-- **Projet restreint** exposes explicit internal-member selection.
-- It calls `create_project_with_access_setup_v1` directly.
-- Guests cannot create projects and project create/archive CTAs are hidden/defensively blocked.
+- Team is recommended/default and includes eligible current/future internal members;
+- Restricted exposes explicit participant selection;
+- creation calls `create_project_with_access_setup_v1` directly;
+- Guests do not receive impossible create/archive management actions.
 
-### Project Messages → Communication V3
+### Messages
 
-`project-messages-route-v1.js` is mandatory and converts the historical project Messages route into the project's actual `kind=project` conversation inside the global Communication workspace.
+`project-messages-route-v1.js` and mandatory `communication-workspace-v1.js` establish one intended effective renderer:
 
-- All three current active projects were checked and each has exactly one active general project conversation.
-- Direct project-message links preserve their project context while authentication/workspace state is still loading, then resolve after the session is ready.
-- `communication-workspace-v1.js` is now mandatory; the boot chain no longer silently falls back to the native global Messages renderer.
-- The old project Messages implementation still physically exists in `live.js`, but it is no longer the intended effective route. Removing that dormant code remains cleanup work behind browser regression coverage.
+- project Messages resolves to the project's `kind=project` general conversation;
+- global/project Messages both render through Communication V3;
+- project deep links preserve context while auth/workspace state loads;
+- all three active production projects were verified to have exactly one active general project conversation.
+
+The historical Messages implementation remains physically present in `live.js` pending browser-covered cleanup.
+
+### Resources, deliverables, versions and approvals
+
+`resources-workspace-v2.js` is mandatory and is the intended effective renderer/owner for:
+
+- work resources;
+- deliverable creation with first immutable version via `create_deliverable_with_first_version_v1`;
+- subsequent immutable versions via `register_deliverable_version_v3`;
+- approval requests via `request_deliverable_approval_v1`;
+- approval decisions via `decide_deliverable_approval_v1`.
+
+`approval-route-v1.js` intercepts validation entry points from Home, My Work, project overview/external view and any historical approval action, resolves the RLS-visible approval, routes to project Resources and opens the Resources V2 decision action. It is bounded/event-driven and does not use MutationObserver.
+
+`delivery-workflow-v1.js` remains the effective owner for project closure preview, completion, delivery history and reopen.
+
+Historical resource/approval code remains physically present in `live.js` and `workflow-backend-safe-v1.js`; it is now compatibility/safety debt rather than the intended product path. Remove it only after authenticated browser coverage exists.
+
+## Quality-gate correction
+
+The repository quality gate itself contained stale assumptions during recovery:
+
+- `stability-check.mjs` still expected build 512 / `v4.5.12-roadmap-p2`;
+- `contract-check.mjs` explicitly required legacy Messages V2 and legacy deliverable/version code to remain present.
+
+These checks were corrected to describe the effective runtime instead. `repo-hygiene-check.mjs`, `stability-check.mjs` and `contract-check.mjs` now guard mandatory Access, Communication, Resources and approval-routing owners rather than preserving obsolete implementations.
 
 ## Security classification
 
@@ -93,32 +121,34 @@ Supabase advisors still require follow-up for authenticated `SECURITY DEFINER` A
 ## Remaining structural debt
 
 - `live.js` remains a large multi-domain monolith.
-- Some legacy workflow implementations remain physically present behind newer mandatory/effective owners.
-- Deliverable/version/approval behavior still partly depends on capture-phase interception in `workflow-backend-safe-v1.js`.
-- Browser-level authenticated E2E coverage remains incomplete, especially two-user messaging, invitations, native calls and mobile camera behavior.
-- Historical V6 PRs in `bayouka/2b2c` remain backlog/reference only.
+- dormant legacy Messages/Resources/approval implementations still physically exist behind the new effective owners;
+- `workflow-backend-safe-v1.js` still intercepts action, milestone, meeting and historical delivery forms;
+- authenticated browser E2E remains incomplete, particularly two-session messaging/invitations/calls and mobile camera behavior;
+- CSS still contains historical specificity/`!important` debt;
+- remaining `SECURITY DEFINER` functions/grants require least-privilege classification.
 
 ## Gate status
 
 Completed:
 
-- [x] recover and guard missing migration history;
+- [x] recover and guard missing production migration history;
 - [x] make source/runtime/transport authority explicit;
 - [x] verify baseline RLS isolation and Team/Restricted semantics;
 - [x] remove obsolete pilot deployment artifacts;
-- [x] repair and certify the no-GitHub-Actions direct Cloudflare path;
-- [x] fix Team/Restricted project creation semantics;
-- [x] remove impossible Guest project management CTAs;
-- [x] route project Messages through Communication V3;
-- [x] make Communication V3 mandatory;
-- [x] certify production runtime `v4.5.12-communication-p2 / build 515` with public runtime smoke checks.
+- [x] repair and certify the direct no-GitHub-Actions Cloudflare path;
+- [x] correct project-creation access semantics and Guest CTAs;
+- [x] consolidate the intended Messages renderer on Communication V3;
+- [x] make Resources V2 the mandatory intended resources/delivery renderer;
+- [x] route all active approval-attention entry points into Resources V2;
+- [x] align repository quality gates with effective runtime owners;
+- [x] certify production `v4.5.12-delivery-p2 / build 517` with public runtime smoke checks.
 
-Still required before large UX/DA restructuring:
+Still required before destructive cleanup / large UX-DA restructuring:
 
-- [ ] implement executable authenticated browser E2E coverage for access, navigation, roadmap/actions, messaging and native calls;
+- [ ] implement executable authenticated browser E2E coverage for access, navigation, actions/roadmap, messaging, delivery and calls;
 - [ ] verify critical workflows with two real browser sessions;
-- [ ] remove dormant/duplicate project-message implementation from `live.js` once covered;
-- [ ] consolidate deliverable/version/approval ownership;
-- [ ] continue extracting domain ownership from `live.js` incrementally;
+- [ ] consolidate action/milestone/meeting event ownership;
+- [ ] remove dormant legacy Messages/Resources/approval code only behind corresponding E2E coverage;
+- [ ] continue extracting domains from `live.js` incrementally;
 - [ ] classify remaining `SECURITY DEFINER` RPCs and obsolete grants/functions;
 - [ ] then perform the large IA/UX/DA redesign.
