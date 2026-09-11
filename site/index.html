@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f3f6fb" />
+  <meta name="2b2c-call-engine" content="2.0.0" />
   <title>2b2c — Projets qui avancent ensemble</title>
   <meta name="description" content="2b2c rassemble projets, travail, conversations, décisions, réunions, validations et ressources dans un espace partagé." />
   <link rel="icon" href="assets/brand-icon.svg" type="image/svg+xml" />
@@ -14,12 +15,21 @@
   <link rel="stylesheet" href="assets/delivery-workflow-v1.css" />
   <link rel="stylesheet" href="assets/communication-workspace-v1.css" />
   <link rel="stylesheet" href="assets/call-native-v1.css?v=4.4.24-call-ui-polish" />
+  <link rel="stylesheet" href="assets/call-engine-v2.css?v=2.0.0" />
   <link rel="stylesheet" href="assets/design-v5.css?v=5.0.5-roadmap-p1" />
   <style>@import url("assets/design-v6.css?v=6.0.0-shell-p1"); @import url("assets/home-v6.css?v=6.0.1-home-polish"); @import url("assets/projects-v6.css?v=6.0.1-project-polish"); @import url("assets/work-v6.css?v=6.0.1-work-polish");</style>
 </head>
 <body>
   <div id="app"></div>
   <script src="runtime-config.js"></script>
-  <script src="assets/boot.js?build=522"></script>
+  <script type="module">
+    try {
+      await import('./assets/call-media-continuity-v2.js?v=2.0.0');
+      await import('./assets/call-engine-v2.js?v=2.0.0');
+    } catch (error) {
+      console.error('[2b2c] Call Engine V2 unavailable', error);
+    }
+    await import('./assets/boot.js?build=522');
+  </script>
 </body>
 </html>
