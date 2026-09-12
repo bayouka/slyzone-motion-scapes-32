@@ -1,0 +1,11 @@
+/* 2b2c Mobile Shell V8 — explicit close control, single mobile navigation. */
+@media(max-width:767px){
+  .v43-mobile-tabbar.v52-mobile-primary{display:none!important}
+  .mobile-drawer-close{position:relative!important;width:42px!important;height:42px!important;flex:0 0 42px!important;border-radius:12px!important;background:#fff!important;border:1px solid #d7e0ec!important;color:#26344d!important;display:grid!important;place-items:center!important;font-size:0!important;line-height:1!important;box-shadow:0 4px 12px rgba(30,48,78,.06)!important}
+  .mobile-drawer-close::before,.mobile-drawer-close::after{content:""!important;position:absolute!important;width:20px!important;height:2px!important;border-radius:999px!important;background:#26344d!important;left:10px!important;top:19px!important}
+  .mobile-drawer-close::before{transform:rotate(45deg)!important}.mobile-drawer-close::after{transform:rotate(-45deg)!important}
+  .mobile-drawer-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+  .mobile-drawer-head .live-brand{min-width:0!important;flex:1 1 auto!important}.mobile-drawer-head .live-brand>div{min-width:0!important}.mobile-drawer-head .live-brand small{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .brand-logo-icon,.mobile-drawer .brand-logo-icon,.mobile-top-brand .brand-logo-icon{background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
+  .brand-logo-icon img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important}
+}
