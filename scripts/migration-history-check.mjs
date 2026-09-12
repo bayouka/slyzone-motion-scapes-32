@@ -26,11 +26,14 @@ const requiredProductionTail = [
   '20260909093700_revoke_public_call_heartbeat.sql',
   '20260911225000_pending_call_invite_v2.sql',
   '20260911235900_call_reliability_v2.sql',
+  '20260912013500_call_media_sfu_v3.sql',
+  '20260912015000_call_media_catalog_active_session_v3.sql',
+  '20260912000407_harden_call_media_v3_rpc_execute.sql',
 ];
 
 const missing = requiredProductionTail.filter((name) => !fs.existsSync(`${migrationDir}/${name}`));
 if (missing.length) {
-  console.error(`MIGRATION HISTORY CHECK FAILED: missing recovered production migrations: ${missing.join(', ')}`);
+  console.error(`MIGRATION HISTORY CHECK FAILED: missing recovered/canonical migrations: ${missing.join(', ')}`);
   process.exit(1);
 }
 
@@ -51,7 +54,7 @@ for (const required of [
   'create or replace function public.get_pending_call_invite_v2()',
   'ci.invited_user_id = auth.uid()',
   "ci.status = 'pending'",
-  "cp.user_id = cs.started_by",
+  'cp.user_id = cs.started_by',
   "interval '25 seconds'",
   'revoke all on function public.get_pending_call_invite_v2() from anon',
   'grant execute on function public.get_pending_call_invite_v2() to authenticated',
@@ -74,4 +77,52 @@ for (const required of [
   }
 }
 
-console.log(`migration history: OK (${requiredProductionTail.length} production migrations guarded)`);
+const v3Media = fs.readFileSync(`${migrationDir}/20260912013500_call_media_sfu_v3.sql`, 'utf8');
+for (const required of [
+  'create table if not exists public.call_media_tracks_v3',
+  'create table if not exists public.call_media_telemetry_v3',
+  'create or replace function public.register_call_provider_session_v3(',
+  'create or replace function public.get_call_media_catalog_v3(',
+  'create or replace function public.record_call_media_telemetry_v3(',
+]) {
+  if (!v3Media.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: V3 media migration missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const v3Catalog = fs.readFileSync(`${migrationDir}/20260912015000_call_media_catalog_active_session_v3.sql`, 'utf8');
+for (const required of [
+  'cp.provider_session_id=t.provider_session_id',
+  'cp.left_at is null',
+]) {
+  if (!v3Catalog.replace(/\s+/g, '').includes(required.replace(/\s+/g, ''))) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: V3 catalog active-session guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const v3Acl = fs.readFileSync(`${migrationDir}/20260912000407_harden_call_media_v3_rpc_execute.sql`, 'utf8');
+for (const fn of [
+  'register_call_provider_session_v3(uuid,text)',
+  'upsert_call_media_track_v3(uuid,text,text,text,text)',
+  'end_call_media_track_v3(uuid,text)',
+  'end_all_call_media_tracks_v3(uuid)',
+  'get_call_media_catalog_v3(uuid)',
+  'record_call_media_telemetry_v3(uuid,text,text,jsonb)',
+]) {
+  for (const role of ['public', 'anon']) {
+    const marker = `revoke all on function public.${fn} from ${role}`;
+    if (!v3Acl.includes(marker)) {
+      console.error(`MIGRATION HISTORY CHECK FAILED: V3 RPC ACL guard missing: ${marker}`);
+      process.exit(1);
+    }
+  }
+  const grant = `grant execute on function public.${fn} to authenticated`;
+  if (!v3Acl.includes(grant)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: V3 authenticated grant missing: ${grant}`);
+    process.exit(1);
+  }
+}
+
+console.log(`migration history: OK (${requiredProductionTail.length} guarded migrations)`);
