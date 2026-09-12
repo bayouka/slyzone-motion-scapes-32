@@ -153,6 +153,36 @@ Use it for the validated low-fidelity capture surface and microcopy:
 
 The capture **surface** remains validated. Its older sections describing post-click analysis/first-return behavior are refined/superseded by Capture Contract V1.2 and Master Blueprint V1. Do not reintroduce an intermediate analysis page from the old snapshot wording.
 
+### 6. Post-capture Idea workspace — current UX candidate, not yet validated
+
+**Candidate behavior contract:**
+
+`docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_2.md`
+
+**Candidate low-fidelity wireframes:**
+
+`docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
+
+**Supporting red-team:**
+
+`docs/idea-engine/validation/WORKSPACE_PROJECTION_V0_2_RED_TEAM_20260913.md`
+
+Status: **candidate / not functionally validated yet**. These files do not override the Master Blueprint, Matrix V5, Capture Contract V1.2 or validated Capture UX.
+
+They define/test the current proposed novice-oriented projection model:
+
+- permanent `ORIENTATION_NOW` ;
+- consequence-based `PROGRESS_SIGNAL` ;
+- conditional `ATTENTION_NOW` ;
+- zero-or-one dominant `USER_NEXT_ACTION` ;
+- prudent `NEXT_VALUE_HINT` ;
+- explicit Rescue Path (`Je ne sais pas`, proposal, hypothesis, later, accepted unknown) ;
+- long-running autonomous work without fake steps/spinners ;
+- stable workspace surface with adaptive dominant content ;
+- progress by consequences rather than global percentage/stage.
+
+Do **not** implement these candidates as a frozen production contract until explicit functional validation. Use them as the current basis for low-fidelity prototype/testing.
+
 ---
 
 ## Production implementation vs target Idea Engine
