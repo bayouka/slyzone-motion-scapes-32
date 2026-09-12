@@ -29,8 +29,9 @@ export default {
           version: 'v4.5.12-v6-polish-p2',
           call_engine: '2.0.0',
           call_engine_v3: {
-            code: '3.1.0-direct-preview',
+            code: '3.1.1-direct-preview',
             transport: 'p2p-stun',
+            signal_isolation: '1.0.0',
             default: false,
             configured: true,
             external_account_required: false,
