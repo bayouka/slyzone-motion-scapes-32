@@ -32,11 +32,13 @@ for (const forbidden of [
 
 assert(src.includes("if(peer.initiator)createInitiatorTransceivers(ctx,peer)"), 'only deterministic initiator may precreate transceivers');
 assert(src.includes("rejected non-deterministic offer"), 'non-deterministic offers must be rejected');
-assert(index.includes('3.1.0-direct-preview'), 'index V3 Direct marker missing');
+assert(index.includes('3.1.3-direct-preview'), 'index V3 Direct release marker missing');
 assert(index.includes('call-engine-v3-direct.js?v=3.1.0-direct-preview'), 'index must load direct engine behind V3 flag');
+assert(index.includes('call-certification-v3.js?v=1.0.0'), 'passive certification loader missing');
 assert(!index.includes('call-engine-v3.js?v=3.0.0-sfu-preview'), 'index still loads SFU preview');
-assert(worker.includes("code: '3.1.0-direct-preview'"), 'health Direct code missing');
+assert(worker.includes("code: '3.1.3-direct-preview'"), 'health Direct code missing');
 assert(worker.includes("transport: 'p2p-stun'"), 'health Direct transport missing');
+assert(worker.includes("certification: '1.0.0'"), 'health certification marker missing');
 assert(worker.includes('configured: true'), 'Direct engine must not depend on external provisioning');
 assert(!worker.includes('handleCallSfuV3'), 'Worker still owns SFU route');
 
