@@ -1,0 +1,31 @@
+/* 2b2c Call mobile V7 — stable viewport + always-accessible controls */
+@media(max-width:767px){
+  html.call-engine-v3-active,html.call-engine-v3-active body{overflow:hidden!important;overscroll-behavior:none!important}
+  #call-engine-v3-active{height:var(--ce3-mobile-vh,100dvh)!important;min-height:var(--ce3-mobile-vh,100dvh)!important}
+  .ce3-shell{inset:0!important;width:100vw!important;height:var(--ce3-mobile-vh,100dvh)!important;max-height:var(--ce3-mobile-vh,100dvh)!important;border-radius:0!important;border:0!important;display:grid!important;grid-template-rows:auto auto minmax(0,1fr) auto!important;overflow:hidden!important}
+  .ce3-head{min-height:54px!important;padding:7px 9px 7px 11px!important;gap:8px!important}
+  .ce3-head-left{gap:7px!important;align-items:center!important;min-width:0!important}
+  .ce3-head-left .ce3-live{font-size:9px!important;line-height:1.25!important;max-width:58px!important}
+  .ce3-head strong{font-size:15px!important;line-height:1.1!important;max-width:110px!important;white-space:normal!important}
+  .ce3-head small,.ce3-health{display:none!important}
+  .ce3-head-actions{gap:5px!important;flex-shrink:0!important}
+  .ce3-head-actions button{min-width:38px!important;min-height:38px!important;padding:0 9px!important;border-radius:10px!important}
+  .ce3-head-actions .danger-soft{max-width:108px!important;padding:4px 8px!important;font-size:11px!important;line-height:1.15!important;white-space:normal!important}
+  .ce3-status{font-size:10px!important;padding:5px 8px!important}
+  .ce3-stage{padding:7px!important;gap:6px!important;min-height:0!important;overflow:hidden!important;contain:layout paint!important}
+  .ce3-main,.ce3-grid{min-height:0!important;height:100%!important;overflow:hidden!important}
+  .ce3-grid,.ce3-grid.count-1,.ce3-grid.count-2{grid-template-columns:1fr!important;grid-template-rows:minmax(0,1fr)!important}
+  .ce3-grid.count-3,.ce3-grid.count-4,.ce3-grid.count-5,.ce3-grid.count-6{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:minmax(0,1fr)!important}
+  .ce3-tile{border-radius:16px!important;min-height:0!important;contain:layout paint style!important;transform:translateZ(0)!important;backface-visibility:hidden!important}
+  .ce3-tile video{transform:translateZ(0)!important;backface-visibility:hidden!important;will-change:transform!important;contain:paint!important}
+  .ce3-tile.self video{transform:scaleX(-1) translateZ(0)!important}
+  .ce3-tile.screen video{transform:translateZ(0)!important}
+  .ce3-filmstrip{position:absolute!important;right:10px!important;bottom:10px!important;z-index:5!important;width:auto!important;max-width:calc(100% - 20px)!important;display:flex!important;gap:6px!important;pointer-events:none!important;overflow:visible!important}
+  .ce3-filmstrip .ce3-tile{width:92px!important;height:122px!important;flex:0 0 92px!important;border-radius:13px!important;box-shadow:0 8px 24px rgba(0,0,0,.28)!important;pointer-events:auto!important}
+  .ce3-filmstrip .ce3-label{font-size:9px!important;left:5px!important;bottom:5px!important}
+  .ce3-pending{left:10px!important;top:10px!important;right:auto!important;z-index:6!important}.ce3-pending span{font-size:10px!important;padding:5px 7px!important}
+  .ce3-share-local{right:8px!important;top:8px!important;width:132px!important;z-index:8!important}
+  .ce3-controls{position:relative!important;z-index:20!important;min-height:auto!important;max-height:none!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;padding:7px 8px calc(8px + env(safe-area-inset-bottom))!important;overflow:visible!important;background:#0e1728!important;box-shadow:0 -8px 28px rgba(0,0,0,.22)!important}
+  .ce3-controls button{width:100%!important;min-width:0!important;height:45px!important;border-radius:12px!important;font-size:15px!important;padding:0 3px!important}.ce3-controls button small{font-size:8px!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
+}
+@media(max-width:390px){.ce3-head-actions .danger-soft{max-width:92px!important;font-size:10px!important}.ce3-controls{grid-template-columns:repeat(4,minmax(0,1fr))!important}.ce3-controls button{height:43px!important}}
