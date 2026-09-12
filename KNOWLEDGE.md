@@ -4,7 +4,7 @@
 
 This file tells humans and AI agents **where the reliable knowledge for 4b4c lives**.
 
-It is an index, not a second specification. If a detailed rule is needed, read the linked source rather than inferring it from this summary.
+It is an index, not a second specification. Read the linked canonical source rather than reconstructing rules from memory or old UI behavior.
 
 ## Global authority
 
@@ -12,17 +12,9 @@ It is an index, not a second specification. If a detailed rule is needed, read t
 
 **Primary source:** `README.md`
 
-Use it for:
+Use it for canonical repository identity, canonical Supabase backend, transport-mirror status, runtime ownership, deployment/release chain and current production baseline.
 
-- canonical repository identity;
-- canonical Supabase backend identity;
-- transport-mirror status;
-- effective runtime ownership;
-- deployment/release chain;
-- current production baseline;
-- high-level product and collaboration contract.
-
-Supporting operational sources currently include:
+Supporting dated operational sources include notably:
 
 - `docs/RECOVERY_BASELINE_20260911.md`
 - `docs/RUNTIME_OWNERSHIP_20260911.md`
@@ -31,163 +23,190 @@ Supporting operational sources currently include:
 - `docs/UX_PRODUCT_DA_GATE_20260911.md`
 - `docs/E2E_TEST_MATRIX_20260911.md`
 
-These dated documents are important recovery/audit evidence, but they do not automatically override a newer explicit canonical contract.
+Dated evidence does not automatically override a newer explicit canonical contract.
+
+---
 
 ## Idea Engine — canonical target
 
 Scope:
 
-> Idea → understanding/enrichment → candidate proposal → decision → optional Project Draft
+> Idea → understanding/enrichment → candidate proposition → decision → optional Project Draft
 
-Reference Blueprint currently used to design and validate the engine:
+Reference Blueprint currently validated:
 
 > creation or redesign of a showcase/marketing website (`site vitrine`).
 
-Do not claim universal validation for every future project type yet.
+Do not claim universal information coverage for every future project type yet.
 
-### 1. Workflow and orchestration
+### 1. Master orchestration architecture
 
-**Canonical:** `docs/idea-engine/canonical/WORKFLOW_V7_1_CONSOLIDATED.md`
+**Primary canonical source:**
 
-Use it for:
+`docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md`
 
-- overall Idea lifecycle;
-- adaptive vs fixed behavior;
-- Project Memory;
-- provenance and information states;
-- Next Best Action;
-- research/evidence/recommendations;
-- proposal formation;
-- Change Intelligence;
-- Decision Requirements;
-- solo/team decision flows;
-- presentation/workshop rules;
-- Candidate snapshots;
-- Idea → Project Draft handoff;
-- role of deterministic rules vs LLM reasoning.
+Read this **first** for any substantial Idea Engine work.
 
-### 2. Information contract and dependencies
+It defines:
 
-**Canonical:** `docs/idea-engine/canonical/INFORMATION_MATRIX_V4_1.md`
+- what 4b4c actually is before GO ;
+- Idea Decision Dossier vs Project Draft ;
+- six-layer engine architecture ;
+- Output Contracts ;
+- Requirement Model ;
+- independent Output Readiness ;
+- Acquisition Engine ;
+- separate system actions vs user next action ;
+- Next Best Action selection ;
+- challenge/research as capabilities, not fixed steps ;
+- capture→workspace orchestration ;
+- UX projection principles ;
+- precedence over any linear reading of older workflow states/B-levels.
 
-Use it for:
+**Important precedence:** where `WORKFLOW_V7_1_CONSOLIDATED.md` or the historical `B0→B4` matrix language appears sequential, the Master Blueprint V1 governs orchestration and readiness.
 
-- which information matters for the Site vitrine Blueprint;
-- how it may be acquired;
-- whether AI may extract/infer/propose it;
-- which information requires human validation/decision;
-- dependencies between information and outputs;
-- blocking levels;
-- presentation/decision readiness dependencies.
+### 2. Detailed workflow mechanisms
 
-Important: the matrix is an internal contract. It must never become a giant visible questionnaire.
+**Canonical companion:**
 
-### 3. Capture, ingestion and structured memory
+`docs/idea-engine/canonical/WORKFLOW_V7_1_CONSOLIDATED.md`
 
-**Canonical:** `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_1.md`
+Use it for detailed mechanisms such as:
 
-**Supersedes:** `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1.md`
+- Project Memory ;
+- provenance/information states ;
+- Answer Resolver ;
+- Research Planner / Evidence Model ;
+- Recommendation Contract ;
+- Candidate formation ;
+- Change Intelligence ;
+- Decision Requirements ;
+- collaboration/workshop ;
+- Candidate snapshots ;
+- Decision Brief ;
+- GO / REVISE / PAUSE / STOP ;
+- Project Draft handoff.
 
-Use V1.1 for:
+Its historical state chain is **not** a mandatory linear state machine anymore. Read it through Master Blueprint V1.
 
-- autosave and RAW FIRST;
-- exact role of `Commencer avec 2b2c`;
-- upload persistence before navigation;
-- raw input + structured memory;
-- optional guided assistance `M’aider à préciser mon idée`;
-- AI enrichment of the visible description without overwriting human sources;
-- rollback to the prior description;
-- atomic multi-domain extraction;
-- negation/modality/temporal interpretation;
-- prefill without freezing;
-- links/images/documents and optional context/notes;
-- supported-format strategy and deferred quota sizing;
-- Answer Resolver rules;
-- capture-versioning and stale-safety;
-- targeted supersession;
-- Idea-document-as-view rather than single source-of-truth blob;
-- mandatory QA cases for Capture V5.
+### 3. Information registry — Site vitrine Blueprint
 
-For capture/ingestion-specific ambiguity, this contract is the most specific source and should be read alongside Workflow V7.1 and Matrix V4.1.
+**Canonical:**
 
-### 4. Capture UX validated snapshot
+`docs/idea-engine/canonical/INFORMATION_MATRIX_V4_1.md`
 
-**Validated functional UX:** `docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
+Use it for which information may matter, acquisition possibilities, validation needs and dependencies for the Site vitrine reference Blueprint.
 
-Use it for the validated low-fidelity shape and microcopy of the initial Idea capture:
+The matrix is internal and must never become a giant visible questionnaire.
 
-- `Parlez-nous de votre idée ?`;
-- short placeholder + contextual help;
-- optional adaptive guided help;
-- automatic enrichment of the visible description;
-- `+ Ajouter des éléments` with Links / Images / Documents;
-- context/notes per source;
-- `Commencer avec 2b2c`;
-- first post-analysis acknowledgment and Next Best Action.
+Its `B0 / B1 / B2 / B3 / B4 / POST-GO` values are currently compatibility hints. Output-specific Requirements and Readiness from Master Blueprint V1 take precedence over any rigid progression interpretation.
 
-This file is **functionally validated**, not a final high-fidelity visual design contract.
+A future Matrix version should migrate those links to explicit Output Contracts/Requirements.
+
+### 4. Capture, ingestion and structured memory
+
+**Current canonical:**
+
+`docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md`
+
+**Supersedes:** V1.1 and V1.0 while preserving their history.
+
+Use V1.2 for:
+
+- RAW FIRST and autosave ;
+- optional guided assistance ;
+- AI enrichment of visible description without source loss ;
+- Links / Images / Documents ;
+- provenance/versioning/stale-safety ;
+- opportunistic pre-analysis after persistence ;
+- exact role of `Commencer avec 2b2c` ;
+- direct entry into the first useful workspace state ;
+- no mandatory `2b2c analyse…` intermediate page ;
+- no immediate repetition of a brief 2b2c just helped write.
+
+### 5. Initial Capture UX validated snapshot
+
+**Validated capture surface:**
+
+`docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
+
+Use it for the validated low-fidelity capture surface and microcopy:
+
+- `Parlez-nous de votre idée ?` ;
+- short placeholder/contextual help ;
+- optional `M’aider à préciser mon idée` ;
+- automatic visible-description enrichment ;
+- `+ Ajouter des éléments` → Links / Images / Documents ;
+- source context/notes ;
+- `Commencer avec 2b2c`.
+
+The capture **surface** remains validated. Its older sections describing post-click analysis/first-return behavior are refined/superseded by Capture Contract V1.2 and Master Blueprint V1. Do not reintroduce an intermediate analysis page from the old snapshot wording.
+
+---
 
 ## Production implementation vs target Idea Engine
 
-Do not conflate these two layers:
+Do not conflate:
 
-- **Current production implementation** = what the repository currently serves and what root `README.md`/runtime docs describe.
-- **Target Idea Engine** = the newer conceptual/UX/information contract in `docs/idea-engine/canonical/` plus explicitly validated UX snapshots in `docs/idea-engine/ux/`.
+- **Current production implementation** = what the repository serves today and root runtime docs describe.
+- **Target Idea Engine** = Master Blueprint + canonical domain contracts + validated UX snapshots.
 
-The production Ideas module may still contain historical rigid behavior such as fixed progression and older IA buttons. That historical implementation is not evidence that the target conceptual model should regress to a wizard.
+Historical production Ideas behavior is not evidence that the target model should regress to a wizard.
 
 Before changing production Ideas code:
 
-1. read the target Idea Engine canonical docs;
-2. read any validated UX snapshot for the surface being changed;
-3. audit the existing implementation/tables/RPCs;
-4. identify the minimal safe change;
-5. preserve existing data/contracts unless an explicit migration is designed and validated;
-6. verify public runtime after release according to `README.md`.
+1. read Master Blueprint V1 ;
+2. read the specific canonical contract(s) ;
+3. read validated UX snapshot(s) relevant to the surface ;
+4. audit the existing implementation/tables/RPCs ;
+5. identify the minimal safe change ;
+6. preserve data/contracts unless an explicit migration is designed ;
+7. verify public runtime according to `README.md`.
+
+---
 
 ## Key Idea Engine invariants — index only
 
-These are pointers, not substitutes for the canonical documents:
-
 - Idea ≠ Project.
-- 2b2c exploits existing information before asking.
-- Workspace is adaptive; internal states are not a forced visible wizard.
-- Raw user/source data is persisted before LLM analysis.
-- `Commencer avec 2b2c` starts analysis/workspace entry; it is not the first save.
-- The initial description can be empty, minimal or rich.
-- Guided help is optional and adaptive, never a mandatory form.
-- Guided human answers remain distinct from AI-generated synthesis.
-- AI may enrich the visible description, but never silently erase the original.
-- One rich brief can populate many domains.
-- Original wording and provenance survive AI structuring.
-- Prefill ≠ freeze.
-- Known information may remain hidden until relevant.
-- Questions exist only for information still necessary now.
-- `Je ne sais pas` is a valid state/path.
-- Recommendations are explainable and may conclude insufficient evidence.
-- Decision readiness depends on actual Decision Requirements.
-- Changes re-open only affected dependencies.
-- Presentation/workshop are optional.
-- Launch/deepen/pause/stop are all valid outcomes.
-- Project Draft exists only after launch.
+- The canonical pre-GO object is a living structured **Idea Decision Dossier**, not a completed questionnaire.
+- The engine is driven by **Output Contracts + Requirements + Readiness + Next Best Action**, not screen order.
+- 2b2c does more work than the user.
+- System actions and the user next action are distinct; autonomous work may run in parallel.
+- A human question is a last-mile acquisition path, not the default.
+- Research/challenge/improvement are capabilities, not mandatory stages.
+- Readiness is per output/decision, never a global arbitrary percentage.
+- Raw data is persisted before AI analysis.
+- Opportunistic pre-analysis is allowed only after persistence and with version/stale safety.
+- `Commencer avec 2b2c` is not `Sauvegarder` and does not require an intermediate analysis screen.
+- Original wording/provenance survive AI structuring/synthesis.
+- Prefill ≠ freeze; visibility ≠ existence.
+- `Je ne sais pas` / accepted unknown are valid.
+- Recommendations may conclude insufficient information or recommend stop/pause/simplification.
+- Changes reopen only affected dependencies.
+- Presentation/projection/workshop may be `NOT_RELEVANT`.
+- Project Draft exists only after explicit GO.
 
-Read the exact canonical source before implementing any of these.
+Read exact canonical sources before implementing.
+
+---
 
 ## Supporting validation material
 
-Cognitive walkthroughs, synthetic profiles, prototypes and red-team documents are useful for explaining **why** the current model exists, but they are not independent sources of truth unless explicitly promoted to canonical/validated status.
+Prototypes, walkthroughs, red-team docs and synthetic profiles explain **why** the current model exists but are not independent truth unless promoted explicitly.
 
-Typical reference profiles used during Idea Engine validation:
+Reference profiles:
 
-- Nathalie — novice, solo decision;
-- Vincent — experienced/pressured Fast Path user with existing documents;
-- Maya — multi-decision-maker context with real disagreements.
+- Nathalie — novice, solo decision ;
+- Vincent — experienced/pressured, many existing sources ;
+- Maya — multi-decision-maker context with disagreements.
 
-These are test profiles, not users or mandatory product modes. 4b4c must implement one adaptive workspace, not three separate journeys.
+These are tests, not separate product modes.
+
+---
 
 ## Current operational/collaboration domains
 
-For production collaboration behavior, consult root `README.md` first. Relevant dated docs in `docs/` include communication/call/recovery/audit material such as:
+For production collaboration behavior, consult root `README.md` first. Relevant dated docs include:
 
 - `docs/CALL_SYSTEM_AUDIT_AND_V3_ARCHITECTURE_20260912.md`
 - `docs/CALL_ENGINE_V3_DIRECT_DECISION_20260912.md`
@@ -196,16 +215,16 @@ For production collaboration behavior, consult root `README.md` first. Relevant 
 - `docs/CALL_ENGINE_V2_RELEASE_GATE_20260912.md`
 - `docs/PRE_COLLAB_AUDIT.md`
 
-Treat these according to their explicit status and date. Root `README.md` remains the entry point for current production authority.
+---
 
 ## Knowledge maintenance rule
 
 When a future session discovers a structural invariant:
 
-- do not leave it only in chat;
-- update the canonical document that owns the rule;
-- preserve historical/superseded material when needed;
-- update this map if the source path/version/status changes;
-- do not duplicate full specifications here.
+- do not leave it only in chat ;
+- update the owning canonical document ;
+- preserve superseded/history material ;
+- update this map when authority/path/version/status changes ;
+- do not duplicate complete specifications here.
 
-When uncertainty exists about which document owns a new rule, stop before implementation and determine ownership/precedence explicitly rather than creating another competing source of truth.
+When ownership is unclear, determine precedence before implementation rather than creating competing truths.
