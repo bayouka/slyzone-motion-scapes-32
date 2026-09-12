@@ -20,8 +20,8 @@ Before any substantial change:
 For **Idea → understanding/enrichment → candidate proposition → decision → optional Project Draft**, read at minimum:
 
 - `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md`
+- `docs/idea-engine/canonical/INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
 - `docs/idea-engine/canonical/WORKFLOW_V7_1_CONSOLIDATED.md`
-- `docs/idea-engine/canonical/INFORMATION_MATRIX_V4_1.md`
 - `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md`
 
 For initial capture UX also read:
@@ -34,12 +34,14 @@ Do not reconstruct product logic from memory or old production UI.
 
 - root `README.md` = current production repository/runtime/backend/release authority ;
 - `IDEA_ENGINE_MASTER_BLUEPRINT_V1.md` = primary authority for Idea Engine orchestration, Output Contracts, Requirements, Readiness and Next Best Action ;
-- other `docs/idea-engine/canonical/*` = authoritative domain contracts ;
+- `INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md` = current Site vitrine information registry and internal complete Idea dossier schema ;
+- `INFORMATION_MATRIX_V4_1.md` = historical/superseded matrix only ;
+- other `docs/idea-engine/canonical/*` = authoritative domain contracts according to their status ;
 - `docs/idea-engine/ux/*_VALIDATED.md` = functionally validated UX surfaces unless explicitly reopened ;
 - dated audits/prototypes/walkthroughs = supporting evidence unless promoted ;
 - current code describes production today but does not automatically override newer canonical product contracts.
 
-If Workflow V7.1 or Matrix V4.1 appears to imply a rigid sequence, **Master Blueprint V1 prevails**. The historical state chain and B0→B4 levels must not be implemented as a mandatory wizard.
+If Workflow V7.1 or historical Matrix V4.1 appears to imply a rigid sequence, **Master Blueprint V1 + Matrix V5 prevail**. The historical state chain and B0→B4 levels must not be implemented as a mandatory wizard.
 
 ## Core product invariants
 
@@ -65,13 +67,14 @@ If Workflow V7.1 or Matrix V4.1 appears to imply a rigid sequence, **Master Blue
 20. **Provenance is mandatory.** Human, source, web, calculation, inference and recommendation remain distinguishable.
 21. **AI inference never silently becomes human truth.**
 22. **Requirements are relative to outputs/decisions.** An information item is not globally mandatory.
-23. **`Je ne sais pas` / accepted unknown are valid paths.**
-24. **Recommendations are explainable and may conclude insufficient information, simplify, pause or stop.**
-25. **Change Intelligence is targeted.** Recalculate only affected dependencies.
-26. **Presentation, workshop and concept projection may be NOT_RELEVANT.**
-27. **GO is not privileged.** Deepen, revise, pause and stop are valid successful outcomes.
-28. **Project Draft exists only after explicit launch.** Transfer active useful context selectively; rejected/superseded material stays historical.
-29. **The LLM is not the sole state engine.** Persistence, provenance, dependency/readiness rules, permissions, stale-safety and important mutations require deterministic system/application/database behavior.
+23. **The information registry is exhaustive internally but selective externally.** Never expose Matrix V5 as a giant questionnaire.
+24. **`Je ne sais pas` / accepted unknown are valid paths.**
+25. **Recommendations are explainable and may conclude insufficient information, simplify, pause or stop.**
+26. **Change Intelligence is targeted.** Recalculate only affected dependencies.
+27. **Presentation, workshop and concept projection may be NOT_RELEVANT.**
+28. **GO is not privileged.** Deepen, revise, pause and stop are valid successful outcomes.
+29. **Project Draft exists only after explicit launch.** Transfer active useful context selectively; rejected/superseded material stays historical.
+30. **The LLM is not the sole state engine.** Persistence, provenance, dependency/readiness rules, permissions, stale-safety and important mutations require deterministic system/application/database behavior.
 
 ## Capture-specific validated rules
 
