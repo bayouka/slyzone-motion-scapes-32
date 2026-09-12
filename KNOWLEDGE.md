@@ -155,33 +155,38 @@ The capture **surface** remains validated. Its older sections describing post-cl
 
 ### 6. Post-capture Idea workspace — current UX candidate, not yet validated
 
-**Candidate behavior contract:**
+**Current candidate behavior contract:**
+
+`docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_3.md`
+
+**Supersedes as UX candidate:**
 
 `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_2.md`
 
-**Candidate low-fidelity wireframes:**
+V0.3 removes the over-explanatory projection discovered during prototype testing. Its direction is **value-first continuous workspace**:
+
+- a human question is compact and inline, never a page ;
+- after an answer, no passive “understanding” page is shown ;
+- 2b2c launches useful autonomous enrichment as soon as `MINIMUM_WORKABLE_CONTEXT` exists ;
+- site/source audit, competition, references, audience/conversion, challenge and feasibility may progress in parallel ;
+- the main surface shows `VALUE_NOW`: improvement, comparison, Candidate, challenge, conflict or decision ;
+- `SYSTEM_MICROSTATUS` is compact and non-blocking ;
+- dossier, evidence, sources and competitors remain accessible in progressive disclosure ;
+- free input stays available without competing with a dominant human arbitration.
+
+**Current low-fidelity wireframes (historical candidate to revise):**
 
 `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
 
-**Supporting red-team:**
+**Supporting validation / audits:**
 
-`docs/idea-engine/validation/WORKSPACE_PROJECTION_V0_2_RED_TEAM_20260913.md`
+- `docs/idea-engine/validation/WORKSPACE_PROJECTION_V0_2_RED_TEAM_20260913.md`
+- `docs/idea-engine/validation/WORKSPACE_INTERACTIVE_PROTOTYPE_V0_1_TEST_20260913.md`
+- `docs/idea-engine/validation/QUESTION_ENRICHMENT_COMPETITIVE_AUDIT_20260913.md`
 
-Status: **candidate / not functionally validated yet**. These files do not override the Master Blueprint, Matrix V5, Capture Contract V1.2 or validated Capture UX.
+The V0.1 interactive prototype is **not promotable**: it exposed too much repeated understanding and could create a passive state after a single question. The audit explicitly removes permanent `Travail utile courant`, `Compréhension actuelle`, and large explanatory progress blocks from the target.
 
-They define/test the current proposed novice-oriented projection model:
-
-- permanent `ORIENTATION_NOW` ;
-- consequence-based `PROGRESS_SIGNAL` ;
-- conditional `ATTENTION_NOW` ;
-- zero-or-one dominant `USER_NEXT_ACTION` ;
-- prudent `NEXT_VALUE_HINT` ;
-- explicit Rescue Path (`Je ne sais pas`, proposal, hypothesis, later, accepted unknown) ;
-- long-running autonomous work without fake steps/spinners ;
-- stable workspace surface with adaptive dominant content ;
-- progress by consequences rather than global percentage/stage.
-
-Do **not** implement these candidates as a frozen production contract until explicit functional validation. Use them as the current basis for low-fidelity prototype/testing.
+Status remains **candidate / not functionally validated**. Nothing in this section authorizes production/backend changes.
 
 ---
 
