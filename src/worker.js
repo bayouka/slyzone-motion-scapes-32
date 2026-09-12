@@ -33,6 +33,12 @@ export default {
             dashboard_presence: '2.1.0',
             presence_heartbeat: '1.0.0',
             brand_asset: 'brand-symbol.svg',
+            ideas_v1: {
+              code: '1.0.0',
+              additive: true,
+              project_schema_mutated: false,
+              guarded_conversion: true,
+            },
           },
           call_engine: '2.0.0',
           call_engine_v3: {
