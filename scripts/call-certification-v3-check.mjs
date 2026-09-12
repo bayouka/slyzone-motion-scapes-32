@@ -24,7 +24,11 @@ for (const marker of [
 
 assert(index.includes("call-certification-v3.js?v=1.0.0"), 'certification module not loaded');
 assert(index.indexOf('call-certification-v3.js?v=1.0.0') < index.indexOf('call-engine-v3-direct.js?v=3.1.0-direct-preview'), 'certification must wrap RTCPeerConnection before V3 engine');
+assert(index.includes('3.1.4-direct-pilot'), 'pilot release marker mismatch');
+assert(index.includes('const pilotV3 = currentWorkspaceId === pilotWorkspaceId'), 'pilot scope missing');
 assert(worker.includes("certification: '1.0.0'"), 'health certification marker missing');
-assert(worker.includes("code: '3.1.3-direct-preview'"), 'health release marker mismatch');
+assert(worker.includes("code: '3.1.4-direct-pilot'"), 'health pilot release marker mismatch');
+assert(worker.includes('pilot_default: true'), 'health pilot default marker missing');
+assert(worker.includes('global_default: false'), 'health global default must remain false');
 
-console.log('Call Engine V3 passive certification gate: OK');
+console.log('Call Engine V3 passive certification pilot gate: OK');
