@@ -69,7 +69,11 @@ Its historical state chain is not a mandatory wizard.
 
 V5 remains a valuable Idea information registry, not a visible questionnaire.
 
-**Current audit note:** V5 is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`. It must be coverage-mapped and migrated into the candidate Project Definition Reference Architecture after validation. This does not invalidate its current canonical Idea-level rules.
+**Current audit note:** V5 is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`. It has now been coverage-mapped against the candidate Project Definition architecture. No significant Idea-level need was intentionally dropped; many Project/Build-Ready needs must be added beyond V5.
+
+Coverage audit:
+
+`docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`
 
 ### 4. Capture, ingestion and structured memory
 
@@ -91,7 +95,7 @@ The capture surface remains validated functionally. No regression to a giant que
 
 ## Professional Idea → Project → Build Ready architecture — CURRENT PRIORITY
 
-Workspace UX work is **paused** until the professional referential architecture is validated.
+Workspace UX work is **paused** until the professional referential architecture and requirement coverage are validated.
 
 ### Current architecture candidate
 
@@ -99,7 +103,7 @@ Workspace UX work is **paused** until the professional referential architecture 
 
 Status: **NON CANONIQUE / CANDIDATE À VALIDER**.
 
-It supersedes V0.1 as the current architecture candidate and proposes:
+It proposes:
 
 - three lifecycle zones: `IDEA_DECISION / PROJECT_DEFINITION / BUILD_READY` ;
 - five atom types: `INFO / ANALYSIS / DECISION / SPEC / VERIFY` ;
@@ -114,23 +118,48 @@ It supersedes V0.1 as the current architecture candidate and proposes:
 - explicit `READY_FOR_DEVELOPMENT` contract ;
 - `IMPLEMENTATION_DISCRETION` so developers are not over-specified while product ambiguity is removed.
 
-### Red-team support
+### Domain Registry
 
-`docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_RED_TEAM_20260913.md`
+`docs/project-definition/01_DOMAIN_REGISTRY_V0_1.md`
 
-The red-team tested simple brochure sites, SEO-heavy redesigns, regulated contexts, multilingual sites, CMS, personal-data forms, no-direct-competitor cases, tech constraints, early design requests, incomplete final content, third-party failures and late changes after readiness.
+Current candidate definition of D01→D20, their missions, boundaries, dependencies and principal deliverables.
 
-### Earlier lifecycle audit
+### Requirement registries — current candidates
 
-`docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
+**IDEA — current consolidated candidate:**
 
-Still useful as supporting reasoning, but the V0.2 architecture above is the current candidate structure.
+`docs/project-definition/03_REQUIREMENT_REGISTRY_IDEA_V0_2.md`
 
-### Preliminary requirements matrix — DO NOT EXPAND YET
+Supersedes V0.1 as the active Idea candidate. Covers D01→D07 and G1→G4. Incorporates red-team corrections and Matrix V5 coverage mapping, including Decision Question, explicit non-goals, research stopping rule, conflict groups, regulatory probes, research invalidation and early STOP/PAUSE readiness.
+
+**PROJECT — product/experience candidate:**
+
+`docs/project-definition/04A_REQUIREMENT_REGISTRY_PROJECT_PRODUCT_V0_1.md`
+
+Covers D08→D15: journeys, IA/page model, content, SEO/migration, functional requirements, data/CMS/roles, integrations and UX/UI/design system.
+
+**PROJECT — technical/Build Ready candidate:**
+
+`docs/project-definition/04B_REQUIREMENT_REGISTRY_PROJECT_TECH_BUILDREADY_V0_1.md`
+
+Covers D16→D20: technical architecture, security/privacy/legal, accessibility/performance/reliability, measurement/analytics, QA/acceptance/handoff and candidate G7→G9 `READY_FOR_DEVELOPMENT`.
+
+### Validation support
+
+- `docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_RED_TEAM_20260913.md`
+- `docs/project-definition/validation/IDEA_REQUIREMENT_REGISTRY_RED_TEAM_20260913.md`
+- `docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`
+- `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
+
+### Earlier exploratory inventory
 
 `docs/idea-engine/validation/PROFESSIONAL_REQUIREMENTS_MASTER_MATRIX_V0_1.md`
 
-This is an exploratory inventory created before the architecture was stabilized. Do **not** treat it as the final schema and do not expand it atom-by-atom until `PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_2.md` has been explicitly validated.
+Historical exploratory inventory created before the reference architecture was stabilized. Do not treat it as the active schema; use the current registries above.
+
+### Current status
+
+The architecture and registries are now substantial enough for systematic coverage/red-team work, but remain **non-canonical candidates** until explicit validation. No production/backend implementation is authorized from them yet.
 
 ---
 
@@ -145,7 +174,7 @@ The following are retained only as historical validation material:
 - `docs/idea-engine/validation/WORKSPACE_INTERACTIVE_PROTOTYPE_V0_1_TEST_20260913.md`
 - `docs/idea-engine/validation/QUESTION_ENRICHMENT_COMPETITIVE_AUDIT_20260913.md`
 
-`WORKSPACE_PROJECTION_CONTRACT_V0_3.md` is explicitly rejected as the active UX direction because it still attempted to project the workspace before the professional lifecycle had been fully formalized.
+`WORKSPACE_PROJECTION_CONTRACT_V0_3.md` is explicitly rejected as the active UX direction because it attempted to project the workspace before the professional lifecycle had been fully formalized.
 
 No new workspace prototype should be promoted or implemented until the lifecycle/master referential architecture is validated and sufficient requirement coverage exists.
 
@@ -157,14 +186,14 @@ Do not conflate:
 
 - **Current production implementation** = what the repository serves today and root runtime docs describe.
 - **Canonical Idea Engine target** = current canonical documents.
-- **Project Definition architecture candidate** = V0.2 above; may later change canonical boundaries only after explicit validation.
+- **Project Definition architecture/registries candidates** = current design work; may later change canonical boundaries only after explicit validation.
 
 Before changing production Ideas code:
 
 1. read Master Blueprint V1.1 ;
 2. read Matrix V5 ;
 3. read Capture Contract V1.2 ;
-4. read this file for current architecture status ;
+4. read this file for current reference-architecture status ;
 5. do not implement rejected workspace candidates ;
 6. do not change production while the Project Definition architecture remains under design unless explicitly authorized.
 
@@ -186,7 +215,9 @@ Unless explicitly reopened through the architecture audit:
 - Idea is not Project ;
 - GO to Project is not Ready for Development ;
 - development execution is not Project Definition ;
-- requirements/standards must be proportional to applicability and risk.
+- requirements/standards must be proportional to applicability and risk ;
+- requirements that matter structurally should be traceable to specification and verification ;
+- developers retain implementation discretion where it does not change product behavior or constraints.
 
 ---
 
