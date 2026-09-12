@@ -1,26 +1,29 @@
-# 4b4c — IDEA ENGINE MASTER BLUEPRINT — V1.0
+# 4b4c — IDEA ENGINE MASTER BLUEPRINT — V1.1
 
 ## 0. Statut, autorité et portée
 
 Ce document est **canonique et normatif** pour l’architecture produit du moteur Idea de 4b4c.
 
-Il définit **ce que nous construisons avant de continuer à dessiner les écrans** : le modèle informationnel, les sorties attendues, les dépendances, les règles de readiness, les capacités de 2b2c et la sélection de la Next Best Action.
+Il définit ce que nous construisons avant de continuer à dessiner les écrans : modèle informationnel, sorties attendues, Requirements, Readiness, capacités de 2b2c et sélection de la Next Best Action.
 
-Il s’applique au périmètre :
+Périmètre :
 
 > Idea → compréhension / enrichissement → proposition candidate → décision → éventuellement Project Draft.
 
-Le Blueprint de validation actuel reste le **site vitrine / marketing website**. Les mécanismes généraux du moteur peuvent être réutilisables, mais la couverture informationnelle n’est pas encore déclarée universelle pour tous les types de projet.
+Le Blueprint de validation courant est le **site vitrine / marketing website**.
+
+Les mécanismes du moteur peuvent être génériques, mais la couverture informationnelle n’est pas déclarée universelle pour tous les types de projet.
 
 ### Autorité relative
 
-- ce Master Blueprint est l’autorité principale pour **l’orchestration du moteur, les Output Contracts, la readiness et la Next Best Action** ;
-- `INFORMATION_MATRIX_V4_1.md` reste le registre de référence des informations du Blueprint Site vitrine ;
-- `WORKFLOW_V7_1_CONSOLIDATED.md` reste une source riche pour les mécanismes produit détaillés, mais toute lecture impliquant une séquence rigide d’états doit être interprétée à la lumière du présent document ;
-- `CAPTURE_INGESTION_MEMORY_CONTRACT_*` reste l’autorité spécifique pour la capture, la persistance, l’ingestion et la mémoire initiale ;
-- les UX snapshots validés décrivent une forme fonctionnelle approuvée, pas la logique globale du moteur.
+- ce Master Blueprint est l’autorité principale pour l’orchestration du moteur, les Output Contracts, les Requirements, la Readiness et la Next Best Action ;
+- `INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md` est le registre informationnel canonique actuel du Blueprint Site vitrine ;
+- `INFORMATION_MATRIX_V4_1.md` est historique/supersédée ;
+- `WORKFLOW_V7_1_CONSOLIDATED.md` reste une source riche pour les mécanismes détaillés, mais toute lecture linéaire de sa chaîne d’états est supersédée par ce document ;
+- `CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md` est l’autorité spécifique pour la capture, la persistance, l’ingestion et l’entrée dans le workspace ;
+- les UX snapshots validés fixent une forme fonctionnelle approuvée, pas l’orchestration globale.
 
-En cas de contradiction explicite sur l’ordre du travail, la readiness ou la nécessité d’une étape, **ce Master Blueprint prévaut**.
+En cas de contradiction sur l’ordre du travail, la readiness ou la nécessité d’une étape, **Master Blueprint V1.1 + Matrix V5 prévalent**.
 
 ---
 
@@ -38,13 +41,13 @@ En cas de contradiction explicite sur l’ordre du travail, la readiness ou la n
 
 > **un espace de travail assisté par 2b2c qui transforme progressivement une idée imparfaite en une proposition comprise, challengée, étayée et suffisamment concrète pour qu’une personne ou une équipe puisse décider intelligemment de la lancer, la modifier, l’approfondir, la mettre en pause ou l’abandonner.**
 
-L’objet canonique avant GO est appelé dans ce document :
+L’objet canonique avant GO est :
 
 > **Idea Decision Dossier — IDD**
 
 Il s’agit d’un dossier vivant, structuré, versionné et sourcé. L’utilisateur ne le remplit jamais comme un formulaire géant.
 
-Après une décision explicite `Lancer`, le système peut créer un **Project Draft** séparé.
+Après une décision explicite `Lancer`, 4b4c peut créer un **Project Draft** séparé.
 
 ---
 
@@ -77,7 +80,7 @@ On peut travailler sur :
 
 ### Dans Project Draft, après GO seulement
 
-On peut alors engager :
+On peut engager :
 
 - architecture technique finale ;
 - responsables d’exécution ;
@@ -88,17 +91,31 @@ On peut alors engager :
 - plan de déploiement ;
 - suivi d’exécution.
 
-Une information d’exécution peut être estimée avant GO **uniquement si une Decision Requirement l’exige pour décider honnêtement**. Elle reste alors une estimation/scénario, pas un plan d’exécution engagé.
+Une information d’exécution peut être estimée avant GO uniquement si une Decision Requirement l’exige pour décider honnêtement. Elle reste alors un scénario/estimation, pas un engagement opérationnel.
 
 ---
 
-## 3. Les six couches canoniques du moteur
+## 3. Blueprint Resolver — ne jamais simuler une couverture que nous n’avons pas
+
+Avant d’appliquer une matrice spécialisée, le moteur doit savoir quel Blueprint il utilise.
+
+Pour la phase actuelle :
+
+- `SITE_VITRINE` = Blueprint de référence couvert par Matrix V5 ;
+- une idée qui évolue vers un autre type substantiel (`application complexe`, `marketplace`, `jeu`, etc.) doit être marquée comme `BLUEPRINT_MISMATCH` ou reclassifiée vers un Blueprint réellement disponible ;
+- le système ne doit jamais continuer comme si Matrix Site vitrine couvrait correctement un type de projet différent.
+
+Un changement critique de nature de projet peut donc déclencher une reclassification du Blueprint, sans perdre l’historique de l’Idea.
+
+---
+
+## 4. Les six couches canoniques du moteur
 
 ### Couche 1 — Information Blueprint
 
 Définit tout ce que 4b4c peut avoir besoin de connaître pour produire une sortie ou éclairer une décision.
 
-La Matrice Site vitrine V4.1 est le premier registre de ce Blueprint.
+Pour le Site vitrine : `INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`.
 
 ### Couche 2 — Sources, mémoire et provenance
 
@@ -108,7 +125,7 @@ La mémoire structurée ne remplace jamais les sources originales.
 
 ### Couche 3 — Output Contracts
 
-Définit ce que 4b4c doit être capable de produire, et les exigences réelles de chaque sortie.
+Définit ce que 4b4c doit être capable de produire et les exigences réelles de chaque sortie.
 
 ### Couche 4 — Dependency & Readiness Graph
 
@@ -120,7 +137,7 @@ Il détermine ce qui est suffisant, partiel, bloquant, conflictuel, périmé ou 
 
 ### Couche 5 — Acquisition & Action Engine
 
-Détermine comment résoudre un manque : exploiter la mémoire, extraire une source, rechercher, calculer, inférer, challenger, proposer, ou demander à l’humain.
+Détermine comment résoudre un manque : mémoire, extraction, recherche, calcul, inférence, challenge, proposition ou question humaine.
 
 ### Couche 6 — UX Projection
 
@@ -130,28 +147,28 @@ Ne montre que ce qui est utile maintenant : état lisible du dossier, résultat 
 
 ---
 
-## 4. Le « formulaire complet » existe en interne, jamais comme formulaire visible
+## 5. Le « formulaire complet » existe en interne, jamais comme formulaire visible
 
-Le besoin d’exhaustivité est réel, mais il doit être porté par le moteur.
+Le besoin d’exhaustivité est porté par le moteur.
 
-L’IDD peut contenir notamment les domaines suivants :
+L’IDD peut contenir notamment :
 
-1. identité / contexte de l’Idée ;
+1. identité / contexte ;
 2. problème / opportunité / déclencheur ;
-3. objectifs et résultats attendus ;
+3. objectifs et résultats ;
 4. utilisateurs / audiences ;
 5. offre / proposition de valeur ;
-6. existant / actifs / contenu disponible ;
+6. existant / actifs / contenu ;
 7. concurrence / alternatives / références ;
 8. preuves / evidence ;
-9. fonctionnalités / comportements ;
+9. fonctionnalités ;
 10. expérience / parcours ;
-11. structure / information architecture ;
+11. structure ;
 12. contenu ;
 13. marque / design / préférences / rejets ;
 14. contraintes ;
 15. faisabilité ;
-16. impact économique lorsqu’il peut être établi honnêtement ;
+16. impact économique lorsque défendable ;
 17. risques / contradictions / inconnues ;
 18. scope ;
 19. gouvernance / décideurs ;
@@ -159,13 +176,13 @@ L’IDD peut contenir notamment les domaines suivants :
 21. collaboration / présentation / atelier ;
 22. candidates, recommandations, décisions et historique.
 
-Un utilisateur peut fournir une information de n’importe quel domaine à n’importe quel moment. Elle est stockée immédiatement au bon endroit sans forcer l’interface à afficher ce domaine maintenant.
+Un utilisateur peut fournir une information de n’importe quel domaine à n’importe quel moment. Elle est classée immédiatement sans forcer l’interface à afficher ce domaine.
 
 ---
 
-## 5. Contrat d’un Memory Item / Information Item
+## 6. Contrat d’un Information Item
 
-Toute information exploitable doit être modélisable avec au minimum :
+Toute information exploitable doit pouvoir conserver au minimum :
 
 - `information_key` ;
 - `domain` ;
@@ -173,192 +190,116 @@ Toute information exploitable doit être modélisable avec au minimum :
 - `type` : `FACT / PREFERENCE / CONSTRAINT / ASSUMPTION / OPTION / EVIDENCE / RISK / QUESTION / DECISION / ...` ;
 - `state` : `PROPOSED / CURRENT / ACCEPTED_AS_CURRENT / CONFIRMED / FROZEN_IN_SNAPSHOT / SUPERSEDED / REJECTED / REVIEW_REQUIRED / ACCEPTED_UNKNOWN / ...` ;
 - `provenance` : `HUMAN_DECLARED / HUMAN_GUIDED_ANSWER / SOURCE_EXTRACTED / WEB_RESEARCH / SYSTEM_CALCULATED / AI_INFERRED / AI_RECOMMENDED` ;
-- `source_ref` ou relation aux sources originales ;
-- `capture/source/version` d’origine ;
-- `scope/context` ;
-- `confidence_label` lorsque pertinent ;
-- `freshness` lorsque l’information peut expirer ;
-- `conflict_group` si plusieurs affirmations incompatibles existent ;
-- `supersedes / superseded_by` ;
-- `created_at / observed_at` selon la nature de l’information.
+- `source_ref` ;
+- version d’origine ;
+- scope/contexte ;
+- confiance lorsque pertinente ;
+- fraîcheur lorsque pertinente ;
+- groupe de conflit éventuel ;
+- relations de supersession ;
+- timestamps utiles.
 
 Une provenance IA ne devient jamais implicitement une vérité humaine.
 
 ---
 
-## 6. Source Model
+## 7. Source Model
 
 Les sources incluent au minimum :
 
 - texte libre utilisateur ;
 - réponse guidée ;
 - correction utilisateur ;
-- lien fourni ;
-- image fournie ;
-- document fourni ;
+- lien ;
+- image ;
+- document ;
 - site existant ;
 - recherche publique ;
-- donnée structurée connectée ;
+- donnée connectée ;
 - calcul système ;
 - observation IA dérivée d’une source.
 
 Une source conserve : identité, type, rôle déclaré ou inféré, note humaine éventuelle, version/fraîcheur, état d’analyse, droits/accès lorsque nécessaire.
 
-Une note explicite de l’utilisateur sur une source a priorité sur une classification IA silencieuse.
+Une note explicite de l’utilisateur sur une source prime sur une classification IA silencieuse.
 
 ---
 
-## 7. Les Output Contracts canoniques
+## 8. Output Contracts canoniques
 
-Le moteur ne cherche pas à « compléter le dossier ». Il cherche à rendre **les sorties pertinentes suffisamment prêtes**.
+Les identifiants `O1…O9` sont **des identifiants de contrats, pas des étapes ni un ordre d’exécution**.
+
+Plusieurs Outputs peuvent progresser en parallèle ; certains peuvent rester `NOT_RELEVANT`.
 
 ### O1 — Understanding Model
 
-But : comprendre suffisamment l’Idée pour orienter correctement le travail suivant.
+But : comprendre suffisamment l’Idée pour orienter correctement le travail.
 
-Doit généralement couvrir, explicitement ou sous hypothèse de travail :
+Couvre généralement : ce qui est envisagé, pourquoi, pour qui, contexte essentiel, contraintes critiques connues.
 
-- ce qui est envisagé ;
-- pourquoi / quel problème ou objectif ;
-- pour qui ;
-- contexte essentiel ;
-- contraintes critiques déjà connues.
-
-Ne nécessite pas : design final, contenus finaux, scope complet, recherche exhaustive.
+Ne nécessite pas design final, contenu final, scope complet ou recherche exhaustive.
 
 ### O2 — Evidence & Diagnostic Pack
 
-But : distinguer faits, observations, interprétations, forces, faiblesses, opportunités, risques et contradictions réellement utiles.
+But : distinguer faits, observations, interprétations, forces, faiblesses, opportunités, risques et contradictions utiles.
 
-N’existe que dans la profondeur nécessaire au cas courant.
-
-Les recherches supplémentaires s’arrêtent lorsqu’elles ont peu de chances de modifier une décision ou une recommandation structurante.
+La profondeur dépend du cas. La recherche s’arrête lorsque le gain marginal attendu devient faible.
 
 ### O3 — Candidate Directions
 
 But : produire zéro, une ou plusieurs directions justifiées.
 
-Préconditions typiques :
-
-- Understanding suffisamment fiable ;
-- objectif / audience / offre ou hypothèses explicites ;
-- contraintes critiques connues ;
-- evidence suffisante pour éviter une direction arbitraire.
-
-Sorties valides :
-
-- une direction convergente ;
-- deux directions si vrai compromis ;
-- plusieurs hypothèses si terrain encore ouvert ;
-- aucune recommandation si les données sont insuffisantes.
+Sorties valides : convergence unique, vrai compromis, plusieurs hypothèses ou informations insuffisantes.
 
 ### O4 — Candidate Proposition
 
-But : rendre la direction suffisamment concrète pour être jugée.
+But : rendre une direction suffisamment concrète pour être jugée.
 
-Pour un site vitrine, elle peut couvrir :
+Pour un site vitrine : positionnement, message, conversion, parcours, structure, pages, fonctionnalités, contenus et scope.
 
-- positionnement ;
-- message ;
-- conversion ;
-- parcours ;
-- structure ;
-- pages ;
-- fonctionnalités ;
-- contenus ;
-- scope ;
-- éléments à différer ou déconseiller.
-
-Une Candidate est versionnée. Une Candidate V1 n’est jamais réécrite silencieusement en V2.
+Une Candidate est versionnée ; V1 n’est jamais réécrite silencieusement en V2.
 
 ### O5 — Scope & Structure
 
-But : rendre visible ce qui est réellement envisagé.
+But : rendre visible ce qui est envisagé.
 
-Classification minimale :
+Buckets : `Première version / Peut attendre / Non recommandé actuellement`.
 
-- `Première version` ;
-- `Peut attendre` ;
-- `Non recommandé actuellement`.
-
-Chaque fonctionnalité importante doit être reliée à : besoin, utilisateur, valeur, complexité, dépendances, alternative plus simple éventuelle.
+Chaque fonctionnalité importante relie besoin, utilisateur, valeur, complexité, dépendances et alternative plus simple éventuelle.
 
 ### O6 — Concept Projection
 
 But : aider à juger, pas produire le design final.
 
-État possible : `NOT_RELEVANT`.
+Peut être `NOT_RELEVANT`.
 
-Profondeur :
-
-- aucune projection ;
-- aperçu rapide ;
-- concept poussé.
-
-La profondeur dépend de la valeur décisionnelle de la matérialisation.
+Profondeur : aucune / aperçu rapide / concept poussé selon valeur décisionnelle.
 
 ### O7 — Decision Brief
 
 But : permettre une décision honnête.
 
-Doit rassembler, selon les Decision Requirements :
-
-- Candidate actuelle ;
-- raison de la recommandation ;
-- preuves ;
-- hypothèses ;
-- alternatives importantes ;
-- scope ;
-- risques ;
-- contradictions ;
-- inconnues acceptées ;
-- faisabilité nécessaire ;
-- avis / désaccords équipe si applicables ;
-- recommandation 2b2c ;
-- `Decision Question`.
+Rassemble selon les Decision Requirements : Candidate, evidence, assumptions, alternatives, scope, risques, contradictions, unknowns acceptés, faisabilité nécessaire, positions équipe, recommandation 2b2c et Decision Question.
 
 ### O8 — Presentation / Workshop Pack
 
 But : préparer d’autres personnes à juger ou contribuer.
 
-Peut être `NOT_RELEVANT` pour une décision solo.
+Peut être `NOT_RELEVANT` pour décision solo.
 
-Réutilise le même IDD et le même Decision Brief ; il ne crée pas un deuxième dossier parallèle.
-
-Informations spécifiques possibles :
-
-- audience de la présentation ;
-- décision recherchée ;
-- temps disponible ;
-- niveau de détail ;
-- désaccords connus ;
-- sujets déjà alignés vs sujets à discuter.
+Réutilise l’IDD et le Decision Brief, pas un dossier parallèle.
 
 ### O9 — Project Draft Handoff
 
-But : transférer proprement l’Idée après un GO explicite.
+But : transférer proprement l’Idée après GO explicite.
 
-Précondition absolue : décision `Lancer` ou équivalent explicitement enregistrée.
+Transférer faits actifs, assumptions actives, contraintes, scope, structure, evidence pertinente, risques, questions ouvertes, assets, décisions et Candidate finale.
 
-Transférer :
-
-- faits actifs ;
-- hypothèses actives ;
-- contraintes ;
-- scope retenu ;
-- structure ;
-- evidence pertinente ;
-- risques ;
-- questions ouvertes ;
-- assets ;
-- décisions ;
-- Candidate finale retenue.
-
-Les anciennes Candidates, hypothèses supersédées et recommandations rejetées restent historiques.
+Historique obsolète/rejeté reste historique.
 
 ---
 
-## 8. Requirement Model — remplacer « obligatoire / facultatif »
+## 9. Requirement Model — remplacer « obligatoire / facultatif »
 
 Une information n’est jamais obligatoire en absolu.
 
@@ -366,40 +307,40 @@ Elle est :
 
 > **requise pour une sortie, une décision ou une conséquence donnée dans le contexte actuel.**
 
-Chaque `Requirement` doit pouvoir connaître :
+Chaque Requirement doit pouvoir connaître :
 
-- `required_for_output` ;
-- `required_for_decision_requirement` ;
-- `information_keys` possibles ;
-- `minimum_validation_level` ;
-- `can_use_working_assumption` ;
-- `can_accept_unknown` ;
-- `freshness_requirement` ;
-- `blocking_if_missing` ;
-- `resolution_paths` ;
-- `dependencies`.
+- output(s) concerné(s) ;
+- Decision Requirement concernée ;
+- information keys possibles ;
+- validation minimum ;
+- possibilité d’hypothèse ;
+- possibilité d’unknown accepté ;
+- fraîcheur ;
+- caractère bloquant ;
+- voies de résolution ;
+- dépendances.
 
-Exemple : la couleur préférée peut être `NOT_RELEVANT` pour O1, utile pour O6, et non bloquante pour O7.
+Exemple : la couleur préférée peut être `NOT_RELEVANT` pour O1, utile pour O6 et non bloquante pour O7.
 
 ---
 
-## 9. États de résolution des Requirements
+## 10. États de résolution des Requirements
 
 Utiliser au minimum :
 
-- `SATISFIED` — suffisamment résolu pour l’usage visé ;
-- `PARTIAL` — exploitable mais insuffisant pour l’usage visé ;
-- `BLOCKING` — empêche honnêtement la sortie/décision visée ;
-- `UNKNOWN_ACCEPTABLE` — inconnu explicitement acceptable ;
-- `CONFLICTED` — sources incompatibles non résolues ;
-- `STALE` — information trop ancienne pour l’usage visé ;
-- `NOT_RELEVANT` — non nécessaire dans ce contexte.
+- `SATISFIED` ;
+- `PARTIAL` ;
+- `BLOCKING` ;
+- `UNKNOWN_ACCEPTABLE` ;
+- `CONFLICTED` ;
+- `STALE` ;
+- `NOT_RELEVANT`.
 
 Ces états sont relatifs au Requirement, pas à la valeur absolue de l’information.
 
 ---
 
-## 10. Output Readiness
+## 11. Output Readiness
 
 Chaque sortie possède sa readiness indépendante :
 
@@ -409,519 +350,398 @@ Chaque sortie possède sa readiness indépendante :
 - `READY` ;
 - `STALE`.
 
-Il n’existe pas de pourcentage global « projet complété à 63 % ».
+Il n’existe pas de pourcentage global « projet complété à X % ».
 
-Un dossier peut simultanément être :
-
-- Understanding = READY ;
-- Evidence = READY ;
-- Candidate = PARTIAL/NOT_READY ;
-- Projection = NOT_RELEVANT ;
-- Decision Brief = NOT_READY ;
-- Presentation = NOT_RELEVANT.
-
-L’interface peut traduire cela en langage simple, mais ne doit pas inventer une fausse progression linéaire.
+Le moteur peut simultanément avoir O1 READY, O2 READY, O3 NOT_READY, O6 NOT_RELEVANT et O7 NOT_READY.
 
 ---
 
-## 11. Decision Requirements — ce qui définit réellement « assez »
+## 12. Decision Requirements — ce qui définit réellement « assez »
 
 Avant de conclure qu’une Idée est prête à être décidée, 2b2c détermine ce dont les vrais décideurs ont besoin.
 
-Exemples :
+Exemples : concept, projection, budget, faisabilité, validation juridique, comparaison, avis associé, inconnue explicitement acceptée.
 
-- comprendre le concept ;
-- voir une projection ;
-- connaître une enveloppe budgétaire ;
-- vérifier une faisabilité ;
-- obtenir une validation juridique ;
-- comparer deux alternatives ;
-- obtenir l’avis d’un associé ;
-- accepter explicitement une inconnue.
+Deux Ideas similaires peuvent donc avoir une readiness différente.
 
-Deux Ideas similaires peuvent donc avoir une readiness de décision différente.
-
-Le produit ne demande pas tous les Decision Requirements possibles : il active seulement ceux qui sont pertinents.
+Le produit n’active que les Decision Requirements pertinentes.
 
 ---
 
-## 12. Acquisition Engine — ordre canonique avant de demander à l’humain
+## 13. Acquisition Engine — ordre avant question humaine
 
 Pour tout Requirement non résolu :
 
-1. **Mémoire active** — l’information existe-t-elle déjà ?
-2. **Sources déjà fournies** — peut-elle être extraite d’un texte, site, document, image ou réponse existante ?
-3. **Recherche publique / source externe autorisée** — est-elle objectivement recherchable et la recherche peut-elle changer une décision ?
-4. **Calcul / dérivation déterministe** — peut-elle être obtenue sans opinion ?
-5. **Inférence / hypothèse IA** — une hypothèse explicitement étiquetée est-elle suffisante ?
-6. **Question humaine** — seul l’humain peut-il savoir, corriger ou décider ?
-7. **Acceptation de l’inconnu / différé** — l’absence est-elle acceptable maintenant ?
+1. mémoire active ;
+2. sources déjà fournies ;
+3. recherche publique / source externe autorisée ;
+4. calcul/dérivation déterministe ;
+5. inférence/hypothèse IA explicitement étiquetée ;
+6. question humaine si seul l’humain peut savoir/corriger/décider ;
+7. accepted unknown / différé si légitime.
 
-Une question humaine est interdite si une voie autonome fiable permet de résoudre le Requirement à un coût raisonnable.
+Une question humaine est interdite si une voie autonome fiable résout le Requirement à coût raisonnable.
 
-Une recherche est interdite si elle n’a aucun lien plausible avec une sortie ou une décision actuelle.
+Une recherche est interdite sans lien plausible avec une sortie ou décision actuelle.
 
 ---
 
-## 13. Catalogue des capacités / actions de 2b2c
+## 14. Catalogue des capacités 2b2c
 
 2b2c peut notamment :
 
-- `EXTRACT` — extraire d’une source ;
-- `CLASSIFY` — classer avec provenance ;
-- `SUMMARIZE` — synthétiser sans supprimer les sources ;
-- `RESEARCH` — rechercher publiquement ;
-- `CALCULATE` — calculer/dériver ;
-- `INFER_HYPOTHESIS` — proposer une hypothèse visible ;
-- `ASK_HUMAN` — demander uniquement l’information humaine nécessaire ;
-- `RESCUE_UNKNOWN` — reformuler/aider sans forcer l’utilisateur ;
-- `RESOLVE_CONFLICT` — exposer une contradiction et chercher la bonne résolution ;
-- `CHALLENGE` — remettre en cause une solution disproportionnée/incohérente ;
-- `SIMPLIFY` — proposer une alternative plus simple ;
-- `ENRICH` — ajouter une option justifiée ;
-- `COMPARE` — comparer de vraies alternatives ;
-- `GENERATE_CANDIDATE` — produire une direction/proposition ;
-- `RECOMMEND` — recommander via Recommendation Contract ;
-- `MATERIALIZE` — produire une projection si utile ;
-- `PREPARE_DECISION` — construire le Decision Brief ;
-- `PREPARE_PRESENTATION` — générer la vue adaptée au public ;
-- `REASSESS_DELTA` — recalculer les seules dépendances affectées.
+`EXTRACT / CLASSIFY / SUMMARIZE / RESEARCH / CALCULATE / INFER_HYPOTHESIS / ASK_HUMAN / RESCUE_UNKNOWN / RESOLVE_CONFLICT / CHALLENGE / SIMPLIFY / ENRICH / COMPARE / GENERATE_CANDIDATE / RECOMMEND / MATERIALIZE / PREPARE_DECISION / PREPARE_PRESENTATION / REASSESS_DELTA`.
 
-`Améliorer`, `Challenger`, `Analyser la concurrence`, `Faire une recherche` ne sont donc pas des étapes fixes : ce sont des actions disponibles au moteur lorsqu’elles ont une valeur réelle.
+`Améliorer`, `Challenger`, `Analyser la concurrence` ou `Faire une recherche` sont des capacités, pas des étapes fixes.
 
 ---
 
-## 14. Deux files d’action distinctes : système et humain
+## 15. Deux files d’action distinctes : système et humain
 
-Le moteur maintient conceptuellement :
+### SYSTEM_NEXT_ACTIONS
 
-### A. `SYSTEM_NEXT_ACTIONS`
+Actions autonomes : extraction, recherche autorisée, calcul, analyse, génération, comparaison, etc.
 
-Actions que 2b2c peut effectuer sans intervention humaine : extraction, recherche autorisée, calcul, analyse, génération, comparaison, etc.
+Plusieurs actions indépendantes peuvent s’exécuter en parallèle.
 
-Plusieurs actions indépendantes peuvent être exécutées en parallèle.
+### USER_NEXT_ACTION
 
-### B. `USER_NEXT_ACTION`
+Une seule action humaine dominante est mise en avant lorsque l’humain est réellement nécessaire.
 
-Une seule action humaine dominante doit être mise en avant lorsque l’utilisateur est réellement nécessaire.
+L’utilisateur n’a pas à cliquer `Faire la recherche` pour autoriser un travail public, réversible et déjà justifié.
 
-Conséquence UX majeure :
-
-> l’utilisateur ne doit pas avoir à cliquer sur « Faire la recherche » simplement pour autoriser 2b2c à accomplir un travail public, réversible et déjà justifié par le moteur.
-
-Demander une autorisation seulement lorsqu’elle est réellement nécessaire : accès privé, coût externe, action irréversible, conséquence sensible, connexion à un service ou changement engageant.
+Demander une autorisation seulement lorsqu’elle est réellement requise : accès privé, coût externe, conséquence sensible/irréversible, connexion ou décision engageante.
 
 ---
 
-## 15. Algorithme conceptuel de Next Best Action
+## 16. Active Output Targets — quel horizon travaille-t-on maintenant ?
 
-### Étape A — déterminer l’horizon actuel
+Le moteur dérive un ensemble `ACTIVE_OUTPUT_TARGETS` à partir de :
 
-Identifier les sorties actuellement utiles : comprendre, explorer, former une Candidate, préparer une décision, préparer une présentation, etc.
+- l’état du dossier ;
+- la demande explicite de l’utilisateur ;
+- les Decision Requirements ;
+- les outputs déjà prêts ;
+- les outputs `NOT_RELEVANT`.
 
-L’utilisateur ne choisit pas nécessairement cet horizon dans un menu ; il est dérivé du dossier et de son intention actuelle.
+Une demande explicite de l’utilisateur comme `je veux voir une maquette maintenant` peut activer O6, mais ne doit pas contourner un blocker critique qui rendrait la projection trompeuse.
 
-### Étape B — calculer les Requirements non résolus
+L’utilisateur peut changer d’objectif sans « revenir à une étape ».
 
-Pour chaque Output Contract actif :
+---
 
-- requirements satisfaits ;
-- partiels ;
-- conflictuels ;
-- périmés ;
-- bloquants ;
-- inconnus acceptables.
+## 17. Algorithme conceptuel de Next Best Action
 
-### Étape C — générer des Action Candidates
+### A — déterminer ACTIVE_OUTPUT_TARGETS
 
-Pour chaque requirement : voies d’acquisition possibles, action de challenge, recherche, question, génération ou acceptation d’inconnu.
+Comprendre, explorer, former une Candidate, préparer une décision, présenter, etc.
 
-### Étape D — appliquer les exclusions dures
+### B — calculer Requirements non résolus
 
-Éliminer :
+Satisfaits, partiels, conflictuels, stale, bloquants, unknown acceptables.
 
-- question redondante ;
-- recherche sans impact décisionnel ;
-- inférence présentée comme fait ;
-- sortie dont les blockers critiques ne sont pas traités ;
-- action sur une version obsolète ;
-- action qui recrée artificiellement une étape déjà résolue.
+### C — générer Action Candidates
 
-### Étape E — prioriser
+Extraction, recherche, calcul, hypothèse, challenge, question, génération, acceptation d’inconnu.
 
-Ordre conceptuel :
+### D — exclusions dures
+
+Éliminer : question redondante, recherche sans impact, inférence présentée comme fait, sortie masquant un blocker critique, action obsolète, pseudo-étape artificielle.
+
+### E — prioriser
 
 1. intégrité / conflit critique / stale-safety ;
 2. blocker d’une décision réellement demandée ;
-3. blocker de la sortie active ;
+3. blocker d’un output actif ;
 4. action autonome à fort gain d’information ;
-5. action humaine à fort gain d’information ;
-6. amélioration substantielle de Candidate ;
+5. action humaine à fort gain ;
+6. amélioration substantielle ;
 7. enrichissement facultatif.
 
-À priorité égale, préférer :
+À égalité, préférer : moins d’effort humain, plus de gain d’information, plus d’impact décisionnel, plus de réversibilité, moins de coût/latence, meilleure traçabilité.
 
-- moins d’effort humain ;
-- plus grand gain d’information ;
-- plus fort impact décisionnel ;
-- action plus réversible ;
-- coût/latence plus faibles ;
-- meilleure traçabilité.
+### F — exécuter / afficher
 
-### Étape F — exécuter / afficher
-
-- les actions système pertinentes peuvent s’exécuter automatiquement ;
-- une seule action humaine dominante est affichée ;
-- l’interface explique `Pourquoi maintenant ?` lorsque cela aide la confiance.
+Les actions système peuvent s’exécuter ; une seule action humaine dominante est mise en avant.
 
 ---
 
-## 16. Le moteur n’avance pas « à l’étape suivante »
+## 18. Le moteur n’avance pas « à l’étape suivante »
 
 Après toute nouvelle information :
 
 1. enregistrer la source ;
-2. résoudre/mettre à jour les memory items concernés ;
+2. mettre à jour les memory items concernés ;
 3. déterminer les dépendances impactées ;
 4. recalculer les Requirements affectés ;
 5. recalculer les Output Readiness affectées ;
-6. recalculer les System Next Actions ;
+6. recalculer System Next Actions ;
 7. recalculer l’éventuelle User Next Action.
 
-Le moteur pose donc la question :
+Question canonique :
 
 > **« Qu’est-ce que cette nouvelle information change ? »**
 
-et non :
+Pas :
 
 > « Quelle est l’étape suivante ? »
 
 ---
 
-## 17. Challenge / amélioration de l’Idée
+## 19. Challenge / amélioration
 
-Le challenge n’est jamais un passage obligatoire.
+Le challenge se déclenche si, par exemple :
 
-2b2c doit le déclencher lorsque, par exemple :
+- solution disproportionnée ;
+- fonctions sans objectif ;
+- alternative plus simple équivalente ;
+- contradiction avec contrainte ;
+- evidence affaiblissant une hypothèse ;
+- risque majeur ignoré ;
+- différenciation insuffisante lorsque décisionnelle.
 
-- la solution est disproportionnée par rapport au besoin ;
-- plusieurs fonctionnalités ne servent aucun objectif identifié ;
-- une alternative plus simple a une valeur comparable ;
-- la proposition contredit une contrainte ;
-- l’evidence affaiblit fortement une hypothèse ;
-- un risque majeur est ignoré ;
-- la différenciation est insuffisante lorsque cela est décisionnel.
+Structure : `observation → conséquence → alternative/question → impact potentiel`.
 
-Le challenge doit produire :
-
-`observation → conséquence → alternative / question → impact potentiel`.
-
-Il ne doit pas être utilisé pour générer artificiellement de la complexité.
+Ne jamais challenger pour créer artificiellement de la complexité.
 
 ---
 
-## 18. Research Planner
+## 20. Research Planner
 
-Toute recherche doit répondre à :
+Toute recherche répond à :
 
 > **« Quelle décision, hypothèse ou sortie cette recherche peut-elle modifier ? »**
 
-Sans réponse crédible, ne pas rechercher.
+Sinon : ne pas rechercher.
 
-Une recherche peut porter selon le cas sur :
+La recherche peut concerner concurrents, alternatives, marché, réglementation, SEO, références, faisabilité, tendances ou standards.
 
-- concurrents ;
-- alternatives ;
-- patterns ;
-- marché ;
-- réglementation ;
-- SEO ;
-- références ;
-- faisabilité ;
-- tendances ;
-- standards.
+Elle produit des observations sourcées, jamais des vérités internes sans preuve.
 
-La recherche produit des observations sourcées, jamais une vérité interne sur l’entreprise sans preuve.
-
-Elle s’arrête lorsque le gain marginal attendu devient faible par rapport aux décisions restantes.
+Arrêt lorsque le gain marginal attendu devient faible.
 
 ---
 
-## 19. Recommendation Contract
+## 21. Recommendation Contract
 
-Toute recommandation structurante conserve :
+Toute recommandation structurante conserve : recommandation, objectif, evidence, assumptions, critères, alternatives, trade-offs, risques, confiance et ce qui pourrait changer la recommandation.
 
-- recommandation ;
-- objectif ;
-- evidence ;
-- assumptions ;
-- critères ;
-- alternatives considérées ;
-- trade-offs ;
-- risques ;
-- niveau de confiance ;
-- ce qui pourrait faire changer la recommandation.
+Confiance utilisateur :
 
-Niveaux de confiance utilisateur :
-
-- `Bien étayé` ;
-- `Raisonnable mais à confirmer` ;
-- `Hypothèse de travail` ;
-- `Informations insuffisantes`.
+- Bien étayé ;
+- Raisonnable mais à confirmer ;
+- Hypothèse de travail ;
+- Informations insuffisantes.
 
 Aucun faux pourcentage.
 
 ---
 
-## 20. Capture → workspace : comportement cible
+## 22. Capture → workspace
 
-### 20.1 Pré-analyse opportuniste
+### Pré-analyse opportuniste
 
-Après persistance RAW FIRST, 2b2c **peut** préparer une première compréhension avant le CTA final de capture.
+Après persistance RAW FIRST, 2b2c peut préparer une première compréhension avant le CTA final.
 
-Déclencheurs possibles :
+Déclencheurs : pause stable, fin de réponse guidée, upload terminé, source analysable, etc.
 
-- pause significative dans la saisie ;
-- fin d’une réponse guidée ;
-- fin d’un upload ;
-- source devenue analysable ;
-- autre événement indiquant une version suffisamment stable.
-
-Ne jamais appeler le LLM à chaque frappe.
+Jamais un appel LLM à chaque frappe.
 
 Toute pré-analyse est versionnée et stale-safe.
 
-### 20.2 `Commencer avec 2b2c`
+### `Commencer avec 2b2c`
 
-Au clic :
+Au clic : flush, sécurisation uploads, snapshot, réutilisation des analyses valides, analyse delta si nécessaire, ouverture directe du workspace sur **le premier état utile**.
 
-1. flush des écritures ;
-2. sécurisation des uploads ;
-3. snapshot de la capture courante ;
-4. réutilisation des analyses déjà valides pour cette version ;
-5. analyse du delta si nécessaire ;
-6. ouverture directe du workspace sur **le premier état utile**.
+Pas de page obligatoire `2b2c analyse…`.
 
-Il n’existe pas de page produit obligatoire `2b2c analyse…`.
+Si la compréhension minimale n’est pas encore disponible, rester brièvement sur la capture avec un état léger puis ouvrir automatiquement.
 
-Si une compréhension minimale n’est exceptionnellement pas encore disponible, rester brièvement sur la capture avec un état léger du CTA ou un message de préparation, puis ouvrir automatiquement le workspace.
+Les analyses lourdes continuent éventuellement en arrière-plan.
 
-Les analyses lourdes peuvent continuer en arrière-plan après l’entrée dans le workspace.
+### Si 2b2c a aidé à rédiger le brief
 
-### 20.3 Si 2b2c a déjà aidé à rédiger le brief
+Ne pas relire immédiatement ce texte comme une étape.
 
-Ne pas relire à l’utilisateur le texte que 2b2c vient lui-même d’écrire.
+Apporter une nouvelle valeur : NBA, contradiction, recommandation, travail autonome ou première direction.
 
-La première surface doit apporter une valeur nouvelle : prochaine action utile, contradiction, recommandation, travail autonome en cours ou première direction.
-
-La compréhension détaillée reste consultable/corrigeable à la demande.
+La compréhension détaillée reste consultable/corrigeable.
 
 ---
 
-## 21. UX Projection — règles, pas écrans figés
+## 23. UX Projection — règles, pas écrans figés
 
-L’espace Idée doit généralement pouvoir exprimer :
+L’espace Idée doit pouvoir exprimer :
 
-- **2b2c recommande maintenant** — action/résultat dominant ;
-- **Acquis pour l’instant** — vraies informations utiles, pas métadonnées vagues ;
-- **À examiner maintenant** — uniquement ce qui mérite l’attention ;
-- **Peut attendre** — rassurer sur ce qui n’a pas besoin d’être résolu ;
-- **Ce que 2b2c sait / sources** — accessible et corrigeable ;
+- `2b2c recommande maintenant` ;
+- vraies informations `Acquis pour l’instant` ;
+- `À examiner maintenant` ;
+- `Peut attendre` ;
+- ce que 2b2c sait et ses sources ;
 - composer naturel permanent ;
-- historique/version lorsque pertinent.
+- historique/version si pertinent.
 
-Ne pas créer une page uniquement pour :
-
-- dire que l’analyse est en cours ;
-- répéter ce que l’IA vient d’écrire avec l’utilisateur ;
-- obliger à confirmer des informations non ambiguës ;
-- matérialiser un état interne sans action ou valeur utilisateur.
+Ne pas créer une page uniquement pour dire que l’analyse est en cours, répéter le texte que 2b2c vient d’écrire, obliger à confirmer l’évident ou matérialiser un état interne sans valeur utilisateur.
 
 ---
 
-## 22. Gestion des sources après la capture
+## 24. Gestion des sources après capture
 
-Les sources ne disparaissent pas après upload.
+Le workspace peut montrer lorsque pertinent : ce qui a été exploité, ce qui reste à analyser, rôle compris, note utilisateur, observations, conflits et fraîcheur.
 
-Le workspace doit pouvoir montrer, lorsque pertinent :
+Exemple : `Deck 2023 → 70 % B2B` vs `Utilisateur 2026 → surtout particuliers`.
 
-- ce qui a été exploité ;
-- ce qui reste à analyser ;
-- le rôle compris ;
-- la note utilisateur ;
-- les observations importantes ;
-- les conflits entre source et déclarations ;
-- la fraîcheur.
-
-Exemple :
-
-`Ancien deck 2023 → 70 % B2B` en conflit avec `Utilisateur 2026 → surtout particuliers`.
-
-2b2c ne choisit pas silencieusement. Le requirement devient `CONFLICTED` si le conflit affecte une sortie actuelle.
+2b2c ne choisit pas silencieusement ; le Requirement devient `CONFLICTED` si le conflit affecte un output actif.
 
 ---
 
-## 23. Change Intelligence
+## 25. Change Intelligence
 
-Tout changement est classé selon son impact réel : cosmétique, contextuel, substantiel, critique.
+Tout changement est classé selon son impact : cosmétique, contextuel, substantiel, critique.
 
-Le système conserve :
+Conserver ce qui reste valable, superséder ce qui ne l’est plus, recalculer seulement les outputs/recherches/décisions affectés.
 
-- ce qui reste valable ;
-- ce qui devient supersédé ;
-- les outputs à recalculer ;
-- les recherches à invalider éventuellement ;
-- les décisions à rouvrir si nécessaire.
-
-Une modification tardive de couleur ne doit pas rouvrir l’audience.
-
-Un passage B2C → B2B peut rouvrir positionnement, parcours, contenu, scope et certaines evidence.
+Un changement de couleur ne rouvre pas l’audience ; B2C→B2B peut rouvrir positionnement, parcours, contenu, scope et evidence.
 
 ---
 
-## 24. Présentation et atelier
+## 26. Présentation et atelier
 
-La présentation est une **vue du même dossier**, pas un livrable construit depuis zéro avec un questionnaire parallèle.
+La présentation est une vue du même IDD, pas un questionnaire/dossier parallèle.
 
-Elle réutilise :
+Elle réutilise compréhension, diagnostic, Candidate, alternatives, scope, projection si utile, risques, inconnues, recommandation et Decision Question.
 
-- compréhension ;
-- diagnostic/evidence ;
-- Candidate ;
-- alternatives ;
-- scope ;
-- projection si utile ;
-- risques ;
-- inconnues ;
-- recommandation ;
-- Decision Question.
+L’atelier structure les contributions comme objets versionnés.
 
-L’atelier structure les contributions comme objets versionnés, pas comme simple chat.
-
-La présentation peut être inexistante si la décision solo ne la nécessite pas.
+Présentation et atelier peuvent être `NOT_RELEVANT`.
 
 ---
 
-## 25. Cas de référence obligatoires pour valider le moteur
+## 27. Matrice informationnelle courante
 
-### Nathalie — novice, peu d’informations
+La migration prévue depuis l’ancien modèle `B0→B4` est **réalisée**.
 
-Attendu : accompagnement simple ; peu de questions ; Rescue Path ; aucune obligation de comprendre le framework ; 2b2c fait le maximum lui-même.
+La matrice courante est :
 
-### Vincent — expert, brief + nombreuses sources
+> `INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
 
-Attendu : extraction massive ; aucune répétition ; actions autonomes en parallèle ; accès direct à une Candidate si readiness suffisante.
+Elle définit le « formulaire complet interne » du Blueprint Site vitrine via :
+
+- information keys ;
+- Output dependencies O1→O9 ;
+- Activation Contexts ;
+- acquisition paths ;
+- Requirement rules ;
+- Human-only / inference-safe ;
+- accepted unknown ;
+- readiness par output.
+
+`INFORMATION_MATRIX_V4_1.md` reste historique et ne doit plus guider une implémentation nouvelle.
+
+---
+
+## 28. Workflow V7.1 — statut
+
+Ses mécanismes restent valables lorsqu’ils ne contredisent pas ce document : mémoire, provenance, Answer Resolver, Evidence Model, Research Planner, Recommendation Contract, Change Intelligence, Candidate snapshots, collaboration, Decision Brief, GO/REVISE/PAUSE/STOP.
+
+La chaîne :
+
+`CAPTURED → UNDERSTOOD → DISCOVERING → ...`
+
+n’est plus une machine à états linéaire d’orchestration.
+
+L’orchestration canonique repose sur :
+
+> **Output Contracts + Requirements + independent Readiness + Next Best Action.**
+
+---
+
+## 29. Cas de référence obligatoires
+
+### Nathalie — novice
+
+Peu d’informations ; accompagnement simple ; Rescue Path ; minimum de questions ; 2b2c fait le maximum.
+
+### Vincent — brief riche + sources
+
+Extraction massive ; aucune répétition ; actions autonomes parallèles ; Candidate rapide si readiness suffisante.
 
 ### Maya — équipe / désaccord
 
-Attendu : gouvernance activée lorsqu’elle devient pertinente ; contradictions et positions conservées ; Decision Requirements adaptés ; présentation/atelier seulement si utile.
+Gouvernance activée seulement lorsqu’elle devient pertinente ; contradictions et positions conservées ; présentation/atelier si utile.
 
-### Mauvaise idée / solution disproportionnée
+### Mauvaise idée
 
-Attendu : challenge réel ; simplification ou recommandation de ne pas poursuivre ; aucune préférence systémique pour GO.
+Challenge, simplification ou Stop ; aucun biais GO.
 
 ### Source contradictoire
 
-Attendu : conflit explicite ; aucune fusion silencieuse ; résolution ou acceptation d’inconnu selon impact.
+Conflit explicite ; aucune fusion silencieuse.
 
 ### Changement radical tardif
 
-Attendu : réévaluation ciblée ; historique conservé ; aucune remise à zéro générale.
+Réévaluation ciblée ; historique conservé ; possible reclassification Blueprint.
 
 ### Idée excellente déjà cadrée
 
-Attendu : quasiment aucune question ; 2b2c travaille et produit directement ce qui est prêt.
+Quasiment aucune question ; 2b2c produit directement ce qui est prêt.
 
 ---
 
-## 26. Règles de QA du moteur
+## 30. QA du moteur
 
 Une implémentation n’est pas acceptable si :
 
 1. elle nécessite un ordre fixe des domaines ;
 2. elle repose une information déjà fournie ;
 3. elle demande à l’utilisateur d’autoriser chaque recherche routinière ;
-4. elle produit une recherche sans question décisionnelle ;
+4. elle recherche sans question décisionnelle ;
 5. elle transforme une hypothèse IA en fait ;
-6. elle impose une projection ou une présentation inutile ;
+6. elle impose projection/présentation inutile ;
 7. elle calcule une readiness globale arbitraire ;
-8. elle fait avancer une Candidate malgré un conflit critique masqué ;
+8. elle masque un conflit critique ;
 9. elle recommence tout après un changement local ;
-10. elle crée des tâches/projets avant GO ;
-11. elle favorise GO par design ;
-12. elle dépend du LLM pour la persistance ou les règles déterministes critiques.
+10. elle crée du Project avant GO ;
+11. elle favorise GO ;
+12. elle dépend du LLM pour persistance/règles déterministes critiques ;
+13. elle applique Matrix Site vitrine à un projet reclassifié sans Blueprint compatible.
 
 ---
 
-## 27. Conséquence pour la Matrice V4.1
+## 31. Méthode de conception à partir de maintenant
 
-La Matrice V4.1 reste utile et ne doit pas être jetée.
+Avant tout nouveau prototype Idea workspace :
 
-Cependant ses niveaux historiques `B0 / B1 / B2 / B3 / B4 / POST-GO` doivent être interprétés comme des **indications de dépendance par grandes familles de sorties**, pas comme une progression obligatoire.
-
-À terme, la Matrice devra être migrée vers une version où chaque information référence explicitement :
-
-- les Output Contracts concernés ;
-- les Requirements associés ;
-- le niveau de validation minimal ;
-- les voies de résolution ;
-- les conditions `NOT_RELEVANT` ;
-- l’acceptabilité de l’inconnu.
-
-Jusqu’à cette migration, le présent Master Blueprint prévaut sur toute lecture séquentielle des B-levels.
-
----
-
-## 28. Conséquence pour Workflow V7.1
-
-Les mécanismes détaillés de Workflow V7.1 restent valables lorsqu’ils ne contredisent pas ce document : mémoire, provenance, Answer Resolver, Evidence Model, Research Planner, Recommendation Contract, Change Intelligence, Candidate snapshots, collaboration, Decision Brief, GO/REVISE/PAUSE/STOP.
-
-En revanche, la chaîne d’états :
-
-`CAPTURED → UNDERSTOOD → DISCOVERING → ...`
-
-ne doit plus être interprétée comme une machine à états linéaire imposant l’ordre du travail.
-
-Ces libellés peuvent rester des tags descriptifs ou historiques, mais l’orchestration canonique repose désormais sur :
-
-> **Output Contracts + Requirements + independent Readiness + Next Best Action.**
-
----
-
-## 29. Méthode de conception à partir de maintenant
-
-Avant tout nouveau prototype de l’Idea workspace :
-
-1. choisir la sortie / situation à simuler ;
-2. identifier ses Output Contracts ;
-3. calculer les Requirements pertinents ;
-4. simuler la mémoire et les sources disponibles ;
-5. laisser l’Acquisition Engine et le NBA déterminer ce qui se passe ;
-6. seulement ensuite projeter cet état dans une interface ;
+1. choisir la situation à simuler ;
+2. identifier ACTIVE_OUTPUT_TARGETS ;
+3. dériver Requirements depuis Matrix V5 ;
+4. simuler mémoire/sources ;
+5. laisser Acquisition Engine + NBA déterminer le travail ;
+6. seulement ensuite projeter dans une interface ;
 7. red-teamer avec plusieurs profils et changements tardifs.
 
-Il est interdit de décider d’abord « quel écran vient après quel écran » puis d’inventer la logique pour le justifier.
+Il est interdit de décider d’abord quel écran vient après quel écran puis d’inventer la logique pour le justifier.
 
 ---
 
-## 30. Résumé canonique
-
-La logique de 4b4c est désormais :
+## 32. Résumé canonique
 
 ```text
 IDEA / SOURCES / REPONSES
         ↓
-PERSISTENCE + PROJECT MEMORY
+PERSISTENCE + IDEA DECISION DOSSIER
         ↓
-INFORMATION BLUEPRINT
+BLUEPRINT RESOLVER
         ↓
-OUTPUT CONTRACTS ACTIFS
+INFORMATION MATRIX
+        ↓
+ACTIVE OUTPUT TARGETS
         ↓
 REQUIREMENTS
         ↓
-READINESS PAR SORTIE
+READINESS PAR OUTPUT
         ↓
-ACQUISITION / SYSTEM ACTIONS
+SYSTEM ACTIONS AUTONOMES
         ↓
 EVENTUELLE USER NEXT ACTION
         ↓
