@@ -2,7 +2,7 @@
 
 Statut : **WORKING CANDIDATE — NON CANONIQUE**
 
-Mission : établir pourquoi le projet existe, quel problème/opportunité il traite, quels résultats business et utilisateur sont recherchés et comment juger si une direction est pertinente.
+Mission : établir pourquoi le projet existe, quel problème/opportunité il traite, comment l’organisation crée de la valeur, quels résultats business et utilisateur sont recherchés et comment juger si une direction est pertinente.
 
 ---
 
@@ -30,16 +30,24 @@ Mission : établir pourquoi le projet existe, quel problème/opportunité il tra
 | D02.INFO.170 | INFO | Deadline impérative | Distinguer préférence et contrainte dure | HUM | G4 CONDITIONAL | feasibility/delivery | MULTI_DOMAIN |
 | D02.INFO.180 | INFO | Ressources internes disponibles | Évaluer maintenance/contenu/ops réalistes | HUM/SRC | G4 CONDITIONAL | D10/D16 | MULTI_DOMAIN |
 | D02.INFO.190 | INFO | Non-objectifs / exclusions stratégiques | Éviter scope creep et faux compromis | HUM/RAW | G3 ENHANCER, G5 REQUIRED si connu | D07 | MULTI_DOMAIN |
-| D02.ANALYSIS.200 | ANALYSIS | Problem framing | Séparer problème, symptômes, causes et opportunité | RAW/SRC/AUDIT/AI-H | G1 REQUIRED | G1 | STRATEGIC |
-| D02.ANALYSIS.210 | ANALYSIS | Outcome hierarchy | Hiérarchiser objectif principal, secondaires et résultats utilisateur | CALC/AI-R | G3 REQUIRED | D06/D07/D19 | STRATEGIC |
-| D02.ANALYSIS.220 | ANALYSIS | Problem-evidence consistency | Vérifier si les données soutiennent ou contredisent le problème déclaré | CROSS_SOURCE_CHECK/AI-H | G2 REQUIRED si evidence disponible | challenge | STRATEGIC |
-| D02.ANALYSIS.230 | ANALYSIS | Constraint severity assessment | Distinguer contraintes vraies, souhaits et inconnues | CALC/AI-H | G4 CONDITIONAL | feasibility | MULTI_DOMAIN |
-| D02.DECISION.300 | DECISION | Problem / opportunity frame accepté | Fixer le problème utile à résoudre pour l’itération courante | HUM/AI-R | G3 REQUIRED | strategic options | STRATEGIC |
-| D02.DECISION.310 | DECISION | Outcome priority | Fixer l’objectif dominant en cas de conflit | HUM | G3/G4 BLOCKING | option selection | STRATEGIC |
-| D02.DECISION.320 | DECISION | Contraintes dures retenues | Créer une source de vérité pour feasibility/scope | HUM | G4 CONDITIONAL | D07/D16 | MULTI_DOMAIN |
-| D02.SPEC.400 | SPEC | Project outcome contract | Après GO, consigner objectif, user outcome, conversion et success criteria | dérivé des décisions | G5 REQUIRED | project baseline | STRATEGIC |
-| D02.VERIFY.500 | VERIFY | Outcome traceability check | Vérifier que scope/UX/contenu servent bien l’objectif retenu | TRACEABILITY_CHECK | G8 REQUIRED | Build Ready | MULTI_DOMAIN |
-| D02.VERIFY.510 | VERIFY | Constraint consistency check | Vérifier qu’aucune spec critique ne contredit budget/deadline/contrainte dure | TRACEABILITY_CHECK | G8 CONDITIONAL | Build Ready | MULTI_DOMAIN |
+| D02.INFO.200 | INFO | Modèle économique / création de valeur | Comprendre comment l’activité gagne ou justifie sa valeur | RAW/SRC/HUM/AI-H | G1 REQUIRED pour projet commercial | D05/D06/D07 | STRATEGIC |
+| D02.INFO.210 | INFO | Modèle commercial / acquisition / vente | Relier le site au cycle réel : lead, rendez-vous, devis, vente, recrutement, support… | RAW/SRC/CONN/HUM | G1 REQUIRED si conversion business | D03/D08/D19 | STRATEGIC |
+| D02.INFO.220 | INFO | Importance stratégique du projet | Savoir si le projet est critique, expérimental, support ou simple présence | HUM/RAW | G4 CONDITIONAL | profondeur de validation/NFR | MULTI_DOMAIN |
+| D02.INFO.230 | INFO | Dépendances business externes | Saisonnalité, lancement d’offre, campagne, ouverture, événement, contrat… | HUM/SRC | G4 CONDITIONAL | timing/scope | MULTI_DOMAIN |
+| D02.ANALYSIS.300 | ANALYSIS | Problem framing | Séparer problème, symptômes, causes et opportunité | RAW/SRC/AUDIT/AI-H | G1 REQUIRED | G1 | STRATEGIC |
+| D02.ANALYSIS.310 | ANALYSIS | Outcome hierarchy | Hiérarchiser objectif principal, secondaires et résultats utilisateur | CALC/AI-R | G3 REQUIRED | D06/D07/D19 | STRATEGIC |
+| D02.ANALYSIS.320 | ANALYSIS | Problem-evidence consistency | Vérifier si les données soutiennent ou contredisent le problème déclaré | CROSS_SOURCE_CHECK/AI-H | G2 REQUIRED si evidence disponible | challenge | STRATEGIC |
+| D02.ANALYSIS.330 | ANALYSIS | Constraint severity assessment | Distinguer contraintes vraies, souhaits et inconnues | CALC/AI-H | G4 CONDITIONAL | feasibility | MULTI_DOMAIN |
+| D02.ANALYSIS.340 | ANALYSIS | Business-model relevance analysis | Vérifier que l’Idea proposée sert réellement la manière dont l’organisation crée/capture de la valeur | CALC/AI-H/AI-R | G3 REQUIRED commercial | D06/D07 | STRATEGIC |
+| D02.ANALYSIS.350 | ANALYSIS | Strategic criticality assessment | Ajuster profondeur de validation, risque accepté et exigences aval | CALC/AI-R | G4 CONDITIONAL | D16-D20 | MULTI_DOMAIN |
+| D02.DECISION.400 | DECISION | Problem / opportunity frame accepté | Fixer le problème utile à résoudre pour l’itération courante | HUM/AI-R | G3 REQUIRED | strategic options | STRATEGIC |
+| D02.DECISION.410 | DECISION | Outcome priority | Fixer l’objectif dominant en cas de conflit | HUM | G3/G4 BLOCKING | option selection | STRATEGIC |
+| D02.DECISION.420 | DECISION | Contraintes dures retenues | Créer une source de vérité pour feasibility/scope | HUM | G4 CONDITIONAL | D07/D16 | MULTI_DOMAIN |
+| D02.DECISION.430 | DECISION | Business role du futur site/produit | Fixer explicitement la place de la solution dans le cycle business | HUM/AI-R | G3 REQUIRED | D06-D11 | STRATEGIC |
+| D02.SPEC.500 | SPEC | Project outcome contract | Après GO, consigner objectif, user outcome, conversion, business role et success criteria | dérivé des décisions | G5 REQUIRED | project baseline | STRATEGIC |
+| D02.VERIFY.600 | VERIFY | Outcome traceability check | Vérifier que scope/UX/contenu servent bien l’objectif retenu | TRACEABILITY_CHECK | G8 REQUIRED | Build Ready | MULTI_DOMAIN |
+| D02.VERIFY.610 | VERIFY | Constraint consistency check | Vérifier qu’aucune spec critique ne contredit budget/deadline/contrainte dure | TRACEABILITY_CHECK | G8 CONDITIONAL | Build Ready | MULTI_DOMAIN |
+| D02.VERIFY.620 | VERIFY | Business-model consistency check | Vérifier que conversion, parcours et mesure correspondent au modèle commercial retenu | TRACEABILITY_CHECK | G8 REQUIRED commercial | Build Ready | MULTI_DOMAIN |
 
 ---
 
@@ -49,12 +57,13 @@ Normalement humain :
 
 - intention business réelle ;
 - priorité entre objectifs ;
+- manière dont l’organisation souhaite réellement créer/capturer de la valeur lorsque les sources ne suffisent pas ;
 - budget autorisé ;
 - deadline réellement impérative ;
 - ressources internes non observables ;
 - non-objectifs politiques/stratégiques.
 
-L’IA peut recommander une formulation du problème ou des critères de succès, mais ne doit pas inventer l’intention interne.
+L’IA peut recommander une formulation du problème ou des critères de succès, mais ne doit pas inventer l’intention interne ni un modèle commercial futur.
 
 ---
 
@@ -66,18 +75,21 @@ L’IA peut recommander une formulation du problème ou des critères de succès
 - problème/opportunité suffisamment formulé ;
 - objectif business principal exploitable ;
 - résultat utilisateur plausible ;
+- rôle business du futur site/produit suffisamment compris ;
 - aucune contradiction critique cachée.
 
 ### G3 — Strategic Options
 
 - objectif dominant utilisable comme critère de comparaison ;
+- options compatibles ou explicitement incompatibles avec le modèle business ;
 - contraintes critiques connues ou explicitement inconnues ;
 - options peuvent être jugées sur autre chose que l’esthétique.
 
 ### G4 — Idea Decision
 
-- décision possible sur une direction par rapport à l’objectif ;
+- décision possible sur une direction par rapport à l’objectif et au modèle business ;
 - budget/délai seulement s’ils sont nécessaires à cette décision ;
+- niveau de criticité du projet compris si cela change le niveau de preuve requis ;
 - aucun KPI inventé.
 
 ---
@@ -94,4 +106,6 @@ A02, A06, A07, A08, A15.
 - un mauvais taux de conversion observé ne prouve pas sa cause ;
 - une urgence déclarée n’est pas automatiquement une deadline dure ;
 - absence de KPI ne doit pas bloquer un petit site si des critères qualitatifs suffisent ;
-- une forte contrainte budget peut rendre une option non viable avant tout design détaillé.
+- une forte contrainte budget peut rendre une option non viable avant tout design détaillé ;
+- un site peut viser la crédibilité sans conversion immédiate, mais son rôle business doit quand même être explicite ;
+- une entreprise qui vend par commerciaux n’a pas le même rôle de site qu’un service réservé directement en ligne.
