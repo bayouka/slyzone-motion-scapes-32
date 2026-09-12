@@ -29,7 +29,7 @@ Dated evidence does not automatically override a newer explicit canonical contra
 
 ## Idea Engine — canonical target
 
-Scope:
+Scope currently canonical in Master Blueprint V1.1:
 
 > Idea → understanding/enrichment → candidate proposition → decision → optional Project Draft
 
@@ -49,7 +49,7 @@ Read this **first** for any substantial Idea Engine work.
 
 It defines:
 
-- what 4b4c actually is before GO ;
+- what 4b4c currently considers before GO ;
 - Idea Decision Dossier vs Project Draft ;
 - six-layer engine architecture ;
 - Output Contracts ;
@@ -60,10 +60,9 @@ It defines:
 - Next Best Action selection ;
 - challenge/research as capabilities, not fixed steps ;
 - capture→workspace orchestration ;
-- UX projection principles ;
-- precedence over any linear reading of older workflow states/B-levels.
+- UX projection principles.
 
-**Important precedence:** where `WORKFLOW_V7_1_CONSOLIDATED.md` or the historical `B0→B4` matrix language appears sequential, the Master Blueprint V1 governs orchestration and readiness.
+**Important current design review:** the exact professional lifecycle and depth boundary between Idea and Project are now under controlled re-audit. Do not mutate the canonical Master Blueprint until that audit is validated.
 
 ### 2. Detailed workflow mechanisms
 
@@ -87,7 +86,7 @@ Use it for detailed mechanisms such as:
 - GO / REVISE / PAUSE / STOP ;
 - Project Draft handoff.
 
-Its historical state chain is **not** a mandatory linear state machine anymore. Read it through Master Blueprint V1.
+Its historical state chain is not a mandatory wizard.
 
 ### 3. Information registry — Site vitrine Blueprint
 
@@ -97,7 +96,7 @@ Its historical state chain is **not** a mandatory linear state machine anymore. 
 
 **Supersedes:** `INFORMATION_MATRIX_V4_1.md`, preserved as history.
 
-V5 is the internal **complete Idea information dossier / “full form”** for the Site vitrine Blueprint, but it is never shown as a full questionnaire.
+V5 remains a valuable internal information registry, not a visible questionnaire.
 
 Use it for:
 
@@ -112,15 +111,13 @@ Use it for:
 - research/question triggers ;
 - Site vitrine coverage tests.
 
-The historical `B0/B1/B2/B3/B4` model is no longer the current information contract. The migration anticipated in Master Blueprint V1 §27 is now completed by Matrix V5.
+**Current audit note:** V5 must now be coverage-mapped against the professional `Idea → Project → Ready for Development` lifecycle before further workspace UX is designed. This does not invalidate V5 as a data registry.
 
 ### 4. Capture, ingestion and structured memory
 
 **Current canonical:**
 
 `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md`
-
-**Supersedes:** V1.1 and V1.0 while preserving their history.
 
 Use V1.2 for:
 
@@ -131,8 +128,7 @@ Use V1.2 for:
 - provenance/versioning/stale-safety ;
 - opportunistic pre-analysis after persistence ;
 - exact role of `Commencer avec 2b2c` ;
-- direct entry into the first useful workspace state ;
-- no mandatory `2b2c analyse…` intermediate page ;
+- no mandatory analysis-only page ;
 - no immediate repetition of a brief 2b2c just helped write.
 
 ### 5. Initial Capture UX validated snapshot
@@ -141,52 +137,46 @@ Use V1.2 for:
 
 `docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
 
-Use it for the validated low-fidelity capture surface and microcopy:
+The capture surface remains validated functionally. Its post-click behavior may need later reconciliation with the professional lifecycle audit, but no regression to a large questionnaire is authorized.
 
-- `Parlez-nous de votre idée ?` ;
-- short placeholder/contextual help ;
-- optional `M’aider à préciser mon idée` ;
-- automatic visible-description enrichment ;
-- `+ Ajouter des éléments` → Links / Images / Documents ;
-- source context/notes ;
-- `Commencer avec 2b2c`.
+### 6. Professional lifecycle audit — CURRENT PRIORITY
 
-The capture **surface** remains validated. Its older sections describing post-click analysis/first-return behavior are refined/superseded by Capture Contract V1.2 and Master Blueprint V1. Do not reintroduce an intermediate analysis page from the old snapshot wording.
+Workspace UX work is **paused** until the lifecycle from a raw idea to a project ready for development is formally covered.
 
-### 6. Post-capture Idea workspace — current UX candidate, not yet validated
+Primary current working audit:
 
-**Current candidate behavior contract:**
+`docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
 
-`docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_3.md`
+Detailed working requirements registry:
 
-**Supersedes as UX candidate:**
+`docs/idea-engine/validation/PROFESSIONAL_REQUIREMENTS_MASTER_MATRIX_V0_1.md`
 
-`docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_2.md`
+These are **non-canonical working candidates**. They propose three distinct zones:
 
-V0.3 removes the over-explanatory projection discovered during prototype testing. Its direction is **value-first continuous workspace**:
+1. **IDEA** — understand, research, compare, challenge, improve, test feasibility and select the direction ;
+2. **PROJECT / PRE-DEVELOPMENT** — transform the selected Idea into complete requirements, UX, content, design, technical architecture, non-functional requirements, QA criteria and delivery handoff ;
+3. **DEVELOPMENT / PRODUCTION** — implement, test, preproduce, release and operate.
 
-- a human question is compact and inline, never a page ;
-- after an answer, no passive “understanding” page is shown ;
-- 2b2c launches useful autonomous enrichment as soon as `MINIMUM_WORKABLE_CONTEXT` exists ;
-- site/source audit, competition, references, audience/conversion, challenge and feasibility may progress in parallel ;
-- the main surface shows `VALUE_NOW`: improvement, comparison, Candidate, challenge, conflict or decision ;
-- `SYSTEM_MICROSTATUS` is compact and non-blocking ;
-- dossier, evidence, sources and competitors remain accessible in progressive disclosure ;
-- free input stays available without competing with a dominant human arbitration.
+Core working hypothesis:
 
-**Current low-fidelity wireframes (historical candidate to revise):**
+> target/problem must be sufficiently understood before selecting meaningful competitors ; competitive/evidence work must be able to modify the original Idea ; the improved Idea is selected/frozen before detailed Project definition ; detailed Project work then continues until `READY_FOR_DEVELOPMENT`.
 
-`docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
+Do not implement this hypothesis as canonical behavior until coverage/red-team validation is complete.
 
-**Supporting validation / audits:**
+### 7. Workspace UX — PAUSED / historical candidates
 
+The following are retained only as historical validation material:
+
+- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_2.md`
+- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_3.md`
+- `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
 - `docs/idea-engine/validation/WORKSPACE_PROJECTION_V0_2_RED_TEAM_20260913.md`
 - `docs/idea-engine/validation/WORKSPACE_INTERACTIVE_PROTOTYPE_V0_1_TEST_20260913.md`
 - `docs/idea-engine/validation/QUESTION_ENRICHMENT_COMPETITIVE_AUDIT_20260913.md`
 
-The V0.1 interactive prototype is **not promotable**: it exposed too much repeated understanding and could create a passive state after a single question. The audit explicitly removes permanent `Travail utile courant`, `Compréhension actuelle`, and large explanatory progress blocks from the target.
+`WORKSPACE_PROJECTION_CONTRACT_V0_3.md` is explicitly **rejected as the active UX direction** because it still attempted to project the workspace before the professional lifecycle had been fully formalized.
 
-Status remains **candidate / not functionally validated**. Nothing in this section authorizes production/backend changes.
+No new workspace prototype should be promoted or implemented until the lifecycle/master requirements audit is validated.
 
 ---
 
@@ -195,52 +185,39 @@ Status remains **candidate / not functionally validated**. Nothing in this secti
 Do not conflate:
 
 - **Current production implementation** = what the repository serves today and root runtime docs describe.
-- **Target Idea Engine** = Master Blueprint + Matrix V5 + canonical domain contracts + validated UX snapshots.
-
-Historical production Ideas behavior is not evidence that the target model should regress to a wizard.
+- **Canonical Idea Engine target** = current canonical documents.
+- **Lifecycle audit candidates** = current design work that may later modify canonical boundaries after explicit validation.
 
 Before changing production Ideas code:
 
-1. read Master Blueprint V1 ;
+1. read Master Blueprint V1.1 ;
 2. read Matrix V5 ;
-3. read the specific canonical contract(s) ;
-4. read validated UX snapshot(s) relevant to the surface ;
-5. audit the existing implementation/tables/RPCs ;
-6. identify the minimal safe change ;
-7. preserve data/contracts unless an explicit migration is designed ;
-8. verify public runtime according to `README.md`.
+3. read Capture Contract V1.2 ;
+4. read the current lifecycle audit status in this file ;
+5. inspect current implementation ;
+6. do not implement rejected workspace candidates ;
+7. do not change production while lifecycle architecture remains under design unless explicitly authorized.
 
 ---
 
-## Key Idea Engine invariants — index only
+## Key established invariants
 
-- Idea ≠ Project.
-- The canonical pre-GO object is a living structured **Idea Decision Dossier**, not a completed questionnaire.
-- Matrix V5 can be exhaustive internally while the user sees only the information currently useful.
-- The engine is driven by **Output Contracts + Requirements + Readiness + Next Best Action**, not screen order.
-- 2b2c does more work than the user.
-- System actions and the user next action are distinct; autonomous work may run in parallel.
-- A human question is a last-mile acquisition path, not the default.
-- Research/challenge/improvement are capabilities, not mandatory stages.
-- Readiness is per output/decision, never a global arbitrary percentage.
-- Raw data is persisted before AI analysis.
-- Opportunistic pre-analysis is allowed only after persistence and with version/stale safety.
-- `Commencer avec 2b2c` is not `Sauvegarder` and does not require an intermediate analysis screen.
-- Original wording/provenance survive AI structuring/synthesis.
-- Prefill ≠ freeze; visibility ≠ existence.
-- `Je ne sais pas` / accepted unknown are valid.
-- Recommendations may conclude insufficient information or recommend stop/pause/simplification.
-- Changes reopen only affected dependencies.
-- Presentation/projection/workshop may be `NOT_RELEVANT`.
-- Project Draft exists only after explicit GO.
+Unless explicitly reopened through the lifecycle audit:
 
-Read exact canonical sources before implementing.
+- raw input/provenance must survive AI interpretation ;
+- Matrix/full information coverage must never become a giant visible form ;
+- human questions are last-mile when AI/source/research/calculation can resolve information ;
+- AI inference is not human truth ;
+- stale results cannot overwrite newer state ;
+- accepted unknown is valid when non-blocking ;
+- research and challenge must serve a real output/decision ;
+- GO is not privileged over revise/pause/stop ;
+- the system should do more work than the novice user ;
+- project execution machinery must not be invented before the corresponding Project exists.
 
 ---
 
 ## Supporting validation material
-
-Prototypes, walkthroughs, red-team docs and synthetic profiles explain **why** the current model exists but are not independent truth unless promoted explicitly.
 
 Reference profiles:
 
@@ -270,7 +247,7 @@ For production collaboration behavior, consult root `README.md` first. Relevant 
 When a future session discovers a structural invariant:
 
 - do not leave it only in chat ;
-- update the owning canonical document ;
+- update the owning canonical document after validation ;
 - preserve superseded/history material ;
 - update this map when authority/path/version/status changes ;
 - do not duplicate complete specifications here.
