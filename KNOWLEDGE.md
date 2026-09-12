@@ -91,17 +91,28 @@ Its historical state chain is **not** a mandatory linear state machine anymore. 
 
 ### 3. Information registry — Site vitrine Blueprint
 
-**Canonical:**
+**Current canonical:**
 
-`docs/idea-engine/canonical/INFORMATION_MATRIX_V4_1.md`
+`docs/idea-engine/canonical/INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
 
-Use it for which information may matter, acquisition possibilities, validation needs and dependencies for the Site vitrine reference Blueprint.
+**Supersedes:** `INFORMATION_MATRIX_V4_1.md`, preserved as history.
 
-The matrix is internal and must never become a giant visible questionnaire.
+V5 is the internal **complete Idea information dossier / “full form”** for the Site vitrine Blueprint, but it is never shown as a full questionnaire.
 
-Its `B0 / B1 / B2 / B3 / B4 / POST-GO` values are currently compatibility hints. Output-specific Requirements and Readiness from Master Blueprint V1 take precedence over any rigid progression interpretation.
+Use it for:
 
-A future Matrix version should migrate those links to explicit Output Contracts/Requirements.
+- information keys/domains ;
+- Output Contract dependencies O1→O9 ;
+- Activation Contexts ;
+- acquisition paths ;
+- human-only vs extractable/researchable/inferable information ;
+- output-relative Requirement rules ;
+- readiness conditions ;
+- accepted unknown ;
+- research/question triggers ;
+- Site vitrine coverage tests.
+
+The historical `B0/B1/B2/B3/B4` model is no longer the current information contract. The migration anticipated in Master Blueprint V1 §27 is now completed by Matrix V5.
 
 ### 4. Capture, ingestion and structured memory
 
@@ -149,19 +160,20 @@ The capture **surface** remains validated. Its older sections describing post-cl
 Do not conflate:
 
 - **Current production implementation** = what the repository serves today and root runtime docs describe.
-- **Target Idea Engine** = Master Blueprint + canonical domain contracts + validated UX snapshots.
+- **Target Idea Engine** = Master Blueprint + Matrix V5 + canonical domain contracts + validated UX snapshots.
 
 Historical production Ideas behavior is not evidence that the target model should regress to a wizard.
 
 Before changing production Ideas code:
 
 1. read Master Blueprint V1 ;
-2. read the specific canonical contract(s) ;
-3. read validated UX snapshot(s) relevant to the surface ;
-4. audit the existing implementation/tables/RPCs ;
-5. identify the minimal safe change ;
-6. preserve data/contracts unless an explicit migration is designed ;
-7. verify public runtime according to `README.md`.
+2. read Matrix V5 ;
+3. read the specific canonical contract(s) ;
+4. read validated UX snapshot(s) relevant to the surface ;
+5. audit the existing implementation/tables/RPCs ;
+6. identify the minimal safe change ;
+7. preserve data/contracts unless an explicit migration is designed ;
+8. verify public runtime according to `README.md`.
 
 ---
 
@@ -169,6 +181,7 @@ Before changing production Ideas code:
 
 - Idea ≠ Project.
 - The canonical pre-GO object is a living structured **Idea Decision Dossier**, not a completed questionnaire.
+- Matrix V5 can be exhaustive internally while the user sees only the information currently useful.
 - The engine is driven by **Output Contracts + Requirements + Readiness + Next Best Action**, not screen order.
 - 2b2c does more work than the user.
 - System actions and the user next action are distinct; autonomous work may run in parallel.
