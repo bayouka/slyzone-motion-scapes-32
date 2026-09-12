@@ -45,24 +45,11 @@ Do not claim universal information coverage for every future project type yet.
 
 `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md`
 
-Read this **first** for any substantial Idea Engine work.
+Read this first for any substantial Idea Engine work.
 
-It defines:
+It defines the current canonical Idea Engine, including IDD, Outputs, Requirements, Acquisition Engine, Readiness, System Actions/User NBA, Change Intelligence and GO/REVISE/PAUSE/STOP.
 
-- what 4b4c currently considers before GO ;
-- Idea Decision Dossier vs Project Draft ;
-- six-layer engine architecture ;
-- Output Contracts ;
-- Requirement Model ;
-- independent Output Readiness ;
-- Acquisition Engine ;
-- separate system actions vs user next action ;
-- Next Best Action selection ;
-- challenge/research as capabilities, not fixed steps ;
-- capture→workspace orchestration ;
-- UX projection principles.
-
-**Important current design review:** the exact professional lifecycle and depth boundary between Idea and Project are now under controlled re-audit. Do not mutate the canonical Master Blueprint until that audit is validated.
+**Important current design review:** the professional lifecycle and depth boundary between Idea, Project Definition and Build Ready are under controlled re-audit. Do not mutate the canonical Master Blueprint until that architecture is explicitly validated.
 
 ### 2. Detailed workflow mechanisms
 
@@ -70,21 +57,7 @@ It defines:
 
 `docs/idea-engine/canonical/WORKFLOW_V7_1_CONSOLIDATED.md`
 
-Use it for detailed mechanisms such as:
-
-- Project Memory ;
-- provenance/information states ;
-- Answer Resolver ;
-- Research Planner / Evidence Model ;
-- Recommendation Contract ;
-- Candidate formation ;
-- Change Intelligence ;
-- Decision Requirements ;
-- collaboration/workshop ;
-- Candidate snapshots ;
-- Decision Brief ;
-- GO / REVISE / PAUSE / STOP ;
-- Project Draft handoff.
+Use it for Project Memory, provenance, Answer Resolver, Evidence, Recommendation Contract, Candidate formation, Change Intelligence, Decision Requirements, collaboration, Decision Brief and handoff mechanisms.
 
 Its historical state chain is not a mandatory wizard.
 
@@ -94,24 +67,9 @@ Its historical state chain is not a mandatory wizard.
 
 `docs/idea-engine/canonical/INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
 
-**Supersedes:** `INFORMATION_MATRIX_V4_1.md`, preserved as history.
+V5 remains a valuable Idea information registry, not a visible questionnaire.
 
-V5 remains a valuable internal information registry, not a visible questionnaire.
-
-Use it for:
-
-- information keys/domains ;
-- Output Contract dependencies O1→O9 ;
-- Activation Contexts ;
-- acquisition paths ;
-- human-only vs extractable/researchable/inferable information ;
-- output-relative Requirement rules ;
-- readiness conditions ;
-- accepted unknown ;
-- research/question triggers ;
-- Site vitrine coverage tests.
-
-**Current audit note:** V5 must now be coverage-mapped against the professional `Idea → Project → Ready for Development` lifecycle before further workspace UX is designed. This does not invalidate V5 as a data registry.
+**Current audit note:** V5 is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`. It must be coverage-mapped and migrated into the candidate Project Definition Reference Architecture after validation. This does not invalidate its current canonical Idea-level rules.
 
 ### 4. Capture, ingestion and structured memory
 
@@ -119,17 +77,7 @@ Use it for:
 
 `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md`
 
-Use V1.2 for:
-
-- RAW FIRST and autosave ;
-- optional guided assistance ;
-- AI enrichment of visible description without source loss ;
-- Links / Images / Documents ;
-- provenance/versioning/stale-safety ;
-- opportunistic pre-analysis after persistence ;
-- exact role of `Commencer avec 2b2c` ;
-- no mandatory analysis-only page ;
-- no immediate repetition of a brief 2b2c just helped write.
+Use it for RAW FIRST, autosave, guided capture, source ingestion, provenance/versioning/stale safety and `Commencer avec 2b2c` behavior.
 
 ### 5. Initial Capture UX validated snapshot
 
@@ -137,33 +85,56 @@ Use V1.2 for:
 
 `docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
 
-The capture surface remains validated functionally. Its post-click behavior may need later reconciliation with the professional lifecycle audit, but no regression to a large questionnaire is authorized.
+The capture surface remains validated functionally. No regression to a giant questionnaire is authorized.
 
-### 6. Professional lifecycle audit — CURRENT PRIORITY
+---
 
-Workspace UX work is **paused** until the lifecycle from a raw idea to a project ready for development is formally covered.
+## Professional Idea → Project → Build Ready architecture — CURRENT PRIORITY
 
-Primary current working audit:
+Workspace UX work is **paused** until the professional referential architecture is validated.
+
+### Current architecture candidate
+
+`docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_2.md`
+
+Status: **NON CANONIQUE / CANDIDATE À VALIDER**.
+
+It supersedes V0.1 as the current architecture candidate and proposes:
+
+- three lifecycle zones: `IDEA_DECISION / PROJECT_DEFINITION / BUILD_READY` ;
+- five atom types: `INFO / ANALYSIS / DECISION / SPEC / VERIFY` ;
+- Domains separate from Gates and Deliverables ;
+- Core + Blueprint Overlays + Context Overlays + Delivery Profile Overlays + Standard Profiles ;
+- 20 professional Domains ;
+- G0→G9 dependency Gates ;
+- exploratory vs provisional/current/frozen artifacts ;
+- traceability `Requirement → Spec → Verify` ;
+- decision authority / owner / criticality by Gate ;
+- Change Impact ;
+- explicit `READY_FOR_DEVELOPMENT` contract ;
+- `IMPLEMENTATION_DISCRETION` so developers are not over-specified while product ambiguity is removed.
+
+### Red-team support
+
+`docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_RED_TEAM_20260913.md`
+
+The red-team tested simple brochure sites, SEO-heavy redesigns, regulated contexts, multilingual sites, CMS, personal-data forms, no-direct-competitor cases, tech constraints, early design requests, incomplete final content, third-party failures and late changes after readiness.
+
+### Earlier lifecycle audit
 
 `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
 
-Detailed working requirements registry:
+Still useful as supporting reasoning, but the V0.2 architecture above is the current candidate structure.
+
+### Preliminary requirements matrix — DO NOT EXPAND YET
 
 `docs/idea-engine/validation/PROFESSIONAL_REQUIREMENTS_MASTER_MATRIX_V0_1.md`
 
-These are **non-canonical working candidates**. They propose three distinct zones:
+This is an exploratory inventory created before the architecture was stabilized. Do **not** treat it as the final schema and do not expand it atom-by-atom until `PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_2.md` has been explicitly validated.
 
-1. **IDEA** — understand, research, compare, challenge, improve, test feasibility and select the direction ;
-2. **PROJECT / PRE-DEVELOPMENT** — transform the selected Idea into complete requirements, UX, content, design, technical architecture, non-functional requirements, QA criteria and delivery handoff ;
-3. **DEVELOPMENT / PRODUCTION** — implement, test, preproduce, release and operate.
+---
 
-Core working hypothesis:
-
-> target/problem must be sufficiently understood before selecting meaningful competitors ; competitive/evidence work must be able to modify the original Idea ; the improved Idea is selected/frozen before detailed Project definition ; detailed Project work then continues until `READY_FOR_DEVELOPMENT`.
-
-Do not implement this hypothesis as canonical behavior until coverage/red-team validation is complete.
-
-### 7. Workspace UX — PAUSED / historical candidates
+## Workspace UX — PAUSED / historical candidates
 
 The following are retained only as historical validation material:
 
@@ -174,46 +145,48 @@ The following are retained only as historical validation material:
 - `docs/idea-engine/validation/WORKSPACE_INTERACTIVE_PROTOTYPE_V0_1_TEST_20260913.md`
 - `docs/idea-engine/validation/QUESTION_ENRICHMENT_COMPETITIVE_AUDIT_20260913.md`
 
-`WORKSPACE_PROJECTION_CONTRACT_V0_3.md` is explicitly **rejected as the active UX direction** because it still attempted to project the workspace before the professional lifecycle had been fully formalized.
+`WORKSPACE_PROJECTION_CONTRACT_V0_3.md` is explicitly rejected as the active UX direction because it still attempted to project the workspace before the professional lifecycle had been fully formalized.
 
-No new workspace prototype should be promoted or implemented until the lifecycle/master requirements audit is validated.
+No new workspace prototype should be promoted or implemented until the lifecycle/master referential architecture is validated and sufficient requirement coverage exists.
 
 ---
 
-## Production implementation vs target Idea Engine
+## Production implementation vs design candidates
 
 Do not conflate:
 
 - **Current production implementation** = what the repository serves today and root runtime docs describe.
 - **Canonical Idea Engine target** = current canonical documents.
-- **Lifecycle audit candidates** = current design work that may later modify canonical boundaries after explicit validation.
+- **Project Definition architecture candidate** = V0.2 above; may later change canonical boundaries only after explicit validation.
 
 Before changing production Ideas code:
 
 1. read Master Blueprint V1.1 ;
 2. read Matrix V5 ;
 3. read Capture Contract V1.2 ;
-4. read the current lifecycle audit status in this file ;
-5. inspect current implementation ;
-6. do not implement rejected workspace candidates ;
-7. do not change production while lifecycle architecture remains under design unless explicitly authorized.
+4. read this file for current architecture status ;
+5. do not implement rejected workspace candidates ;
+6. do not change production while the Project Definition architecture remains under design unless explicitly authorized.
 
 ---
 
 ## Key established invariants
 
-Unless explicitly reopened through the lifecycle audit:
+Unless explicitly reopened through the architecture audit:
 
-- raw input/provenance must survive AI interpretation ;
-- Matrix/full information coverage must never become a giant visible form ;
-- human questions are last-mile when AI/source/research/calculation can resolve information ;
+- raw input/provenance survives AI interpretation ;
+- exhaustive internal coverage must never become a giant visible form ;
+- human questions are last-mile when source/research/calculation/inference can legitimately resolve an item ;
 - AI inference is not human truth ;
 - stale results cannot overwrite newer state ;
 - accepted unknown is valid when non-blocking ;
-- research and challenge must serve a real output/decision ;
+- research and challenge serve actual decisions ;
 - GO is not privileged over revise/pause/stop ;
 - the system should do more work than the novice user ;
-- project execution machinery must not be invented before the corresponding Project exists.
+- Idea is not Project ;
+- GO to Project is not Ready for Development ;
+- development execution is not Project Definition ;
+- requirements/standards must be proportional to applicability and risk.
 
 ---
 
@@ -231,14 +204,7 @@ These are tests, not separate product modes.
 
 ## Current operational/collaboration domains
 
-For production collaboration behavior, consult root `README.md` first. Relevant dated docs include:
-
-- `docs/CALL_SYSTEM_AUDIT_AND_V3_ARCHITECTURE_20260912.md`
-- `docs/CALL_ENGINE_V3_DIRECT_DECISION_20260912.md`
-- `docs/CALL_ENGINE_V3_IMPLEMENTATION_GATE_20260912.md`
-- `docs/CALL_ENGINE_V3_SFU_API_NOTES_20260912.md`
-- `docs/CALL_ENGINE_V2_RELEASE_GATE_20260912.md`
-- `docs/PRE_COLLAB_AUDIT.md`
+For production collaboration behavior, consult root `README.md` first. Relevant dated docs include notably the Call Engine audits/gates and `PRE_COLLAB_AUDIT.md`.
 
 ---
 
