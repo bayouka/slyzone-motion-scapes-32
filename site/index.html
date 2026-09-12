@@ -30,9 +30,10 @@
   <link rel="stylesheet" href="assets/design-v5.css?v=5.0.5-roadmap-p1" />
   <style>@import url("assets/design-v6.css?v=6.0.0-shell-p1"); @import url("assets/home-v6.css?v=6.0.1-home-polish"); @import url("assets/projects-v6.css?v=6.0.1-project-polish"); @import url("assets/work-v6.css?v=6.0.1-work-polish");</style>
   <link rel="stylesheet" href="assets/mobile-shell-v7.css?v=7.1.0" />
+  <link rel="stylesheet" href="assets/mobile-shell-v8.css?v=8.0.0" />
   <link rel="stylesheet" href="assets/brand-fix-v1.css?v=1.0.0" />
-  <link rel="stylesheet" href="assets/home-team-v1.css?v=1.0.0" />
-  <link rel="stylesheet" href="assets/call-mobile-v7.css?v=7.1.0" />
+  <link rel="stylesheet" href="assets/home-team-v2.css?v=2.0.0" />
+  <link rel="stylesheet" href="assets/call-mobile-v8.css?v=8.0.0" />
 </head>
 <body>
   <div id="app"></div>
@@ -51,7 +52,9 @@
     try {
       await import('./assets/home-v6-stability.js?v=1.0.0');
       await import('./assets/mobile-shell-v7.js?v=7.1.0');
-      await import('./assets/home-team-v1.js?v=1.0.0');
+      await import('./assets/mobile-shell-v8.js?v=8.0.0');
+      await import('./assets/presence-heartbeat-v1.js?v=1.0.0');
+      await import('./assets/home-team-v2.js?v=2.0.0');
       await import('./assets/call-signal-isolation-v3.js?v=1.1.0');
     } catch (error) {
       console.error('[2b2c] Shell bootstrap enhancer unavailable', error);
@@ -64,7 +67,7 @@
       style.dataset.callEngineV3 = 'true';
       document.head.appendChild(style);
       try {
-        await import('./assets/call-ui-stability-v1.js?v=1.0.0');
+        await import('./assets/call-mobile-v8.js?v=8.0.0');
         await import('./assets/call-certification-v3.js?v=1.0.0');
         await import('./assets/call-engine-v3-direct.js?v=3.1.0-direct-preview');
       } catch (error) {
