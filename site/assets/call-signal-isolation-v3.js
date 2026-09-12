@@ -13,14 +13,19 @@ if (!window.__4B4C_CALL_SIGNAL_ISOLATION_V3__) {
     return !engine || engine === 'v2';
   }
 
+  function isolateSignal(signal, mode) {
+    if (signalMatches(signal, mode)) return signal;
+    return { ...signal, from_user: null, payload: { engine: 'isolated-noop' } };
+  }
+
   function filterSnapshotResult(result) {
     const mode = engineMode();
     const rows = Array.isArray(result) ? result : [result];
-    const filtered = rows.map((row) => {
+    const isolated = rows.map((row) => {
       if (!row || typeof row !== 'object' || !Array.isArray(row.signals)) return row;
-      return { ...row, signals: row.signals.filter((signal) => signalMatches(signal, mode)) };
+      return { ...row, signals: row.signals.map((signal) => isolateSignal(signal, mode)) };
     });
-    return Array.isArray(result) ? filtered : filtered[0];
+    return Array.isArray(result) ? isolated : isolated[0];
   }
 
   SupabaseBrowserClient.prototype.rpc = async function isolatedCallRpc(name, args = {}) {
@@ -30,8 +35,9 @@ if (!window.__4B4C_CALL_SIGNAL_ISOLATION_V3__) {
   };
 
   window.__4B4C_CALL_SIGNAL_ISOLATION_V3__ = Object.freeze({
-    version: '1.0.0',
+    version: '1.1.0',
     v2: 'legacy-or-v2-only',
     v3: 'v3-direct-only',
+    cursorSafe: true,
   });
 }
