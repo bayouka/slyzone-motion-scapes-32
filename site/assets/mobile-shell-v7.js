@@ -23,13 +23,11 @@
     if (!drawer || drawer.querySelector('.mobile-v7-primary')) return;
     const links = primarySourceLinks();
     if (!links.length) return;
-
     const block = document.createElement('section');
     block.className = 'mobile-v7-primary';
     block.setAttribute('aria-label', 'Navigation principale');
     block.innerHTML = '<span class="mobile-v7-primary-title">NAVIGATION</span><nav class="mobile-v7-primary-nav"></nav>';
     const nav = block.querySelector('nav');
-
     for (const source of links) {
       const clone = source.cloneNode(true);
       clone.classList.remove('active');
@@ -45,7 +43,6 @@
       clone.dataset.mobileV7Key = routeKey(href);
       nav.appendChild(clone);
     }
-
     const workspace = drawer.querySelector('.mobile-drawer-workspace');
     const search = drawer.querySelector('.mobile-drawer-search');
     const anchor = search?.nextSibling || workspace?.nextSibling || drawer.querySelector('.mobile-drawer-scroll')?.firstChild;
@@ -71,9 +68,11 @@
 
   function restoreBrand() {
     document.querySelectorAll('.brand-logo-icon img').forEach((img) => {
-      if (!/brand-icon\.svg(?:\?|$)/.test(img.getAttribute('src') || '')) img.setAttribute('src', './assets/brand-icon.svg');
+      if (!/brand-symbol\.svg(?:\?|$)/.test(img.getAttribute('src') || '')) img.setAttribute('src', './assets/brand-symbol.svg?v=1.0.0');
       img.removeAttribute('width');
       img.removeAttribute('height');
+      img.style.opacity = '1';
+      img.style.visibility = 'visible';
     });
   }
 
@@ -93,10 +92,7 @@
   function schedule() {
     if (scheduled) return;
     scheduled = true;
-    requestAnimationFrame(() => {
-      scheduled = false;
-      enhance();
-    });
+    requestAnimationFrame(() => { scheduled = false; enhance(); });
   }
 
   const observer = new MutationObserver(schedule);
