@@ -19,6 +19,7 @@ assert(src.includes('.map((signal) => isolateSignal(signal, mode))'), 'mismatche
 assert(!src.includes('.filter((signal) => signalMatches(signal, mode))'), 'cursor-unsafe filtering must not return');
 assert(index.includes("call-signal-isolation-v3.js?v=1.1.0"), 'isolation module not loaded');
 assert(index.indexOf('call-signal-isolation-v3.js?v=1.1.0') < index.indexOf("if (callV3Enabled)"), 'isolation must load before either call engine');
-assert(index.includes('3.1.3-direct-preview'), 'release marker mismatch');
+assert(index.includes('3.1.4-direct-pilot'), 'pilot release marker mismatch');
+assert(index.includes('const callV3Enabled = !forceV2 && (explicitV3 || pilotV3)'), 'pilot selection must preserve V2 rollback precedence');
 
-console.log('Call signal isolation gate: OK');
+console.log('Call signal isolation pilot gate: OK');
