@@ -6,7 +6,7 @@ const index=read('site/index.html');
 const js=read('site/assets/ideas-v1.js');
 const css=read('site/assets/ideas-v1.css');
 const migration=read('supabase/migrations/20260912041819_idea_incubation_v1.sql');
-const governance=read('supabase/migrations/20260912044610_idea_incubation_governance_v1.sql');
+const governance=read('supabase/migrations/20260912042418_idea_incubation_governance_v1.sql');
 
 for(const marker of ['ideas-v1.css?v=1.0.0',"ideas-v1.js?v=1.0.0"]) assert(index.includes(marker),`index missing ${marker}`);
 
