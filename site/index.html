@@ -9,6 +9,12 @@
   <title>2b2c — Projets qui avancent ensemble</title>
   <meta name="description" content="2b2c rassemble projets, travail, conversations, décisions, réunions, validations et ressources dans un espace partagé." />
   <link rel="icon" href="assets/brand-icon.svg" type="image/svg+xml" />
+  <script>
+    (function(){
+      var home=['','#','#/','#/dashboard'].indexOf(location.hash||'')!==-1;
+      document.documentElement.dataset.homeV6Booting=home?'true':'false';
+    })();
+  </script>
   <link rel="stylesheet" href="assets/core-legacy-v455.css?v=4.5.12-roadmap-p2" />
   <link rel="stylesheet" href="assets/resources-workspace-v1.css" />
   <link rel="stylesheet" href="assets/resources-workspace-v2.css" />
@@ -19,6 +25,7 @@
   <link rel="stylesheet" href="assets/call-engine-v2.css?v=2.0.0" />
   <link rel="stylesheet" href="assets/design-v5.css?v=5.0.5-roadmap-p1" />
   <style>@import url("assets/design-v6.css?v=6.0.0-shell-p1"); @import url("assets/home-v6.css?v=6.0.1-home-polish"); @import url("assets/projects-v6.css?v=6.0.1-project-polish"); @import url("assets/work-v6.css?v=6.0.1-work-polish");</style>
+  <link rel="stylesheet" href="assets/mobile-shell-v7.css?v=7.0.0" />
 </head>
 <body>
   <div id="app"></div>
@@ -35,9 +42,11 @@
     document.documentElement.dataset.callEnginePilot = pilotV3 ? 'true' : 'false';
 
     try {
+      await import('./assets/home-v6-stability.js?v=1.0.0');
+      await import('./assets/mobile-shell-v7.js?v=7.0.0');
       await import('./assets/call-signal-isolation-v3.js?v=1.1.0');
     } catch (error) {
-      console.error('[2b2c] Call signal isolation unavailable', error);
+      console.error('[2b2c] Shell bootstrap enhancer unavailable', error);
     }
 
     if (callV3Enabled) {
