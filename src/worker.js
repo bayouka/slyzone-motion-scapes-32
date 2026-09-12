@@ -27,6 +27,11 @@ export default {
           app: '4b4c',
           backend: 'supabase',
           version: 'v4.5.12-v6-polish-p2',
+          ui_shell: {
+            code: 'mobile-v7',
+            dashboard_stability: '1.0.0',
+            brand_asset: 'brand-icon.svg',
+          },
           call_engine: '2.0.0',
           call_engine_v3: {
             code: '3.1.4-direct-pilot',
