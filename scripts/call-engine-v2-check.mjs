@@ -6,7 +6,8 @@ const engine=read('site/assets/call-engine-v2.js');
 const continuity=read('site/assets/call-media-continuity-v2.js');
 const css=read('site/assets/call-engine-v2.css');
 const worker=read('src/worker.js');
-const migration=read('supabase/migrations/20260911235900_call_reliability_v2.sql');
+const accessFix=read('supabase/migrations/20260911220328_fix_call_access_rls_execute_v1.sql');
+const syncMigration=read('supabase/migrations/20260911220911_call_sync_v2.sql');
 const fail=(message)=>{console.error(`CALL ENGINE V2 CHECK FAILED: ${message}`);process.exit(1);};
 
 for(const marker of [
@@ -66,14 +67,14 @@ for(const marker of ['#incoming-call-v1,#resume-call-v1','.ce-v2-screen-stage','
   if(!css.includes(marker)) fail(`Call Engine V2 CSS missing ${marker}`);
 }
 
+if(!accessFix.includes('grant execute on function app_private.can_access_call_v1(uuid) to authenticated')) fail('call access helper migration missing authenticated grant');
 for(const marker of [
-  'grant execute on function app_private.can_access_call_v1(uuid) to authenticated',
   'create or replace function public.get_call_sync_v2(',
   "if not app_private.can_access_call_v1(p_call_id) then raise exception 'CALL_ACCESS_DENIED'",
   "'participants'",
   "'signals'",
   's.id>v_after',
   'grant execute on function public.get_call_sync_v2(uuid,bigint) to authenticated',
-]) if(!migration.includes(marker)) fail(`call reliability migration missing ${marker}`);
+]) if(!syncMigration.includes(marker)) fail(`call sync migration missing ${marker}`);
 
 console.log('call engine v2: OK (2.0.0 + continuous media)');

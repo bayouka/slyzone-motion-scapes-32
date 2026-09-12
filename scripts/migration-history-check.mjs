@@ -24,16 +24,17 @@ const requiredProductionTail = [
   '20260909073012_expire_unanswered_call_invites.sql',
   '20260909092310_revoke_anon_call_heartbeat.sql',
   '20260909093700_revoke_public_call_heartbeat.sql',
-  '20260911225000_pending_call_invite_v2.sql',
-  '20260911235900_call_reliability_v2.sql',
-  '20260912013500_call_media_sfu_v3.sql',
-  '20260912015000_call_media_catalog_active_session_v3.sql',
+  '20260911210308_pending_call_invite_v2.sql',
+  '20260911220328_fix_call_access_rls_execute_v1.sql',
+  '20260911220911_call_sync_v2.sql',
+  '20260911232657_call_media_sfu_v3.sql',
+  '20260911233259_call_media_catalog_active_session_v3.sql',
   '20260912000407_harden_call_media_v3_rpc_execute.sql',
 ];
 
 const missing = requiredProductionTail.filter((name) => !fs.existsSync(`${migrationDir}/${name}`));
 if (missing.length) {
-  console.error(`MIGRATION HISTORY CHECK FAILED: missing recovered/canonical migrations: ${missing.join(', ')}`);
+  console.error(`MIGRATION HISTORY CHECK FAILED: missing production migration: ${missing.join(', ')}`);
   process.exit(1);
 }
 
@@ -49,7 +50,7 @@ for (const required of [
   }
 }
 
-const incoming = fs.readFileSync(`${migrationDir}/20260911225000_pending_call_invite_v2.sql`, 'utf8');
+const incoming = fs.readFileSync(`${migrationDir}/20260911210308_pending_call_invite_v2.sql`, 'utf8');
 for (const required of [
   'create or replace function public.get_pending_call_invite_v2()',
   'ci.invited_user_id = auth.uid()',
@@ -65,19 +66,28 @@ for (const required of [
   }
 }
 
-const reliability = fs.readFileSync(`${migrationDir}/20260911235900_call_reliability_v2.sql`, 'utf8');
+const accessFix = fs.readFileSync(`${migrationDir}/20260911220328_fix_call_access_rls_execute_v1.sql`, 'utf8');
+if (!accessFix.includes('grant execute on function app_private.can_access_call_v1(uuid) to authenticated')) {
+  console.error('MIGRATION HISTORY CHECK FAILED: call-access helper grant missing');
+  process.exit(1);
+}
+
+const sync = fs.readFileSync(`${migrationDir}/20260911220911_call_sync_v2.sql`, 'utf8');
 for (const required of [
-  'grant execute on function app_private.can_access_call_v1(uuid) to authenticated',
   'create or replace function public.get_call_sync_v2(',
+  "if not app_private.can_access_call_v1(p_call_id) then raise exception 'CALL_ACCESS_DENIED'",
+  "'participants'",
+  "'signals'",
+  's.id>v_after',
   'grant execute on function public.get_call_sync_v2(uuid,bigint) to authenticated',
 ]) {
-  if (!reliability.includes(required)) {
-    console.error(`MIGRATION HISTORY CHECK FAILED: call reliability guard missing: ${required}`);
+  if (!sync.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: call sync guard missing: ${required}`);
     process.exit(1);
   }
 }
 
-const v3Media = fs.readFileSync(`${migrationDir}/20260912013500_call_media_sfu_v3.sql`, 'utf8');
+const v3Media = fs.readFileSync(`${migrationDir}/20260911232657_call_media_sfu_v3.sql`, 'utf8');
 for (const required of [
   'create table if not exists public.call_media_tracks_v3',
   'create table if not exists public.call_media_telemetry_v3',
@@ -91,12 +101,9 @@ for (const required of [
   }
 }
 
-const v3Catalog = fs.readFileSync(`${migrationDir}/20260912015000_call_media_catalog_active_session_v3.sql`, 'utf8');
-for (const required of [
-  'cp.provider_session_id=t.provider_session_id',
-  'cp.left_at is null',
-]) {
-  if (!v3Catalog.replace(/\s+/g, '').includes(required.replace(/\s+/g, ''))) {
+const v3Catalog = fs.readFileSync(`${migrationDir}/20260911233259_call_media_catalog_active_session_v3.sql`, 'utf8').replace(/\s+/g, '');
+for (const required of ['cp.provider_session_id=t.provider_session_id','cp.left_atisnull']) {
+  if (!v3Catalog.includes(required.replace(/\s+/g, ''))) {
     console.error(`MIGRATION HISTORY CHECK FAILED: V3 catalog active-session guard missing: ${required}`);
     process.exit(1);
   }
@@ -125,4 +132,4 @@ for (const fn of [
   }
 }
 
-console.log(`migration history: OK (${requiredProductionTail.length} guarded migrations)`);
+console.log(`migration history: OK (${requiredProductionTail.length} production migrations guarded)`);

@@ -1,9 +1,4 @@
--- 2b2c call reliability V2
--- Keep the private access helper executable by authenticated because RLS policies invoke it.
-grant execute on function app_private.can_access_call_v1(uuid) to authenticated;
-
--- One governed snapshot for the hot call loop. This avoids a Promise.all of several
--- RLS-protected tables where one failing read can silently stop WebRTC negotiation.
+-- 4b4c Call Engine V2 — one governed snapshot for the hot call loop.
 create or replace function public.get_call_sync_v2(
   p_call_id uuid,
   p_after_signal_id bigint default 0
