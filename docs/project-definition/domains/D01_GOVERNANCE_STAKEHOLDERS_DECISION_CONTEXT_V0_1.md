@@ -26,17 +26,23 @@ Ce domaine ne doit pas imposer de gouvernance lourde à un utilisateur solo.
 | D01.INFO.110 | INFO | Tolérance aux inconnues | Savoir qui peut accepter un unknown et à quel niveau | HUM | G4/G8 CONDITIONAL | accepted unknown | DOMAIN |
 | D01.INFO.120 | INFO | Pouvoir de dépense / budget approval | Distinguer budget indicatif et enveloppe autorisée | HUM/SRC | G4 CONDITIONAL si budget décisionnel | faisabilité/scoping | MULTI_DOMAIN |
 | D01.INFO.130 | INFO | Méthode d’arbitrage en cas de désaccord | Éviter les blocages d’équipe | HUM | G4 CONDITIONAL | conflict resolution | DOMAIN |
+| D01.INFO.140 | INFO | Critères de décision / poids relatif | Savoir selon quoi deux directions seront réellement comparées | HUM/AI-R | G3 REQUIRED, G4 BLOCKING si arbitrage entre options | option comparison | STRATEGIC |
+| D01.INFO.150 | INFO | Approbateurs / sign-off requis | Distinguer décideur opérationnel et approbation finale obligatoire | HUM/SRC | G4/G8 CONDITIONAL | validation formelle | MULTI_DOMAIN |
 | D01.ANALYSIS.200 | ANALYSIS | Stakeholder map | Distinguer décideur, contributeur, impacté, expert | CALC/AI-H | G4 CONDITIONAL | plan de décision | DOMAIN |
 | D01.ANALYSIS.210 | ANALYSIS | Decision-context assessment | Déterminer quelles preuves/outputs sont nécessaires pour la décision réelle | CALC/AI-R | G1→G4 REQUIRED | Decision Requirements | STRATEGIC |
 | D01.ANALYSIS.220 | ANALYSIS | Source-authority conflict analysis | Détecter documents/règles contradictoires | CALC/AI-H | G2 CONDITIONAL | arbitrage explicite | MULTI_DOMAIN |
+| D01.ANALYSIS.230 | ANALYSIS | Decision-criteria completeness | Vérifier que les options pourront être comparées sur des critères pertinents et non uniquement au goût | CALC/AI-R | G3 REQUIRED | D06 comparison | STRATEGIC |
 | D01.DECISION.300 | DECISION | Decision Question active | Fixer la question exacte à laquelle le dossier doit permettre de répondre | HUM/AI-R | G4 BLOCKING | readiness décisionnelle | STRATEGIC |
 | D01.DECISION.310 | DECISION | Decision owner confirmé | Autoriser l’acte de GO/REVISE/PAUSE/STOP | HUM | G4 BLOCKING si équipe | Idea decision | STRATEGIC |
 | D01.DECISION.320 | DECISION | Source precedence rule active | Définir quelle source prévaut en conflit | HUM/règle | G2 CONDITIONAL | evidence fiable | MULTI_DOMAIN |
 | D01.DECISION.330 | DECISION | Unknown accepté | Consigner qu’une incertitude peut rester ouverte sans bloquer | HUM/owner | G4/G8 CONDITIONAL | passage Gate | LOCAL→MULTI |
+| D01.DECISION.340 | DECISION | Decision criteria accepted | Figer les critères qui servent à sélectionner/rejeter une direction | HUM/owner | G3/G4 REQUIRED si plusieurs options | Idea decision | STRATEGIC |
 | D01.SPEC.400 | SPEC | Project source-of-truth policy | Définir où vivent décisions/specs actives après GO | AI-R/HUM | G5 REQUIRED | change control/handoff | MULTI_DOMAIN |
 | D01.SPEC.410 | SPEC | Change approval policy | Définir qui peut modifier une décision figée et comment | AI-R/HUM | G8 CONDITIONAL | versioning/handoff | MULTI_DOMAIN |
+| D01.SPEC.420 | SPEC | Approval matrix | Après GO, expliciter les approbations structurantes seulement lorsqu’un contexte multi-acteur l’exige | CALC/HUM | G8 CONDITIONAL | handoff | DOMAIN |
 | D01.VERIFY.500 | VERIFY | Decision authority check | Vérifier qu’aucun GO/Freeze n’a été pris sans autorité | TRACEABILITY_CHECK | G4 BLOCKING | Idea freeze | STRATEGIC |
 | D01.VERIFY.510 | VERIFY | Source-of-truth consistency check | Vérifier qu’aucune source active contradictoire n’est silencieusement conservée | TRACEABILITY_CHECK | G8 REQUIRED | Build Ready | MULTI_DOMAIN |
+| D01.VERIFY.520 | VERIFY | Required approvals check | Vérifier que les sign-offs réellement requis ont été obtenus ou explicitement différés avec impact connu | TRACEABILITY_CHECK | G8/G9 CONDITIONAL | Build Ready | MULTI_DOMAIN |
 
 ---
 
@@ -46,11 +52,12 @@ L’humain est normalement requis pour :
 
 - désigner qui tranche lorsque cela n’est pas évident ;
 - arbitrer une contradiction d’autorité ;
+- choisir/valider les critères de décision lorsque ceux-ci reflètent une priorité interne ;
 - accepter une inconnue importante ;
 - confirmer une contrainte politique/interne non observable ;
 - décider GO / REVISE / PAUSE / STOP.
 
-2b2c peut inférer une gouvernance probable, mais ne doit jamais inventer un pouvoir de décision.
+2b2c peut inférer une gouvernance probable, mais ne doit jamais inventer un pouvoir de décision ou un sign-off.
 
 ---
 
@@ -60,11 +67,17 @@ L’humain est normalement requis pour :
 
 Le dossier connaît au minimum le porteur et sait si le contexte de décision est solo ou potentiellement collectif.
 
+### G3 — Strategic Options Ready
+
+Les critères de comparaison entre directions sont suffisamment clairs pour éviter une sélection purement esthétique.
+
 ### G4 — Idea Decision Ready
 
 - Decision Question explicite ;
 - Decision owner connu si nécessaire ;
+- critères de décision acceptés lorsqu’il existe plusieurs options ;
 - conflits d’autorité critiques résolus ;
+- sign-offs réellement nécessaires identifiés ;
 - inconnues importantes acceptées par une autorité légitime ou encore blocking.
 
 ### G8/G9 — Build Ready
@@ -72,20 +85,22 @@ Le dossier connaît au minimum le porteur et sait si le contexte de décision es
 - sources de vérité projet identifiées ;
 - changements structurants versionnés ;
 - aucun conflit actif critique entre specs/documents ;
-- authority/approval des décisions structurantes traçable.
+- authority/approval des décisions structurantes traçable ;
+- approbations obligatoires satisfaites ou état explicitement assumé.
 
 ---
 
 ## Deliverables affectés
 
-A01, A07, A08, A14, A15.
+A01, A06, A07, A08, A14, A15.
 
 ---
 
 ## Red-team questions
 
 - utilisateur solo : le domaine doit rester presque invisible ;
-- agence travaillant pour un client : distinguer utilisateur de 4b4c et décideur réel ;
+- agence travaillant pour un client : distinguer utilisateur de 4b4c, décision owner et approbateur final ;
 - deux associés en désaccord : ne pas fusionner leurs positions ;
 - décision déjà prise avant 4b4c : l’enregistrer comme source actuelle, mais la challenger seulement si son statut l’autorise ;
-- document contractuel vs note ancienne : ne jamais laisser l’IA choisir silencieusement.
+- document contractuel vs note ancienne : ne jamais laisser l’IA choisir silencieusement ;
+- deux bonnes directions : sans critères de décision explicites, le système ne doit pas maquiller une préférence esthétique en recommandation objective.
