@@ -28,9 +28,10 @@ export default {
           backend: 'supabase',
           version: 'v4.5.12-v6-polish-p2',
           ui_shell: {
-            code: 'mobile-v7',
-            dashboard_stability: '1.0.0',
-            brand_asset: 'brand-icon.svg',
+            code: 'mobile-v7.1',
+            dashboard_stability: '1.1.0',
+            dashboard_presence: '1.0.0',
+            brand_asset: 'brand-symbol.svg',
           },
           call_engine: '2.0.0',
           call_engine_v3: {
@@ -38,6 +39,8 @@ export default {
             transport: 'p2p-stun',
             signal_isolation: '1.1.0',
             certification: '1.0.0',
+            call_ui_stability: '1.0.0',
+            mobile_call_ui: '7.1.0',
             pilot_default: true,
             global_default: false,
             configured: true,
