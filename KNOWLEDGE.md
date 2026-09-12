@@ -84,42 +84,66 @@ Important: the matrix is an internal contract. It must never become a giant visi
 
 ### 3. Capture, ingestion and structured memory
 
-**Canonical:** `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1.md`
+**Canonical:** `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_1.md`
 
-Use it for:
+**Supersedes:** `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1.md`
+
+Use V1.1 for:
 
 - autosave and RAW FIRST;
-- exact role of `Commencer`;
+- exact role of `Commencer avec 2b2c`;
 - upload persistence before navigation;
 - raw input + structured memory;
+- optional guided assistance `M’aider à préciser mon idée`;
+- AI enrichment of the visible description without overwriting human sources;
+- rollback to the prior description;
 - atomic multi-domain extraction;
 - negation/modality/temporal interpretation;
 - prefill without freezing;
-- delayed UX visibility of already-known information;
+- links/images/documents and optional context/notes;
+- supported-format strategy and deferred quota sizing;
 - Answer Resolver rules;
 - capture-versioning and stale-safety;
 - targeted supersession;
 - Idea-document-as-view rather than single source-of-truth blob;
-- mandatory QA cases for ingestion.
+- mandatory QA cases for Capture V5.
 
 For capture/ingestion-specific ambiguity, this contract is the most specific source and should be read alongside Workflow V7.1 and Matrix V4.1.
+
+### 4. Capture UX validated snapshot
+
+**Validated functional UX:** `docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
+
+Use it for the validated low-fidelity shape and microcopy of the initial Idea capture:
+
+- `Parlez-nous de votre idée ?`;
+- short placeholder + contextual help;
+- optional adaptive guided help;
+- automatic enrichment of the visible description;
+- `+ Ajouter des éléments` with Links / Images / Documents;
+- context/notes per source;
+- `Commencer avec 2b2c`;
+- first post-analysis acknowledgment and Next Best Action.
+
+This file is **functionally validated**, not a final high-fidelity visual design contract.
 
 ## Production implementation vs target Idea Engine
 
 Do not conflate these two layers:
 
 - **Current production implementation** = what the repository currently serves and what root `README.md`/runtime docs describe.
-- **Target Idea Engine** = the newer conceptual/UX/information contract in `docs/idea-engine/canonical/`.
+- **Target Idea Engine** = the newer conceptual/UX/information contract in `docs/idea-engine/canonical/` plus explicitly validated UX snapshots in `docs/idea-engine/ux/`.
 
 The production Ideas module may still contain historical rigid behavior such as fixed progression and older IA buttons. That historical implementation is not evidence that the target conceptual model should regress to a wizard.
 
 Before changing production Ideas code:
 
 1. read the target Idea Engine canonical docs;
-2. audit the existing implementation/tables/RPCs;
-3. identify the minimal safe change;
-4. preserve existing data/contracts unless an explicit migration is designed and validated;
-5. verify public runtime after release according to `README.md`.
+2. read any validated UX snapshot for the surface being changed;
+3. audit the existing implementation/tables/RPCs;
+4. identify the minimal safe change;
+5. preserve existing data/contracts unless an explicit migration is designed and validated;
+6. verify public runtime after release according to `README.md`.
 
 ## Key Idea Engine invariants — index only
 
@@ -129,7 +153,11 @@ These are pointers, not substitutes for the canonical documents:
 - 2b2c exploits existing information before asking.
 - Workspace is adaptive; internal states are not a forced visible wizard.
 - Raw user/source data is persisted before LLM analysis.
-- `Commencer` starts analysis/workspace entry; it is not the first save.
+- `Commencer avec 2b2c` starts analysis/workspace entry; it is not the first save.
+- The initial description can be empty, minimal or rich.
+- Guided help is optional and adaptive, never a mandatory form.
+- Guided human answers remain distinct from AI-generated synthesis.
+- AI may enrich the visible description, but never silently erase the original.
 - One rich brief can populate many domains.
 - Original wording and provenance survive AI structuring.
 - Prefill ≠ freeze.
@@ -147,7 +175,7 @@ Read the exact canonical source before implementing any of these.
 
 ## Supporting validation material
 
-Cognitive walkthroughs, synthetic profiles, prototypes and red-team documents are useful for explaining **why** the current model exists, but they are not independent sources of truth unless explicitly promoted to canonical status.
+Cognitive walkthroughs, synthetic profiles, prototypes and red-team documents are useful for explaining **why** the current model exists, but they are not independent sources of truth unless explicitly promoted to canonical/validated status.
 
 Typical reference profiles used during Idea Engine validation:
 
