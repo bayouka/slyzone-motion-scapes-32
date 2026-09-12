@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f3f6fb" />
   <meta name="2b2c-call-engine" content="2.0.0" />
-  <meta name="2b2c-call-engine-v3" content="3.1.1-direct-preview" />
+  <meta name="2b2c-call-engine-v3" content="3.1.2-direct-preview" />
   <title>2b2c — Projets qui avancent ensemble</title>
   <meta name="description" content="2b2c rassemble projets, travail, conversations, décisions, réunions, validations et ressources dans un espace partagé." />
   <link rel="icon" href="assets/brand-icon.svg" type="image/svg+xml" />
@@ -29,7 +29,7 @@
     document.documentElement.dataset.callEngine = callV3Enabled ? 'v3' : 'v2';
 
     try {
-      await import('./assets/call-signal-isolation-v3.js?v=1.0.0');
+      await import('./assets/call-signal-isolation-v3.js?v=1.1.0');
     } catch (error) {
       console.error('[2b2c] Call signal isolation unavailable', error);
     }
@@ -37,7 +37,7 @@
     if (callV3Enabled) {
       const style = document.createElement('link');
       style.rel = 'stylesheet';
-      style.href = './assets/call-engine-v3.css?v=3.1.1-direct-preview';
+      style.href = './assets/call-engine-v3.css?v=3.1.2-direct-preview';
       style.dataset.callEngineV3 = 'true';
       document.head.appendChild(style);
       try {
