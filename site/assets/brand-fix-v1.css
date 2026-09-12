@@ -1,0 +1,4 @@
+/* 2b2c brand symbol rendering */
+.brand-logo-icon,.mobile-drawer .brand-logo-icon,.mobile-top-brand .brand-logo-icon{background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;overflow:visible!important;padding:0!important}
+.brand-logo-icon img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;opacity:1!important;visibility:visible!important;filter:none!important}
+@media(max-width:767px){.mobile-drawer-head .brand-logo-icon{width:72px!important;height:46px!important;flex:0 0 72px!important}.mobile-top-brand .brand-logo-icon{width:42px!important;height:30px!important;flex:0 0 42px!important}.mobile-drawer-head .live-brand{gap:10px!important}}
