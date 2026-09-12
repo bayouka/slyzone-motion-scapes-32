@@ -98,15 +98,17 @@ import { SupabaseBrowserClient } from './supabase-client.js';
     const questionEmpty=questionBlock?.querySelector('.ideas-v1-empty.small');
     if(questionEmpty&&questions.length===0){
       const missingText=s.missing.length?`2b2c a déjà identifié ce qu’il faut clarifier : ${s.missing.join(', ')}.`:'Aucune question bloquante n’est détectée. Vous pouvez tout de même challenger la compréhension si nécessaire.';
-      questionEmpty.className='ideas-v1-empty small ideas-v2-smart-empty';
-      questionEmpty.innerHTML=`<strong>${s.missing.length?'La prochaine question est déjà identifiable':'Aucune zone morte ici'}</strong><p>${esc(missingText)}</p>${actionButton(s.missing.length?'Répondre aux questions':'Poser une question utile','questions')}`;
+      const html=`<strong>${s.missing.length?'La prochaine question est déjà identifiable':'Aucune zone morte ici'}</strong><p>${esc(missingText)}</p>${actionButton(s.missing.length?'Répondre aux questions':'Poser une question utile','questions')}`;
+      questionEmpty.classList.add('ideas-v2-smart-empty');
+      if(questionEmpty.innerHTML!==html)questionEmpty.innerHTML=html;
     }
     const pathBlock=findExploreBlock('Pistes');
     const pathEmpty=pathBlock?.querySelector('.ideas-v1-empty.small');
     if(pathEmpty&&paths.length===0){
       const clarifying=s.phase==='clarify';
-      pathEmpty.className='ideas-v1-empty small ideas-v2-smart-empty';
-      pathEmpty.innerHTML=`<strong>${clarifying?'Les pistes viennent après la clarification':'Aucune piste retenue pour le moment'}</strong><p>${clarifying?'Clarifions d’abord le problème, les personnes concernées et la proposition pour éviter des variantes hors sujet.':'Demandez à 2b2c de proposer des variantes utiles ; aucune piste ne sera retenue automatiquement.'}</p>${actionButton(clarifying?'Clarifier d’abord':'Proposer des pistes',clarifying?'questions':'improve')}`;
+      const html=`<strong>${clarifying?'Les pistes viennent après la clarification':'Aucune piste retenue pour le moment'}</strong><p>${clarifying?'Clarifions d’abord le problème, les personnes concernées et la proposition pour éviter des variantes hors sujet.':'Demandez à 2b2c de proposer des variantes utiles ; aucune piste ne sera retenue automatiquement.'}</p>${actionButton(clarifying?'Clarifier d’abord':'Proposer des pistes',clarifying?'questions':'improve')}`;
+      pathEmpty.classList.add('ideas-v2-smart-empty');
+      if(pathEmpty.innerHTML!==html)pathEmpty.innerHTML=html;
     }
   }
 
@@ -177,7 +179,7 @@ import { SupabaseBrowserClient } from './supabase-client.js';
   }
 
   function patchSidebar(){if(!ideaId()&&route()!=='#/ideas'&&!route().startsWith('#/ideas/'))return;document.querySelectorAll('a[href="#/"],a[href="#/dashboard"]').forEach(a=>a.classList.remove('active','selected'));document.querySelectorAll('a[href="#/projects"]').forEach(a=>a.classList.add('active'));}
-  function patchBranding(){if(!ideaId()&&route()!=='#/projects'&&!route().startsWith('#/ideas'))return;document.querySelectorAll('.ideas-v1-modal input[placeholder],.ideas-ai-v1-panel small,.ideas-v1-guide small').forEach(n=>{if(n.placeholder)n.placeholder=n.placeholder.replace(/4b4c/gi,'2b2c');if(n.textContent)n.textContent=n.textContent.replace(/4b4c/gi,'2b2c')});}
+  function patchBranding(){if(!ideaId()&&route()!=='#/projects'&&!route().startsWith('#/ideas'))return;document.querySelectorAll('.ideas-v1-modal input[placeholder],.ideas-ai-v1-panel small,.ideas-v1-guide small').forEach(n=>{if(n.placeholder){const next=n.placeholder.replace(/4b4c/gi,'2b2c');if(next!==n.placeholder)n.placeholder=next;}if(n.textContent){const next=n.textContent.replace(/4b4c/gi,'2b2c');if(next!==n.textContent)n.textContent=next;}});}
   async function doAction(action){if(['understand','questions','improve','challenge','synthesize'].includes(action)) return window.__4B4C_IDEAS_AI_V1__?.run?.(action);if(action==='evidence') return window.__4B4C_IDEAS_EVIDENCE_V1__?.openResearch?.();if(action==='presentation') return window.__4B4C_IDEAS_EVIDENCE_V1__?.presentation?.();if(action==='share') return document.querySelector('[data-idea-action="share"]')?.click();if(action==='decision'){const id=ideaId();if(id)location.hash=`#/ideas/${id}/decision`;return;}if(action==='convert') return document.querySelector('[data-idea-action="convert"]')?.click();if(action==='projects')location.hash='#/projects';}
   function guardRouteTransition(){const ideas=route()==='#/ideas'||route().startsWith('#/ideas/');document.documentElement.dataset.ideasRouteBooting=ideas?'true':'false';if(ideas)document.querySelector('.live-content')?.classList.remove('ideas-v1-owned');}
   function refresh(){clearTimeout(timer);timer=setTimeout(()=>{if(route()==='#/projects')patchProjects();else if(ideaId())patchDetail();},120)}
@@ -193,5 +195,5 @@ import { SupabaseBrowserClient } from './supabase-client.js';
   window.addEventListener('4b4c:ideas-refresh',refresh);
   new MutationObserver(refresh).observe(document.documentElement,{childList:true,subtree:true});
   ensureUxStyles();guardRouteTransition();setTimeout(refresh,600);
-  window.__2B2C_IDEAS_ORCHESTRATOR_V2__=Object.freeze({version:'2.0.1-transition-guard',uxRevision:'2.0.2-coherence-p1',refresh});
+  window.__2B2C_IDEAS_ORCHESTRATOR_V2__=Object.freeze({version:'2.0.1-transition-guard',uxRevision:'2.0.2-coherence-p2',refresh});
 })();
