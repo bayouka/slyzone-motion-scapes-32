@@ -20,10 +20,12 @@ async function parseResponse(response){
 async function supabaseRequest(env,path,{token,service=false,method='POST',body}={}){
   const key=service?env.SUPABASE_SERVICE_ROLE_KEY:env.SUPABASE_PUBLISHABLE_KEY;
   if(!key)throw new EngineHttpError(503,service?'SERVER_PRIVILEGE_UNAVAILABLE':'BACKEND_CONFIG_UNAVAILABLE');
-  const bearer=service?key:token;
+  const headers=service
+    ? {apikey:key,'content-type':'application/json'}
+    : {apikey:key,Authorization:`Bearer ${token}`,'content-type':'application/json'};
   const response=await fetch(`${env.SUPABASE_URL}${path}`,{
     method,
-    headers:{apikey:key,Authorization:`Bearer ${bearer}`,'content-type':'application/json'},
+    headers,
     body:body===undefined?undefined:JSON.stringify(body)
   });
   const payload=await parseResponse(response);
