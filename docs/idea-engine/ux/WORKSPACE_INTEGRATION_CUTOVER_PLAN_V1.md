@@ -2,202 +2,187 @@
 
 Date : 2026-09-13
 
-Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–3 VALIDATED / SLICE 4 ACTIVATED IN CODE / SLICE 5 STARTED WITH G0 INTERACTIVE**
+Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–4 VALIDATED/ACTIVE — SLICE 5 G0 + SOURCE URL + G1 FOUNDATION IMPLEMENTED — BUILD 544 RELEASE CANDIDATE**
 
 Objectif : remplacer progressivement le workspace Idea historique par une projection fidèle au runtime R0→R7 sans big-bang, sans baisse de sécurité et sans rendre l'application inutilisable pendant la transition.
 
-## Principes
+## 0. Autorité et règles de travail
 
-- GitHub reste la source canonique ; Supabase reste le state/backend canonique ; Cloudflare reste le chemin runtime/deploy.
-- pas de Remote Desktop Commander dans le workflow normal ;
-- aucune réouverture de Capture V5 sans problème réel ;
-- aucun assouplissement des RPCs `service_role only` pour simplifier le frontend ;
+- GitHub `bayouka/slyzone-motion-scapes-32/main` reste la source canonique du produit/runtime.
+- Supabase `wexfzhegiewhldkugtow` reste le backend/state canonique.
+- `bayouka/2b2c/4b4c/` reste uniquement le miroir de transport Cloudflare.
+- Cloudflare Workers reste le chemin normal de build/déploiement/runtime.
+- Remote Desktop Commander n'appartient pas au workflow normal ; son indisponibilité ne doit jamais bloquer l'avancement.
 - chaque slice est additive, testable et rollbackable ;
-- l'ancien orchestrateur est retiré seulement après équivalence fonctionnelle et UX validée ;
-- l'historique des migrations GitHub doit correspondre exactement à `supabase_migrations.schema_migrations` ; aucun faux/no-op de rattrapage n'est accepté.
+- aucun assouplissement des RPCs `service_role only` n'est autorisé pour simplifier le frontend ;
+- l'ancien orchestrateur est retiré seulement après équivalence fonctionnelle/UX et tests de cutover ;
+- l'historique GitHub des migrations doit correspondre au backend Supabase réel ; aucun faux rattrapage n'est accepté.
 
 ## Slice 1 — Canonical read projection — DONE / VALIDATED
 
 Livrable : `get_idea_workspace_projection_v1`.
 
-Effet : une seule source UX agrège le runtime R0→R7 sans exposer les internals et sans reconstruire une progression séquentielle.
-
-Validation : accès autorisé, accès transversal refusé, état non classifié, état `IDEA_ENGINE`, aucune clé `phase/step/progress/completion_percentage`.
-
-Projection active après durcissements G0/change intelligence : **1.2**.
+La projection **1.2** agrège R0→R7 sans exposer les internals et sans reconstruire une progression séquentielle. Elle ne publie pas de `phase`, `step`, `progress` ou pourcentage global artificiel.
 
 ## Slice 2 — G0 / Blueprint Fit — DONE / VALIDATED
 
-Livrables :
+Livrables principaux :
 - `idea_blueprint_fit_assessments` ;
 - `idea_blueprint_fit_decisions` ;
 - `record_idea_blueprint_fit_assessment_v1` — service-role only ;
 - `apply_assessed_blueprint_fit_v1` — service-role only ;
 - `confirm_idea_blueprint_fit_v1` — confirmation humaine contrôlée ;
-- projection workspace 1.2 avec état G0/reclassification minimal.
+- reclassification après changement matériel.
 
-Garanties validées :
-- Site vitrine n'est jamais assigné par défaut à toute Idea ;
+Garanties :
+- Site vitrine n'est jamais forcé par défaut ;
 - assessment IA/système ≠ vérité humaine ;
-- auto-application uniquement `HIGH + non ambiguous + auto_applicable` ;
-- confidence MEDIUM/LOW ou `AMBIGUOUS` ne peut pas être auto-appliquée ;
-- l'humain peut corriger l'assessment ;
-- une assessment devient stale/superseded si l'entrée matérielle change ;
-- mismatch conserve RAW/source et historique au lieu de forcer le Blueprint disponible ;
-- après modification matérielle, `BLUEPRINT_MIGRATION_REQUIRED` force une reclassification G0 avant réutilisation du Blueprint ;
-- les Action Runs non promus devenus invalides passent stale et les Requirements concernés passent `REVIEW_REQUIRED` sans perdre leur historique ;
-- une Idea déjà promue en Project Definition n'est plus structurellement modifiable via l'ancien éditeur ;
-- aucune fixture de test résiduelle.
+- auto-application seulement `HIGH + non ambiguous + auto_applicable` ;
+- stale/supersession après changement matériel ;
+- mismatch conserve RAW, sources et historique ;
+- `BLUEPRINT_MIGRATION_REQUIRED` bloque la réutilisation silencieuse d'un Blueprint devenu douteux ;
+- seules les dépendances réellement affectées sont invalidées/revues.
 
-Migrations d'intégration alignées avec l'historique Supabase :
-- `20260913043039_idea_workspace_projection_v1` ;
-- `20260913043203_idea_workspace_projection_v1_boolean_fix` ;
-- `20260913043603_idea_blueprint_fit_g0_v1` ;
-- `20260913043734_idea_workspace_projection_g0_v1` ;
-- `20260913043819_idea_blueprint_fit_g0_fk_index` ;
-- `20260913044946_idea_blueprint_fit_reclassification_v1` ;
-- `20260913045028_idea_content_change_runtime_compat_v1`.
+## Slice 3 — Parallel Workspace V3 — DONE / VALIDATED PREVIEW
 
-## Slice 3 — Parallel workspace shell — DONE / VALIDATED PREVIEW
-
-Livrables frontend :
+Frontend :
 - `site/assets/ideas-workspace-v3-preview.js` ;
 - `site/assets/ideas-workspace-v3-preview.css` ;
-- wiring additif dans `site/index.html`.
+- route `#/ideas/<idea_id>/workspace-v3` ;
+- preview par `?workspacev3=1` ou localStorage `2b2c.idea.workspace.v3=1`.
 
-Route parallèle : `#/ideas/<idea_id>/workspace-v3`.
+La surface lit uniquement la projection canonique et reste parallèle au legacy. Build 539 a constitué la première preview runtime certifiée.
 
-Activation preview :
-- query `?workspacev3=1`, ou
-- localStorage `2b2c.idea.workspace.v3=1`.
-
-La surface lit exclusivement `get_idea_workspace_projection_v1`. Elle expose :
-- Header Idea + lifecycle badge ;
-- HUMAN_INPUT_INLINE si réellement nécessaire ;
-- VALUE_NOW central ;
-- SYSTEM_MICROSTATUS compact ;
-- navigation sémantique non bloquante ;
-- agrégats provenance/sources/artefacts ;
-- décision neutre ;
-- Project Definition / Gates lorsqu'ils existent ;
-- retour vers l'éditeur de compatibilité.
-
-Coexistence vérifiée : la route `workspace-v3` ne matche pas la regex historique de `ideas-v1.js`; aucun lien principal n'est basculé.
-
-Production : **build 539 certifié directement** le 2026-09-13 :
-- `/health` OK ;
-- shell production référence JS/CSS Workspace V3 ;
-- `/assets/ideas-workspace-v3-preview.js` servi avec marqueur `__2B2C_IDEA_WORKSPACE_V3_PREVIEW__` ;
-- `/assets/ideas-workspace-v3-preview.css` servi avec marqueur `.ideas-workspace-v3-owned`.
-
-## Slice 4 — Privileged action adapter — ADAPTER 0.1.1 / SECRET PROVISIONED / RUNTIME CERTIFICATION PENDING
-
-Contrat : `WORKSPACE_PRIVILEGED_ADAPTER_CONTRACT_V0_1.md`.
-Validation : `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALIDATION_20260913.md`.
+## Slice 4 — Privileged adapter — ACTIVE / SECURITY BASELINE VALIDATED
 
 Implémentation :
 - `src/idea-engine-adapter.js` ;
-- `POST /api/ideas/engine` dans `src/worker.js` ;
-- commande allowlistée unique : `blueprint_fit.assess`.
+- `POST /api/ideas/engine` ;
+- secret `SUPABASE_SERVICE_ROLE_KEY` Worker-only ;
+- appels service-role avec secret dans `apikey` uniquement, jamais comme Bearer ;
+- body/commandes allowlistés ;
+- projection user-scoped et `can_write` vérifiés avant élévation ;
+- stale-safety et idempotence préservées ;
+- aucune autorité humaine/expert fabriquée par l'adapter.
 
-Garanties :
-1. JWT utilisateur obligatoire ;
-2. projection user-scoped lue avant toute élévation ;
-3. `capabilities.can_write` requis ;
-4. body strict : `command + idea_id` uniquement ;
-5. aucun nom de RPC/table/SQL/actor/authorized_by/permission_scope fourni par le browser ;
-6. revision, stale-safety et idempotency préservées ;
-7. `SUPABASE_SERVICE_ROLE_KEY` Worker-only ;
-8. secret absent → fail closed ;
-9. aucune ACL moteur relâchée ;
-10. autorité humaine/expert exclue de l'adapter générique ;
-11. clé Supabase moderne `sb_secret_...` envoyée uniquement dans `apikey`, jamais comme Bearer token.
+Build 540 reste la dernière baseline transport explicitement certifiée tant qu'une release plus récente ne possède pas de preuve runtime indépendante.
 
-Red-team initial exact commit canonique : `WORKSPACE_PRIVILEGED_ADAPTER_V0_1_REDTEAM_PASS`.
+Le marqueur `/health` historique `idea_engine_adapter_v0_1.code=0.1.1` est maintenu temporairement pour compatibilité. Il ne doit plus être utilisé comme preuve unique de la surface fonctionnelle G1 : les gates doivent également vérifier les commandes et marqueurs réels du fichier adapter.
 
-Production historique : **build 540 certifié** avec adapter 0.1.0 fail-closed : endpoint présent, `401 UNAUTHORIZED` sans JWT, `service_role_browser_exposed=false`.
+## Slice 5 — Idea workspace interactions — ACTIVE
 
-Le secret runtime `SUPABASE_SERVICE_ROLE_KEY` a ensuite été provisionné manuellement dans **Worker 4b4c → Runtime variables and secrets**, type `Secret`. Sa valeur n'est stockée ni dans GitHub ni dans la documentation.
+### 5A — G0 interactif — IMPLEMENTED / VALIDATED
 
-Une incompatibilité a ensuite été détectée avant validation E2E : l'adapter 0.1.0 envoyait la clé `sb_secret_...` comme Bearer. Cette release ne doit pas être utilisée pour une mutation privilégiée. Adapter 0.1.1 corrige ce point avec `apikey-only` pour les appels service-role.
-
-Build 541 : **abandonné / non retenu comme baseline**.
-
-Build 542 : **release candidate active**, runtime `v4.5.12-workspace-g0-actions-p2`, source runtime canonique `abf11adf85586aa47f4de3f9f65f74d6e3b20a44`.
-
-Le gate Cloudflare 542 exige :
-- adapter 0.1.1 ;
-- secret `apikey-only` ;
-- `/health` avec `configured=true` ;
-- `service_role_browser_exposed=false` ;
-- endpoint sans JWT → `401` ;
-- shell + JS/CSS G0 interactifs effectivement servis.
-
-Cloudflare ne publie actuellement aucun statut de commit exploitable dans GitHub et aucun connecteur Cloudflare n'est disponible. **Ne pas déclarer build 542 certifié sans preuve runtime distante ou résultat Cloudflare directement observable.**
-
-## Slice 5 — Idea workspace interactions — STARTED
-
-Première interaction implémentée de manière additive : **G0 interactif**.
-
-Frontend canonique :
-- `site/assets/ideas-workspace-v3-actions.js` ;
-- `site/assets/ideas-workspace-v3-actions.css` ;
-- wiring dans `site/index.html`.
-
-Comportement G0 :
-- aucune assessment → bouton `Analyser le type de projet` → Worker `blueprint_fit.assess` ;
+- aucune assessment → `blueprint_fit.assess` ;
 - HIGH auto-applicable → résolution système autorisée ;
-- ambiguity / confiance insuffisante → confirmation humaine inline ;
-- confirmation Site vitrine ou autre type via `confirm_idea_blueprint_fit_v1`, avec JWT utilisateur et `engine_revision` courante ;
-- aucun secret dans le navigateur.
+- ambiguity/confiance insuffisante → confirmation humaine inline ;
+- confirmation via `confirm_idea_blueprint_fit_v1` ;
+- aucun secret service-role dans le navigateur.
 
-La suite Slice 5 se fera incrémentalement :
-- ajout/correction d'information humaine via `apply_human_information_v1` ;
-- sources via `register_idea_source_v1` ;
-- réponses last-mile ;
-- actions système ;
-- artefacts de préfiguration ;
-- review/feedback ;
-- Decision Package et décision.
+### 5B — Source URL — IMPLEMENTED / VALIDATED BACKEND
 
-Les mutations humaines déjà user-scoped restent directes via leurs RPCs authentifiées ; ne pas les rerouter inutilement par service-role.
+- ajout utilisateur via `register_idea_source_v1` ;
+- sensibilité `public | internal | personal | sensitive` ;
+- idempotence déterministe liée à revision + contenu ;
+- stale guard ;
+- un lien enregistré n'est jamais présenté comme preuve validée par défaut.
 
-Les anciennes `idea_items` peuvent rester en lecture/compatibilité durant la transition, mais ne doivent plus définir la maturité canonique.
+### 5C — G1 Foundation déterministe — IMPLEMENTED / RELEASE CANDIDATE
 
-Avant d'élargir les commandes privilégiées de Slice 5 :
-- certifier build 542 ;
-- réaliser l'E2E authentifié G0 contrôlé ;
-- valider desktop/mobile du panneau G0 ;
-- préserver un rollback simple vers la preview read-only.
+Le moteur G1 résout la base de compréhension en respectant l'invariant :
+
+> **Requirement unresolved ≠ question utilisateur.**
+
+Migrations présentes dans le backend canonique :
+- `20260913063230_idea_engine_acquisition_traceability_v1` ;
+- `20260913063548_idea_engine_target_fingerprints_v1` ;
+- `20260913063741_idea_engine_requirement_resolution_refs_v1` ;
+- `20260913064148_idea_engine_g1_foundation_planner_v1` ;
+- `20260913064618_idea_engine_foundation_raw_input_v1` ;
+- `20260913065006_idea_engine_action_retry_v1` ;
+- `20260913070345_idea_engine_foundation_unknown_rescue_v1`.
+
+Adapter Workspace :
+- surface fonctionnelle `workspace-engine-adapter-0.2.0` ;
+- commandes allowlistées `blueprint_fit.assess` et `foundation.advance` ;
+- planner déterministe `plan_idea_foundation_v1` ;
+- extraction RAW uniquement lorsqu'elle est réellement éligible ;
+- Action Run traçable, idempotent et stale-safe ;
+- `support_text` doit être réellement présent dans le RAW avant promotion ;
+- fingerprints par Requirement empêchent une mutation fondée sur un état devenu obsolète ;
+- maximum de travail automatique borné par requête ;
+- une question humaine n'est exposée que si le planner retourne une `dominant_user_action` ;
+- `Je ne sais pas / plus tard` est un chemin explicite via `accept_idea_requirement_unknown_v1`.
+
+Frontend : `site/assets/ideas-workspace-v3-actions.js` **0.3.0**.
+
+États UX G1 :
+- analyse automatique utile en cours ;
+- erreur récupérable sans perte du RAW ;
+- une seule précision humaine utile ;
+- report accepté ;
+- Foundation suffisamment comprise ;
+- travail système continu sans étape utilisateur artificielle.
+
+Le cache-busting du shell doit rester aligné sur `actions 0.3.0`.
+
+### 5D — Release 544 — ACTIVE RELEASE CANDIDATE
+
+Transport : `v4.5.12-workspace-foundation-g1-p1 / build 544`.
+
+Source canonique runtime : `b0754db9f3d6b42fb970514a8c2ad00e6e7b798d`.
+
+Gate de release 544 vérifie notamment :
+- manifeste build 544 + source SHA exact ;
+- actions 0.3.0 ;
+- shell JS/CSS 0.3.0 ;
+- adapter allowlist `blueprint_fit.assess + foundation.advance` ;
+- tool version G1 `workspace-engine-adapter-0.2.0` ;
+- secret service-role `apikey-only` ;
+- absence du secret dans les assets navigateur ;
+- formulaires Foundation + Source ;
+- endpoint sans JWT → `401` pour G0 et G1 ;
+- smoke runtime des assets après déploiement.
+
+GitHub ne reçoit toujours aucun statut Cloudflare exploitable. Tant qu'une preuve runtime indépendante n'est pas observable, **build 544 reste release candidate et ne remplace pas artificiellement la baseline certifiée 540**.
+
+## Prochaine étape obligatoire avant G2
+
+1. obtenir/observer le résultat de build/runtime 544 sans dépendre de Remote Desktop ;
+2. réaliser un E2E authentifié G1 sur une Idea contrôlée ;
+3. vérifier desktop + mobile : pending, human-required, unknown, ready et error/retry ;
+4. vérifier qu'aucune question n'apparaît lorsqu'une voie automatique admissible existe encore ;
+5. conserver rollback simple vers Workspace V3 read-only / build précédent.
+
+Si ces points passent, la prochaine extension métier est **G2 Evidence / Market**, en réutilisant les mêmes primitives d'acquisition : Requirements → chemins automatiques admissibles → Action Runs traçables → provenance → intervention humaine uniquement en dernier recours.
 
 ## Slice 6 — Project Definition / Build Ready UI
 
 Après GO explicite :
-- montrer la baseline approuvée ;
-- distinguer clairement `FOR_PROJECT` et `FOR_BUILD` ;
-- projeter G8→G12 sans les transformer en checklist utilisateur ;
-- faire apparaître les décisions humaines/expert réellement requises ;
-- exposer les artefacts A19→A25 et le Build Ready Snapshot.
+- baseline approuvée ;
+- distinction `FOR_PROJECT` / `FOR_BUILD` ;
+- projection G8→G12 sans checklist utilisateur brute ;
+- décisions humaines/expert seulement lorsqu'elles sont réellement requises ;
+- artefacts A19→A25 et Build Ready Snapshot.
 
 ## Slice 7 — Legacy retirement
 
-Retirer progressivement :
+Retirer progressivement seulement après équivalence et E2E :
 - `ideas-orchestrator-v2.js` comme autorité ;
-- la bande `Clarifier / Renforcer / Étayer / Partager / Décider` ;
-- le `maturity 5/5` de `ideas-v1.js` ;
-- les gardes décisionnelles fondées sur `hasPath/hasRisk/hasEvidence/reviews` ;
-- les conversions legacy qui créent directement un Project d'exécution.
+- bande `Clarifier / Renforcer / Étayer / Partager / Décider` ;
+- `maturity 5/5` ;
+- gardes décisionnelles legacy ;
+- conversion legacy directe vers un Project d'exécution.
 
-Chaque retrait exige un smoke test de la nouvelle surface et un rollback simple.
-
-## Critères de réussite du cutover
+## Critères de réussite permanents
 
 - aucune question répétée évitable ;
 - aucune page d'attente passive obligatoire ;
-- aucun pourcentage de complétion artificiel ;
+- aucun pourcentage global artificiel ;
 - aucune décision humaine escamotée ;
 - aucun Blueprint forcé ;
 - aucun appel browser à une RPC service-role ;
-- aucune secret key envoyée comme Bearer ;
-- un changement matériel déclenche une reclassification et une invalidation ciblée, jamais une continuité silencieuse sous un Blueprint potentiellement faux ;
-- les utilisateurs peuvent toujours comprendre où en est leur idée et ce qui nécessite réellement leur attention.
+- aucune secret key dans le navigateur ou comme Bearer côté service ;
+- provenance et historique préservés ;
+- changements matériels → invalidation/reclassification ciblées ;
+- l'utilisateur comprend toujours ce qui est acquis, ce que 2b2c fait seul et ce qui nécessite réellement son attention.
