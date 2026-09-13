@@ -2,7 +2,7 @@
 
 Date : 2026-09-13
 
-Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–4 VALIDATED/ACTIVE — SLICE 5 G0 + SOURCE URL + G1 FOUNDATION IMPLEMENTED — BUILD 544 RELEASE CANDIDATE**
+Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–4 VALIDATED/ACTIVE — SLICE 5 G0 + SOURCE URL + G1 FOUNDATION IMPLEMENTED — BUILD 544 RELEASE CANDIDATE — G2 DESIGN PREPARED / NON ACTIVE**
 
 Objectif : remplacer progressivement le workspace Idea historique par une projection fidèle au runtime R0→R7 sans big-bang, sans baisse de sécurité et sans rendre l'application inutilisable pendant la transition.
 
@@ -146,15 +146,51 @@ Gate de release 544 vérifie notamment :
 
 GitHub ne reçoit toujours aucun statut Cloudflare exploitable. Tant qu'une preuve runtime indépendante n'est pas observable, **build 544 reste release candidate et ne remplace pas artificiellement la baseline certifiée 540**.
 
-## Prochaine étape obligatoire avant G2
+### 5E — G2 Evidence / Market — DESIGN PREPARED / NON ACTIVE
+
+Aucun SQL, aucune commande Worker et aucun asset production G2 n'est actif.
+
+Documents de préparation :
+- `docs/project-definition/runtime/G2_EVIDENCE_MARKET_RUNTIME_DESIGN_V0_1.md` ;
+- `docs/project-definition/runtime/G2_EVIDENCE_MARKET_BACKEND_GAP_AUDIT_20260913.md` ;
+- `docs/project-definition/runtime/G2_EVIDENCE_MARKET_ACQUISITION_MATRIX_V0_1.md` ;
+- `docs/project-definition/runtime/G2_RESEARCH_ACTION_ATOMIC_PROMOTION_CONTRACT_V0_1.md` ;
+- candidat machine `SITE_VITRINE@0.5` non actif.
+
+Décisions structurantes :
+- G2 reste system-first ; l'utilisateur ne devient pas le chercheur/benchmarkeur par défaut ;
+- `COMPETITOR_SET` est matériel par défaut en greenfield, mais peut devenir non matériel lorsqu'une refonte dispose déjà d'un audit `OBSERVED` + evidence quality `CALCULATED` et qu'aucune comparaison marché n'est explicitement requise ;
+- `requires_all/requires_any` deviennent dans le candidat 0.5 des préconditions transitives des actions/Gates ;
+- une valeur libre fournie par un caller/LLM ne peut pas désactiver la recherche concurrentielle ;
+- une preuve `WEB_RESEARCH` ne peut pas être `SOURCE_BACKED/OBSERVED` sans Source canonique.
+
+### Atomic research promotion — règle obligatoire avant implémentation G2
+
+Le flow initial `Action Run → créer/ingérer Source → promouvoir` est rejeté : `commit_source_ingestion_v1` incrémente `engine_revision` et ferait courir un risque d'auto-staleness au run qui vient de découvrir cette source.
+
+Flow retenu :
+
+`plan → Action Run → travail externe en mémoire → complete avec SOURCE/observation proposals → promotion atomique → une seule engine_revision`.
+
+La future promotion research doit, avant toute écriture canonique :
+- vérifier la revision Idea ;
+- comparer les target Requirement fingerprints du run avec les fingerprints courants ;
+- vérifier input fingerprint, path, permission scope, provenance, sensitivity et aliases Source ;
+- en cas de stale/mismatch : **zéro Source et zéro observation canonique créées**.
+
+Les Sources, observations, Requirement refs et Ledger entries autorisées sont ensuite promus dans une seule transaction.
+
+## Verrous obligatoires avant activation G2
 
 1. obtenir/observer le résultat de build/runtime 544 sans dépendre de Remote Desktop ;
 2. réaliser un E2E authentifié G1 sur une Idea contrôlée ;
 3. vérifier desktop + mobile : pending, human-required, unknown, ready et error/retry ;
 4. vérifier qu'aucune question n'apparaît lorsqu'une voie automatique admissible existe encore ;
-5. conserver rollback simple vers Workspace V3 read-only / build précédent.
+5. conserver rollback simple vers Workspace V3 read-only / build précédent ;
+6. effectuer le full R0 replay + red-team du candidat Blueprint 0.5 ;
+7. préparer et faire passer les tests SQL rollbackés/red-team de l'atomic research promotion avant toute migration G2.
 
-Si ces points passent, la prochaine extension métier est **G2 Evidence / Market**, en réutilisant les mêmes primitives d'acquisition : Requirements → chemins automatiques admissibles → Action Runs traçables → provenance → intervention humaine uniquement en dernier recours.
+Seulement après ces preuves, implémenter progressivement : planner G2 → executors → adapter `evidence.advance` → A03/A04/A05 → UI Workspace → E2E/runtime certification.
 
 ## Slice 6 — Project Definition / Build Ready UI
 
@@ -185,4 +221,5 @@ Retirer progressivement seulement après équivalence et E2E :
 - aucune secret key dans le navigateur ou comme Bearer côté service ;
 - provenance et historique préservés ;
 - changements matériels → invalidation/reclassification ciblées ;
+- recherche système : aucune Source canonique écrite à mi-run ; Source + observation sont promues atomiquement après stale/fingerprint guards ;
 - l'utilisateur comprend toujours ce qui est acquis, ce que 2b2c fait seul et ce qui nécessite réellement son attention.
