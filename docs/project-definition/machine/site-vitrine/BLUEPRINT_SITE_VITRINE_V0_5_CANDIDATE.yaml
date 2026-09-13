@@ -91,14 +91,17 @@ r0_candidate_contract:
   active_production_blueprint_unchanged: SITE_VITRINE@0.4
 
 validation_status:
-  status: TARGETED_PASS_FULL_R0_REPLAY_PENDING
+  status: R0_DELTA_EQUIVALENCE_PASS_NON_ACTIVE
+  baseline_0_4_reference: PASS_REFERENCE
+  shared_corpus_equivalence: PASS_2026_09_13
+  algorithmic_replay: PASS_22_OF_22_2026_09_13
   targeted_competitor_context_logic: PASS_2026_09_13
-  deterministic_competitor_materiality: PASS_TARGETED_2026_09_13
-  basis_fingerprint_stale_safety: PASS_TARGETED_2026_09_13
-  current_basis_inflight_deduplication: PASS_TARGETED_2026_09_13
-  transitive_dependency_runtime_semantics: PASS_TARGETED_2026_09_13
-  full_r0_candidate_replay: PENDING
-  production_activation: FORBIDDEN_UNTIL_G1_RUNTIME_E2E_AND_V0_5_R0_PASS
+  deterministic_competitor_materiality: PASS_2026_09_13
+  basis_fingerprint_stale_safety: PASS_2026_09_13
+  current_basis_inflight_deduplication: PASS_2026_09_13
+  transitive_dependency_runtime_semantics: PASS_2026_09_13
+  private_checkout_byte_for_byte_replay: NOT_EXECUTED_IN_CURRENT_CLOUD_RUNTIME
+  production_activation: FORBIDDEN_UNTIL_G1_RUNTIME_E2E_AND_REMAINING_G2_BACKEND_GATES_PASS
 
 validation_support:
   - ../../runtime/G2_EVIDENCE_MARKET_RUNTIME_DESIGN_V0_1.md
@@ -107,3 +110,4 @@ validation_support:
   - ../../runtime/G2_BLUEPRINT_V0_5_CANDIDATE_VALIDATION_20260913.md
   - ../../runtime/G2_REQUIREMENT_BASIS_FINGERPRINT_CONTRACT_V0_1.md
   - ../../runtime/G2_BASIS_FINGERPRINT_VALIDATION_20260913.md
+  - ../../runtime/R0_BLUEPRINT_0_5_DELTA_EQUIVALENCE_VALIDATION_20260913.md
