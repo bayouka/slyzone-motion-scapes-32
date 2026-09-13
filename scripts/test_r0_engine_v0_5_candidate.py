@@ -32,7 +32,6 @@ class R0EngineV05CandidateTests(unittest.TestCase):
     ):
         facts = {
             "idea": {"creation_or_redesign": "redesign" if redesign else "creation"},
-            # Adversarial caller value: deterministic preparation must overwrite it.
             "research": {
                 "competitive_evidence_material": False,
                 "material_market_conflict": material_market_conflict,
@@ -100,14 +99,11 @@ class R0EngineV05CandidateTests(unittest.TestCase):
         self.assertEqual(projection["gate_states"]["G2_EVIDENCE_CONTEXT_SUFFICIENT"]["status"], "READY")
 
     def test_04_existing_competitor_output_does_not_force_own_applicability(self):
-        projection = candidate.project(
-            self.bp,
-            self.g2_state(redesign=True, competitor_resolved=True),
-        )
+        state = self.g2_state(redesign=True, competitor_resolved=True)
+        projection = candidate.project(self.bp, state)
         self.assertNotIn("NEEDS_COMPETITIVE_EVIDENCE", projection["active_contexts"])
         self.assertFalse(projection["requirement_states"]["SV.D05.COMPETITOR_SET"]["applicable"])
-        # Historical evidence is preserved in supplied state but does not decide materiality.
-        self.assertIn("SV.D05.COMPETITOR_SET", self.g2_state(redesign=True, competitor_resolved=True)["requirements"])
+        self.assertIn("SV.D05.COMPETITOR_SET", state["requirements"])
 
     def test_05_explicit_market_comparison_reactivates_competitor_requirement(self):
         projection = candidate.project(
@@ -149,6 +145,45 @@ class R0EngineV05CandidateTests(unittest.TestCase):
         )
         self.assertFalse(dependency["ready"])
         self.assertIn("SV.D05.PATTERN_GAP_SYNTHESIS", dependency["missing"])
+
+    def test_10_basis_excludes_own_output_but_tracks_parent_resolution(self):
+        mini = {
+            "manifest": {"blueprint_version": "0.5"},
+            "requirements": {
+                "PARENT": {"id": "PARENT", "applicability": {"default": "ACTIVE"}},
+                "CHILD": {
+                    "id": "CHILD",
+                    "applicability": {"default": "ACTIVE"},
+                    "dependencies": {"requires_all": ["PARENT"]},
+                },
+            },
+        }
+        state_a = {
+            "requirements": {
+                "PARENT": {"levels": ["ACCEPTED_AS_CURRENT"], "refs": ["parent-a"]},
+                "CHILD": {"levels": ["AI_RECOMMENDATION"], "refs": ["child-a"]},
+            }
+        }
+        rows_a = candidate.resolve_requirements(mini, state_a, set())
+        child_basis_a = rows_a["CHILD"]["fingerprint"]
+
+        state_own_output_changed = copy.deepcopy(state_a)
+        state_own_output_changed["requirements"]["CHILD"] = {
+            "levels": ["SOURCE_BACKED"], "refs": ["child-b"]
+        }
+        rows_own = candidate.resolve_requirements(mini, state_own_output_changed, set())
+        self.assertEqual(child_basis_a, rows_own["CHILD"]["fingerprint"])
+        self.assertNotEqual(
+            rows_a["CHILD"]["resolution_signature"],
+            rows_own["CHILD"]["resolution_signature"],
+        )
+
+        state_parent_changed = copy.deepcopy(state_a)
+        state_parent_changed["requirements"]["PARENT"] = {
+            "levels": ["HUMAN_VALIDATED"], "refs": ["parent-b"]
+        }
+        rows_parent = candidate.resolve_requirements(mini, state_parent_changed, set())
+        self.assertNotEqual(child_basis_a, rows_parent["CHILD"]["fingerprint"])
 
 
 if __name__ == "__main__":
