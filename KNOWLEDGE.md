@@ -86,7 +86,7 @@ Fresh canonical result: 77 Requirements / 21 Contexts / 14 Gates / 19 Deliverabl
 
 ---
 
-# Runtime status — R6 PASS / R7 CURRENT PRIORITY
+# Runtime status — R7 PASS / INTEGRATION-CUTOVER NEXT
 
 Runtime authority/index: `docs/project-definition/runtime/README.md`.
 
@@ -132,8 +132,6 @@ Migrations:
 
 Persistent objects: `idea_decision_packages`, `idea_decision_feedback`, `idea_decision_records_v2`.
 
-Server-only boundaries include Decision Snapshot, Decision Package generation/freshness/promotion, feedback record/resolve and immutable Decision Record.
-
 Validated: exact decision lineage, package freshness, cosmetic vs material feedback, explicit feedback closure, neutral outcomes, false-GO rejection and `promotable` without Project Definition side-effect.
 
 ## R6 — PASS_PROJECT_DEFINITION_BASELINE
@@ -144,8 +142,6 @@ Docs:
 
 Migration: `20260913035836_idea_engine_r6_project_definition_baseline`.
 
-Server-only boundary: `promote_approved_idea_to_project_definition_v1`.
-
 Validated:
 - latest promotable Decision Record only ;
 - exact engine/package/snapshot freshness ;
@@ -155,30 +151,63 @@ Validated:
 - immutable Project Definition baseline ;
 - explicit artifact promotion classification ;
 - inherited artifacts become new `FOR_PROJECT / PROJECT_DEFINITION` versions ;
-- Decision Package outputs do not become specs ;
 - execution-planning keys blocked ;
 - no `projects`, milestones or tasks created ;
 - nominal and red-team transactional tests PASS with clean rollback.
 
-## R7 — current priority
+## R7 — PASS_BUILD_READY_RUNTIME_BASELINE
 
-R7 owns Project Definition completion → Build Ready.
+Docs:
+- `docs/project-definition/runtime/R7_BUILD_READY_IMPLEMENTATION_PLAN_V0_1.md`
+- `docs/project-definition/runtime/R7_BUILD_READY_VALIDATION_REPORT_20260913.md`
 
-It must consume the R6 baseline without restarting, resolve/deepen Project Requirements D08→D20, evaluate G8→G12 with Gate-specific minimums, manage progressive locks and only create a `BUILD_READY_SNAPSHOT` when the development team can build without inventing structural decisions.
+Migrations:
+- `20260913040538_idea_engine_r7_build_ready_runtime`
+- `20260913040724_idea_engine_r7_gate_semantics_hardening`
+- `20260913040751_idea_engine_r7_human_decision_authority`
+- `20260913040802_idea_engine_r7_r6_artifact_linkage`
+- `20260913040853_idea_engine_r7_artifact_rpc_fix`
 
-Implementation sequence:
-`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ → R5 ✅ → R6 ✅ → R7 build ready`.
+Validated runtime semantics:
+- 28 Project Requirement states matérialisés depuis la baseline R6 ;
+- context/applicability et `definition_revision` contrôlés ;
+- `ACCEPTED_UNKNOWN` n'est pas une fausse résolution structurelle ;
+- G8 Product, G9 Experience, G10 Tech/NFR, G11 Traceability/Acceptance et G12 Ready sont évalués explicitement ;
+- décisions D16 delivery approach, D18 accessibility target, D20 implementation discretion et Ready approval nécessitent autorité humaine ;
+- expert signoff conditionnel ne peut pas être simulé par SYSTEM ;
+- artefacts A19→A24 sont `FOR_PROJECT / PROJECT_DEFINITION` ; A25 seul est `FOR_BUILD / BUILD_SPEC` ;
+- fingerprints exacts empêchent la réutilisation silencieuse d'un artefact stale ;
+- `BUILD_READY_SNAPSHOT` immuable seulement après ambiguity audit PASS, human READY approval et Gates satisfaites ;
+- finalisation ne crée aucun Project d'exécution.
+
+Validation :
+- `R7_HAPPY_PATH_PASS` ;
+- bug réel dans l'Artifact RPC détecté et corrigé par migration additive ;
+- `R7_REDTEAM_PASS` 5/5 ;
+- RPCs R7 critiques service-role only ;
+- fixtures transactionnelles rollbackées proprement.
+
+Implementation sequence complete:
+`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ → R5 ✅ → R6 ✅ → R7 ✅`.
 
 ---
 
-## Workspace UX — PAUSED
+## Next track — Integration / UX projection / cutover
 
-Historical candidates only:
-- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_2.md`
-- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_3.md`
-- `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
+Le runtime professionnel n'est plus le bloqueur du workspace UX.
 
-R0–R6 are validated, but the professional runtime is not complete. Do not promote a new post-capture workspace UX until the runtime semantics required by that surface are explicitly validated.
+La prochaine mission doit projeter R0→R7 dans une expérience utilisateur compréhensible et non séquentielle, puis définir l'intégration frontend/Worker sans exposer les RPCs service-role au navigateur.
+
+Priorités :
+1. mapping runtime state/actions → surfaces UX ;
+2. nouvelle UX post-capture fondée sur les vrais Requirements/Gates/NBA ;
+3. red-team UX Nathalie/Vincent/Maya + STOP/mismatch/stale ;
+4. adapters/API/Worker server-side ;
+5. E2E authentifié/multi-user ;
+6. cutover incrémental/réversible ;
+7. release seulement après validation.
+
+Les anciens prototypes workspace restent historiques. Leur existence n'autorise pas leur promotion.
 
 ---
 
@@ -189,7 +218,7 @@ R0–R6 are validated, but the professional runtime is not complete. Do not prom
 - human questions are last-mile ;
 - AI inference is not human truth ;
 - stale results cannot overwrite newer state ;
-- accepted unknown can be valid ;
+- accepted unknown can be valid, but cannot satisfy a required structural spec by itself ;
 - GO is not privileged over revise/pause/stop ;
 - Idea ≠ Project ;
 - approval of a prefigured Idea ≠ Ready for Development ;
@@ -198,8 +227,9 @@ R0–R6 are validated, but the professional runtime is not complete. Do not prom
 - high-fidelity concept artifacts are not real-user evidence ;
 - Decision Package freshness is bound to an exact snapshot/revision ;
 - an approval is promotable only if required decision authority and Gate conditions are satisfied ;
-- `FOR_PROJECT / PROJECT_DEFINITION` ≠ `FOR_BUILD / BUILD_SPEC` ;
+- `FOR_DECISION` ≠ `FOR_PROJECT` ≠ `FOR_BUILD` ;
 - Project Definition baseline never contains execution roadmap/tasks by default ;
+- Build Ready requires G8→G12, exact current artifacts, ambiguity audit and formal human approval ;
 - generic Requirement resolution never substitutes for stricter Gate-specific minimum ;
 - canonical writes require provenance, authorization, idempotency and stale-safety ;
 - LLM/providers never own canonical state ;
