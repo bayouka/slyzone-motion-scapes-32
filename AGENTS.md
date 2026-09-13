@@ -12,10 +12,11 @@ Before any substantial change:
 
 1. read root `README.md` for runtime/deployment/backend authority ;
 2. read `KNOWLEDGE.md` ;
-3. for Idea Engine work, read `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md` **first** ;
-4. read the specific canonical contract(s) for the domain ;
-5. read validated UX snapshot(s) for the surface ;
-6. inspect current implementation before changing it.
+3. read `docs/REMOTE_DESKTOP_POLICY.md` for tooling/workflow authority ;
+4. for Idea Engine work, read `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md` **first** ;
+5. read the specific canonical contract(s) for the domain ;
+6. read validated UX snapshot(s) for the surface ;
+7. inspect current implementation before changing it.
 
 For **Idea → understanding/enrichment → candidate proposition → decision → optional Project Draft**, read at minimum:
 
@@ -33,6 +34,7 @@ Do not reconstruct product logic from memory or old production UI.
 ## Authority and precedence
 
 - root `README.md` = current production repository/runtime/backend/release authority ;
+- `docs/REMOTE_DESKTOP_POLICY.md` = tooling-path authority ;
 - `IDEA_ENGINE_MASTER_BLUEPRINT_V1.md` = primary authority for Idea Engine orchestration, Output Contracts, Requirements, Readiness and Next Best Action ;
 - `INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md` = current Site vitrine information registry and internal complete Idea dossier schema ;
 - `INFORMATION_MATRIX_V4_1.md` = historical/superseded matrix only ;
@@ -107,6 +109,9 @@ AI failure never destroys raw data or blocks continuity; analysis can retry.
 
 - no destructive rewrite without precise audit and executable validation ;
 - preserve canonical backend/deployment identities from root `README.md` ;
+- canonical working order is GitHub → relevant remote services/connectors → deployment → runtime verification ;
+- Remote Desktop Commander is last-resort/local-only tooling, not a dependency; its failure or disconnection must never block normal progress ;
+- never use Remote Desktop merely to read/modify canonical GitHub, administer Supabase, trigger the normal Cloudflare release path or work around an available connector ;
 - transport mirror is not canonical development source ;
 - do not reintroduce GitHub Actions as production release mechanism unless explicitly changed/validated ;
 - follow root release/recovery chain before production changes.
