@@ -61,7 +61,7 @@ Lifecycle candidate:
 
 `Capture → Foundation → Evidence/Market → Strategy/Options → Prefiguration/Concept Alpha → conditional Concept Validation → Decision Package/Presentation/Review → Approved Idea → Project Baseline → Project Definition → Build Ready`.
 
-V0.4 currently defines:
+V0.4 defines notably:
 - 22 professional Domains D01→D22 ;
 - INFO / ANALYSIS / DECISION / SPEC / VERIFY ;
 - G0→G12 dependency Gates ;
@@ -69,7 +69,7 @@ V0.4 currently defines:
 - provisional journeys/sitemap/capabilities/content/visual concepts before Project ;
 - conditional real-user concept validation ;
 - business case/projection rules ;
-- professional Decision Package including editable PPTX/PDF target ;
+- Decision Package including editable PPTX/PDF target ;
 - review feedback + targeted Change Impact ;
 - progressive lock/freeze ;
 - Idea artifact promotion rather than Project restart ;
@@ -79,123 +79,52 @@ V0.4 currently defines:
 
 ## Domain / requirement registries
 
-### Consolidated Idea registry
+- Idea D01→D07: `docs/project-definition/03_REQUIREMENT_REGISTRY_IDEA_V0_2.md`
+- Prefiguration / Decision: `docs/project-definition/04_PREFIGURATION_DECISION_PACKAGE_REGISTRY_V0_1.md`
+- Project product / experience D08→D15: `docs/project-definition/04A_REQUIREMENT_REGISTRY_PROJECT_PRODUCT_V0_1.md`
+- Project technical / Build Ready D16→D20: `docs/project-definition/04B_REQUIREMENT_REGISTRY_PROJECT_TECH_BUILDREADY_V0_1.md`
 
-`docs/project-definition/03_REQUIREMENT_REGISTRY_IDEA_V0_2.md`
+Detailed catalogs:
+- index: `docs/project-definition/detail/05_MASTER_DETAIL_INDEX_V0_1.md`
+- Idea: `docs/project-definition/detail/05A_IDEA_DETAIL_CATALOG_V0_1.md`
+- Prefiguration / Decision: `docs/project-definition/detail/05B_PREFIGURATION_DECISION_DETAIL_CATALOG_V0_1.md`
+- Project product: `docs/project-definition/detail/05C_PROJECT_PRODUCT_DETAIL_CATALOG_V0_1.md`
+- Project tech / Build Ready: `docs/project-definition/detail/05D_PROJECT_TECH_BUILDREADY_DETAIL_CATALOG_V0_1.md`
 
-D01→D07 through strategic direction/macro scope.
-
-### Prefiguration / Decision Package registry
-
-`docs/project-definition/04_PREFIGURATION_DECISION_PACKAGE_REGISTRY_V0_1.md`
-
-Decision-time PREVIEW subsets D08→D19 plus D21/D22.
-
-### Project product / experience registry
-
-`docs/project-definition/04A_REQUIREMENT_REGISTRY_PROJECT_PRODUCT_V0_1.md`
-
-D08→D15.
-
-### Project technical / Build Ready registry
-
-`docs/project-definition/04B_REQUIREMENT_REGISTRY_PROJECT_TECH_BUILDREADY_V0_1.md`
-
-D16→D20.
-
----
-
-## Detailed subdomain/question catalogs — CURRENT COVERAGE WORK
-
-Master detail index:
-
-`docs/project-definition/detail/05_MASTER_DETAIL_INDEX_V0_1.md`
-
-### Volume A — Idea
-
-`docs/project-definition/detail/05A_IDEA_DETAIL_CATALOG_V0_1.md`
-
-D01→D07 decomposed into subdomains, internal questions, resolution path, human intervention, dependencies, outputs and lock targets.
-
-### Volume B — Prefiguration / Decision
-
-`docs/project-definition/detail/05B_PREFIGURATION_DECISION_DETAIL_CATALOG_V0_1.md`
-
-Z4/Z4b/Z5, PREVIEW D08→D19 + D21/D22, including decision-usefulness/fidelity, concept validation, business case, deck/review/approval.
-
-### Volume C — Project product / experience
-
-`docs/project-definition/detail/05C_PROJECT_PRODUCT_DETAIL_CATALOG_V0_1.md`
-
-D08→D15 in Project depth: journeys, IA/routes, content, SEO, functional/business rules/states, data/CMS/roles, integrations and UX/UI/design system.
-
-### Volume D — Project tech / Build Ready
-
-`docs/project-definition/detail/05D_PROJECT_TECH_BUILDREADY_DETAIL_CATALOG_V0_1.md`
-
-D16→D20 in Project/Build Ready depth: architecture, security/privacy/legal, accessibility/performance/reliability, measurement/observability, QA/acceptance/handoff.
-
-These detailed catalogs are **not visible questionnaires**. Their internal questions are requirements to resolve, not necessarily things to ask a user.
+These catalogs are **not visible questionnaires**. Their internal questions are requirements to resolve, not necessarily things to ask a user.
 
 ---
 
 ## Cross-cutting candidate mechanisms
 
-### Context applicability
+- Context applicability: `docs/project-definition/06_CONTEXT_OVERLAY_CATALOG_V0_1.md`
+- Approved Idea → Project promotion: `docs/project-definition/07_APPROVED_IDEA_TO_PROJECT_PROMOTION_CONTRACT_V0_1.md`
+- Human intervention minimization: `docs/project-definition/08_HUMAN_INTERVENTION_MAP_V0_1.md`
+- Cross-cutting ledgers: `docs/project-definition/09_CROSS_CUTTING_LEDGER_MODEL_V0_1.md`
+- Progressive lock/freeze: `docs/project-definition/PROGRESSIVE_LOCK_PROMOTION_MODEL_V0_1.md`
+- AI vs Human resolution: `docs/project-definition/AI_HUMAN_RESOLUTION_POLICY_V0_1.md`
 
-`docs/project-definition/06_CONTEXT_OVERLAY_CATALOG_V0_1.md`
-
-Candidate overlays include redesign, local business, multilingual, CMS, personal/sensitive data, auth/roles, critical integration, SEO/domain migration, team decision, presentation, business case, concept validation, regulated, brand transition, budget/time constrained, media/motion, high traffic/business critical and external-vendor handoff.
-
-### Approved Idea → Project promotion
-
-`docs/project-definition/07_APPROVED_IDEA_TO_PROJECT_PROMOTION_CONTRACT_V0_1.md`
-
-Defines Z6, approval-condition classes, artifact promotion, promotion diff and Project Baseline creation.
-
-### Human intervention minimization
-
-`docs/project-definition/08_HUMAN_INTERVENTION_MAP_V0_1.md`
-
-Key target:
+Key invariant:
 
 > **aucune question évitable, aucune décision humaine escamotée.**
 
-### Cross-cutting ledgers
-
-`docs/project-definition/09_CROSS_CUTTING_LEDGER_MODEL_V0_1.md`
-
-Defines Evidence/Source, Assumption, Decision, Risk/Unknown, Conflict, Change, Artifact, Requirement Traceability and Snapshot ledgers.
-
-### Progressive lock / freeze / promotion
-
-`docs/project-definition/PROGRESSIVE_LOCK_PROMOTION_MODEL_V0_1.md`
-
-Candidate states:
-`WORKING → AI_PROPOSED → VALIDATED_CURRENT → LOCKED_FOR_DEPENDENTS → FROZEN_IN_DECISION_SNAPSHOT → APPROVED_FOR_PROJECT → FROZEN_FOR_BUILD`, plus review/stale/superseded/rejected states.
-
-### AI vs Human resolution
-
-`docs/project-definition/AI_HUMAN_RESOLUTION_POLICY_V0_1.md`
-
-Invariant:
+And:
 `Requirement exists ≠ question user`.
 
 ---
 
-## Machine-readable Site vitrine Blueprint — CURRENT MACHINE-CONTRACT CANDIDATE
+# Machine-readable Site vitrine Blueprint — CURRENT R0 CANDIDATE
 
 The machine-readable layer is **non-canonical** and does not authorize backend/runtime implementation yet.
 
-### Active machine manifest
+## Active machine manifest
 
-`docs/project-definition/machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_3.yaml`
+`docs/project-definition/machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_4.yaml`
 
-V0.3 supersedes V0.2 as the active machine manifest candidate because it adds explicit `Gate → Requirement Atom / Deliverable / Ledger` bindings.
+V0.4 is the active executable candidate for R0. It supersedes V0.3 as the active manifest because context derivation is now machine-readable rather than semi-textual.
 
-Load set includes:
-
-- `CONTEXT_OVERLAYS_V0_1.yaml`
+Load set:
+- `CONTEXT_OVERLAYS_V0_2.yaml`
 - `REQUIREMENTS_IDEA_V0_1.yaml`
 - `REQUIREMENTS_PREFIGURATION_DECISION_V0_1.yaml`
 - `REQUIREMENTS_PROJECT_BUILD_V0_1.yaml`
@@ -204,56 +133,96 @@ Load set includes:
 - `GATE_BINDINGS_V0_1.yaml`
 - `OVERRIDES_V0_1.yaml`
 
-### Atom schema
+## Context DSL
 
-Current candidate:
+`docs/project-definition/machine/site-vitrine/CONTEXT_OVERLAYS_V0_2.yaml`
+
+R0 accepts only a closed deterministic predicate DSL:
+`all / any / not` and `fact + exists/eq/neq/in/contains/gt/gte/lt/lte`.
+
+No free-text rule interpretation, no Python/JS `eval`, no LLM authority.
+
+## Atom schema
 
 `docs/project-definition/machine/REQUIREMENT_ATOM_SCHEMA_V0_2.md`
 
-V0.2 supports alternative acceptable resolution forms per Gate, versioned overrides and separate `IDEA_DECISION_OWNER` / `BUILD_READY_OWNER` role references.
+Supports alternative acceptable resolution forms per Gate, versioned overrides and separate `IDEA_DECISION_OWNER` / `BUILD_READY_OWNER` role references.
 
-### Automated machine-contract validator
+## Previous machine validation
 
-`script`: `scripts/validate_site_vitrine_blueprint.py`
+`scripts/validate_site_vitrine_blueprint.py`
 
-`report`: `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md`
+Report:
+`docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md`
 
-Fresh-clone result on `main` after corrections:
-
+V0.3 fresh-clone result before Context DSL V0.2:
 - 77 Requirements ;
 - 21 Contexts ;
 - 14 Gates ;
 - 19 Deliverables ;
 - 5 Overrides ;
-- **0 errors / 0 warnings**.
+- 0 errors / 0 warnings.
 
-The validator checks YAML parsing, ID uniqueness, atom/context/Gate references, Gate bindings, override targets, deliverable sources, resolution paths, explicit authority for formal choices/signoffs and blocking dependency cycles.
+This does **not** by itself promote V0.4 to final R0 PASS.
 
-### Machine simulation
+---
 
-`docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
+# Runtime architecture / R0 — CURRENT EXECUTION PRIORITY
 
-Simulation result: the exhaustive internal referential remains compatible with low human burden. Representative simple/rich cases require only a small number of human interventions because most requirements resolve through sources, audit, research, calculation or recommendations.
+Runtime architecture index:
+`docs/project-definition/runtime/README.md`
 
-Human-intervention count is **not** a KPI to minimize blindly; high-risk contexts may legitimately require more human/expert involvement.
+Supporting contracts:
+- `RUNTIME_EXECUTION_MAPPING_V0_1.md`
+- `PERSISTENCE_MODEL_V0_1.md`
+- `DETERMINISTIC_ENGINE_CONTRACT_V0_1.md`
+- `MUTATION_RPC_BOUNDARIES_V0_1.md`
+- `RUNTIME_EXECUTION_MAPPING_RED_TEAM_20260913.md`
 
-### Machine-contract status
+## Active R0 engine
 
-Current state:
+**Only active candidate:** `scripts/r0_engine_v0_3.py`
 
-- professional coverage: substantially complete for Site vitrine ;
-- machine schema: candidate V0.2 ;
-- machine Blueprint manifest: candidate V0.3 ;
-- Gate bindings: candidate V0.1 ;
-- scenario simulation: passed with local corrections incorporated ;
-- automated YAML syntax/reference/cycle validation: **PASS 2026-09-13** ;
-- backend/runtime mapping: not started and not authorized yet.
+**Active test suite:** `scripts/test_r0_engine_v0_3.py`
+
+Report:
+`docs/project-definition/runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
+
+Older `scripts/r0_engine.py`, `scripts/r0_engine_v0_2.py` and `tests/r0/*` remain historical/regression material. Do not use them as active engine contracts for new work.
+
+V0.3 fixes a material planning bug found during testing: a Requirement may be generically resolved yet still fail the minimum level demanded by the current Gate. Action planning must therefore compare against the **current Gate minimum**, not merely `RESOLVED` status.
+
+Current R0 validation state:
+- deterministic Context DSL: implemented ;
+- contexts/applicability/Requirement fingerprints/Gates/Change Impact/stale guards: implemented as local reference ;
+- isolated algorithmic suite: **12/12 PASS** ;
+- actual replay of `scripts/test_r0_engine_v0_3.py` on fresh `main` + V0.4: **PENDING** because the authorized remote execution device became unavailable ;
+- R0: **NOT_YET_PASS_REFERENCE** ;
+- R1 persistence/Supabase: **BLOCKED until R0 PASS_REFERENCE**.
+
+No production backend, Worker, frontend or Supabase schema has been changed by R0.
+
+---
+
+## Runtime mapping decisions already established
+
+- reuse backend additively, do not rewrite it ;
+- existing Idea RLS, decisions, optimistic concurrency, audit and stale approval logic are useful ;
+- `ideas.status/readiness`, `idea_items` and old `clarify → strengthen → prove → share → decide` are too coarse to be the new canonical engine state ;
+- candidate persistent additions include `idea_sources`, `idea_information_items`, `idea_requirement_states`, `idea_action_runs`, `idea_artifacts`, `idea_snapshots`, `idea_ledger_entries`, `project_definitions` ;
+- the 77 Requirements stay in the versioned Blueprint, not duplicated as canonical DB configuration ;
+- LLM/workflows never mutate canonical state directly ;
+- new GO creates a **Project Definition baseline**, not milestones/tasks ;
+- future mutations use narrow, versioned, idempotent, stale-safe RPC boundaries.
+
+Future implementation order:
+`R0 deterministic engine → R1 persistence → R2 ingestion → R3 autonomous actions → R4 prefiguration/artifacts → R5 decision package → R6 project definition → R7 build ready`.
 
 ---
 
 ## Validation support
 
-Current validation material includes:
+Current relevant validation material includes:
 - `docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_RED_TEAM_20260913.md`
 - `docs/project-definition/PREFIGURATION_DECISION_PACKAGE_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/IDEA_REQUIREMENT_REGISTRY_RED_TEAM_20260913.md`
@@ -262,6 +231,7 @@ Current validation material includes:
 - `docs/project-definition/validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md`
 - `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
 - `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md`
+- `docs/project-definition/runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
 - `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
 
 Earlier exploratory inventory:
@@ -279,7 +249,7 @@ Historical only:
 - `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
 - associated prototype/red-team docs.
 
-No new workspace prototype should be promoted or implemented until the professional lifecycle/master referential is explicitly validated.
+No new workspace prototype should be promoted or implemented until the professional lifecycle/master referential and R0 semantics are explicitly validated.
 
 ---
 
@@ -289,7 +259,7 @@ Do not conflate:
 - current production implementation ;
 - current canonical Idea Engine ;
 - non-canonical Project Definition architecture/registries ;
-- non-canonical machine-readable Blueprint files.
+- non-canonical machine-readable Blueprint/R0 reference engine.
 
 No production/backend implementation is authorized from these candidates yet unless explicitly decided.
 
@@ -313,7 +283,9 @@ No production/backend implementation is authorized from these candidates yet unl
 - requirements/standards are proportional to applicability/risk ;
 - structural requirements should be traceable to specification and verification ;
 - developers retain implementation discretion when it does not alter product behavior/constraints ;
-- Idea approval authority and Build Ready approval authority may be different roles.
+- Idea approval authority and Build Ready approval authority may be different roles ;
+- Context rules used by R0 must be deterministic structured predicates ;
+- generic Requirement resolution never substitutes for satisfying a stricter Gate-specific minimum.
 
 ---
 
