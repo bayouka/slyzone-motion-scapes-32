@@ -2,7 +2,7 @@
 
 Date : 2026-09-13
 
-Statut : **PARTIAL PASS — G0 + URL SOURCE VALIDATED — G1 FOUNDATION IMPLEMENTED / RED-TEAM HARNESS PRESENT / RUNTIME E2E PENDING**
+Statut : **PARTIAL PASS — G0 + URL SOURCE VALIDATED — G1 PLANNER LIVE-ROLLBACK PASS — ADAPTER/FRONTEND IMPLEMENTED — RUNTIME E2E PENDING**
 
 ## Scope
 
@@ -12,7 +12,7 @@ Invariant principal :
 
 > **Requirement unresolved ≠ question utilisateur.**
 
-Une question humaine n'est autorisée que lorsqu'un planner déterministe démontre qu'elle est réellement la meilleure action humaine restante.
+Une question humaine n'est autorisée que lorsqu'un planner déterministe démontre qu'elle est réellement la meilleure action humaine restante pour la Requirement concernée.
 
 ## 1. G0 human confirmation — PASS
 
@@ -115,7 +115,31 @@ Fonctions actives :
 
 Le shell canonique charge maintenant JS/CSS avec cache-busting `0.3.0`.
 
-## 7. Release 544
+## 7. Live backend planner — PASS_ROLLBACK
+
+Un test synthétique a été exécuté directement contre le backend Supabase canonique avec fixture intégralement rollbackée.
+
+Scénario A — voie automatique RAW disponible :
+- `gate_status = NOT_READY` ;
+- `eligible_system_actions = 1` ;
+- `dominant_user_action = null` ;
+- `projection_fingerprint` présent.
+
+Scénario B — aucune voie automatique déclarée disponible :
+- `gate_status = NOT_READY` ;
+- `eligible_system_actions = 0` ;
+- une `dominant_user_action` humaine est produite ;
+- `projection_fingerprint` présent.
+
+Vérification après test :
+- `residual_ideas = 0` ;
+- `residual_sources = 0`.
+
+Conclusion : le planner live respecte le principe « automatique d'abord pour une Requirement lorsqu'une voie admissible existe ; humain lorsque cette voie n'existe pas », sans persistance de fixture.
+
+Note méthodologique : un premier indicateur de test avait interprété à tort un `jsonb null` comme un `SQL NULL`. Le test a été corrigé avant toute modification du moteur ; aucun changement de schéma n'a été appliqué sur la base de ce faux positif.
+
+## 8. Release 544
 
 Release candidate transport :
 - runtime `v4.5.12-workspace-foundation-g1-p1` ;
@@ -140,13 +164,13 @@ GitHub n'expose aucun statut Cloudflare exploitable (`statuses=[]`). En conséqu
 
 La baseline explicitement certifiée reste build 540.
 
-## 8. Reste à valider avant G2
+## 9. Reste à valider avant G2
 
 - résultat observable de build/runtime 544 ;
 - E2E authentifié `foundation.advance` sur une Idea contrôlée ;
 - réponse humaine ciblée ;
 - `Je ne sais pas / plus tard` ;
-- extraction RAW réelle ;
+- extraction RAW réelle à travers le Worker ;
 - stale/retry côté runtime ;
 - desktop + mobile ;
 - rollback vers Workspace V3 read-only / release précédente.
@@ -158,14 +182,16 @@ PASS établi :
 - URL source registration ;
 - source stale guard ;
 - architecture/planner G1 présente dans Supabase ;
+- **planner G1 live : PASS_ROLLBACK** ;
 - adapter G1 allowlisté et red-team harnessé ;
 - UI G1 ciblée, non questionnaire ;
 - cache-busting actions 0.3.0 ;
-- aucune exposition service-role navigateur.
+- aucune exposition service-role navigateur ;
+- aucune fixture résiduelle après test live.
 
 PENDING :
 - certification runtime build 544 ;
-- E2E authentifié G1 ;
+- E2E authentifié G1 via Worker ;
 - desktop/mobile G1.
 
 NEXT après ces preuves : **G2 Evidence / Market**, en conservant la même discipline d'acquisition automatique d'abord, intervention humaine seulement lorsqu'elle est réellement nécessaire.
