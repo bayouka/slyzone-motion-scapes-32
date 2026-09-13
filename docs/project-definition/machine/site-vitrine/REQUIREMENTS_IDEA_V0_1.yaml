@@ -1,0 +1,358 @@
+schema_version: '0.1'
+blueprint: SITE_VITRINE
+scope: Z1_Z3
+status: CANDIDATE_NON_CANONICAL
+
+requirements:
+  - id: SV.D01.DECISION_MODE
+    type: INFO
+    domain_id: D01
+    lifecycle_zone: Z1
+    title: Mode de décision
+    purpose: Savoir si la décision est solo, équipe, client ou comité.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R6], preferred_paths: [RAW, SRC, HUM], default_human_interaction: OPTIONAL_CORRECTION}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: ENHANCER, G7_IDEA_APPROVAL_READY: CONDITIONAL}
+    minimum_resolution_by_gate: {G7_IDEA_APPROVAL_READY: ACCEPTED_AS_CURRENT}
+    state_policy: {first_lock_gate: G1_FOUNDATION_LOCKABLE, decision_snapshot: true, project_promotable: true, build_freezable: false}
+
+  - id: SV.D01.DECISION_OWNER
+    type: DECISION
+    domain_id: D01
+    lifecycle_zone: Z1
+    title: Décideur autorisé
+    purpose: Éviter qu'une IA ou un contributeur non autorisé approuve la baseline.
+    applicability: {default: INACTIVE, any_of_contexts: [HAS_TEAM_DECISION]}
+    resolution: {allowed_classes: [R6, R8], preferred_paths: [RAW, SRC, HUM], default_human_interaction: EXPLICIT_CHOICE, human_only_reason: internal_governance}
+    authority: {ai_may_extract: true, ai_may_hypothesize: false, ai_may_recommend: false, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    criticality_by_gate: {G7_IDEA_APPROVAL_READY: BLOCKING}
+    minimum_resolution_by_gate: {G7_IDEA_APPROVAL_READY: HUMAN_DECISION}
+    state_policy: {first_lock_gate: G7_IDEA_APPROVAL_READY, decision_snapshot: true, project_promotable: true, build_freezable: false}
+
+  - id: SV.D01.DECISION_QUESTION
+    type: DECISION
+    domain_id: D01
+    lifecycle_zone: Z1
+    title: Question de décision active
+    purpose: Définir exactement la décision que le dossier doit préparer.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R5, R8], preferred_paths: [CALC, AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    authority: {ai_may_extract: false, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_any: [SV.D02.PRIMARY_OBJECTIVE, SV.D02.DECLARED_PROBLEM], unlocks: [SV.D06.RECOMMENDATION]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: REQUIRED, G6_DECISION_PACKAGE_READY: REQUIRED}
+    minimum_resolution_by_gate: {G3_STRATEGIC_OPTIONS_READY: ACCEPTED_AS_CURRENT, G6_DECISION_PACKAGE_READY: FROZEN_IN_DECISION_SNAPSHOT}
+    state_policy: {first_lock_gate: G3_STRATEGIC_OPTIONS_READY, decision_snapshot: true, project_promotable: true, build_freezable: false}
+
+  - id: SV.D02.ORG_CONTEXT
+    type: INFO
+    domain_id: D02
+    lifecycle_zone: Z1
+    title: Organisation et activité
+    purpose: Situer l'idée dans une activité réelle.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R4], preferred_paths: [RAW, SRC, WEB, AI_H], default_human_interaction: OPTIONAL_CORRECTION}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: REQUIRED}
+    minimum_resolution_by_gate: {G1_FOUNDATION_LOCKABLE: SOURCE_BACKED}
+    state_policy: {first_lock_gate: G1_FOUNDATION_LOCKABLE, decision_snapshot: true, project_promotable: true, build_freezable: false}
+
+  - id: SV.D02.DECLARED_PROBLEM
+    type: INFO
+    domain_id: D02
+    lifecycle_zone: Z1
+    title: Problème ou opportunité déclarée
+    purpose: Préserver la perception humaine sans la confondre avec le diagnostic.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R6], preferred_paths: [RAW, SRC, HUM], default_human_interaction: OPTIONAL_CORRECTION}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: REQUIRED}
+    minimum_resolution_by_gate: {G1_FOUNDATION_LOCKABLE: RAW_HUMAN}
+    state_policy: {first_lock_gate: G1_FOUNDATION_LOCKABLE, decision_snapshot: true, project_promotable: true, build_freezable: false}
+
+  - id: SV.D02.PRIMARY_OBJECTIVE
+    type: DECISION
+    domain_id: D02
+    lifecycle_zone: Z1
+    title: Objectif business ou communication principal
+    purpose: Donner un critère de jugement aux directions futures.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R4, R6, R8], preferred_paths: [RAW, SRC, AI_H, HUM], default_human_interaction: LIGHT_REVIEW, human_only_reason: future_internal_intent_if_ambiguous}
+    authority: {ai_may_extract: true, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: BLOCKING, G7_IDEA_APPROVAL_READY: REQUIRED}
+    minimum_resolution_by_gate: {G1_FOUNDATION_LOCKABLE: WORKING_ASSUMPTION, G7_IDEA_APPROVAL_READY: ACCEPTED_AS_CURRENT}
+    state_policy: {first_lock_gate: G1_FOUNDATION_LOCKABLE, decision_snapshot: true, project_promotable: true, build_freezable: true}
+    change_impact: {review_atoms: [SV.D06.OPPORTUNITY_SYNTHESIS, SV.D06.RECOMMENDATION, SV.D07.MACRO_SCOPE], materiality_default: CRITICAL}
+
+  - id: SV.D02.USER_OUTCOME
+    type: INFO
+    domain_id: D02
+    lifecycle_zone: Z1
+    title: Résultat principal attendu côté visiteur
+    purpose: Relier l'objectif business à un comportement utilisateur.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R4, R5], preferred_paths: [RAW, SRC, AI_H, AI_R], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_any: [SV.D02.PRIMARY_OBJECTIVE, SV.D03.PRIMARY_AUDIENCE]}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: REQUIRED}
+    minimum_resolution_by_gate: {G1_FOUNDATION_LOCKABLE: WORKING_ASSUMPTION}
+
+  - id: SV.D02.HARD_CONSTRAINTS
+    type: INFO
+    domain_id: D02
+    lifecycle_zone: Z1
+    title: Contraintes dures
+    purpose: Budget, délai, plateforme, obligation ou ressource qui éliminent réellement des options.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R6], preferred_paths: [RAW, SRC, HUM], default_human_interaction: NONE, human_only_reason: private_constraint_if_material}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: CONDITIONAL, G3_STRATEGIC_OPTIONS_READY: REQUIRED}
+    minimum_resolution_by_gate: {G3_STRATEGIC_OPTIONS_READY: ACCEPTED_AS_CURRENT}
+    state_policy: {first_lock_gate: G3_STRATEGIC_OPTIONS_READY, decision_snapshot: true, project_promotable: true, build_freezable: true}
+
+  - id: SV.D03.PRIMARY_AUDIENCE
+    type: DECISION
+    domain_id: D03
+    lifecycle_zone: Z1
+    title: Audience principale active
+    purpose: Cibler research, positionnement et solution.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R4, R6, R8], preferred_paths: [RAW, SRC, CONN, AI_H, HUM], default_human_interaction: OPTIONAL_CORRECTION}
+    authority: {ai_may_extract: true, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_any: [SV.D02.ORG_CONTEXT, SV.D02.PRIMARY_OBJECTIVE], unlocks: [SV.D05.MARKET_CONTEXT]}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: REQUIRED, G7_IDEA_APPROVAL_READY: REQUIRED}
+    minimum_resolution_by_gate: {G1_FOUNDATION_LOCKABLE: WORKING_ASSUMPTION, G7_IDEA_APPROVAL_READY: ACCEPTED_AS_CURRENT}
+    state_policy: {first_lock_gate: G1_FOUNDATION_LOCKABLE, decision_snapshot: true, project_promotable: true, build_freezable: true}
+    change_impact: {invalidates_atoms: [SV.D05.COMPETITOR_SET, SV.D06.POSITIONING_OPTIONS], review_atoms: [SV.D07.MACRO_SCOPE], stale_artifacts: [A05_MARKET_COMPETITIVE_LANDSCAPE, A16_DECISION_PACKAGE], materiality_default: CRITICAL}
+
+  - id: SV.D03.PRIMARY_NEED
+    type: ANALYSIS
+    domain_id: D03
+    lifecycle_zone: Z2
+    title: Besoin ou job principal
+    purpose: Comprendre ce que la cible cherche réellement à accomplir.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R4], preferred_paths: [RAW, SRC, WEB, CONN, AI_H], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.D03.PRIMARY_AUDIENCE]}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: REQUIRED}
+    minimum_resolution_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: WORKING_ASSUMPTION}
+
+  - id: SV.D03.OBJECTIONS_TRUST
+    type: ANALYSIS
+    domain_id: D03
+    lifecycle_zone: Z2
+    title: Objections et besoins de confiance
+    purpose: Informer preuve, contenu et conversion.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R4], preferred_paths: [SRC, WEB, CONN, AI_H], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.D03.PRIMARY_AUDIENCE]}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: ENHANCER}
+
+  - id: SV.D04.CREATION_OR_REDESIGN
+    type: INFO
+    domain_id: D04
+    lifecycle_zone: Z1
+    title: Création ou refonte
+    purpose: Activer audit et migration si nécessaire.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R3], preferred_paths: [RAW, SRC, CALC], default_human_interaction: OPTIONAL_CORRECTION}
+    criticality_by_gate: {G0_BLUEPRINT_FIT_SUFFICIENT: REQUIRED}
+    minimum_resolution_by_gate: {G0_BLUEPRINT_FIT_SUFFICIENT: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D04.EXISTING_SITE
+    type: INFO
+    domain_id: D04
+    lifecycle_zone: Z1
+    title: Site existant
+    purpose: Fournir la source principale de baseline en refonte.
+    applicability: {default: INACTIVE, any_of_contexts: [IS_REDESIGN, HAS_EXISTING_SITE]}
+    resolution: {allowed_classes: [R1], preferred_paths: [RAW, SRC], default_human_interaction: OPTIONAL_CORRECTION}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: CONDITIONAL}
+
+  - id: SV.D04.EXISTING_AUDIT
+    type: ANALYSIS
+    domain_id: D04
+    lifecycle_zone: Z2
+    title: Audit de l'existant
+    purpose: Distinguer forces, faiblesses et baseline observable.
+    applicability: {default: INACTIVE, any_of_contexts: [IS_REDESIGN, HAS_EXISTING_SITE]}
+    resolution: {allowed_classes: [R2, R4], preferred_paths: [AUDIT, SRC, CONN, AI_H], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D04.EXISTING_SITE]}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: REQUIRED}
+    minimum_resolution_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: OBSERVED}
+
+  - id: SV.D04.OFFER_BASELINE
+    type: INFO
+    domain_id: D04
+    lifecycle_zone: Z1
+    title: Offre actuelle
+    purpose: Éviter de concevoir pour une offre imaginaire ou obsolète.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1], preferred_paths: [RAW, SRC, AUDIT], default_human_interaction: OPTIONAL_CORRECTION}
+    criticality_by_gate: {G1_FOUNDATION_LOCKABLE: REQUIRED}
+    minimum_resolution_by_gate: {G1_FOUNDATION_LOCKABLE: SOURCE_BACKED}
+
+  - id: SV.D04.EVIDENCE_QUALITY
+    type: ANALYSIS
+    domain_id: D04
+    lifecycle_zone: Z2
+    title: Qualité et fraîcheur des preuves
+    purpose: Éviter qu'une source ancienne ou marketing soit traitée comme vérité actuelle.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R4], preferred_paths: [CALC, AI_H], default_human_interaction: NONE}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: REQUIRED}
+    minimum_resolution_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: CALCULATED}
+
+  - id: SV.D05.MARKET_CONTEXT
+    type: ANALYSIS
+    domain_id: D05
+    lifecycle_zone: Z2
+    title: Terrain de marché pertinent
+    purpose: Définir secteur, zone, segment et type d'alternatives à comparer.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R4], preferred_paths: [CALC, WEB, AI_H], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D02.ORG_CONTEXT, SV.D03.PRIMARY_AUDIENCE, SV.D04.OFFER_BASELINE], unlocks: [SV.D05.COMPETITOR_SET]}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: REQUIRED}
+    minimum_resolution_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: CALCULATED}
+
+  - id: SV.D05.COMPETITOR_SET
+    type: INFO
+    domain_id: D05
+    lifecycle_zone: Z2
+    title: Concurrents, alternatives et références pertinents
+    purpose: Construire un benchmark pertinent sans demander au novice de connaître le marché.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R2, R4], preferred_paths: [WEB, SRC, AUDIT, AI_H], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.D05.MARKET_CONTEXT]}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: CONDITIONAL}
+    minimum_resolution_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: SOURCE_BACKED}
+
+  - id: SV.D05.PATTERN_GAP_SYNTHESIS
+    type: ANALYSIS
+    domain_id: D05
+    lifecycle_zone: Z2
+    title: Patterns, faiblesses et opportunités de marché
+    purpose: Transformer le benchmark en enseignements utilisables.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R4, R5], preferred_paths: [AUDIT, AI_H, AI_R], default_human_interaction: NONE}
+    dependencies: {requires_any: [SV.D05.COMPETITOR_SET, SV.D04.EXISTING_AUDIT]}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: REQUIRED}
+    minimum_resolution_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: AI_RECOMMENDATION}
+
+  - id: SV.D05.RESEARCH_SUFFICIENCY
+    type: VERIFY
+    domain_id: D05
+    lifecycle_zone: Z2
+    title: Suffisance et arrêt de recherche
+    purpose: Arrêter lorsque le gain marginal ne peut plus raisonnablement changer la décision.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R4], preferred_paths: [CALC, AI_H], default_human_interaction: NONE}
+    dependencies: {requires_any: [SV.D05.PATTERN_GAP_SYNTHESIS, SV.D04.EXISTING_AUDIT]}
+    criticality_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: BLOCKING}
+    minimum_resolution_by_gate: {G2_EVIDENCE_CONTEXT_SUFFICIENT: CALCULATED}
+    validation: {method: research_marginal_value_check, pass_condition: Additional research is unlikely to change active strategic options or decision confidence materially.}
+
+  - id: SV.D06.ORIGINAL_IDEA_CHALLENGE
+    type: ANALYSIS
+    domain_id: D06
+    lifecycle_zone: Z3
+    title: Challenge de l'idée initiale
+    purpose: Éviter de simplement mettre en forme la première solution imaginée.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R4, R5], preferred_paths: [AI_H, AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D02.PRIMARY_OBJECTIVE, SV.D03.PRIMARY_AUDIENCE, SV.D05.RESEARCH_SUFFICIENCY]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: BLOCKING}
+    minimum_resolution_by_gate: {G3_STRATEGIC_OPTIONS_READY: AI_RECOMMENDATION}
+
+  - id: SV.D06.OPPORTUNITY_SYNTHESIS
+    type: ANALYSIS
+    domain_id: D06
+    lifecycle_zone: Z3
+    title: Synthèse des opportunités
+    purpose: Transformer evidence et marché en leviers d'amélioration.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R4, R5], preferred_paths: [CALC, AI_H, AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D06.ORIGINAL_IDEA_CHALLENGE]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: REQUIRED}
+
+  - id: SV.D06.POSITIONING_OPTIONS
+    type: INFO
+    domain_id: D06
+    lifecycle_zone: Z3
+    title: Options de positionnement et direction
+    purpose: Rendre visibles de vraies alternatives quand un trade-off existe.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D06.OPPORTUNITY_SYNTHESIS]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: REQUIRED}
+    minimum_resolution_by_gate: {G3_STRATEGIC_OPTIONS_READY: AI_RECOMMENDATION}
+
+  - id: SV.D06.RISKS_ASSUMPTIONS
+    type: ANALYSIS
+    domain_id: D06
+    lifecycle_zone: Z3
+    title: Hypothèses risquées et trade-offs
+    purpose: Empêcher une recommandation séduisante mais non falsifiable.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R4], preferred_paths: [AI_H, CALC], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D06.POSITIONING_OPTIONS]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: REQUIRED}
+
+  - id: SV.D06.RECOMMENDATION
+    type: ANALYSIS
+    domain_id: D06
+    lifecycle_zone: Z3
+    title: Recommandation stratégique
+    purpose: Comparer options selon outcomes, audience, evidence, différenciation, faisabilité et risques.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D01.DECISION_QUESTION, SV.D06.POSITIONING_OPTIONS, SV.D06.RISKS_ASSUMPTIONS]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: REQUIRED, G6_DECISION_PACKAGE_READY: REQUIRED}
+    minimum_resolution_by_gate: {G3_STRATEGIC_OPTIONS_READY: AI_RECOMMENDATION, G6_DECISION_PACKAGE_READY: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D07.OFFER_PRIORITY
+    type: DECISION
+    domain_id: D07
+    lifecycle_zone: Z3
+    title: Offre prioritaire
+    purpose: Ne pas optimiser le site pour une offre que l'organisation ne souhaite pas développer.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R5, R6, R8], preferred_paths: [RAW, SRC, AI_R, HUM], default_human_interaction: LIGHT_REVIEW, human_only_reason: internal_commercial_priority_if_ambiguous}
+    authority: {ai_may_extract: true, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_all: [SV.D04.OFFER_BASELINE]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: REQUIRED}
+    minimum_resolution_by_gate: {G3_STRATEGIC_OPTIONS_READY: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D07.MACRO_SCOPE
+    type: DECISION
+    domain_id: D07
+    lifecycle_zone: Z3
+    title: Macro scope de la direction
+    purpose: Rendre l'idée assez concrète sans produire le Project détaillé.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R8], preferred_paths: [AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    authority: {ai_may_extract: false, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_all: [SV.D06.RECOMMENDATION, SV.D07.OFFER_PRIORITY]}
+    criticality_by_gate: {G3_STRATEGIC_OPTIONS_READY: REQUIRED, G7_IDEA_APPROVAL_READY: REQUIRED}
+    minimum_resolution_by_gate: {G3_STRATEGIC_OPTIONS_READY: AI_RECOMMENDATION, G7_IDEA_APPROVAL_READY: ACCEPTED_AS_CURRENT}
+    state_policy: {first_lock_gate: G3_STRATEGIC_OPTIONS_READY, decision_snapshot: true, project_promotable: true, build_freezable: true}
+
+  - id: SV.D07.NON_GOALS
+    type: DECISION
+    domain_id: D07
+    lifecycle_zone: Z3
+    title: Non-objectifs et exclusions macro
+    purpose: Éviter le scope creep et tracer les choix volontairement exclus.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R8], preferred_paths: [AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D07.MACRO_SCOPE]}
+    criticality_by_gate: {G7_IDEA_APPROVAL_READY: REQUIRED}
+    minimum_resolution_by_gate: {G7_IDEA_APPROVAL_READY: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D06.PREFIGURATION_TARGET
+    type: DECISION
+    domain_id: D06
+    lifecycle_zone: Z3
+    title: Direction(s) à préfigurer
+    purpose: Sélectionner ce qui mérite un concept concret sans confondre préférence visuelle et décision stratégique.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R8], preferred_paths: [AI_R, HUM], default_human_interaction: EXPLICIT_CHOICE}
+    authority: {ai_may_extract: false, ai_may_hypothesize: false, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_all: [SV.D06.RECOMMENDATION, SV.D07.MACRO_SCOPE]}
+    criticality_by_gate: {G4_PREFIGURATION_TARGET_SELECTED: BLOCKING}
+    minimum_resolution_by_gate: {G4_PREFIGURATION_TARGET_SELECTED: ACCEPTED_AS_CURRENT}
