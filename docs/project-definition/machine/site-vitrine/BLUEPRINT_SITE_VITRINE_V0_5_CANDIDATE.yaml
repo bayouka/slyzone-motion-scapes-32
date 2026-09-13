@@ -36,6 +36,7 @@ state_policy:
   progressive_lock: true
   dependency_prerequisites_required_for_actions: true
   dependency_prerequisites_required_for_gate_satisfaction: true
+  dependency_prerequisites_transitive: true
 
 research_policy:
   system_first: true
@@ -43,12 +44,20 @@ research_policy:
   competitor_set_requires_material_evidence_value: true
   competitor_materiality_fact: research.competitive_evidence_material
   competitor_materiality_owner: deterministic_g2_evidence_planner
+  competitor_materiality_default_for_greenfield: true
+  competitor_materiality_can_be_false_when:
+    - redesign_is_active
+    - existing_audit_has_OBSERVED_resolution
+    - evidence_quality_has_CALCULATED_resolution
+    - no_explicit_market_comparison_requirement
+  existing_source_backed_competitor_evidence_keeps_requirement_active: true
+  stale_or_conflicted_audit_cannot_disable_competitor_requirement: true
   free_form_llm_cannot_set_materiality_fact: true
   web_evidence_requires_persisted_source: true
 
 mismatch_policy:
   preserve_history: true
-  stop_false_site_vitrine_coverage: true
+  stop_false_site_vitrine_coverage_claim: true
   require_blueprint_remap: true
 
 machine_contract_invariants:
@@ -76,12 +85,15 @@ r0_candidate_contract:
   active_production_blueprint_unchanged: SITE_VITRINE@0.4
 
 validation_status:
-  status: PENDING_FULL_R0_CANDIDATE_VALIDATION
-  targeted_competitor_context_logic: PASS_DESIGN_2026_09_13
-  dependency_runtime_semantics: PENDING_CANDIDATE_ENGINE_TESTS
+  status: TARGETED_PASS_FULL_R0_REPLAY_PENDING
+  targeted_competitor_context_logic: PASS_2026_09_13
+  deterministic_competitor_materiality: PASS_TARGETED_2026_09_13
+  transitive_dependency_runtime_semantics: PASS_TARGETED_2026_09_13
+  full_r0_candidate_replay: PENDING
   production_activation: FORBIDDEN_UNTIL_G1_RUNTIME_E2E_AND_V0_5_R0_PASS
 
 validation_support:
   - ../../runtime/G2_EVIDENCE_MARKET_RUNTIME_DESIGN_V0_1.md
   - ../../runtime/G2_EVIDENCE_MARKET_BACKEND_GAP_AUDIT_20260913.md
   - ../../runtime/G2_EVIDENCE_MARKET_ACQUISITION_MATRIX_V0_1.md
+  - ../../runtime/G2_BLUEPRINT_V0_5_CANDIDATE_VALIDATION_20260913.md
