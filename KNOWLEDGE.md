@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This file tells humans and AI agents **where the reliable knowledge for 4b4c lives**.
+This file tells humans and AI agents **where the reliable knowledge for 4b4c lives**. It is an index, not a second specification.
 
-It is an index, not a second specification. Read the linked canonical source rather than reconstructing rules from memory or old UI behavior.
+---
 
 ## Global authority
 
@@ -15,7 +15,6 @@ It is an index, not a second specification. Read the linked canonical source rat
 Use it for canonical repository identity, canonical Supabase backend, transport-mirror status, runtime ownership, deployment/release chain and current production baseline.
 
 Supporting dated operational sources include notably:
-
 - `docs/RECOVERY_BASELINE_20260911.md`
 - `docs/RUNTIME_OWNERSHIP_20260911.md`
 - `docs/TECHNICAL_AUDIT_20260909.md`
@@ -27,254 +26,229 @@ Dated evidence does not automatically override a newer explicit canonical contra
 
 ---
 
-## Idea Engine — canonical target
+## Idea Engine — current canonical target
 
-Scope currently canonical in Master Blueprint V1.1:
+Current canonical sources remain:
 
-> Idea → understanding/enrichment → candidate proposition → decision → optional Project Draft
+1. `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md`
+2. `docs/idea-engine/canonical/WORKFLOW_V7_1_CONSOLIDATED.md`
+3. `docs/idea-engine/canonical/INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
+4. `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md`
+5. `docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
 
-Reference Blueprint currently validated:
+The reference Blueprint currently validated is `Site vitrine`.
 
-> creation or redesign of a showcase/marketing website (`site vitrine`).
+Important: the professional boundary beyond the current Idea Engine is under controlled redesign. Do **not** mutate the canonical Master Blueprint/Matrix from the candidate Project Definition work until explicit validation/promotion.
 
-Do not claim universal information coverage for every future project type yet.
-
-### 1. Master orchestration architecture
-
-**Primary canonical source:**
-
-`docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md`
-
-Read this first for any substantial Idea Engine work.
-
-It defines the current canonical Idea Engine, including IDD, Outputs, Requirements, Acquisition Engine, Readiness, System Actions/User NBA, Change Intelligence and GO/REVISE/PAUSE/STOP.
-
-**Important current design review:** the professional lifecycle and depth boundary between Idea, Project Definition and Build Ready are under controlled re-audit. Do not mutate the canonical Master Blueprint until that architecture is explicitly validated.
-
-### 2. Detailed workflow mechanisms
-
-**Canonical companion:**
-
-`docs/idea-engine/canonical/WORKFLOW_V7_1_CONSOLIDATED.md`
-
-Use it for Project Memory, provenance, Answer Resolver, Evidence, Recommendation Contract, Candidate formation, Change Intelligence, Decision Requirements, collaboration, Decision Brief and handoff mechanisms.
-
-Its historical state chain is not a mandatory wizard.
-
-### 3. Information registry — Site vitrine Blueprint
-
-**Current canonical:**
-
-`docs/idea-engine/canonical/INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
-
-V5 remains a valuable Idea information registry, not a visible questionnaire.
-
-**Current audit note:** V5 is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`. It has been coverage-mapped against the candidate Project Definition architecture. No significant Idea-level need was intentionally dropped; many Prefiguration/Project/Build-Ready needs extend beyond V5.
+Matrix V5 remains valuable and canonical for the current Idea-level model, but is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`.
 
 Coverage audit:
-
 `docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`
-
-### 4. Capture, ingestion and structured memory
-
-**Current canonical:**
-
-`docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md`
-
-Use it for RAW FIRST, autosave, guided capture, source ingestion, provenance/versioning/stale safety and `Commencer avec 2b2c` behavior.
-
-### 5. Initial Capture UX validated snapshot
-
-**Validated capture surface:**
-
-`docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
-
-The capture surface remains validated functionally. No regression to a giant questionnaire is authorized.
 
 ---
 
-## Professional Idea → Prefiguration → Decision → Project → Build Ready architecture — CURRENT PRIORITY
+# Professional Idea → Prefiguration → Decision → Project → Build Ready — CURRENT DESIGN PRIORITY
 
-Workspace UX work is **paused** until the professional referential architecture and requirement coverage are validated.
+Workspace UX work remains **paused** while this referential is designed and validated.
 
-### Current architecture candidate
+## Current architecture candidate
 
 `docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4.md`
 
-Status: **NON CANONIQUE / CURRENT ARCHITECTURE CANDIDATE À VALIDER**.
+Status: **NON CANONIQUE / CURRENT ARCHITECTURE CANDIDATE**.
 
-V0.4 supersedes V0.3/V0.2 as the active candidate. It proposes:
+Lifecycle candidate:
 
-- lifecycle zones `Capture → Discovery Foundation → Evidence/Market → Strategy/Options → Prefiguration/Concept Alpha → conditional Concept Validation → Decision Package/Presentation/Review → Approved Idea/Project Baseline → Project Definition → Build Ready` ;
-- five atom types: `INFO / ANALYSIS / DECISION / SPEC / VERIFY` ;
-- Domains separate from Gates and Deliverables ;
+`Capture → Foundation → Evidence/Market → Strategy/Options → Prefiguration/Concept Alpha → conditional Concept Validation → Decision Package/Presentation/Review → Approved Idea → Project Baseline → Project Definition → Build Ready`.
+
+V0.4 currently defines:
 - 22 professional Domains D01→D22 ;
+- INFO / ANALYSIS / DECISION / SPEC / VERIFY ;
 - G0→G12 dependency Gates ;
-- pre-GO provisional journeys/sitemap/capabilities/content/visual mockups/feasibility/projections when useful to decision ;
-- `Prefiguration Budget` so Idea does not become a hidden full Project ;
-- conditional real-user Concept Validation ;
-- Decision Package modes for solo/team/committee ;
-- Review feedback objects + targeted Change Impact ;
-- `APPROVE_WITH_CONDITIONS` ;
-- progressive lock/freeze snapshots ;
-- artifact promotion Idea → Project rather than restart ;
-- traceability `Requirement → Spec → Verify` ;
-- explicit `READY_FOR_DEVELOPMENT` contract ;
-- `IMPLEMENTATION_DISCRETION` for developer choices that do not alter product behavior/constraints.
+- Prefiguration Budget ;
+- provisional journeys/sitemap/capabilities/content/visual concepts before Project ;
+- conditional real-user concept validation ;
+- business case/projection rules ;
+- professional Decision Package including editable PPTX/PDF target ;
+- review feedback + targeted Change Impact ;
+- progressive lock/freeze ;
+- Idea artifact promotion rather than Project restart ;
+- traceability and `READY_FOR_DEVELOPMENT` contract.
 
-### Requirement registries — current candidates
+---
 
-**IDEA — consolidated candidate:**
+## Domain / requirement registries
+
+### Consolidated Idea registry
 
 `docs/project-definition/03_REQUIREMENT_REGISTRY_IDEA_V0_2.md`
 
-Covers D01→D07 through strategic direction/macro scope, including Decision Question, target, evidence, market/competition, challenge, options, risk/assumptions, non-goals and early STOP/PAUSE readiness.
+D01→D07 through strategic direction/macro scope.
 
-**PREFIGURATION / DECISION PACKAGE:**
+### Prefiguration / Decision Package registry
 
 `docs/project-definition/04_PREFIGURATION_DECISION_PACKAGE_REGISTRY_V0_1.md`
 
-Covers provisional decision-time subsets of D08–D19 plus D21 Business Case/Forecasts and D22 Decision Package/Presentation/Review. Includes concept sitemap/journey/features/content, visual territories, hi-fi concept mockups, feasibility envelope, scenario models, PPTX/PDF decision deck, feedback capture and artifact promotion.
+Decision-time PREVIEW subsets D08→D19 plus D21/D22.
 
-**PROJECT — product/experience candidate:**
+### Project product / experience registry
 
 `docs/project-definition/04A_REQUIREMENT_REGISTRY_PROJECT_PRODUCT_V0_1.md`
 
-Covers D08→D15: journeys, IA/page model, content, SEO/migration, functional requirements, data/CMS/roles, integrations and UX/UI/design system.
+D08→D15.
 
-**PROJECT — technical/Build Ready candidate:**
+### Project technical / Build Ready registry
 
 `docs/project-definition/04B_REQUIREMENT_REGISTRY_PROJECT_TECH_BUILDREADY_V0_1.md`
 
-Covers D16→D20: technical architecture, security/privacy/legal, accessibility/performance/reliability, measurement/analytics, QA/acceptance/handoff.
+D16→D20.
+
+---
+
+## Detailed subdomain/question catalogs — CURRENT COVERAGE WORK
+
+Master detail index:
+
+`docs/project-definition/detail/05_MASTER_DETAIL_INDEX_V0_1.md`
+
+### Volume A — Idea
+
+`docs/project-definition/detail/05A_IDEA_DETAIL_CATALOG_V0_1.md`
+
+D01→D07 decomposed into subdomains, internal questions, resolution path, human intervention, dependencies, outputs and lock targets.
+
+### Volume B — Prefiguration / Decision
+
+`docs/project-definition/detail/05B_PREFIGURATION_DECISION_DETAIL_CATALOG_V0_1.md`
+
+Z4/Z4b/Z5, PREVIEW D08→D19 + D21/D22, including decision-usefulness/fidelity, concept validation, business case, deck/review/approval.
+
+### Volume C — Project product / experience
+
+`docs/project-definition/detail/05C_PROJECT_PRODUCT_DETAIL_CATALOG_V0_1.md`
+
+D08→D15 in Project depth: journeys, IA/routes, content, SEO, functional/business rules/states, data/CMS/roles, integrations and UX/UI/design system.
+
+### Volume D — Project tech / Build Ready
+
+`docs/project-definition/detail/05D_PROJECT_TECH_BUILDREADY_DETAIL_CATALOG_V0_1.md`
+
+D16→D20 in Project/Build Ready depth: architecture, security/privacy/legal, accessibility/performance/reliability, measurement/observability, QA/acceptance/handoff.
+
+These detailed catalogs are **not visible questionnaires**. Their internal questions are requirements to resolve, not necessarily things to ask a user.
+
+---
+
+## Cross-cutting candidate mechanisms
+
+### Context applicability
+
+`docs/project-definition/06_CONTEXT_OVERLAY_CATALOG_V0_1.md`
+
+Candidate overlays include redesign, local business, multilingual, CMS, personal/sensitive data, auth/roles, critical integration, SEO/domain migration, team decision, presentation, business case, concept validation, regulated, brand transition, budget/time constrained, media/motion, high traffic/business critical and external-vendor handoff.
+
+### Approved Idea → Project promotion
+
+`docs/project-definition/07_APPROVED_IDEA_TO_PROJECT_PROMOTION_CONTRACT_V0_1.md`
+
+Defines Z6, approval-condition classes, artifact promotion, promotion diff and Project Baseline creation.
+
+### Human intervention minimization
+
+`docs/project-definition/08_HUMAN_INTERVENTION_MAP_V0_1.md`
+
+Key target:
+
+> **aucune question évitable, aucune décision humaine escamotée.**
+
+### Cross-cutting ledgers
+
+`docs/project-definition/09_CROSS_CUTTING_LEDGER_MODEL_V0_1.md`
+
+Defines Evidence/Source, Assumption, Decision, Risk/Unknown, Conflict, Change, Artifact, Requirement Traceability and Snapshot ledgers.
 
 ### Progressive lock / freeze / promotion
 
 `docs/project-definition/PROGRESSIVE_LOCK_PROMOTION_MODEL_V0_1.md`
 
-Current candidate states include:
-
-`WORKING → AI_PROPOSED → VALIDATED_CURRENT → LOCKED_FOR_DEPENDENTS → FROZEN_IN_DECISION_SNAPSHOT → APPROVED_FOR_PROJECT → FROZEN_FOR_BUILD`, plus `REVIEW_REQUIRED / STALE / SUPERSEDED / REJECTED`.
-
-Business/problem/target may be locked early for downstream work but are not made irreversibly immutable; new evidence can trigger targeted review.
+Candidate states:
+`WORKING → AI_PROPOSED → VALIDATED_CURRENT → LOCKED_FOR_DEPENDENTS → FROZEN_IN_DECISION_SNAPSHOT → APPROVED_FOR_PROJECT → FROZEN_FOR_BUILD`, plus review/stale/superseded/rejected states.
 
 ### AI vs Human resolution
 
 `docs/project-definition/AI_HUMAN_RESOLUTION_POLICY_V0_1.md`
 
-Key invariant:
+Invariant:
+`Requirement exists ≠ question user`.
 
-> `Requirement exists ≠ question user`.
+---
 
-2b2c should prefer source/audit/research/calculation/hypothesis/recommendation before asking the human, while preserving human authority for internal intent, material preferences, conflicts and decisions.
+## Validation support
 
-### Validation support
-
+Current validation material includes:
 - `docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_RED_TEAM_20260913.md`
 - `docs/project-definition/PREFIGURATION_DECISION_PACKAGE_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/IDEA_REQUIREMENT_REGISTRY_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`
+- `docs/project-definition/validation/DETAILED_REFERENTIAL_RED_TEAM_20260913.md`
 - `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
 
-### Earlier exploratory inventory
-
+Earlier exploratory inventory:
 `docs/idea-engine/validation/PROFESSIONAL_REQUIREMENTS_MASTER_MATRIX_V0_1.md`
 
-Historical exploratory inventory created before the reference architecture was stabilized. Do not treat it as the active schema.
-
-### Current status
-
-The architecture now explicitly models the missing zone between strategic Idea and Project: **Prefiguration + Decision Package + Review**. It remains **non-canonical** until explicit validation. No production/backend implementation is authorized from it yet.
+Do not treat the earlier inventory as the active schema.
 
 ---
 
 ## Workspace UX — PAUSED / historical candidates
 
-The following are retained only as historical validation material:
-
+Historical only:
 - `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_2.md`
 - `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_3.md`
 - `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
-- `docs/idea-engine/validation/WORKSPACE_PROJECTION_V0_2_RED_TEAM_20260913.md`
-- `docs/idea-engine/validation/WORKSPACE_INTERACTIVE_PROTOTYPE_V0_1_TEST_20260913.md`
-- `docs/idea-engine/validation/QUESTION_ENRICHMENT_COMPETITIVE_AUDIT_20260913.md`
+- associated prototype/red-team docs.
 
-`WORKSPACE_PROJECTION_CONTRACT_V0_3.md` is explicitly rejected as the active UX direction because it attempted to project the workspace before the professional lifecycle had been fully formalized.
-
-No new workspace prototype should be promoted or implemented until the lifecycle/master referential architecture is validated and sufficient requirement coverage exists.
+No new workspace prototype should be promoted or implemented until the professional lifecycle/master referential is explicitly validated.
 
 ---
 
 ## Production implementation vs design candidates
 
 Do not conflate:
+- current production implementation ;
+- current canonical Idea Engine ;
+- non-canonical Project Definition architecture/registries.
 
-- **Current production implementation** = what the repository serves today and root runtime docs describe.
-- **Canonical Idea Engine target** = current canonical documents.
-- **Project Definition architecture/registries candidates** = current design work; may later change canonical boundaries only after explicit validation.
-
-Before changing production Ideas code:
-
-1. read Master Blueprint V1.1 ;
-2. read Matrix V5 ;
-3. read Capture Contract V1.2 ;
-4. read this file for current reference-architecture status ;
-5. do not implement rejected workspace candidates ;
-6. do not change production while the Project Definition architecture remains under design unless explicitly authorized.
+No production/backend implementation is authorized from these candidates yet unless explicitly decided.
 
 ---
 
 ## Key established invariants
 
-Unless explicitly reopened through the architecture audit:
-
 - raw input/provenance survives AI interpretation ;
-- exhaustive internal coverage must never become a giant visible form ;
-- human questions are last-mile when source/research/calculation/inference can legitimately resolve an item ;
+- exhaustive internal coverage never becomes a giant visible form ;
+- human questions are last-mile ;
 - AI inference is not human truth ;
 - stale results cannot overwrite newer state ;
-- accepted unknown is valid when non-blocking ;
-- research and challenge serve actual decisions ;
+- accepted unknown can be valid ;
+- research/challenge serve actual decisions ;
 - GO is not privileged over revise/pause/stop ;
-- the system should do more work than the novice user ;
-- Idea is not Project ;
-- approval of a prefigured Idea is not Ready for Development ;
-- development execution is not Project Definition ;
-- requirements/standards must be proportional to applicability and risk ;
-- requirements that matter structurally should be traceable to specification and verification ;
-- developers retain implementation discretion where it does not change product behavior or constraints ;
-- a high-fidelity mockup before Project is a decision artifact, not final UI truth ;
-- synthetic/AI user simulation is not real user evidence ;
-- Project inherits valid Idea artifacts instead of restarting by default.
-
----
-
-## Supporting validation material
-
-Reference profiles:
-
-- Nathalie — novice, solo decision ;
-- Vincent — experienced/pressured, many existing sources ;
-- Maya — multi-decision-maker context with disagreements.
-
-These are tests, not separate product modes.
-
----
-
-## Current operational/collaboration domains
-
-For production collaboration behavior, consult root `README.md` first. Relevant dated docs include notably the Call Engine audits/gates and `PRE_COLLAB_AUDIT.md`.
+- Idea ≠ Project ;
+- approval of a prefigured Idea ≠ Ready for Development ;
+- high-fidelity pre-Project mockups are decision artifacts, not final specs ;
+- AI/synthetic persona simulation is not user evidence ;
+- Project inherits valid Idea artifacts instead of restarting ;
+- requirements/standards are proportional to applicability/risk ;
+- structural requirements should be traceable to specification and verification ;
+- developers retain implementation discretion when it does not alter product behavior/constraints.
 
 ---
 
 ## Knowledge maintenance rule
 
-When a future session discovers a structural invariant:
-
+When a structural invariant is discovered:
 - do not leave it only in chat ;
-- update the owning canonical document after validation ;
+- update the owning document after validation ;
 - preserve superseded/history material ;
 - update this map when authority/path/version/status changes ;
-- do not duplicate complete specifications here.
-
-When ownership is unclear, determine precedence before implementation rather than creating competing truths.
+- avoid duplicating full specifications here.
