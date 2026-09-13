@@ -1,0 +1,332 @@
+schema_version: '0.1'
+blueprint: SITE_VITRINE
+scope: Z6_Z8
+status: CANDIDATE_NON_CANONICAL
+
+requirements:
+  - id: SV.PRJ.APPROVED_BASELINE
+    type: INFO
+    domain_id: D01
+    lifecycle_zone: Z6
+    title: Baseline Idea approuvée
+    purpose: Le Project hérite d'un snapshot approuvé au lieu de recommencer.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3], preferred_paths: [CALC], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D22.APPROVAL_OUTCOME]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: BLOCKING}
+    minimum_resolution_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: APPROVED_FOR_PROJECT}
+    state_policy: {first_lock_gate: G8_PROJECT_PRODUCT_DEFINITION_STABLE, decision_snapshot: false, project_promotable: true, build_freezable: true}
+
+  - id: SV.D08.JOURNEY_SPEC
+    type: SPEC
+    domain_id: D08
+    lifecycle_zone: Z7
+    title: Parcours utilisateur détaillé
+    purpose: Définir start, goal, conversion, preuve, fallback et handoff service.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R6], preferred_paths: [AI_R, HUM], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.PRJ.APPROVED_BASELINE]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: REQUIRED}
+    minimum_resolution_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: ACCEPTED_AS_CURRENT}
+    state_policy: {first_lock_gate: G8_PROJECT_PRODUCT_DEFINITION_STABLE, decision_snapshot: false, project_promotable: true, build_freezable: true}
+
+  - id: SV.D09.PAGE_MANIFEST
+    type: SPEC
+    domain_id: D09
+    lifecycle_zone: Z7
+    title: Manifest pages/routes
+    purpose: Définir surfaces, rôle, audience, CTA, navigation et route.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D08.JOURNEY_SPEC]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: REQUIRED}
+    minimum_resolution_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: ACCEPTED_AS_CURRENT}
+    validation: {method: no_orphan_page_check, pass_condition: Every strategic page has role, audience, CTA and navigation relation.}
+
+  - id: SV.D10.CONTENT_REQUIREMENTS
+    type: SPEC
+    domain_id: D10
+    lifecycle_zone: Z7
+    title: Exigences contenu par surface
+    purpose: Définir message, preuve, média, owner, statut et timing sans exiger tout le copy final.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R5, R6], preferred_paths: [SRC, AI_R, HUM], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.D09.PAGE_MANIFEST]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: REQUIRED}
+    minimum_resolution_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: ACCEPTED_AS_CURRENT}
+    validation: {method: content_owner_status_check, pass_condition: Every critical content slot has purpose, owner and status; missing final content cannot be mistaken for publishable content.}
+
+  - id: SV.D11.SEO_PAGE_MAP
+    type: SPEC
+    domain_id: D11
+    lifecycle_zone: Z7
+    title: Mapping SEO page/intention
+    purpose: Relier pages indexables, intentions, liens internes et règles crawl.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R2, R5], preferred_paths: [WEB, CONN, AUDIT, AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D09.PAGE_MANIFEST]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: CONDITIONAL}
+    minimum_resolution_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D11.REDIRECT_MAP
+    type: SPEC
+    domain_id: D11
+    lifecycle_zone: Z7
+    title: Plan de redirections SEO
+    purpose: Préserver la valeur des URLs existantes lors d'une migration.
+    applicability: {default: INACTIVE, any_of_contexts: [SEO_MIGRATION_RISK, DOMAIN_MIGRATION]}
+    resolution: {allowed_classes: [R2, R3, R5], preferred_paths: [AUDIT, CONN, CALC, AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D09.PAGE_MANIFEST]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: REQUIRED, G11_TRACEABILITY_AND_ACCEPTANCE_READY: REQUIRED}
+
+  - id: SV.D12.FUNCTIONAL_REQUIREMENTS
+    type: SPEC
+    domain_id: D12
+    lifecycle_zone: Z7
+    title: Exigences fonctionnelles
+    purpose: Définir comportement, règles, triggers et outputs de chaque fonction active.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R6], preferred_paths: [AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D08.JOURNEY_SPEC, SV.D09.PAGE_MANIFEST]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: REQUIRED}
+    minimum_resolution_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D12.UI_STATES
+    type: SPEC
+    domain_id: D12
+    lifecycle_zone: Z7
+    title: États loading/empty/error/success/disabled
+    purpose: Éviter les comportements implicites laissés au développement.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D12.FUNCTIONAL_REQUIREMENTS]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: REQUIRED}
+
+  - id: SV.D12.BUSINESS_RULES
+    type: SPEC
+    domain_id: D12
+    lifecycle_zone: Z7
+    title: Règles métier et cas limites
+    purpose: Documenter ce que l'IA ne peut pas inventer dans les processus internes.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R5, R6], preferred_paths: [SRC, AI_R, HUM], default_human_interaction: NONE, human_only_reason: undocumented_internal_rule_if_material}
+    dependencies: {requires_all: [SV.D12.FUNCTIONAL_REQUIREMENTS]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: CONDITIONAL}
+    minimum_resolution_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D13.CONTENT_DATA_MODEL
+    type: SPEC
+    domain_id: D13
+    lifecycle_zone: Z7
+    title: Modèle contenu/données
+    purpose: Définir types, champs, relations et ownership si contenu structuré ou data persistante.
+    applicability: {default: INACTIVE, any_of_contexts: [HAS_CMS, HAS_AUTH_OR_ROLES]}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D10.CONTENT_REQUIREMENTS, SV.D12.FUNCTIONAL_REQUIREMENTS]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: CONDITIONAL, G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+
+  - id: SV.D13.ROLE_PERMISSION_MATRIX
+    type: SPEC
+    domain_id: D13
+    lifecycle_zone: Z7
+    title: Rôles et permissions
+    purpose: Définir qui voit/modifie/publie quoi.
+    applicability: {default: INACTIVE, any_of_contexts: [HAS_CMS, HAS_AUTH_OR_ROLES]}
+    resolution: {allowed_classes: [R5, R6, R8], preferred_paths: [SRC, AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: CONDITIONAL, G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+
+  - id: SV.D14.INTEGRATION_CONTRACTS
+    type: SPEC
+    domain_id: D14
+    lifecycle_zone: Z7
+    title: Contrats d'intégration
+    purpose: Définir provider, input/output, auth, failure, quota et fallback.
+    applicability: {default: INACTIVE, any_of_contexts: [HAS_CRITICAL_INTEGRATION]}
+    resolution: {allowed_classes: [R1, R2, R5, R9], preferred_paths: [SRC, AUDIT, WEB, AI_R, EXPERT], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D12.FUNCTIONAL_REQUIREMENTS]}
+    criticality_by_gate: {G8_PROJECT_PRODUCT_DEFINITION_STABLE: REQUIRED, G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+
+  - id: SV.D15.WIREFRAME_BASELINE
+    type: SPEC
+    domain_id: D15
+    lifecycle_zone: Z7
+    title: Wireframes structurants
+    purpose: Résoudre hiérarchie, contenu et comportement avant polish visuel final.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D09.PAGE_MANIFEST, SV.D10.CONTENT_REQUIREMENTS, SV.D12.FUNCTIONAL_REQUIREMENTS]}
+    criticality_by_gate: {G9_PROJECT_EXPERIENCE_DEFINITION_STABLE: REQUIRED}
+
+  - id: SV.D15.DESIGN_DEFINITION
+    type: SPEC
+    domain_id: D15
+    lifecycle_zone: Z7
+    title: Direction visuelle et design system nécessaires au build
+    purpose: Transformer la direction conceptuelle en règles répétables.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R5, R7], preferred_paths: [SRC, AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D15.WIREFRAME_BASELINE]}
+    criticality_by_gate: {G9_PROJECT_EXPERIENCE_DEFINITION_STABLE: REQUIRED}
+    minimum_resolution_by_gate: {G9_PROJECT_EXPERIENCE_DEFINITION_STABLE: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D15.RESPONSIVE_BEHAVIOR
+    type: SPEC
+    domain_id: D15
+    lifecycle_zone: Z7
+    title: Comportement responsive
+    purpose: Éviter que mobile soit inventé pendant le développement.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D15.DESIGN_DEFINITION]}
+    criticality_by_gate: {G9_PROJECT_EXPERIENCE_DEFINITION_STABLE: REQUIRED}
+
+  - id: SV.D16.DELIVERY_APPROACH
+    type: DECISION
+    domain_id: D16
+    lifecycle_zone: Z7
+    title: Approche de delivery
+    purpose: Choisir custom/no-code/CMS/hybrid en fonction du produit et des contraintes.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R8], preferred_paths: [AI_R, HUM], default_human_interaction: EXPLICIT_CHOICE}
+    authority: {ai_may_extract: false, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_all: [SV.D12.FUNCTIONAL_REQUIREMENTS]}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+    minimum_resolution_by_gate: {G10_PROJECT_TECH_NFR_STABLE: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D16.ARCHITECTURE
+    type: SPEC
+    domain_id: D16
+    lifecycle_zone: Z7
+    title: Architecture technique
+    purpose: Définir boundaries frontend/backend/data/rendering sans sur-spécifier l'implémentation interne.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R9], preferred_paths: [AI_R, EXPERT], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D16.DELIVERY_APPROACH], benefits_from: [SV.D13.CONTENT_DATA_MODEL, SV.D14.INTEGRATION_CONTRACTS]}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+    validation: {method: architecture_fit_check, pass_condition: Architecture satisfies product, data, integration and NFR constraints without hiding product decisions.}
+
+  - id: SV.D16.ENV_HOSTING_OPS
+    type: SPEC
+    domain_id: D16
+    lifecycle_zone: Z7
+    title: Environnements, hébergement et maintenance
+    purpose: Définir preview/staging/prod, ownership et maintenance selon besoin.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R5, R6], preferred_paths: [SRC, AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D16.ARCHITECTURE]}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+
+  - id: SV.D17.PRIVACY_SECURITY
+    type: SPEC
+    domain_id: D17
+    lifecycle_zone: Z7
+    title: Sécurité, privacy et conformité applicables
+    purpose: Traduire les risques activés en exigences vérifiables.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R4, R5, R9], preferred_paths: [AUDIT, WEB, AI_H, AI_R, EXPERT], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D12.FUNCTIONAL_REQUIREMENTS, SV.D16.ARCHITECTURE]}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+    minimum_resolution_by_gate: {G10_PROJECT_TECH_NFR_STABLE: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D17.EXPERT_SIGNOFF
+    type: VERIFY
+    domain_id: D17
+    lifecycle_zone: Z7
+    title: Validation experte conditionnelle
+    purpose: Empêcher l'IA d'être autorité finale sur des obligations à haute conséquence.
+    applicability: {default: INACTIVE, any_of_contexts: [HAS_REGULATORY_CONSTRAINT, HAS_SENSITIVE_DATA]}
+    resolution: {allowed_classes: [R9], preferred_paths: [EXPERT], default_human_interaction: EXPERT_SIGNOFF}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: BLOCKING}
+    minimum_resolution_by_gate: {G10_PROJECT_TECH_NFR_STABLE: EXPERT_SIGNOFF}
+
+  - id: SV.D18.ACCESSIBILITY_TARGET
+    type: DECISION
+    domain_id: D18
+    lifecycle_zone: Z7
+    title: Cible d'accessibilité
+    purpose: Définir une baseline testable au lieu d'un adjectif vague.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R8, R9], preferred_paths: [AI_R, HUM, EXPERT], default_human_interaction: LIGHT_REVIEW}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+
+  - id: SV.D18.PERFORMANCE_RELIABILITY
+    type: SPEC
+    domain_id: D18
+    lifecycle_zone: Z7
+    title: Performance, fiabilité et compatibilité
+    purpose: Définir device/browser support, degraded behavior et budgets quand pertinents.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D16.ARCHITECTURE]}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: REQUIRED}
+
+  - id: SV.D19.MEASUREMENT_PLAN
+    type: SPEC
+    domain_id: D19
+    lifecycle_zone: Z7
+    title: Plan de mesure
+    purpose: Mesurer seulement ce qui sert les outcomes et opérations.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R5], preferred_paths: [CALC, AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D08.JOURNEY_SPEC]}
+    criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: CONDITIONAL}
+    validation: {method: event_purpose_owner_check, pass_condition: Every tracked event has a purpose, owner and privacy basis if applicable.}
+
+  - id: SV.D20.ACCEPTANCE_CRITERIA
+    type: VERIFY
+    domain_id: D20
+    lifecycle_zone: Z8
+    title: Critères d'acceptation des exigences critiques
+    purpose: Rendre la définition testable avant handoff.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R5], preferred_paths: [CALC, AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D12.FUNCTIONAL_REQUIREMENTS, SV.D15.DESIGN_DEFINITION, SV.D16.ARCHITECTURE]}
+    criticality_by_gate: {G11_TRACEABILITY_AND_ACCEPTANCE_READY: BLOCKING}
+    validation: {method: requirement_spec_verify_trace_check, pass_condition: Every critical requirement has active SPEC and VERIFY/acceptance mapping.}
+
+  - id: SV.D20.SOURCE_OF_TRUTH_MANIFEST
+    type: SPEC
+    domain_id: D20
+    lifecycle_zone: Z8
+    title: Manifest des sources de vérité
+    purpose: Indiquer exactement quel artifact/version fait autorité.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3], preferred_paths: [CALC], default_human_interaction: NONE}
+    criticality_by_gate: {G11_TRACEABILITY_AND_ACCEPTANCE_READY: REQUIRED}
+
+  - id: SV.D20.IMPLEMENTATION_DISCRETION
+    type: DECISION
+    domain_id: D20
+    lifecycle_zone: Z8
+    title: Liberté d'implémentation
+    purpose: Définir ce que le développement peut choisir sans modifier le contrat produit.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5, R8], preferred_paths: [AI_R, HUM], default_human_interaction: LIGHT_REVIEW}
+    criticality_by_gate: {G11_TRACEABILITY_AND_ACCEPTANCE_READY: REQUIRED}
+    minimum_resolution_by_gate: {G11_TRACEABILITY_AND_ACCEPTANCE_READY: ACCEPTED_AS_CURRENT}
+
+  - id: SV.D20.DEVELOPER_AMBIGUITY_AUDIT
+    type: VERIFY
+    domain_id: D20
+    lifecycle_zone: Z8
+    title: Audit d'ambiguïté développeur
+    purpose: Détecter ce qu'une équipe devrait encore inventer à la place du produit.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R4], preferred_paths: [CALC, AI_H], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.D20.ACCEPTANCE_CRITERIA, SV.D20.SOURCE_OF_TRUTH_MANIFEST, SV.D20.IMPLEMENTATION_DISCRETION]}
+    criticality_by_gate: {G12_READY_FOR_DEVELOPMENT: BLOCKING}
+    validation: {method: ambiguity_red_team, pass_condition: No unresolved structural product, UX, data, integration, NFR or acceptance decision must be invented by developers.}
+
+  - id: SV.D20.READY_APPROVAL
+    type: DECISION
+    domain_id: D20
+    lifecycle_zone: Z8
+    title: Approbation Ready for Development
+    purpose: Autoriser le handoff d'un snapshot build-ready.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R8], preferred_paths: [HUM], default_human_interaction: FORMAL_APPROVAL, human_only_reason: formal_build_readiness_approval}
+    authority: {ai_may_extract: false, ai_may_hypothesize: false, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_all: [SV.D20.DEVELOPER_AMBIGUITY_AUDIT]}
+    criticality_by_gate: {G12_READY_FOR_DEVELOPMENT: BLOCKING}
+    minimum_resolution_by_gate: {G12_READY_FOR_DEVELOPMENT: HUMAN_DECISION}
+    state_policy: {first_lock_gate: G12_READY_FOR_DEVELOPMENT, decision_snapshot: false, project_promotable: false, build_freezable: true}
