@@ -78,6 +78,7 @@ requirements:
     purpose: Remplacer un questionnaire esthétique abstrait par 1–3 directions concrètes.
     applicability: {default: INACTIVE, any_of_contexts: [NEEDS_VISUAL_PREFIGURATION]}
     resolution: {allowed_classes: [R1, R5, R7], preferred_paths: [SRC, AI_R, HUM], default_human_interaction: EXPLICIT_CHOICE}
+    authority: {ai_may_extract: true, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: IDEA_DECISION_OWNER}
     criticality_by_gate: {G5_DECISION_CONCEPT_READY: CONDITIONAL}
     minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: ACCEPTED_AS_CURRENT}
 
@@ -114,6 +115,7 @@ requirements:
     purpose: Détecter ce qui peut invalider la direction avant Project.
     applicability: {default: INACTIVE, any_of_contexts: [HAS_REGULATORY_CONSTRAINT, HAS_SENSITIVE_DATA, HIGH_TRUST_DECISION]}
     resolution: {allowed_classes: [R4, R9], preferred_paths: [WEB, AI_H, EXPERT], default_human_interaction: EXPERT_SIGNOFF}
+    authority: {ai_may_extract: true, ai_may_hypothesize: true, ai_may_recommend: true, ai_may_decide: false, decision_authority: EXPERT_ROLE}
     criticality_by_gate: {G5_DECISION_CONCEPT_READY: CONDITIONAL}
     minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: EXPERT_SIGNOFF}
 
