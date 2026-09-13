@@ -2,7 +2,7 @@
 
 Date : 2026-09-13
 
-Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–3 VALIDATED / SLICE 4 DEPLOYED FAIL-CLOSED**
+Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–3 VALIDATED / SLICE 4 ACTIVATED IN CODE / SLICE 5 STARTED WITH G0 INTERACTIVE**
 
 Objectif : remplacer progressivement le workspace Idea historique par une projection fidèle au runtime R0→R7 sans big-bang, sans baisse de sécurité et sans rendre l'application inutilisable pendant la transition.
 
@@ -71,7 +71,7 @@ Activation preview :
 - query `?workspacev3=1`, ou
 - localStorage `2b2c.idea.workspace.v3=1`.
 
-La surface lit exclusivement `get_idea_workspace_projection_v1` et reste volontairement read-only pour les mutations privilégiées. Elle expose :
+La surface lit exclusivement `get_idea_workspace_projection_v1`. Elle expose :
 - Header Idea + lifecycle badge ;
 - HUMAN_INPUT_INLINE si réellement nécessaire ;
 - VALUE_NOW central ;
@@ -90,7 +90,7 @@ Production : **build 539 certifié directement** le 2026-09-13 :
 - `/assets/ideas-workspace-v3-preview.js` servi avec marqueur `__2B2C_IDEA_WORKSPACE_V3_PREVIEW__` ;
 - `/assets/ideas-workspace-v3-preview.css` servi avec marqueur `.ideas-workspace-v3-owned`.
 
-## Slice 4 — Privileged action adapter — DEPLOYED / FAIL-CLOSED
+## Slice 4 — Privileged action adapter — ADAPTER 0.1.1 / SECRET PROVISIONED / RUNTIME CERTIFICATION PENDING
 
 Contrat : `WORKSPACE_PRIVILEGED_ADAPTER_CONTRACT_V0_1.md`.
 Validation : `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALIDATION_20260913.md`.
@@ -98,7 +98,7 @@ Validation : `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALI
 Implémentation :
 - `src/idea-engine-adapter.js` ;
 - `POST /api/ideas/engine` dans `src/worker.js` ;
-- commande allowlistée V0.1 unique : `blueprint_fit.assess`.
+- commande allowlistée unique : `blueprint_fit.assess`.
 
 Garanties :
 1. JWT utilisateur obligatoire ;
@@ -110,40 +110,65 @@ Garanties :
 7. `SUPABASE_SERVICE_ROLE_KEY` Worker-only ;
 8. secret absent → fail closed ;
 9. aucune ACL moteur relâchée ;
-10. autorité humaine/expert exclue de l'adapter générique.
+10. autorité humaine/expert exclue de l'adapter générique ;
+11. clé Supabase moderne `sb_secret_...` envoyée uniquement dans `apikey`, jamais comme Bearer token.
 
-Red-team exact commit canonique : `WORKSPACE_PRIVILEGED_ADAPTER_V0_1_REDTEAM_PASS`.
+Red-team initial exact commit canonique : `WORKSPACE_PRIVILEGED_ADAPTER_V0_1_REDTEAM_PASS`.
 
-Production : **build 540 certifié** :
-- `/health` expose `idea_engine_adapter_v0_1.code=0.1.0` ;
-- commande déclarée : `blueprint_fit.assess` ;
+Production historique : **build 540 certifié** avec adapter 0.1.0 fail-closed : endpoint présent, `401 UNAUTHORIZED` sans JWT, `service_role_browser_exposed=false`.
+
+Le secret runtime `SUPABASE_SERVICE_ROLE_KEY` a ensuite été provisionné manuellement dans **Worker 4b4c → Runtime variables and secrets**, type `Secret`. Sa valeur n'est stockée ni dans GitHub ni dans la documentation.
+
+Une incompatibilité a ensuite été détectée avant validation E2E : l'adapter 0.1.0 envoyait la clé `sb_secret_...` comme Bearer. Cette release ne doit pas être utilisée pour une mutation privilégiée. Adapter 0.1.1 corrige ce point avec `apikey-only` pour les appels service-role.
+
+Build 541 : **abandonné / non retenu comme baseline**.
+
+Build 542 : **release candidate active**, runtime `v4.5.12-workspace-g0-actions-p2`, source runtime canonique `abf11adf85586aa47f4de3f9f65f74d6e3b20a44`.
+
+Le gate Cloudflare 542 exige :
+- adapter 0.1.1 ;
+- secret `apikey-only` ;
+- `/health` avec `configured=true` ;
 - `service_role_browser_exposed=false` ;
-- `POST /api/ideas/engine` sans JWT → `401 UNAUTHORIZED`.
+- endpoint sans JWT → `401` ;
+- shell + JS/CSS G0 interactifs effectivement servis.
 
-État d'activation réel : **`configured=false`**. Le secret `SUPABASE_SERVICE_ROLE_KEY` n'est pas provisionné dans le Worker. L'adapter est donc déployé mais volontairement incapable d'exécuter une mutation privilégiée. Une tentative automatisée d'accès à la clé secrète a été bloquée par la couche de sécurité ; aucun contournement ne doit être tenté.
+Cloudflare ne publie actuellement aucun statut de commit exploitable dans GitHub et aucun connecteur Cloudflare n'est disponible. **Ne pas déclarer build 542 certifié sans preuve runtime distante ou résultat Cloudflare directement observable.**
 
-### Condition pour fermer complètement Slice 4
+## Slice 5 — Idea workspace interactions — STARTED
 
-- provisionner `SUPABASE_SERVICE_ROLE_KEY` par une voie de secret-management autorisée, hors repo/browser ;
-- vérifier `/health` → `configured=true` ;
-- réaliser un E2E authentifié `blueprint_fit.assess` sur une Idea de test contrôlée ;
-- vérifier cas HIGH auto-apply et cas ambiguous → confirmation humaine ;
-- seulement ensuite brancher l'action G0 interactive dans Workspace V3.
+Première interaction implémentée de manière additive : **G0 interactif**.
 
-## Slice 5 — Idea workspace interactions — BLOCKED ON SLICE 4 ACTIVATION FOR PRIVILEGED G0
+Frontend canonique :
+- `site/assets/ideas-workspace-v3-actions.js` ;
+- `site/assets/ideas-workspace-v3-actions.css` ;
+- wiring dans `site/index.html`.
 
-Brancher progressivement :
-- ajout/correction d'information humaine ;
-- sources ;
+Comportement G0 :
+- aucune assessment → bouton `Analyser le type de projet` → Worker `blueprint_fit.assess` ;
+- HIGH auto-applicable → résolution système autorisée ;
+- ambiguity / confiance insuffisante → confirmation humaine inline ;
+- confirmation Site vitrine ou autre type via `confirm_idea_blueprint_fit_v1`, avec JWT utilisateur et `engine_revision` courante ;
+- aucun secret dans le navigateur.
+
+La suite Slice 5 se fera incrémentalement :
+- ajout/correction d'information humaine via `apply_human_information_v1` ;
+- sources via `register_idea_source_v1` ;
 - réponses last-mile ;
 - actions système ;
 - artefacts de préfiguration ;
 - review/feedback ;
 - Decision Package et décision.
 
-Les mutations humaines déjà user-scoped peuvent rester directes via leurs RPCs authentifiées ; ne pas les rerouter inutilement par service-role.
+Les mutations humaines déjà user-scoped restent directes via leurs RPCs authentifiées ; ne pas les rerouter inutilement par service-role.
 
 Les anciennes `idea_items` peuvent rester en lecture/compatibilité durant la transition, mais ne doivent plus définir la maturité canonique.
+
+Avant d'élargir les commandes privilégiées de Slice 5 :
+- certifier build 542 ;
+- réaliser l'E2E authentifié G0 contrôlé ;
+- valider desktop/mobile du panneau G0 ;
+- préserver un rollback simple vers la preview read-only.
 
 ## Slice 6 — Project Definition / Build Ready UI
 
@@ -173,5 +198,6 @@ Chaque retrait exige un smoke test de la nouvelle surface et un rollback simple.
 - aucune décision humaine escamotée ;
 - aucun Blueprint forcé ;
 - aucun appel browser à une RPC service-role ;
+- aucune secret key envoyée comme Bearer ;
 - un changement matériel déclenche une reclassification et une invalidation ciblée, jamais une continuité silencieuse sous un Blueprint potentiellement faux ;
 - les utilisateurs peuvent toujours comprendre où en est leur idée et ce qui nécessite réellement leur attention.
