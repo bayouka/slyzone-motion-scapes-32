@@ -1,0 +1,72 @@
+schema_version: '0.2'
+blueprint: SITE_VITRINE
+status: R0_5_CANDIDATE_NON_ACTIVE
+
+# Applied after base registries by the isolated Blueprint 0.5 candidate only.
+# The active SITE_VITRINE@0.4 contract continues to use OVERRIDES_V0_1.yaml.
+
+overrides:
+  - target: SV.D02.ORG_CONTEXT
+    reason: >
+      A creation project may have no external source; explicit RAW human context is sufficient
+      to start Discovery and should not force an unnecessary confirmation/source hunt.
+    patch:
+      minimum_resolution_by_gate:
+        G1_FOUNDATION_LOCKABLE:
+          any_of: [RAW_HUMAN, SOURCE_BACKED, ACCEPTED_AS_CURRENT]
+
+  - target: SV.D04.OFFER_BASELINE
+    reason: >
+      For a creation without an existing public offer, explicit RAW human offer information can
+      legitimately satisfy the foundation; SOURCE_BACKED remains preferred for redesigns.
+    patch:
+      minimum_resolution_by_gate:
+        G1_FOUNDATION_LOCKABLE:
+          any_of: [RAW_HUMAN, SOURCE_BACKED, ACCEPTED_AS_CURRENT]
+
+  - target: SV.D01.DECISION_OWNER
+    reason: Separate Idea approval authority from later Build Ready authority.
+    patch:
+      authority:
+        ai_may_extract: true
+        ai_may_hypothesize: false
+        ai_may_recommend: false
+        ai_may_decide: false
+        decision_authority:
+          role_ref: IDEA_DECISION_OWNER
+          fallback: USER
+
+  - target: SV.D22.APPROVAL_OUTCOME
+    reason: Idea to Project is a formal Idea-owner decision.
+    patch:
+      authority:
+        ai_may_extract: false
+        ai_may_hypothesize: false
+        ai_may_recommend: true
+        ai_may_decide: false
+        decision_authority:
+          role_ref: IDEA_DECISION_OWNER
+          fallback: USER
+
+  - target: SV.D20.READY_APPROVAL
+    reason: Build Ready can be approved by a different authorized owner than the Idea sponsor.
+    patch:
+      authority:
+        ai_may_extract: false
+        ai_may_hypothesize: false
+        ai_may_recommend: true
+        ai_may_decide: false
+        decision_authority:
+          role_ref: BUILD_READY_OWNER
+          fallback: USER
+
+  - target: SV.D05.COMPETITOR_SET
+    reason: >
+      Competitive research must be decision-material rather than universally mandatory. The
+      deterministic G2 Evidence planner owns research.competitive_evidence_material. When false,
+      COMPETITOR_SET is NOT_RELEVANT; when true, NEEDS_COMPETITIVE_EVIDENCE activates it. This
+      must never be inferred directly from a free-form LLM response.
+    patch:
+      applicability:
+        default: INACTIVE
+        any_of_contexts: [NEEDS_COMPETITIVE_EVIDENCE]
