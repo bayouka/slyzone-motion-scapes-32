@@ -1,0 +1,135 @@
+schema_version: '0.2'
+blueprint_id: SITE_VITRINE
+blueprint_version: '0.2'
+status: CURRENT_CANDIDATE_NON_CANONICAL
+parent_architecture: PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4
+atom_schema: ../REQUIREMENT_ATOM_SCHEMA_V0_2.md
+
+purpose: >
+  Transformer une idée de création/refonte de site vitrine en Idea approuvée,
+  Project Definition puis package READY_FOR_DEVELOPMENT, avec résolution AI-first,
+  dépendances explicites, progressive lock et intervention humaine seulement lorsque
+  l'intention, la préférence, l'autorité ou le risque l'exigent.
+
+load_order:
+  - CONTEXT_OVERLAYS_V0_1.yaml
+  - GATES_V0_1.yaml
+  - REQUIREMENTS_IDEA_V0_1.yaml
+  - REQUIREMENTS_PREFIGURATION_DECISION_V0_1.yaml
+  - REQUIREMENTS_PROJECT_BUILD_V0_1.yaml
+  - DELIVERABLE_CONTRACTS_V0_1.yaml
+  - OVERRIDES_V0_1.yaml
+
+mismatch_when:
+  - core_behavior_requires_application_state == true
+  - dominant_value_requires_logged_in_product_workflow == true
+  - project_type in [SAAS, MARKETPLACE, MOBILE_APP, GAME]
+
+resolution_defaults:
+  preferred_paths: [MEM, RAW, SRC, AUDIT, CONN, WEB, CALC, AI_H, AI_R, HUM, EXPERT]
+  default_human_interaction: NONE
+  rescue_policy: DEFAULT
+  provenance_required: true
+  conflict_policy: PRESERVE_AND_RESOLVE
+  ai_may_extract: true
+  ai_may_hypothesize: true
+  ai_may_recommend: true
+  ai_may_decide: false
+
+role_refs:
+  IDEA_DECISION_OWNER:
+    purpose: Approve/revise/pause/stop and authorize Idea → Project.
+    required_when: formal Idea approval exists
+  BUILD_READY_OWNER:
+    purpose: Approve the Build Ready handoff.
+    required_when: G12_READY_FOR_DEVELOPMENT
+  CONTENT_OWNER:
+    purpose: Own factual content and delayed content delivery where applicable.
+  TECH_OWNER:
+    purpose: Own technical constraints/architecture approvals where applicable.
+  PRIVACY_OWNER:
+    purpose: Own privacy/compliance decisions when activated.
+  EXPERT_ROLE:
+    purpose: Provide required signoff for high-consequence specialist issues.
+
+state_defaults:
+  change_policy: TARGETED_RECOMPUTE
+  accepted_unknown_allowed_if_non_blocking: true
+  stale_result_cannot_overwrite_current: true
+  no_global_completion_percentage: true
+
+human_question_policy:
+  create_question_only_when:
+    - HUMAN_ONLY_OR_AUTHORITY_REQUIRED == true
+    - MATERIAL_NOW == true
+  never_optimize_for_question_count_at_cost_of_safety: true
+  one_dominant_user_action_at_a_time: true
+
+lifecycle_zones:
+  Z0: CAPTURE_BLUEPRINT_FIT
+  Z1: IDEA_DISCOVERY_FOUNDATION
+  Z2: IDEA_EVIDENCE_MARKET
+  Z3: IDEA_STRATEGY_OPTIONS
+  Z4: IDEA_PREFIGURATION_CONCEPT_ALPHA
+  Z4B: CONCEPT_VALIDATION_CONDITIONAL
+  Z5: DECISION_PACKAGE_PRESENTATION_REVIEW
+  Z6: APPROVED_IDEA_TO_PROJECT_BASELINE
+  Z7: PROJECT_DEFINITION
+  Z8: BUILD_READY
+
+domains:
+  D01: Governance, Stakeholders & Decision Context
+  D02: Business Context, Problem & Outcomes
+  D03: Users, Audiences, Segments & Jobs
+  D04: Existing State, Assets & Evidence
+  D05: Market, Competition, Alternatives & References
+  D06: Opportunity, Strategy, Value Proposition & Positioning
+  D07: Offer, Product/Service Model & Scope
+  D08: User Journeys, Conversion & Service Flow
+  D09: Information Architecture, Navigation & Page Model
+  D10: Content, Proof, Media & Content Operations
+  D11: SEO, Discoverability & Migration
+  D12: Functional Requirements, Business Rules & UI States
+  D13: Data, Content Model, CMS, Roles & Permissions
+  D14: Integrations, APIs, Notifications & External Services
+  D15: UX, UI, Brand & Design System Definition
+  D16: Technical Architecture, Platform, Environments & Operations
+  D17: Security, Privacy, Legal & Compliance
+  D18: Accessibility, Performance, Reliability & Compatibility
+  D19: Measurement, Analytics, Experimentation & Observability
+  D20: QA, Acceptance, Delivery Constraints & Handoff
+  D21: Business Case, Economics, Forecasts & Scenario Models
+  D22: Decision Package, Presentation, Review & Approval
+
+cross_cutting_ledgers:
+  - SOURCE_PROVENANCE_LEDGER
+  - EVIDENCE_LEDGER
+  - ASSUMPTION_LEDGER
+  - DECISION_LEDGER
+  - RISK_UNKNOWN_LEDGER
+  - CONFLICT_GROUP_LEDGER
+  - CHANGE_LEDGER
+  - ARTIFACT_VERSION_LEDGER
+  - TRACEABILITY_LEDGER
+
+invariants:
+  - exhaustive_internal_not_visible_form
+  - human_question_is_last_mile
+  - research_serves_decision_not_completeness
+  - AI_inference_is_not_human_truth
+  - synthetic_user_simulation_is_not_real_user_evidence
+  - prefiguration_artifacts_are_FOR_DECISION_until_promoted
+  - presentation_is_projection_of_same_dossier
+  - project_inherits_valid_idea_artifacts
+  - approval_with_structural_condition_does_not_promote
+  - requirement_to_spec_to_verify_traceability
+  - proportionality_by_context_and_risk
+  - STOP_PAUSE_INSUFFICIENT_are_valid_outcomes
+  - Idea_approval_is_not_Build_Ready
+  - Idea_owner_may_differ_from_Build_Ready_owner
+  - developer_retains_implementation_discretion_non_structural
+  - stale_data_never_satisfies_current_gate
+
+validation_support:
+  simulation: ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md
+  coverage_audit: ../../validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md
