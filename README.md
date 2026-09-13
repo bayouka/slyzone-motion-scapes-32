@@ -11,7 +11,16 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current certified production runtime: **v4.5.12-work-p1 / build 519**.
+Current certified production transport release: **v4.5.12-workspace-engine-adapter-p1 / build 540**.
+
+Production certification performed on 2026-09-13 includes:
+- Workspace V3 preview shell/assets reachable in production behind its preview flag/parallel route ;
+- privileged Idea Engine adapter V0.1 deployed at `POST /api/ideas/engine` ;
+- unauthenticated adapter request correctly rejected with `401 UNAUTHORIZED` ;
+- `/health` reports adapter code `0.1.0`, allowlisted command `blueprint_fit.assess`, and `service_role_browser_exposed=false` ;
+- adapter currently reports `configured=false`, therefore privileged G0 execution remains fail-closed until the Worker secret `SUPABASE_SERVICE_ROLE_KEY` is provisioned through an authorized secret-management path.
+
+The historical `/health.version` string still reports the older shell lineage `v4.5.12-v6-polish-p2`; transport build/release certification and feature-specific health markers are currently the authoritative release evidence. Align that generic health version field on the next functional Worker release.
 
 A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and the production runtime smoke checks pass.
 
@@ -31,8 +40,10 @@ A release is production-verified only when the transport manifest matches the in
 - `site/assets/approval-route-v1.js` — routes validation entry points from Home/My Work/project views into Resources V2.
 - `site/assets/library-workspace-v1.js` — global file library enhancement.
 - `site/assets/design-v5.css` — current global V5 Soft Spatial Workspace design layer, loaded last.
+- `site/assets/ideas-workspace-v3-preview.js` + `.css` — parallel, feature-flagged post-capture workspace projection using the canonical R0→R7 read model; not yet default.
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
-- `src/worker.js` — Cloudflare Worker, health endpoint, SPA fallback and response hardening.
+- `src/worker.js` — Cloudflare Worker, API routes, health endpoint, SPA fallback and response hardening.
+- `src/idea-engine-adapter.js` — fail-closed, command-allowlisted server boundary for selected `service_role only` Idea Engine capabilities; V0.1 exposes only `blueprint_fit.assess` and is not active until its Worker secret exists.
 - `wrangler.jsonc` — canonical Worker configuration named `4b4c`.
 
 Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their capture-phase handlers stop the historical handlers from executing, while the old code remains physically present until authenticated browser coverage permits safe deletion.
@@ -41,11 +52,13 @@ Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their cap
 
 The production migration history recovered during the 2026-09-11 audit is represented in the canonical repository through `20260909093700_revoke_public_call_heartbeat.sql` and guarded by `scripts/migration-history-check.mjs`.
 
-Do not reconstruct, reorder or replay production migrations from memory. New schema changes must start from the verified live/canonical baseline and preserve RLS/least-privilege invariants.
+The additive Idea Engine / Project Definition runtime R1→R7 and workspace-integration migrations applied on 2026-09-13 are also represented canonically in `supabase/migrations/`, including the current integration sequence through `20260913045028_idea_content_change_runtime_compat_v1`.
+
+Do not reconstruct, reorder or replay production migrations from memory. GitHub migration filenames/versions must match `supabase_migrations.schema_migrations`. New schema changes must start from the verified live/canonical baseline and preserve RLS/least-privilege invariants.
 
 ## Product contract
 
-2b2c is a simple, complete collaborative workspace: projects, personal work, messages, meetings, roadmap, resources/files, approvals and native calls in one product.
+2b2c is a simple, complete collaborative workspace: projects, personal work, messages, meetings, roadmap, resources/files, approvals and native calls in one product. The Idea Engine adds a distinct pre-project decision layer: an Idea is matured, evidenced, challenged, prefigured and explicitly decided before any Project Definition or execution project is created.
 
 The Home is a personal situation summary, not a generic widget dashboard. In under 10 seconds it should answer:
 
@@ -56,6 +69,8 @@ The Home is a personal situation summary, not a generic widget dashboard. In und
 5. Which project should I resume, and why?
 
 Do not add decorative dashboard gadgets that do not improve collaboration or decision-making.
+
+For Idea Engine product authority and workspace cutover, follow `KNOWLEDGE.md`, `AGENTS.md`, `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V1.md` and `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md` rather than inferring product logic from the legacy Ideas UI.
 
 ## Collaboration rules
 
@@ -96,13 +111,15 @@ npm run check
 
 `npm run check` must describe the effective runtime, not require legacy implementations merely because they still physically exist.
 
+Idea Engine/workspace integration changes additionally require the domain-specific deterministic/red-team harnesses documented by the owning runtime/UX contracts.
+
 GitHub Actions are not used for production. The verified release chain is:
 
 1. validate canonical source;
 2. mirror only validated runtime files to `bayouka/2b2c/4b4c/`;
 3. update `4b4c/TRANSPORT_RELEASE.txt`;
 4. let Cloudflare Workers Builds run `scripts/deploy-4b4c-direct.sh`;
-5. that script removes Cloudflare CI Worker-name overrides, explicitly deploys `--name 4b4c`, then verifies `/health`, the shell build and mandatory production assets;
+5. that script removes Cloudflare CI Worker-name overrides, explicitly deploys `--name 4b4c`, then verifies `/health`, the shell build and mandatory production assets/API markers;
 6. any failed syntax/manifest/deployment/runtime-smoke assertion must fail the Cloudflare build.
 
 Historical one-off GitHub workflows remain archived/non-executable and must not be used for production.
@@ -110,11 +127,14 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 ## Known technical debt
 
 - `live.js` remains a large multi-domain monolith;
-- dormant legacy Messages, Resources/approval, Meeting and Work handlers still physically exist although mandatory owners now supersede their effective runtime paths;
+- dormant legacy Messages, Resources/approval, Meeting, Work and sequential Ideas handlers still physically exist although newer owners/contracts supersede their target behavior;
 - `workflow-backend-safe-v1.js` still contains compatibility implementations for several superseded forms and historical delivery/project paths;
+- `ideas-orchestrator-v2.js` still renders the historical `Clarifier → Renforcer → Étayer → Partager → Décider` progression and remains compatibility-only during Workspace V3 cutover;
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
 - authenticated multi-user browser E2E coverage remains incomplete because a safe dedicated E2E Auth identity lifecycle is not yet available through the connected tooling;
+- the privileged Idea Engine adapter is deployed fail-closed but `SUPABASE_SERVICE_ROLE_KEY` is not yet provisioned in Worker `4b4c`, so G0 automatic assessment cannot yet execute through production;
+- the generic `/health.version` field still uses the older shell-lineage label and should be aligned on the next functional Worker release;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
 
 Reduce these items incrementally behind executable checks. Do not perform a destructive rewrite of the runtime.
