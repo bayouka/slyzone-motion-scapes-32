@@ -212,6 +212,23 @@ Current candidate:
 
 V0.2 supports alternative acceptable resolution forms per Gate, versioned overrides and separate `IDEA_DECISION_OWNER` / `BUILD_READY_OWNER` role references.
 
+### Automated machine-contract validator
+
+`script`: `scripts/validate_site_vitrine_blueprint.py`
+
+`report`: `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md`
+
+Fresh-clone result on `main` after corrections:
+
+- 77 Requirements ;
+- 21 Contexts ;
+- 14 Gates ;
+- 19 Deliverables ;
+- 5 Overrides ;
+- **0 errors / 0 warnings**.
+
+The validator checks YAML parsing, ID uniqueness, atom/context/Gate references, Gate bindings, override targets, deliverable sources, resolution paths, explicit authority for formal choices/signoffs and blocking dependency cycles.
+
 ### Machine simulation
 
 `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
@@ -228,8 +245,8 @@ Current state:
 - machine schema: candidate V0.2 ;
 - machine Blueprint manifest: candidate V0.3 ;
 - Gate bindings: candidate V0.1 ;
-- scenario simulation: passed with local corrections incorporated as overrides/schema V0.2 ;
-- automated YAML syntax/reference/cycle validation: still required before promotion ;
+- scenario simulation: passed with local corrections incorporated ;
+- automated YAML syntax/reference/cycle validation: **PASS 2026-09-13** ;
 - backend/runtime mapping: not started and not authorized yet.
 
 ---
@@ -244,6 +261,7 @@ Current validation material includes:
 - `docs/project-definition/validation/DETAILED_REFERENTIAL_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md`
 - `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
+- `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md`
 - `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
 
 Earlier exploratory inventory:
