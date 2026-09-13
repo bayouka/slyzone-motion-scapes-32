@@ -1,0 +1,1 @@
+create index idea_blueprint_fit_decisions_raw_source_idx on public.idea_blueprint_fit_decisions(raw_source_id);
