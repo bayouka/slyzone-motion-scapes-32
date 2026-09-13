@@ -14,9 +14,9 @@ Primary source: `README.md`.
 
 Use it for canonical repository identity, canonical Supabase backend, transport-mirror status, runtime ownership, deployment/release chain and current production baseline.
 
-Current **certified** transport production baseline remains **v4.5.12-workspace-engine-adapter-p1 / build 540** until build 542 receives independent runtime certification.
+Current **certified** transport production baseline remains **v4.5.12-workspace-engine-adapter-p1 / build 540** until a newer release receives independent runtime certification.
 
-Current active release candidate: **v4.5.12-workspace-g0-actions-p2 / build 542**, adapter `0.1.1`, runtime secret provisioned, G0 interactive assets included.
+Current active release candidate: **v4.5.12-workspace-source-actions-p1 / build 543**, Workspace actions `0.2.0`, adapter `0.1.1`, runtime secret provisioned, G0 + source URL interaction included.
 
 Supporting operational sources include notably:
 - `docs/RECOVERY_BASELINE_20260911.md`
@@ -204,7 +204,8 @@ Active UX/integration authority:
 - `docs/idea-engine/ux/WORKSPACE_PRIVILEGED_ADAPTER_CONTRACT_V0_1.md`.
 
 Validation evidence:
-- `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALIDATION_20260913.md`.
+- `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALIDATION_20260913.md` ;
+- `docs/idea-engine/validation/WORKSPACE_SLICE5_INTERACTIONS_VALIDATION_20260913.md`.
 
 ### Slice 1 — Canonical read projection — VALIDATED
 
@@ -257,7 +258,7 @@ Feature preview: `?workspacev3=1` or localStorage `2b2c.idea.workspace.v3=1`.
 
 Production build **539** was certified directly on 2026-09-13: `/health` OK, shell references Workspace V3, JS marker present, CSS marker present.
 
-### Slice 4 — Privileged adapter — 0.1.1 / SECRET PROVISIONED / BUILD 542 CERTIFICATION PENDING
+### Slice 4 — Privileged adapter — 0.1.1 / SECRET PROVISIONED
 
 Implementation:
 - `src/idea-engine-adapter.js`
@@ -278,42 +279,51 @@ Security behavior:
 
 Historical build **540** remains the current certified baseline: adapter 0.1.0 was deployed fail-closed and unauthenticated calls were rejected with `401`.
 
-Runtime secret `SUPABASE_SERVICE_ROLE_KEY` is now provisioned in Cloudflare Worker runtime bindings as a `Secret`, outside GitHub.
+Runtime secret `SUPABASE_SERVICE_ROLE_KEY` is provisioned in Cloudflare Worker runtime bindings as a `Secret`, outside GitHub.
 
 Critical compatibility correction: modern Supabase `sb_secret_...` keys are not JWTs. Adapter 0.1.1 sends the secret **only as `apikey`**, never as `Authorization: Bearer`. User JWTs remain Bearer tokens with the publishable key in `apikey`.
 
-Build 541 was withdrawn after this issue was detected and is not a certified baseline.
+Build 541 was withdrawn after this issue was detected. Build 542 was superseded by 543 before becoming certified.
 
-Build **542** is the active release candidate:
-- runtime `v4.5.12-workspace-g0-actions-p2` ;
-- adapter `0.1.1` ;
-- source runtime SHA `abf11adf85586aa47f4de3f9f65f74d6e3b20a44` ;
-- Cloudflare release gate requires `configured=true`, `service_role_browser_exposed=false`, `apikey-only` secret semantics, 401 without JWT, and G0 action assets served.
+### Slice 5 — Idea workspace interactions — PARTIAL PASS / ACTIVE
 
-Cloudflare does not currently publish a usable GitHub status and no Cloudflare connector is installed; therefore build 542 must not be called certified until an independent runtime result is available.
-
-### Slice 5 — Idea workspace interactions — STARTED
-
-Canonical G0 interaction assets:
-- `site/assets/ideas-workspace-v3-actions.js`
-- `site/assets/ideas-workspace-v3-actions.css`
+Canonical interaction assets:
+- `site/assets/ideas-workspace-v3-actions.js` — **0.2.0** ;
+- `site/assets/ideas-workspace-v3-actions.css` ;
 - additive wiring in `site/index.html`.
 
-G0 behavior:
-- no assessment → `Analyser le type de projet` calls Worker `blueprint_fit.assess` ;
+Validated backend paths:
+- `G0_HUMAN_CONFIRMATION_ROLLBACK_PASS` under real `authenticated` role / `auth.uid()` ;
+- `SOURCE_REGISTER_AUTHENTICATED_ROLLBACK_PASS` ;
+- `SOURCE_REGISTER_STALE_GUARD_ROLLBACK_PASS`.
+
+Workspace actions 0.2.0:
+- no assessment → Worker `blueprint_fit.assess` ;
 - HIGH auto-applicable → system resolution allowed ;
 - ambiguous/medium → inline human confirmation ;
-- human confirmation uses authenticated `confirm_idea_blueprint_fit_v1` with current `engine_revision` ;
-- no service secret in browser assets.
+- confirmation uses authenticated `confirm_idea_blueprint_fit_v1` with current `engine_revision` ;
+- active Idea Engine mode exposes a user-initiated URL source form ;
+- URL source uses authenticated `register_idea_source_v1` ;
+- user chooses source sensitivity (`public/internal/personal/sensitive`) ;
+- idempotency keys are deterministic from revision + content ;
+- a render marker prevents redundant MutationObserver rerenders ;
+- no service secret exists in browser assets.
 
-Next Slice 5 work after runtime certification / controlled E2E:
-- human information via `apply_human_information_v1` ;
-- sources via `register_idea_source_v1` ;
-- last-mile responses ;
-- system actions ;
-- prefiguration artifacts ;
-- review/feedback ;
-- Decision Package / decision.
+Current active release candidate: **build 543** (`v4.5.12-workspace-source-actions-p1`) with runtime source SHA `085c9c12cbf45bab396a3a05f58de160311d5d95`.
+
+Its Cloudflare gate validates syntax, adapter 0.1.1 + `configured=true`, apikey-only secret semantics, 401 without JWT, shell actions 0.2.0, source-RPC markers and renderer marker.
+
+Cloudflare does not currently publish a usable GitHub status and no Cloudflare connector is installed; therefore build 543 must not be called certified until an independent runtime result is available.
+
+### Next architectural requirement — deterministic Next Best Human Action
+
+The projection currently exposes Requirement aggregates but does **not** persist/project the acquisition planner detail that proves a human question is necessary.
+
+Do not wire `apply_human_information_v1` from a generic unresolved/blocker counter.
+
+Next extension must expose one deterministic human action only when justified, including target Requirement, reason, typed interaction/question, revision/fingerprint and proof that automatic acquisition paths are exhausted or inappropriate.
+
+Invariant remains: **Requirement unresolved ≠ question utilisateur**.
 
 Legacy workspace/orchestrator remains compatibility only until parallel workspace equivalence, desktop/mobile tests, authenticated E2E and rollback are validated.
 
@@ -345,6 +355,7 @@ Legacy workspace/orchestrator remains compatibility only until parallel workspac
 - service-role secrets and service-role-only engine RPCs never belong in browser code ;
 - Supabase `sb_secret_...` server keys are `apikey` headers, never Bearer tokens ;
 - generic server adapters never accept client-chosen privileged RPC/function/authority identifiers ;
+- unresolved Requirement state alone never justifies a human question ;
 - LLM/providers never own canonical state ;
 - Remote Desktop availability is never a normal project dependency.
 
