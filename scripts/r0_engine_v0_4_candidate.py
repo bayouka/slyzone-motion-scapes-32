@@ -11,6 +11,45 @@ READY = base.READY
 PATH_ACTION = base.PATH_ACTION
 
 
+def _supplied_levels(state: dict, requirement_id: str) -> set[str]:
+    supplied = state.get("requirements", state.get("resolutions", {}))
+    row = supplied.get(requirement_id, {}) or {}
+    if row.get("stale") or row.get("fresh") is False or row.get("conflicted"):
+        return set()
+    return set(row.get("levels", []))
+
+
+def compute_competitive_evidence_material(state: dict) -> bool:
+    facts = state.get("facts", {}) or {}
+    if base._get(facts, "decision.market_comparison_required", False) is True:
+        return True
+
+    competitor_levels = _supplied_levels(state, "SV.D05.COMPETITOR_SET")
+    if "SOURCE_BACKED" in competitor_levels or "OBSERVED" in competitor_levels:
+        return True
+
+    redesign = (
+        base._get(facts, "idea.creation_or_redesign") == "redesign"
+        or base._get(facts, "existing.site_url") is not None
+    )
+    audit_levels = _supplied_levels(state, "SV.D04.EXISTING_AUDIT")
+    quality_levels = _supplied_levels(state, "SV.D04.EVIDENCE_QUALITY")
+    sufficient_existing_baseline = (
+        redesign
+        and "OBSERVED" in audit_levels
+        and "CALCULATED" in quality_levels
+    )
+    return not sufficient_existing_baseline
+
+
+def prepare_candidate_state(state: dict) -> dict:
+    prepared = copy.deepcopy(state)
+    facts = prepared.setdefault("facts", {})
+    research = facts.setdefault("research", {})
+    research["competitive_evidence_material"] = compute_competitive_evidence_material(prepared)
+    return prepared
+
+
 def load_site_vitrine_blueprint(repo_root: str | Path) -> dict:
     directory = Path(repo_root) / "docs" / "project-definition" / "machine" / "site-vitrine"
     manifest = base._load(directory / "BLUEPRINT_SITE_VITRINE_V0_5_CANDIDATE.yaml")
@@ -103,8 +142,6 @@ def dependency_status(
             _dependency_usable(item, requirement_states, blueprint, seen)
             for item in applicable
         ):
-            # If every alternative is NOT_RELEVANT, the dependent Requirement is orphaned and
-            # cannot be treated as evidence-ready merely because its own payload exists.
             missing.extend(applicable or requires_any)
 
     return {"ready": not missing, "missing": list(dict.fromkeys(missing))}
@@ -228,7 +265,8 @@ def plan_actions(
 
 
 def project(blueprint: dict, state: dict) -> dict:
-    contexts = base.derive_contexts(blueprint, state)
+    prepared = prepare_candidate_state(state)
+    contexts = base.derive_contexts(blueprint, prepared)
     blueprint_version = blueprint["manifest"].get("blueprint_version")
     if "BLUEPRINT_MISMATCH" in contexts:
         return {
@@ -245,10 +283,10 @@ def project(blueprint: dict, state: dict) -> dict:
             ),
         }
 
-    requirement_states = base.resolve_requirements(blueprint, state, contexts)
-    gate_states = evaluate_gates(blueprint, state, requirement_states, contexts)
+    requirement_states = base.resolve_requirements(blueprint, prepared, contexts)
+    gate_states = evaluate_gates(blueprint, prepared, requirement_states, contexts)
     actions, human = plan_actions(
-        blueprint, state, requirement_states, gate_states, contexts
+        blueprint, prepared, requirement_states, gate_states, contexts
     )
     promotion = []
     order = blueprint.get("gate_order", [])
@@ -259,7 +297,7 @@ def project(blueprint: dict, state: dict) -> dict:
                 gate_states[gate]["status"] in READY | {"NOT_APPLICABLE"}
                 for gate in before_approval
             )
-            and state.get("decision_path", "LAUNCH") == "LAUNCH"
+            and prepared.get("decision_path", "LAUNCH") == "LAUNCH"
         ):
             promotion.append("CREATE_PROJECT_DEFINITION_BASELINE")
     if gate_states.get("G12_READY_FOR_DEVELOPMENT", {}).get("status") == "READY":
