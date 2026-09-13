@@ -1,0 +1,200 @@
+schema_version: '0.1'
+blueprint: SITE_VITRINE
+status: CANDIDATE_NON_CANONICAL
+
+contexts:
+  - id: IS_REDESIGN
+    derive_when_any:
+      - idea.creation_or_redesign == redesign
+      - existing.site_url exists
+    activates:
+      - EXISTING_AUDIT
+      - CONTENT_REUSE
+      - MIGRATION_ASSESSMENT
+
+  - id: HAS_EXISTING_SITE
+    derive_when:
+      - existing.site_url exists
+    activates:
+      - CRAWL_CURRENT_SITE
+      - EXISTING_PAGE_INVENTORY
+
+  - id: IS_LOCAL_BUSINESS
+    derive_when_any:
+      - audience.geo is materially local
+      - offer.delivery_area is local
+    activates:
+      - LOCAL_MARKET_COMPETITORS
+      - LOCAL_SEO
+      - MAP_CONTACT_CONTEXT
+
+  - id: IS_MULTILINGUAL
+    derive_when:
+      - required_locales.count > 1
+    activates:
+      - LOCALE_MODEL
+      - TRANSLATION_WORKFLOW
+      - HREFLANG_CANONICAL
+      - LOCALIZED_QA
+
+  - id: HAS_TEAM_DECISION
+    derive_when_any:
+      - governance.mode in [team, committee, client]
+      - governance.decision_owner_count > 1
+    activates:
+      - DECISION_OWNER
+      - DECISION_METHOD
+      - FORMAL_REVIEW_LOG
+      - TEAM_DECISION_PACKAGE
+
+  - id: NEEDS_PRESENTATION
+    derive_when_any:
+      - governance.mode in [team, committee, client]
+      - explicit.presentation_requested == true
+    activates:
+      - DECISION_DECK
+      - EXECUTIVE_MEMO
+      - PRESENTATION_FRESHNESS
+
+  - id: NEEDS_VISUAL_PREFIGURATION
+    derive_when_any:
+      - decision.requires_tangible_concept == true
+      - visual_change_is_material == true
+      - stakeholders_need_visual_comparison == true
+    activates:
+      - VISUAL_TERRITORIES
+      - HIFI_CONCEPT_MOCKUP
+
+  - id: NEEDS_CONCEPT_VALIDATION
+    derive_when_any:
+      - new_segment == true
+      - value_prop_uncertain == true
+      - novel_critical_journey == true
+      - high_cost_irreversible_decision == true
+      - stakeholder_evidence_conflict == true
+    activates:
+      - USER_TEST_PLAN
+      - USER_VALIDATION_EVIDENCE
+
+  - id: NEEDS_FINANCIAL_CASE
+    derive_when_any:
+      - committee_requires_financial_case == true
+      - budget_decision_depends_on_return == true
+      - decision_question includes financial viability
+    activates:
+      - COST_ENVELOPE
+      - SCENARIO_MODEL
+      - ROI_IF_SUPPORTED
+
+  - id: HAS_CMS
+    derive_when_any:
+      - content_update_frequency materially recurring
+      - explicit.cms_required == true
+    activates:
+      - CONTENT_MODEL
+      - EDITORIAL_ROLES
+      - DRAFT_REVIEW_PUBLISH
+      - PREVIEW_REQUIREMENT
+
+  - id: HAS_AUTH_OR_ROLES
+    derive_when_any:
+      - authentication_required == true
+      - protected_content == true
+      - multiple_user_roles == true
+    activates:
+      - AUTH_REQUIREMENTS
+      - ROLE_PERMISSION_MATRIX
+      - SESSION_SECURITY
+      - ABUSE_PROTECTION
+
+  - id: HAS_PERSONAL_DATA
+    derive_when:
+      - collected_personal_data.count > 0
+    activates:
+      - DATA_MINIMIZATION
+      - FORM_PRIVACY_NOTICE
+      - RETENTION_DELETION
+      - PROCESSOR_REVIEW
+      - SECURE_FORM_HANDLING
+
+  - id: HAS_SENSITIVE_DATA
+    derive_when:
+      - sensitive_personal_data == true
+    activates:
+      - EXPERT_SECURITY_PRIVACY_REVIEW
+      - HIGH_RISK_DATA_CONTROLS
+
+  - id: HAS_CRITICAL_INTEGRATION
+    derive_when:
+      - integration.failure_materially_breaks_primary_journey == true
+    activates:
+      - INTEGRATION_FALLBACK
+      - SANDBOX_TESTING
+      - QUOTA_RATE_LIMIT_REVIEW
+      - VENDOR_RISK
+
+  - id: SEO_MIGRATION_RISK
+    derive_when_all:
+      - IS_REDESIGN == true
+      - existing.organic_visibility_material == true
+    activates:
+      - URL_PRESERVATION
+      - REDIRECT_MAP
+      - CANONICAL_MIGRATION
+      - SEARCH_CONSOLE_BASELINE
+      - SEO_MIGRATION_QA
+
+  - id: DOMAIN_MIGRATION
+    derive_when:
+      - domain_change_planned == true
+    activates:
+      - DNS_PLAN
+      - DOMAIN_REDIRECTS
+      - EMAIL_CONTINUITY
+      - ANALYTICS_SEARCH_CONSOLE_RECONFIG
+
+  - id: HAS_REGULATORY_CONSTRAINT
+    derive_when_any:
+      - sector_regulated == true
+      - regulated_claims == true
+    activates:
+      - CLAIMS_REVIEW
+      - COMPLIANCE_APPLICABILITY
+      - EXPERT_SIGNOFF_WHERE_REQUIRED
+
+  - id: BRAND_IN_TRANSITION
+    derive_when:
+      - brand_rework_parallel == true
+    activates:
+      - TEMP_VISUAL_BASELINE
+      - BRAND_DEPENDENCY_OWNER
+      - VISUAL_PROMOTION_CONDITION
+
+  - id: BUDGET_OR_TIME_CONSTRAINED
+    derive_when_any:
+      - hard_budget is materially low relative to option envelope
+      - hard_deadline is materially tight
+    activates:
+      - SCOPE_TIERING
+      - SIMPLIFICATION_PROBE
+      - DELIVERY_PROFILE_FIT
+      - DELIVERY_RISK
+
+  - id: HIGH_TRUST_DECISION
+    derive_when_any:
+      - sector in [health, legal, finance]
+      - purchase_value is high
+      - user_risk_if_wrong is high
+    activates:
+      - TRUST_PROOF_REQUIREMENTS
+      - CLAIMS_EVIDENCE
+      - ACCESSIBILITY_PRIORITY
+
+  - id: BLUEPRINT_MISMATCH
+    derive_when_any:
+      - core_behavior_requires_application_state == true
+      - project_type in [saas, marketplace, mobile_app, game]
+    effect:
+      - stop_site_vitrine_coverage_claim
+      - preserve_history
+      - require_blueprint_remap
