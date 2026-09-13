@@ -11,16 +11,21 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current certified production transport release: **v4.5.12-workspace-engine-adapter-p1 / build 540**.
+Current **certified** production transport release: **v4.5.12-workspace-engine-adapter-p1 / build 540**.
 
-Production certification performed on 2026-09-13 includes:
-- Workspace V3 preview shell/assets reachable in production behind its preview flag/parallel route ;
-- privileged Idea Engine adapter V0.1 deployed at `POST /api/ideas/engine` ;
-- unauthenticated adapter request correctly rejected with `401 UNAUTHORIZED` ;
-- `/health` reports adapter code `0.1.0`, allowlisted command `blueprint_fit.assess`, and `service_role_browser_exposed=false` ;
-- adapter currently reports `configured=false`, therefore privileged G0 execution remains fail-closed until the Worker secret `SUPABASE_SERVICE_ROLE_KEY` is provisioned through an authorized secret-management path.
+Current active release candidate: **v4.5.12-workspace-g0-actions-p2 / build 542**.
 
-The historical `/health.version` string still reports the older shell lineage `v4.5.12-v6-polish-p2`; transport build/release certification and feature-specific health markers are currently the authoritative release evidence. Align that generic health version field on the next functional Worker release.
+Build 542 contains:
+- Workspace V3 G0 interactive actions ;
+- Idea Engine adapter `0.1.1` ;
+- runtime `SUPABASE_SERVICE_ROLE_KEY` provisioned as a Cloudflare Worker Secret ;
+- modern Supabase secret-key handling: `sb_secret_...` is sent only in the `apikey` header, never as a Bearer token ;
+- health metadata aligned to `v4.5.12-workspace-g0-actions-p2` ;
+- release gates requiring `configured=true`, `service_role_browser_exposed=false`, unauthenticated adapter rejection and G0 assets present.
+
+Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. It is not a certified baseline.
+
+Build 542 must not be called production-certified until the Cloudflare release/runtime smoke result is independently observable. GitHub currently receives no usable Cloudflare commit status through the available integration.
 
 A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and the production runtime smoke checks pass.
 
@@ -41,9 +46,10 @@ A release is production-verified only when the transport manifest matches the in
 - `site/assets/library-workspace-v1.js` — global file library enhancement.
 - `site/assets/design-v5.css` — current global V5 Soft Spatial Workspace design layer, loaded last.
 - `site/assets/ideas-workspace-v3-preview.js` + `.css` — parallel, feature-flagged post-capture workspace projection using the canonical R0→R7 read model; not yet default.
+- `site/assets/ideas-workspace-v3-actions.js` + `.css` — additive G0 interaction layer for Blueprint assessment and targeted human confirmation.
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
 - `src/worker.js` — Cloudflare Worker, API routes, health endpoint, SPA fallback and response hardening.
-- `src/idea-engine-adapter.js` — fail-closed, command-allowlisted server boundary for selected `service_role only` Idea Engine capabilities; V0.1 exposes only `blueprint_fit.assess` and is not active until its Worker secret exists.
+- `src/idea-engine-adapter.js` — command-allowlisted server boundary for selected `service_role only` Idea Engine capabilities; adapter 0.1.1 exposes only `blueprint_fit.assess`.
 - `wrangler.jsonc` — canonical Worker configuration named `4b4c`.
 
 Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their capture-phase handlers stop the historical handlers from executing, while the old code remains physically present until authenticated browser coverage permits safe deletion.
@@ -133,8 +139,7 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
 - authenticated multi-user browser E2E coverage remains incomplete because a safe dedicated E2E Auth identity lifecycle is not yet available through the connected tooling;
-- the privileged Idea Engine adapter is deployed fail-closed but `SUPABASE_SERVICE_ROLE_KEY` is not yet provisioned in Worker `4b4c`, so G0 automatic assessment cannot yet execute through production;
-- the generic `/health.version` field still uses the older shell-lineage label and should be aligned on the next functional Worker release;
+- build 542 runtime certification and authenticated production G0 E2E are still pending observable evidence;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
 
 Reduce these items incrementally behind executable checks. Do not perform a destructive rewrite of the runtime.
