@@ -1,0 +1,140 @@
+schema_version: '0.2'
+blueprint: SITE_VITRINE
+status: R0_CANDIDATE_NON_CANONICAL
+
+# Deterministic predicate DSL only. No eval, no free-text interpretation.
+# Supported operators for R0: all, any, not, fact + exists/eq/neq/in/contains/gt/gte/lt/lte.
+
+contexts:
+  - id: IS_REDESIGN
+    rule:
+      any:
+        - {fact: idea.creation_or_redesign, eq: redesign}
+        - {fact: existing.site_url, exists: true}
+    activates: [EXISTING_AUDIT, CONTENT_REUSE, MIGRATION_ASSESSMENT]
+
+  - id: HAS_EXISTING_SITE
+    rule: {fact: existing.site_url, exists: true}
+    activates: [CRAWL_CURRENT_SITE, EXISTING_PAGE_INVENTORY]
+
+  - id: IS_LOCAL_BUSINESS
+    rule:
+      any:
+        - {fact: audience.geo_is_local, eq: true}
+        - {fact: offer.delivery_area_is_local, eq: true}
+    activates: [LOCAL_MARKET_COMPETITORS, LOCAL_SEO, MAP_CONTACT_CONTEXT]
+
+  - id: IS_MULTILINGUAL
+    rule: {fact: required_locales.count, gt: 1}
+    activates: [LOCALE_MODEL, TRANSLATION_WORKFLOW, HREFLANG_CANONICAL, LOCALIZED_QA]
+
+  - id: HAS_TEAM_DECISION
+    rule:
+      any:
+        - {fact: governance.mode, in: [team, committee, client]}
+        - {fact: governance.decision_owner_count, gt: 1}
+    activates: [DECISION_OWNER, DECISION_METHOD, FORMAL_REVIEW_LOG, TEAM_DECISION_PACKAGE]
+
+  - id: NEEDS_PRESENTATION
+    rule:
+      any:
+        - {fact: governance.mode, in: [team, committee, client]}
+        - {fact: explicit.presentation_requested, eq: true}
+    activates: [DECISION_DECK, EXECUTIVE_MEMO, PRESENTATION_FRESHNESS]
+
+  - id: NEEDS_VISUAL_PREFIGURATION
+    rule:
+      any:
+        - {fact: decision.requires_tangible_concept, eq: true}
+        - {fact: decision.visual_change_is_material, eq: true}
+        - {fact: decision.stakeholders_need_visual_comparison, eq: true}
+    activates: [VISUAL_TERRITORIES, HIFI_CONCEPT_MOCKUP]
+
+  - id: NEEDS_CONCEPT_VALIDATION
+    rule:
+      any:
+        - {fact: risk.new_segment, eq: true}
+        - {fact: risk.value_prop_uncertain, eq: true}
+        - {fact: risk.novel_critical_journey, eq: true}
+        - {fact: risk.high_cost_irreversible_decision, eq: true}
+        - {fact: risk.stakeholder_evidence_conflict, eq: true}
+    activates: [USER_TEST_PLAN, USER_VALIDATION_EVIDENCE]
+
+  - id: NEEDS_FINANCIAL_CASE
+    rule:
+      any:
+        - {fact: finance.committee_requires_financial_case, eq: true}
+        - {fact: finance.budget_decision_depends_on_return, eq: true}
+        - {fact: decision.question_tags, contains: financial_viability}
+    activates: [COST_ENVELOPE, SCENARIO_MODEL, ROI_IF_SUPPORTED]
+
+  - id: HAS_CMS
+    rule:
+      any:
+        - {fact: content.update_frequency_recurring, eq: true}
+        - {fact: explicit.cms_required, eq: true}
+    activates: [CONTENT_MODEL, EDITORIAL_ROLES, DRAFT_REVIEW_PUBLISH, PREVIEW_REQUIREMENT]
+
+  - id: HAS_AUTH_OR_ROLES
+    rule:
+      any:
+        - {fact: product.authentication_required, eq: true}
+        - {fact: product.protected_content, eq: true}
+        - {fact: product.multiple_user_roles, eq: true}
+    activates: [AUTH_REQUIREMENTS, ROLE_PERMISSION_MATRIX, SESSION_SECURITY, ABUSE_PROTECTION]
+
+  - id: HAS_PERSONAL_DATA
+    rule: {fact: privacy.collected_personal_data_count, gt: 0}
+    activates: [DATA_MINIMIZATION, FORM_PRIVACY_NOTICE, RETENTION_DELETION, PROCESSOR_REVIEW, SECURE_FORM_HANDLING]
+
+  - id: HAS_SENSITIVE_DATA
+    rule: {fact: privacy.sensitive_personal_data, eq: true}
+    activates: [EXPERT_SECURITY_PRIVACY_REVIEW, HIGH_RISK_DATA_CONTROLS]
+
+  - id: HAS_CRITICAL_INTEGRATION
+    rule: {fact: integration.failure_materially_breaks_primary_journey, eq: true}
+    activates: [INTEGRATION_FALLBACK, SANDBOX_TESTING, QUOTA_RATE_LIMIT_REVIEW, VENDOR_RISK]
+
+  - id: SEO_MIGRATION_RISK
+    rule:
+      all:
+        - {fact: contexts.IS_REDESIGN, eq: true}
+        - {fact: existing.organic_visibility_material, eq: true}
+    activates: [URL_PRESERVATION, REDIRECT_MAP, CANONICAL_MIGRATION, SEARCH_CONSOLE_BASELINE, SEO_MIGRATION_QA]
+
+  - id: DOMAIN_MIGRATION
+    rule: {fact: migration.domain_change_planned, eq: true}
+    activates: [DNS_PLAN, DOMAIN_REDIRECTS, EMAIL_CONTINUITY, ANALYTICS_SEARCH_CONSOLE_RECONFIG]
+
+  - id: HAS_REGULATORY_CONSTRAINT
+    rule:
+      any:
+        - {fact: compliance.sector_regulated, eq: true}
+        - {fact: compliance.regulated_claims, eq: true}
+    activates: [CLAIMS_REVIEW, COMPLIANCE_APPLICABILITY, EXPERT_SIGNOFF_WHERE_REQUIRED]
+
+  - id: BRAND_IN_TRANSITION
+    rule: {fact: brand.rework_parallel, eq: true}
+    activates: [TEMP_VISUAL_BASELINE, BRAND_DEPENDENCY_OWNER, VISUAL_PROMOTION_CONDITION]
+
+  - id: BUDGET_OR_TIME_CONSTRAINED
+    rule:
+      any:
+        - {fact: constraints.budget_materially_low, eq: true}
+        - {fact: constraints.deadline_materially_tight, eq: true}
+    activates: [SCOPE_TIERING, SIMPLIFICATION_PROBE, DELIVERY_PROFILE_FIT, DELIVERY_RISK]
+
+  - id: HIGH_TRUST_DECISION
+    rule:
+      any:
+        - {fact: business.sector, in: [health, legal, finance]}
+        - {fact: business.purchase_value_high, eq: true}
+        - {fact: business.user_risk_if_wrong_high, eq: true}
+    activates: [TRUST_PROOF_REQUIREMENTS, CLAIMS_EVIDENCE, ACCESSIBILITY_PRIORITY]
+
+  - id: BLUEPRINT_MISMATCH
+    rule:
+      any:
+        - {fact: core_behavior_requires_application_state, eq: true}
+        - {fact: project_type, in: [saas, marketplace, mobile_app, game]}
+    effect: [stop_site_vitrine_coverage_claim, preserve_history, require_blueprint_remap]
