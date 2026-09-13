@@ -68,9 +68,9 @@ validation_status:
   v0_3_machine_yaml_reference_cycle_validation: PASS_2026_09_13
   backend_mapping: ARCHITECTURE_MAPPED_NON_IMPLEMENTED_2026_09_13
   r0_isolated_algorithm_suite: PASS_12_OF_12_2026_09_13
-  r0_real_repo_v0_4_replay: PENDING_FRESH_EXECUTION_ENVIRONMENT
-  r0_reference_status: NOT_YET_PASS_REFERENCE
-  r1_persistence_implementation: BLOCKED_UNTIL_R0_PASS_REFERENCE
+  r0_real_repo_v0_4_replay: PASS_12_OF_12_FRESH_MAIN_2026_09_13
+  r0_reference_status: PASS_REFERENCE
+  r1_persistence_implementation: UNBLOCKED_FOR_CONTROLLED_IMPLEMENTATION
 
 validation_support:
   - ../../validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md
