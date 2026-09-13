@@ -1,0 +1,60 @@
+schema_version: '0.2'
+blueprint: SITE_VITRINE
+status: CANDIDATE_NON_CANONICAL
+
+# Applied after base registries.
+
+overrides:
+  - target: SV.D02.ORG_CONTEXT
+    reason: >
+      A création project may have no external source; explicit RAW human context is sufficient
+      to start Discovery and should not force an unnecessary confirmation/source hunt.
+    patch:
+      minimum_resolution_by_gate:
+        G1_FOUNDATION_LOCKABLE:
+          any_of: [RAW_HUMAN, SOURCE_BACKED, ACCEPTED_AS_CURRENT]
+
+  - target: SV.D04.OFFER_BASELINE
+    reason: >
+      For a creation without an existing public offer, explicit RAW human offer information can
+      legitimately satisfy the foundation; SOURCE_BACKED remains preferred for redesigns.
+    patch:
+      minimum_resolution_by_gate:
+        G1_FOUNDATION_LOCKABLE:
+          any_of: [RAW_HUMAN, SOURCE_BACKED, ACCEPTED_AS_CURRENT]
+
+  - target: SV.D01.DECISION_OWNER
+    reason: Separate Idea approval authority from later Build Ready authority.
+    patch:
+      authority:
+        ai_may_extract: true
+        ai_may_hypothesize: false
+        ai_may_recommend: false
+        ai_may_decide: false
+        decision_authority:
+          role_ref: IDEA_DECISION_OWNER
+          fallback: USER
+
+  - target: SV.D22.APPROVAL_OUTCOME
+    reason: Idea to Project is a formal Idea-owner decision.
+    patch:
+      authority:
+        ai_may_extract: false
+        ai_may_hypothesize: false
+        ai_may_recommend: true
+        ai_may_decide: false
+        decision_authority:
+          role_ref: IDEA_DECISION_OWNER
+          fallback: USER
+
+  - target: SV.D20.READY_APPROVAL
+    reason: Build Ready can be approved by a different authorized owner than the Idea sponsor.
+    patch:
+      authority:
+        ai_may_extract: false
+        ai_may_hypothesize: false
+        ai_may_recommend: true
+        ai_may_decide: false
+        decision_authority:
+          role_ref: BUILD_READY_OWNER
+          fallback: USER
