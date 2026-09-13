@@ -86,7 +86,7 @@ Fresh canonical result: 77 Requirements / 21 Contexts / 14 Gates / 19 Deliverabl
 
 ---
 
-# Runtime status — R7 PASS / INTEGRATION-CUTOVER NEXT
+# Runtime status — R7 PASS / WORKSPACE CUTOVER ACTIVE
 
 Runtime authority/index: `docs/project-definition/runtime/README.md`.
 
@@ -192,22 +192,81 @@ Implementation sequence complete:
 
 ---
 
-## Next track — Integration / UX projection / cutover
+## Workspace integration / cutover — ACTIVE
 
-Le runtime professionnel n'est plus le bloqueur du workspace UX.
+Active UX/integration authority:
+- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V1.md` — **projection active 1.2** ;
+- `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md`.
 
-La prochaine mission doit projeter R0→R7 dans une expérience utilisateur compréhensible et non séquentielle, puis définir l'intégration frontend/Worker sans exposer les RPCs service-role au navigateur.
+### Slice 1 — Canonical read projection — VALIDATED
 
-Priorités :
-1. mapping runtime state/actions → surfaces UX ;
-2. nouvelle UX post-capture fondée sur les vrais Requirements/Gates/NBA ;
-3. red-team UX Nathalie/Vincent/Maya + STOP/mismatch/stale ;
-4. adapters/API/Worker server-side ;
-5. E2E authentifié/multi-user ;
-6. cutover incrémental/réversible ;
-7. release seulement après validation.
+`get_idea_workspace_projection_v1(idea_id)` is the canonical read model for the new workspace.
 
-Les anciens prototypes workspace restent historiques. Leur existence n'autorise pas leur promotion.
+It aggregates R0→R7 into lifecycle/signals/Requirements/system micro-status/sources/artifacts/decision/Project Definition without exposing raw LLM/action payloads and without `phase`, `step`, global `progress` or completion percentage.
+
+ACL transversal and projection-shape red-team tests passed.
+
+### Slice 2 — G0 Blueprint Fit — VALIDATED
+
+Persistent objects:
+- `idea_blueprint_fit_assessments` ;
+- `idea_blueprint_fit_decisions`.
+
+Rules validated:
+- Site vitrine is never forced by default ;
+- assessment IA/system ≠ human truth ;
+- auto-apply only for HIGH, non-ambiguous, explicitly auto-applicable assessment ;
+- otherwise targeted human confirmation ;
+- mismatch preserves RAW/history ;
+- stale assessment cannot be applied ;
+- material Idea change triggers `BLUEPRINT_MIGRATION_REQUIRED` and G0 reclassification before Blueprint reuse.
+
+Change-intelligence compatibility validated:
+- obsolete unpromoted Action Runs become stale ;
+- affected Requirements preserve historical resolution but move to `REVIEW_REQUIRED` ;
+- draft/current Decision Packages become stale ;
+- unresolved Blueprint assessment is superseded ;
+- post-Project Definition structural editing through the legacy pre-GO editor is blocked pending controlled change workflow.
+
+Canonical integration migration sequence is aligned with Supabase migration history:
+- `20260913043039_idea_workspace_projection_v1`
+- `20260913043203_idea_workspace_projection_v1_boolean_fix`
+- `20260913043603_idea_blueprint_fit_g0_v1`
+- `20260913043734_idea_workspace_projection_g0_v1`
+- `20260913043819_idea_blueprint_fit_g0_fk_index`
+- `20260913044946_idea_blueprint_fit_reclassification_v1`
+- `20260913045028_idea_content_change_runtime_compat_v1`
+
+### Slice 3 — Parallel workspace V3 — IMPLEMENTED / PREVIEW
+
+Frontend:
+- `site/assets/ideas-workspace-v3-preview.js`
+- `site/assets/ideas-workspace-v3-preview.css`
+- additive wiring in `site/index.html`.
+
+Route: `#/ideas/<idea_id>/workspace-v3`.
+Feature preview: `?workspacev3=1` or localStorage `2b2c.idea.workspace.v3=1`.
+
+The preview reads the canonical projection and coexists with legacy `ideas-v1.js` / `ideas-orchestrator-v2.js`. It does not yet call privileged engine mutations.
+
+Transport build **539** was prepared with JS syntax and V3 shell/assets smoke checks and the normal Cloudflare release path was triggered. No Cloudflare status/check is observable through GitHub and no Cloudflare connector is available in the current environment, so **runtime certification remains unproven** until an external smoke result is available. Do not silently upgrade that status to certified.
+
+### Current active mission — Slice 4 server-side privileged adapter
+
+The next implementation target is the authenticated server-side boundary for selected R3→R7 service-role-only operations.
+
+Required properties:
+1. authenticate user JWT ;
+2. verify Idea/Project Definition access ;
+3. explicit operation allowlist ;
+4. revision/fingerprint/idempotency guards end-to-end ;
+5. service-role secret stays server-side ;
+6. minimal UX response ;
+7. audit/security red-team before interactive cutover.
+
+Do not relax engine RPC ACLs to make browser integration easier.
+
+Legacy workspace/orchestrator remains compatibility only until parallel workspace equivalence, desktop/mobile tests, authenticated E2E and rollback are validated.
 
 ---
 
@@ -231,7 +290,10 @@ Les anciens prototypes workspace restent historiques. Leur existence n'autorise 
 - Project Definition baseline never contains execution roadmap/tasks by default ;
 - Build Ready requires G8→G12, exact current artifacts, ambiguity audit and formal human approval ;
 - generic Requirement resolution never substitutes for stricter Gate-specific minimum ;
+- material Idea change never silently continues under a potentially invalid Blueprint ;
+- post-Project Definition structural change requires controlled change management ;
 - canonical writes require provenance, authorization, idempotency and stale-safety ;
+- service-role secrets and service-role-only engine RPCs never belong in browser code ;
 - LLM/providers never own canonical state ;
 - Remote Desktop availability is never a normal project dependency.
 
@@ -239,4 +301,4 @@ Les anciens prototypes workspace restent historiques. Leur existence n'autorise 
 
 ## Knowledge maintenance rule
 
-When a structural invariant is discovered: update the owning document after validation, preserve history/superseded material, update this map when authority/path/version/status changes, and avoid duplicating full specifications here.
+When a structural invariant is discovered: update the owning document after validation, preserve history/superseded material, update this map when authority/path/version/status changes, keep GitHub migration versions aligned with canonical Supabase history, and avoid duplicating full specifications here.
