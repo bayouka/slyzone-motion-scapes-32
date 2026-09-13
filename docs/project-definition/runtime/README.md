@@ -1,8 +1,8 @@
 # 4b4c — Project Definition Runtime Architecture
 
-Statut global : **R0 PASS_REFERENCE / R1 PASS_PERSISTENCE_BASELINE / R2 PASS_INGESTION_BASELINE / R3 NEXT**.
+Statut global : **R0 PASS_REFERENCE / R1 PASS_PERSISTENCE_BASELINE / R2 PASS_INGESTION_BASELINE / R3 PASS_ACTION_LIFECYCLE_BASELINE / R4 NEXT**.
 
-Le runtime professionnel complet reste en construction progressive. R1 a ajouté la persistance Supabase additive et R2 les frontières RAW-first/source/human mutations ; aucun basculement frontend/Worker vers le nouveau moteur n'a encore eu lieu.
+Le runtime professionnel complet reste en construction progressive. R1 a ajouté la persistance Supabase additive, R2 les frontières RAW-first/source/human mutations et R3 le lifecycle des System Actions + promotion déterministe. Aucun basculement frontend/Worker vers le nouveau moteur n'a encore eu lieu.
 
 ## Ordre de lecture
 
@@ -12,10 +12,12 @@ Le runtime professionnel complet reste en construction progressive. R1 a ajouté
 4. `R1_PERSISTENCE_VALIDATION_REPORT_20260913.md`
 5. `R2_INGESTION_IMPLEMENTATION_PLAN_V0_1.md`
 6. `R2_INGESTION_VALIDATION_REPORT_20260913.md`
-7. `DETERMINISTIC_ENGINE_CONTRACT_V0_1.md`
-8. `MUTATION_RPC_BOUNDARIES_V0_1.md`
-9. `RUNTIME_EXECUTION_MAPPING_RED_TEAM_20260913.md`
-10. `R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
+7. `R3_ACTIONS_IMPLEMENTATION_PLAN_V0_1.md`
+8. `R3_ACTIONS_VALIDATION_REPORT_20260913.md`
+9. `DETERMINISTIC_ENGINE_CONTRACT_V0_1.md`
+10. `MUTATION_RPC_BOUNDARIES_V0_1.md`
+11. `RUNTIME_EXECUTION_MAPPING_RED_TEAM_20260913.md`
+12. `R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
 
 ## Décisions structurantes actives
 
@@ -33,65 +35,66 @@ Le runtime professionnel complet reste en construction progressive. R1 a ajouté
 
 Blueprint : `../machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_4.yaml`
 
-Context DSL : `../machine/site-vitrine/CONTEXT_OVERLAYS_V0_2.yaml`
+Moteur : `scripts/r0_engine_v0_3.py`
 
-Moteur actif : `scripts/r0_engine_v0_3.py`
-
-Suite active : `scripts/test_r0_engine_v0_3.py`
-
-Validation :
-- replay frais `main` + Blueprint V0.4 : **12/12 PASS** ;
-- validateur V0.4 : **77 Requirements / 21 Contexts / 14 Gates / 19 Deliverables / 5 Overrides / 0 erreur / 0 warning**.
+Validation : replay frais **12/12 PASS** ; validateur V0.4 **77 Requirements / 21 Contexts / 14 Gates / 19 Deliverables / 5 Overrides / 0 erreur / 0 warning**.
 
 # R1 — PASS_PERSISTENCE_BASELINE
 
-Migrations Supabase :
+Migrations :
 - `20260913031001_idea_engine_r1_persistence_core`
 - `20260913031053_idea_engine_r1_fk_indexes`
 
-Persistance ajoutée : metadata Blueprint/engine sur `ideas`, `idea_sources`, `idea_information_items`, `idea_requirement_states`, `idea_action_runs`, `idea_snapshots`, `project_definitions`, `idea_artifacts`, `idea_ledger_entries`.
+Persistance : metadata Blueprint/engine sur `ideas`, sources, information atomique, Requirement-state cache, Action Runs, snapshots, Project Definitions, artifacts et ledger.
 
 Sécurité : RLS partout, aucun write générique client, tables moteur internes non exposées par grants, colonnes engine protégées, snapshots immuables.
 
 # R2 — PASS_INGESTION_BASELINE
 
-Migration Supabase :
-- `20260913031644_idea_engine_r2_ingestion_rpcs`
+Migration : `20260913031644_idea_engine_r2_ingestion_rpcs`.
 
-Frontières actives :
-- `initialize_idea_engine_v1` ;
-- `register_idea_source_v1` ;
-- `commit_source_ingestion_v1` (service-role only) ;
-- `supersede_source_v1` ;
-- `apply_human_information_v1`.
+Frontières : `initialize_idea_engine_v1`, `register_idea_source_v1`, `commit_source_ingestion_v1`, `supersede_source_v1`, `apply_human_information_v1`.
 
-Garanties validées :
-- RAW/source persisted before analysis ;
-- optimistic stale guard via `engine_revision` ;
-- idempotency keys + request fingerprints ;
-- source-version stale guard ;
-- explicit human supersession/history ;
-- source content changes stale directly derived information ;
-- direct authenticated table writes remain forbidden ;
-- unauthorized Idea writers rejected ;
-- audit/change payloads do not duplicate human/source content.
+Garanties : RAW-first, revision/source stale guards, idempotence, explicit supersession/history, source-change invalidation, no generic client write.
 
-Transactional tests on the live schema were always rolled back; production data remained unchanged.
+# R3 — PASS_ACTION_LIFECYCLE_BASELINE
 
-# R3 — NEXT: autonomous System Actions
+Migration : `20260913032224_idea_engine_r3_action_lifecycle`.
 
-R3 may now implement the lifecycle around `idea_action_runs`:
+Server-only RPCs :
 - `create_action_run_v1` ;
 - `start_action_run_v1` ;
 - `complete_action_run_v1` ;
 - `fail_action_run_v1` ;
 - `mark_action_run_stale_v1` ;
-- deterministic `promote_action_result_v1` ;
-- `materialize_requirement_states_v1` as a server-controlled cache boundary ;
-- eligibility/fingerprint/permission-scope checks between R0 projection and persisted runs.
+- `materialize_requirement_states_v1` ;
+- `promote_action_result_v1`.
 
-R3 must not allow any LLM/provider/workflow to write canonical Information Items, Requirement states, decisions or artifacts directly. AI outputs remain proposed mutations until deterministic promotion.
+Guarantees :
+- service-role-only action lifecycle ;
+- request/input/result/projection fingerprints ;
+- stale before start / during run / before promotion ;
+- idempotent create/complete/fail/stale/promotion where applicable ;
+- mutation permission scope ;
+- machine provenance allowlist excludes human/formal authority ;
+- atomic canonical promotion with action-run lineage ;
+- Requirement-state materialization guarded by exact Idea revision/Blueprint ;
+- no provider/LLM can mutate canonical state directly.
+
+All live-schema validation fixtures were transactionally rolled back; production data remains untouched.
+
+# R4 — NEXT: prefiguration / artifacts
+
+R4 may now implement artifact-version and snapshot freshness boundaries for decision-time prefiguration, notably concept journey/sitemap/message/capabilities/visual/feasibility outputs when applicable.
+
+R4 must preserve these safeguards:
+- prefiguration artifacts are `FOR_DECISION`, not final build specs ;
+- high-fidelity concepts remain labelled/not-final and cannot substitute for user evidence ;
+- artifact versions are immutable historical records with controlled current/frozen/stale transitions ;
+- artifact freshness derives from exact input fingerprints/snapshots ;
+- creating/promoting an artifact cannot bypass Requirement/Gate authority ;
+- R4 still does not create a real execution Project/backlog.
 
 ## Séquence
 
-`R0 deterministic engine ✅ → R1 persistence ✅ → R2 ingestion ✅ → R3 autonomous actions → R4 prefiguration/artifacts → R5 decision package → R6 project definition → R7 build ready`.
+`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 prefiguration/artifacts → R5 decision package → R6 project definition → R7 build ready`.
