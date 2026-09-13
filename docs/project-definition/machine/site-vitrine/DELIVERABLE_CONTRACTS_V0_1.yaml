@@ -1,0 +1,249 @@
+schema_version: '0.1'
+blueprint: SITE_VITRINE
+status: CANDIDATE_NON_CANONICAL
+
+deliverables:
+  - id: A01_IDEA_INTAKE_RECORD
+    zone: Z0
+    ready_when:
+      - raw_idea persisted
+      - source_provenance persisted
+      - blueprint fit classified
+    stale_when:
+      - raw source version superseded without re-ingestion
+
+  - id: A02_PROBLEM_OUTCOME_FRAME
+    zone: Z1
+    sources:
+      - SV.D02.ORG_CONTEXT
+      - SV.D02.DECLARED_PROBLEM
+      - SV.D02.PRIMARY_OBJECTIVE
+      - SV.D02.USER_OUTCOME
+      - SV.D02.HARD_CONSTRAINTS
+    ready_when:
+      - primary objective usable
+      - declared vs observed problem distinction preserved
+      - critical constraints visible
+
+  - id: A03_AUDIENCE_NEED_MODEL
+    zone: Z1_Z2
+    sources:
+      - SV.D03.PRIMARY_AUDIENCE
+      - SV.D03.PRIMARY_NEED
+      - SV.D03.OBJECTIONS_TRUST
+    ready_when:
+      - audience specific enough for targeted evidence work
+      - needs are sourced or labelled hypothesis
+
+  - id: A04_CURRENT_STATE_EVIDENCE_PACK
+    zone: Z2
+    sources:
+      - SV.D04.EXISTING_SITE
+      - SV.D04.EXISTING_AUDIT
+      - SV.D04.OFFER_BASELINE
+      - SV.D04.EVIDENCE_QUALITY
+    ready_when:
+      - relevant existing sources inspected OR NOT_RELEVANT
+      - observations separated from causal claims
+
+  - id: A05_MARKET_COMPETITIVE_LANDSCAPE
+    zone: Z2
+    sources:
+      - SV.D05.MARKET_CONTEXT
+      - SV.D05.COMPETITOR_SET
+      - SV.D05.PATTERN_GAP_SYNTHESIS
+      - SV.D05.RESEARCH_SUFFICIENCY
+    ready_when:
+      - market context sufficient for strategy
+      - sample relevance checked
+      - research stopping rule satisfied
+
+  - id: A06_OPPORTUNITY_OPTIONS_MAP
+    zone: Z3
+    sources:
+      - SV.D06.ORIGINAL_IDEA_CHALLENGE
+      - SV.D06.OPPORTUNITY_SYNTHESIS
+      - SV.D06.POSITIONING_OPTIONS
+      - SV.D06.RISKS_ASSUMPTIONS
+      - SV.D06.RECOMMENDATION
+      - SV.D07.MACRO_SCOPE
+      - SV.D07.NON_GOALS
+    ready_when:
+      - at least one viable direction or honest stop conclusion exists
+      - tradeoffs and assumptions visible
+
+  - id: A08_CONCEPT_PREFIGURATION
+    zone: Z4
+    sources:
+      - SV.PF.CONCEPT_JOURNEY
+      - SV.PF.CONCEPT_SITEMAP
+      - SV.PF.MESSAGE_HIERARCHY
+      - SV.PF.SEO_CONCEPT
+      - SV.PF.CAPABILITY_SET
+      - SV.PF.VISUAL_TERRITORIES
+      - SV.PF.HIFI_CONCEPT
+      - SV.PF.FEASIBILITY_ENVELOPE
+      - SV.PF.SUCCESS_MODEL
+    ready_when:
+      - decision-relevant concept artifacts sufficient
+      - visual artifacts labelled FOR_DECISION
+    not_required_when:
+      - early STOP_PAUSE_INSUFFICIENT path
+
+  - id: A09_CONCEPT_VALIDATION_RECORD
+    zone: Z4B
+    sources:
+      - SV.CV.USER_VALIDATION_PLAN
+      - SV.CV.USER_VALIDATION_EVIDENCE
+    applies_when:
+      - NEEDS_CONCEPT_VALIDATION
+    ready_when:
+      - risky assumption tested appropriately OR inability explicitly accepted
+
+  - id: A15_DECISION_ECONOMICS
+    zone: Z4_Z5
+    sources:
+      - SV.D21.BASELINE_INPUTS
+      - SV.D21.SCENARIO_MODEL
+    applies_when:
+      - NEEDS_FINANCIAL_CASE
+    ready_when:
+      - every number classified source/calculation/estimate
+      - assumptions and sensitivity exposed
+
+  - id: A16_DECISION_PACKAGE
+    zone: Z5
+    sources:
+      - SV.D01.DECISION_QUESTION
+      - A02_PROBLEM_OUTCOME_FRAME
+      - A03_AUDIENCE_NEED_MODEL
+      - A04_CURRENT_STATE_EVIDENCE_PACK
+      - A05_MARKET_COMPETITIVE_LANDSCAPE
+      - A06_OPPORTUNITY_OPTIONS_MAP
+      - A08_CONCEPT_PREFIGURATION
+      - A09_CONCEPT_VALIDATION_RECORD
+      - A15_DECISION_ECONOMICS
+      - SV.D22.EXECUTIVE_MEMO
+      - SV.D22.DECISION_DECK
+      - SV.D22.PRESENTATION_FRESHNESS
+    ready_when:
+      - G6_DECISION_PACKAGE_READY == READY
+    outputs:
+      - executive memo
+      - editable PPTX when NEEDS_PRESENTATION
+      - PDF fallback when NEEDS_PRESENTATION
+      - speaker notes if useful
+      - evidence appendix
+      - review agenda
+
+  - id: A17_IDEA_DECISION_RECORD
+    zone: Z5
+    sources:
+      - SV.D22.REVIEW_FEEDBACK
+      - SV.D22.APPROVAL_OUTCOME
+    ready_when:
+      - G7_IDEA_APPROVAL_READY resolved
+    outputs:
+      - outcome
+      - conditions
+      - accepted changes
+      - owner
+      - decision snapshot id
+
+  - id: A18_PROJECT_DEFINITION_BASELINE
+    zone: Z6
+    sources:
+      - SV.PRJ.APPROVED_BASELINE
+      - A17_IDEA_DECISION_RECORD
+    ready_when:
+      - approval outcome promotable
+      - structural approval conditions resolved
+    promotion_rules:
+      - concept artifacts may PROMOTE_DIRECTLY
+      - concept artifacts may PROMOTE_AND_DEEPEN
+      - stale artifacts require REWORK_TARGETED
+      - rejected artifacts become SUPERSEDED
+
+  - id: A19_EXPERIENCE_INFORMATION_ARCHITECTURE_SPEC
+    zone: Z7
+    sources:
+      - SV.D08.JOURNEY_SPEC
+      - SV.D09.PAGE_MANIFEST
+      - SV.D15.WIREFRAME_BASELINE
+      - SV.D15.RESPONSIVE_BEHAVIOR
+    ready_when:
+      - G8_PROJECT_PRODUCT_DEFINITION_STABLE == READY
+      - G9_PROJECT_EXPERIENCE_DEFINITION_STABLE == READY
+
+  - id: A20_CONTENT_DISCOVERABILITY_SPEC
+    zone: Z7
+    sources:
+      - SV.D10.CONTENT_REQUIREMENTS
+      - SV.D11.SEO_PAGE_MAP
+      - SV.D11.REDIRECT_MAP
+    ready_when:
+      - applicable content/SEO requirements current
+
+  - id: A21_FUNCTIONAL_DATA_INTEGRATION_SPEC
+    zone: Z7
+    sources:
+      - SV.D12.FUNCTIONAL_REQUIREMENTS
+      - SV.D12.UI_STATES
+      - SV.D12.BUSINESS_RULES
+      - SV.D13.CONTENT_DATA_MODEL
+      - SV.D13.ROLE_PERMISSION_MATRIX
+      - SV.D14.INTEGRATION_CONTRACTS
+    ready_when:
+      - applicable functional/data/integration requirements current
+
+  - id: A22_DESIGN_DEFINITION
+    zone: Z7
+    sources:
+      - SV.D15.DESIGN_DEFINITION
+      - SV.D15.RESPONSIVE_BEHAVIOR
+    ready_when:
+      - G9_PROJECT_EXPERIENCE_DEFINITION_STABLE == READY
+
+  - id: A23_TECHNICAL_NFR_DEFINITION
+    zone: Z7
+    sources:
+      - SV.D16.DELIVERY_APPROACH
+      - SV.D16.ARCHITECTURE
+      - SV.D16.ENV_HOSTING_OPS
+      - SV.D17.PRIVACY_SECURITY
+      - SV.D17.EXPERT_SIGNOFF
+      - SV.D18.ACCESSIBILITY_TARGET
+      - SV.D18.PERFORMANCE_RELIABILITY
+      - SV.D19.MEASUREMENT_PLAN
+    ready_when:
+      - G10_PROJECT_TECH_NFR_STABLE == READY
+
+  - id: A24_VERIFICATION_ACCEPTANCE_PLAN
+    zone: Z8
+    sources:
+      - SV.D20.ACCEPTANCE_CRITERIA
+      - SV.D20.SOURCE_OF_TRUTH_MANIFEST
+      - SV.D20.IMPLEMENTATION_DISCRETION
+      - SV.D20.DEVELOPER_AMBIGUITY_AUDIT
+    ready_when:
+      - G11_TRACEABILITY_AND_ACCEPTANCE_READY == READY
+
+  - id: A25_BUILD_READY_PROJECT_SPECIFICATION
+    zone: Z8
+    sources:
+      - A18_PROJECT_DEFINITION_BASELINE
+      - A19_EXPERIENCE_INFORMATION_ARCHITECTURE_SPEC
+      - A20_CONTENT_DISCOVERABILITY_SPEC
+      - A21_FUNCTIONAL_DATA_INTEGRATION_SPEC
+      - A22_DESIGN_DEFINITION
+      - A23_TECHNICAL_NFR_DEFINITION
+      - A24_VERIFICATION_ACCEPTANCE_PLAN
+      - SV.D20.READY_APPROVAL
+    ready_when:
+      - G12_READY_FOR_DEVELOPMENT == READY
+    outputs:
+      - BUILD_READY_SNAPSHOT_ID
+      - versioned source-of-truth manifest
+      - developer handoff package
+      - accepted unknowns and risks
+      - implementation discretion boundaries
