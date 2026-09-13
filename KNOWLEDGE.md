@@ -189,17 +189,20 @@ The machine-readable layer is **non-canonical** and does not authorize backend/r
 
 ### Active machine manifest
 
-`docs/project-definition/machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_2.yaml`
+`docs/project-definition/machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_3.yaml`
 
-It loads, in order:
+V0.3 supersedes V0.2 as the active machine manifest candidate because it adds explicit `Gate → Requirement Atom / Deliverable / Ledger` bindings.
 
-1. `CONTEXT_OVERLAYS_V0_1.yaml`
-2. `GATES_V0_1.yaml`
-3. `REQUIREMENTS_IDEA_V0_1.yaml`
-4. `REQUIREMENTS_PREFIGURATION_DECISION_V0_1.yaml`
-5. `REQUIREMENTS_PROJECT_BUILD_V0_1.yaml`
-6. `DELIVERABLE_CONTRACTS_V0_1.yaml`
-7. `OVERRIDES_V0_1.yaml`
+Load set includes:
+
+- `CONTEXT_OVERLAYS_V0_1.yaml`
+- `REQUIREMENTS_IDEA_V0_1.yaml`
+- `REQUIREMENTS_PREFIGURATION_DECISION_V0_1.yaml`
+- `REQUIREMENTS_PROJECT_BUILD_V0_1.yaml`
+- `DELIVERABLE_CONTRACTS_V0_1.yaml`
+- `GATES_V0_1.yaml`
+- `GATE_BINDINGS_V0_1.yaml`
+- `OVERRIDES_V0_1.yaml`
 
 ### Atom schema
 
@@ -207,15 +210,15 @@ Current candidate:
 
 `docs/project-definition/machine/REQUIREMENT_ATOM_SCHEMA_V0_2.md`
 
-V0.2 supersedes V0.1 as the machine-schema candidate. It explicitly supports alternative acceptable resolution forms per Gate and separate `IDEA_DECISION_OWNER` / `BUILD_READY_OWNER` role references.
+V0.2 supports alternative acceptable resolution forms per Gate, versioned overrides and separate `IDEA_DECISION_OWNER` / `BUILD_READY_OWNER` role references.
 
 ### Machine simulation
 
 `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
 
-Simulation result: the exhaustive internal referential can remain compatible with low human burden. Representative simple/rich cases require only a small number of human interventions because most requirements resolve through sources, audit, research, calculation or recommendations.
+Simulation result: the exhaustive internal referential remains compatible with low human burden. Representative simple/rich cases require only a small number of human interventions because most requirements resolve through sources, audit, research, calculation or recommendations.
 
-Important: human-intervention count is **not** a KPI to minimize blindly; high-risk contexts may legitimately require more human/expert involvement.
+Human-intervention count is **not** a KPI to minimize blindly; high-risk contexts may legitimately require more human/expert involvement.
 
 ### Machine-contract status
 
@@ -223,8 +226,10 @@ Current state:
 
 - professional coverage: substantially complete for Site vitrine ;
 - machine schema: candidate V0.2 ;
-- machine Blueprint: candidate V0.2 ;
-- syntax/reference/cycle validation: still required before promotion ;
+- machine Blueprint manifest: candidate V0.3 ;
+- Gate bindings: candidate V0.1 ;
+- scenario simulation: passed with local corrections incorporated as overrides/schema V0.2 ;
+- automated YAML syntax/reference/cycle validation: still required before promotion ;
 - backend/runtime mapping: not started and not authorized yet.
 
 ---
