@@ -19,13 +19,14 @@ Le navigateur ne choisit jamais un nom de RPC, une table, du SQL, un acteur priv
 1. Le JWT utilisateur est obligatoire et validé via Supabase Auth.
 2. Avant tout appel service-role, le Worker vérifie que ce JWT peut lire/écrire la cible via une frontière user-scoped existante (`get_idea_workspace_projection_v1` et `capabilities.can_write`).
 3. `SUPABASE_SERVICE_ROLE_KEY` est un secret Worker uniquement. Il ne doit jamais apparaître dans GitHub, le transport, le HTML, le JavaScript navigateur, les réponses API ou les logs.
-4. Absence du secret = fail closed `503 SERVER_PRIVILEGE_UNAVAILABLE`.
-5. Les commandes sont une allowlist codée en dur. Aucune commande `rpc`, `sql`, `table`, `function` ou équivalent fournie par le client n'est interprétée.
-6. Les paramètres sensibles sont dérivés côté serveur : actor, provider/model, permission scopes, versions de prompt/schema/tool, provenance système et paramètres d'autorité.
-7. Les `engine_revision`, fingerprints et idempotency guards restent obligatoires lorsque le RPC sous-jacent les exige.
-8. Une erreur stale reste une erreur stale ; le Worker ne retry pas aveuglément avec une nouvelle revision.
-9. Les réponses sont minimales et orientées UX. Les payloads LLM bruts, proposed mutations, scopes internes et secrets ne sont pas retournés sauf contrat explicite ultérieur.
-10. Les appels service-role restent étroits : jamais de broad table update ni de PostgREST arbitraire piloté par le browser.
+4. Les clés Supabase modernes `sb_secret_...` ne sont pas des JWT : côté serveur elles sont envoyées uniquement dans l'en-tête `apikey`. Elles ne doivent jamais être placées dans `Authorization: Bearer ...`. Les JWT utilisateurs restent, eux, transmis via `Authorization: Bearer <user-jwt>` avec la publishable key dans `apikey`.
+5. Absence du secret = fail closed `503 SERVER_PRIVILEGE_UNAVAILABLE`.
+6. Les commandes sont une allowlist codée en dur. Aucune commande `rpc`, `sql`, `table`, `function` ou équivalent fournie par le client n'est interprétée.
+7. Les paramètres sensibles sont dérivés côté serveur : actor, provider/model, permission scopes, versions de prompt/schema/tool, provenance système et paramètres d'autorité.
+8. Les `engine_revision`, fingerprints et idempotency guards restent obligatoires lorsque le RPC sous-jacent les exige.
+9. Une erreur stale reste une erreur stale ; le Worker ne retry pas aveuglément avec une nouvelle revision.
+10. Les réponses sont minimales et orientées UX. Les payloads LLM bruts, proposed mutations, scopes internes et secrets ne sont pas retournés sauf contrat explicite ultérieur.
+11. Les appels service-role restent étroits : jamais de broad table update ni de PostgREST arbitraire piloté par le browser.
 
 ## 3. Séparation des catégories d'opérations
 
@@ -133,7 +134,7 @@ Ne pas transmettre directement les messages SQL internes au navigateur.
 Le Worker peut loguer uniquement : command, outcome classifié, status code, latency et identifiants non secrets nécessaires au diagnostic.
 
 Interdits dans les logs :
-- service-role key ;
+- service-role/secret key ;
 - JWT utilisateur ;
 - contenu complet privé de l'Idea ;
 - données sensibles inutiles ;
@@ -154,7 +155,8 @@ Les mutations métier elles-mêmes restent auditées par les RPCs canoniques lor
 9. assessment ambiguë/non auto-applicable ;
 10. tentative d'escalade vers décision humaine/expert/Build Ready ;
 11. réponse et logs sans secret ;
-12. aucun changement d'ACL des RPCs moteur.
+12. aucun changement d'ACL des RPCs moteur ;
+13. `sb_secret_...` présent uniquement dans `apikey`, jamais dans `Authorization`.
 
 ## 10. Definition of Done Slice 4 V0.1
 
@@ -165,5 +167,6 @@ Les mutations métier elles-mêmes restent auditées par les RPCs canoniques lor
 - seule commande `blueprint_fit.assess` allowlistée ;
 - validation syntaxique ;
 - tests unitaires ou harness des cas red-team essentiels ;
+- règle `sb_secret_... → apikey only` vérifiée dans le contrat de release ;
 - aucune activation frontend dépendante du service-role avant provisionnement du secret ;
 - `KNOWLEDGE.md` / plan de cutover mis à jour après validation.
