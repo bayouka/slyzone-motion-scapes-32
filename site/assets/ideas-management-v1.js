@@ -12,6 +12,7 @@ import { SupabaseBrowserClient } from './supabase-client.js';
   let busy = false;
   let capabilityPromise = null;
   let capabilities = new Map();
+  let capabilitiesLoaded = false;
 
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const ideaIdFromHref = (href='') => (String(href).match(/#\/ideas\/([0-9a-f-]{36})(?:\/|$)/i) || [])[1] || null;
@@ -27,13 +28,14 @@ import { SupabaseBrowserClient } from './supabase-client.js';
   }
 
   async function loadCapabilities(force=false){
-    if(capabilityPromise && !force) return capabilityPromise;
+    if(!force && capabilitiesLoaded) return capabilities;
+    if(capabilityPromise) return capabilityPromise;
     capabilityPromise=(async()=>{
       const session=api.getSession();
-      if(!session?.access_token){ capabilities=new Map(); return capabilities; }
+      if(!session?.access_token){ capabilities=new Map(); capabilitiesLoaded=true; return capabilities; }
       const user=await api.getUser();
       const workspace=workspaceId();
-      if(!user?.id || !workspace){ capabilities=new Map(); return capabilities; }
+      if(!user?.id || !workspace){ capabilities=new Map(); capabilitiesLoaded=true; return capabilities; }
       const [ideas,members,workspaceRows]=await Promise.all([
         api.select('ideas',`select=id,created_by,status,converted_project_id&workspace_id=eq.${workspace}`).catch(()=>[]),
         api.select('idea_members',`select=idea_id,user_id,role&user_id=eq.${user.id}`).catch(()=>[]),
@@ -48,6 +50,7 @@ import { SupabaseBrowserClient } from './supabase-client.js';
         const editor=ideaRoles.get(idea.id)==='editor';
         return [idea.id,{canEdit:!converted&&(creator||editor||canManage),canDelete:!converted&&(creator||canManage)}];
       }));
+      capabilitiesLoaded=true;
       return capabilities;
     })().finally(()=>{ capabilityPromise=null; });
     return capabilityPromise;
@@ -230,7 +233,7 @@ import { SupabaseBrowserClient } from './supabase-client.js';
 
   const observer=new MutationObserver(()=>queueMicrotask(enhance));
   observer.observe(document.documentElement,{subtree:true,childList:true});
-  window.addEventListener('hashchange',()=>{ capabilities=new Map(); setTimeout(enhance,0); });
+  window.addEventListener('hashchange',()=>{ capabilities=new Map(); capabilitiesLoaded=false; setTimeout(enhance,0); });
   document.addEventListener('DOMContentLoaded',enhance,{once:true});
   setTimeout(enhance,0);
 })();
