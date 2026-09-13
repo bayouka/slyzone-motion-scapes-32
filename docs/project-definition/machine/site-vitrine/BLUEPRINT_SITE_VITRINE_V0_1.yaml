@@ -1,0 +1,91 @@
+schema_version: '0.1'
+blueprint_id: SITE_VITRINE
+blueprint_version: '0.1'
+status: CANDIDATE_NON_CANONICAL
+parent_architecture: PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4
+atom_schema: ../REQUIREMENT_ATOM_SCHEMA_V0_1.md
+
+purpose: >
+  Transformer une idée de création/refonte de site vitrine en Idea approuvée,
+  Project Definition puis package READY_FOR_DEVELOPMENT, avec résolution AI-first
+  et intervention humaine limitée aux intentions, préférences, arbitrages et approvals.
+
+mismatch_when:
+  - core_behavior_requires_application_state == true
+  - dominant_value_requires_logged_in_product_workflow == true
+  - project_type in [SAAS, MARKETPLACE, MOBILE_APP, GAME]
+
+resolution_defaults:
+  preferred_paths: [MEM, RAW, SRC, AUDIT, CONN, WEB, CALC, AI_H, AI_R, HUM, EXPERT]
+  default_human_interaction: NONE
+  rescue_policy: DEFAULT
+  provenance_required: true
+  conflict_policy: PRESERVE_AND_RESOLVE
+  ai_may_extract: true
+  ai_may_hypothesize: true
+  ai_may_recommend: true
+  ai_may_decide: false
+
+state_defaults:
+  change_policy: TARGETED_RECOMPUTE
+  accepted_unknown_allowed_if_non_blocking: true
+  stale_result_cannot_overwrite_current: true
+
+machine_files:
+  contexts: CONTEXT_OVERLAYS_V0_1.yaml
+  gates: GATES_V0_1.yaml
+  requirements_idea: REQUIREMENTS_IDEA_V0_1.yaml
+  requirements_prefiguration_decision: REQUIREMENTS_PREFIGURATION_DECISION_V0_1.yaml
+  requirements_project_build: REQUIREMENTS_PROJECT_BUILD_V0_1.yaml
+  deliverables: DELIVERABLE_CONTRACTS_V0_1.yaml
+  simulation: ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md
+
+domains:
+  D01: Governance, Stakeholders & Decision Context
+  D02: Business Context, Problem & Outcomes
+  D03: Users, Audiences, Segments & Jobs
+  D04: Existing State, Assets & Evidence
+  D05: Market, Competition, Alternatives & References
+  D06: Opportunity, Strategy, Value Proposition & Positioning
+  D07: Offer, Product/Service Model & Scope
+  D08: User Journeys, Conversion & Service Flow
+  D09: Information Architecture, Navigation & Page Model
+  D10: Content, Proof, Media & Content Operations
+  D11: SEO, Discoverability & Migration
+  D12: Functional Requirements, Business Rules & UI States
+  D13: Data, Content Model, CMS, Roles & Permissions
+  D14: Integrations, APIs, Notifications & External Services
+  D15: UX, UI, Brand & Design System Definition
+  D16: Technical Architecture, Platform, Environments & Operations
+  D17: Security, Privacy, Legal & Compliance
+  D18: Accessibility, Performance, Reliability & Compatibility
+  D19: Measurement, Analytics, Experimentation & Observability
+  D20: QA, Acceptance, Delivery Constraints & Handoff
+  D21: Business Case, Economics, Forecasts & Scenario Models
+  D22: Decision Package, Presentation, Review & Approval
+
+lifecycle_zones:
+  Z0: CAPTURE_BLUEPRINT_FIT
+  Z1: IDEA_DISCOVERY_FOUNDATION
+  Z2: IDEA_EVIDENCE_MARKET
+  Z3: IDEA_STRATEGY_OPTIONS
+  Z4: IDEA_PREFIGURATION_CONCEPT_ALPHA
+  Z4B: CONCEPT_VALIDATION_CONDITIONAL
+  Z5: DECISION_PACKAGE_PRESENTATION_REVIEW
+  Z6: APPROVED_IDEA_TO_PROJECT_BASELINE
+  Z7: PROJECT_DEFINITION
+  Z8: BUILD_READY
+
+invariants:
+  - exhaustive_internal_not_visible_form
+  - human_question_is_last_mile
+  - research_serves_decision_not_completeness
+  - AI_inference_is_not_human_truth
+  - presentation_is_projection_of_same_dossier
+  - prefiguration_artifacts_are_FOR_DECISION_until_promoted
+  - project_inherits_valid_idea_artifacts
+  - requirement_to_spec_to_verify_traceability
+  - proportionality_by_context_and_risk
+  - no_global_completion_percentage
+  - STOP_PAUSE_INSUFFICIENT_are_valid_outcomes
+  - developer_retains_implementation_discretion_non_structural
