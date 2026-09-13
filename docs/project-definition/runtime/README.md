@@ -48,8 +48,9 @@ Les fichiers `scripts/r0_engine.py`, `scripts/r0_engine_v0_2.py` et les anciens 
 - core contexts / Requirements / Gates / fingerprints / Change Impact / stale guards : **IMPLEMENTE EN REFERENCE LOCALE** ;
 - suite algorithmique isolée : **12/12 PASS** ;
 - bug `generic RESOLVED != Gate minimum satisfied` détecté et corrigé dans V0.3 ;
-- replay de `scripts/test_r0_engine_v0_3.py` contre un clone frais de `main` + Blueprint V0.4 : **PENDING**, environnement distant actuellement indisponible ;
-- statut final : **NOT_YET_PASS_REFERENCE**.
+- replay de `scripts/test_r0_engine_v0_3.py` contre un clone frais de `main` + Blueprint V0.4 : **12/12 PASS** le 2026-09-13 ;
+- validateur V0.4 : **77 Requirements / 21 Contexts / 14 Gates / 19 Deliverables / 5 Overrides / 0 erreur / 0 warning** ;
+- statut final : **PASS_REFERENCE**.
 
 R0 ne lit ni n'écrit Supabase, n'appelle aucun LLM et ne déploie rien.
 
@@ -57,4 +58,4 @@ R0 ne lit ni n'écrit Supabase, n'appelle aucun LLM et ne déploie rien.
 
 `R0 deterministic engine → R1 persistence → R2 ingestion → R3 autonomous actions → R4 prefiguration/artifacts → R5 decision package → R6 project definition → R7 build ready`.
 
-**R1 SQL/Supabase reste bloqué tant que R0 n'a pas obtenu `PASS_REFERENCE` après replay frais et red-team final.**
+**R1 SQL/Supabase est désormais déverrouillé pour conception/implémentation contrôlée ; aucune migration production n'est implicite et les invariants RLS, idempotence et stale-safety restent obligatoires.**
