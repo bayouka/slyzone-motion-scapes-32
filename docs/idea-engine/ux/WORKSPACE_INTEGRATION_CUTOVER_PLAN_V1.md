@@ -2,7 +2,7 @@
 
 Date : 2026-09-13
 
-Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–2 VALIDATED / SLICE 3 IMPLEMENTED IN PARALLEL**
+Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–3 VALIDATED / SLICE 4 DEPLOYED FAIL-CLOSED**
 
 Objectif : remplacer progressivement le workspace Idea historique par une projection fidèle au runtime R0→R7 sans big-bang, sans baisse de sécurité et sans rendre l'application inutilisable pendant la transition.
 
@@ -58,7 +58,7 @@ Migrations d'intégration alignées avec l'historique Supabase :
 - `20260913044946_idea_blueprint_fit_reclassification_v1` ;
 - `20260913045028_idea_content_change_runtime_compat_v1`.
 
-## Slice 3 — Parallel workspace shell — IMPLEMENTED / PREVIEW
+## Slice 3 — Parallel workspace shell — DONE / VALIDATED PREVIEW
 
 Livrables frontend :
 - `site/assets/ideas-workspace-v3-preview.js` ;
@@ -84,31 +84,53 @@ La surface lit exclusivement `get_idea_workspace_projection_v1` et reste volonta
 
 Coexistence vérifiée : la route `workspace-v3` ne matche pas la regex historique de `ideas-v1.js`; aucun lien principal n'est basculé.
 
-Transport : build 539 préparé avec validation syntaxique et smoke checks dédiés aux assets V3. La chaîne Cloudflare a été déclenchée via le miroir normal, mais aucun statut/check Cloudflare n'est observable depuis GitHub et aucun connecteur Cloudflare n'est disponible dans l'environnement courant. **Ne pas déclarer la preview runtime certifiée tant qu'une preuve de smoke production n'est pas disponible.**
+Production : **build 539 certifié directement** le 2026-09-13 :
+- `/health` OK ;
+- shell production référence JS/CSS Workspace V3 ;
+- `/assets/ideas-workspace-v3-preview.js` servi avec marqueur `__2B2C_IDEA_WORKSPACE_V3_PREVIEW__` ;
+- `/assets/ideas-workspace-v3-preview.css` servi avec marqueur `.ideas-workspace-v3-owned`.
 
-## Slice 4 — Privileged action adapter — NEXT
+## Slice 4 — Privileged action adapter — DEPLOYED / FAIL-CLOSED
 
-Les RPCs R3→R7 restent `service_role only`.
+Contrat : `WORKSPACE_PRIVILEGED_ADAPTER_CONTRACT_V0_1.md`.
+Validation : `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALIDATION_20260913.md`.
 
-Créer une frontière serveur qui :
-1. authentifie le JWT utilisateur ;
-2. vérifie le droit sur l'Idea/Project Definition ;
-3. valide l'action demandée et sa revision/fingerprint ;
-4. appelle uniquement une RPC allowlistée avec service role ;
-5. renvoie un résultat UX minimal ;
-6. journalise l'acte ;
-7. n'expose jamais la clé service-role au navigateur.
+Implémentation :
+- `src/idea-engine-adapter.js` ;
+- `POST /api/ideas/engine` dans `src/worker.js` ;
+- commande allowlistée V0.1 unique : `blueprint_fit.assess`.
 
-Le Worker Cloudflare est la cible architecturale préférée si le secret service-role peut être provisionné proprement. Ne pas coder de contournement client et ne pas élargir les ACL des RPCs moteur pour faciliter l'UI.
+Garanties :
+1. JWT utilisateur obligatoire ;
+2. projection user-scoped lue avant toute élévation ;
+3. `capabilities.can_write` requis ;
+4. body strict : `command + idea_id` uniquement ;
+5. aucun nom de RPC/table/SQL/actor/authorized_by/permission_scope fourni par le browser ;
+6. revision, stale-safety et idempotency préservées ;
+7. `SUPABASE_SERVICE_ROLE_KEY` Worker-only ;
+8. secret absent → fail closed ;
+9. aucune ACL moteur relâchée ;
+10. autorité humaine/expert exclue de l'adapter générique.
 
-Avant activation :
-- vérifier le mécanisme de secret Worker disponible ;
-- définir une allowlist explicite des opérations moteur exposables ;
-- distinguer lecture utilisateur, mutation humaine, action système et autorité humaine/expert ;
-- préserver revision/fingerprint/idempotency de bout en bout ;
-- tester ACL transversal, stale request, idempotency reuse et absence de fuite du service-role.
+Red-team exact commit canonique : `WORKSPACE_PRIVILEGED_ADAPTER_V0_1_REDTEAM_PASS`.
 
-## Slice 5 — Idea workspace interactions
+Production : **build 540 certifié** :
+- `/health` expose `idea_engine_adapter_v0_1.code=0.1.0` ;
+- commande déclarée : `blueprint_fit.assess` ;
+- `service_role_browser_exposed=false` ;
+- `POST /api/ideas/engine` sans JWT → `401 UNAUTHORIZED`.
+
+État d'activation réel : **`configured=false`**. Le secret `SUPABASE_SERVICE_ROLE_KEY` n'est pas provisionné dans le Worker. L'adapter est donc déployé mais volontairement incapable d'exécuter une mutation privilégiée. Une tentative automatisée d'accès à la clé secrète a été bloquée par la couche de sécurité ; aucun contournement ne doit être tenté.
+
+### Condition pour fermer complètement Slice 4
+
+- provisionner `SUPABASE_SERVICE_ROLE_KEY` par une voie de secret-management autorisée, hors repo/browser ;
+- vérifier `/health` → `configured=true` ;
+- réaliser un E2E authentifié `blueprint_fit.assess` sur une Idea de test contrôlée ;
+- vérifier cas HIGH auto-apply et cas ambiguous → confirmation humaine ;
+- seulement ensuite brancher l'action G0 interactive dans Workspace V3.
+
+## Slice 5 — Idea workspace interactions — BLOCKED ON SLICE 4 ACTIVATION FOR PRIVILEGED G0
 
 Brancher progressivement :
 - ajout/correction d'information humaine ;
@@ -118,6 +140,8 @@ Brancher progressivement :
 - artefacts de préfiguration ;
 - review/feedback ;
 - Decision Package et décision.
+
+Les mutations humaines déjà user-scoped peuvent rester directes via leurs RPCs authentifiées ; ne pas les rerouter inutilement par service-role.
 
 Les anciennes `idea_items` peuvent rester en lecture/compatibilité durant la transition, mais ne doivent plus définir la maturité canonique.
 
