@@ -183,6 +183,52 @@ Invariant:
 
 ---
 
+## Machine-readable Site vitrine Blueprint — CURRENT MACHINE-CONTRACT CANDIDATE
+
+The machine-readable layer is **non-canonical** and does not authorize backend/runtime implementation yet.
+
+### Active machine manifest
+
+`docs/project-definition/machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_2.yaml`
+
+It loads, in order:
+
+1. `CONTEXT_OVERLAYS_V0_1.yaml`
+2. `GATES_V0_1.yaml`
+3. `REQUIREMENTS_IDEA_V0_1.yaml`
+4. `REQUIREMENTS_PREFIGURATION_DECISION_V0_1.yaml`
+5. `REQUIREMENTS_PROJECT_BUILD_V0_1.yaml`
+6. `DELIVERABLE_CONTRACTS_V0_1.yaml`
+7. `OVERRIDES_V0_1.yaml`
+
+### Atom schema
+
+Current candidate:
+
+`docs/project-definition/machine/REQUIREMENT_ATOM_SCHEMA_V0_2.md`
+
+V0.2 supersedes V0.1 as the machine-schema candidate. It explicitly supports alternative acceptable resolution forms per Gate and separate `IDEA_DECISION_OWNER` / `BUILD_READY_OWNER` role references.
+
+### Machine simulation
+
+`docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
+
+Simulation result: the exhaustive internal referential can remain compatible with low human burden. Representative simple/rich cases require only a small number of human interventions because most requirements resolve through sources, audit, research, calculation or recommendations.
+
+Important: human-intervention count is **not** a KPI to minimize blindly; high-risk contexts may legitimately require more human/expert involvement.
+
+### Machine-contract status
+
+Current state:
+
+- professional coverage: substantially complete for Site vitrine ;
+- machine schema: candidate V0.2 ;
+- machine Blueprint: candidate V0.2 ;
+- syntax/reference/cycle validation: still required before promotion ;
+- backend/runtime mapping: not started and not authorized yet.
+
+---
+
 ## Validation support
 
 Current validation material includes:
@@ -191,6 +237,8 @@ Current validation material includes:
 - `docs/project-definition/validation/IDEA_REQUIREMENT_REGISTRY_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`
 - `docs/project-definition/validation/DETAILED_REFERENTIAL_RED_TEAM_20260913.md`
+- `docs/project-definition/validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md`
+- `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
 - `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
 
 Earlier exploratory inventory:
@@ -217,7 +265,8 @@ No new workspace prototype should be promoted or implemented until the professio
 Do not conflate:
 - current production implementation ;
 - current canonical Idea Engine ;
-- non-canonical Project Definition architecture/registries.
+- non-canonical Project Definition architecture/registries ;
+- non-canonical machine-readable Blueprint files.
 
 No production/backend implementation is authorized from these candidates yet unless explicitly decided.
 
@@ -240,7 +289,8 @@ No production/backend implementation is authorized from these candidates yet unl
 - Project inherits valid Idea artifacts instead of restarting ;
 - requirements/standards are proportional to applicability/risk ;
 - structural requirements should be traceable to specification and verification ;
-- developers retain implementation discretion when it does not alter product behavior/constraints.
+- developers retain implementation discretion when it does not alter product behavior/constraints ;
+- Idea approval authority and Build Ready approval authority may be different roles.
 
 ---
 
