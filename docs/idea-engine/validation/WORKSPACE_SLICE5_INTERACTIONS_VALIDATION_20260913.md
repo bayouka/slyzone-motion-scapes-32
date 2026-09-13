@@ -2,131 +2,170 @@
 
 Date : 2026-09-13
 
-Statut : **PARTIAL PASS — G0 HUMAN CONFIRMATION + URL SOURCE INTERACTION**
+Statut : **PARTIAL PASS — G0 + URL SOURCE VALIDATED — G1 FOUNDATION IMPLEMENTED / RED-TEAM HARNESS PRESENT / RUNTIME E2E PENDING**
 
 ## Scope
 
-Cette validation couvre uniquement les premières mutations humaines du Workspace V3 qui disposent déjà d'un contrat Supabase user-scoped explicite.
+Cette validation couvre la montée progressive des interactions du Workspace V3 sans transformer le référentiel interne en questionnaire utilisateur.
 
-Sont inclus :
-- confirmation humaine G0 via `confirm_idea_blueprint_fit_v1` ;
-- ajout d'une source URL via `register_idea_source_v1` ;
-- stale-safety / engine revision ;
-- idempotence déterministe côté navigateur ;
-- stabilité du renderer interactif V3.
+Invariant principal :
 
-Ne sont pas encore inclus :
-- question last-mile générée depuis le planner déterministe ;
-- information humaine ciblée sur une Requirement ;
-- ingestion/extraction de source ;
-- Action Run système ;
-- artefacts / review / Decision Package.
+> **Requirement unresolved ≠ question utilisateur.**
+
+Une question humaine n'est autorisée que lorsqu'un planner déterministe démontre qu'elle est réellement la meilleure action humaine restante.
 
 ## 1. G0 human confirmation — PASS
 
-Test transactionnel exécuté contre Supabase sous le rôle `authenticated` avec `auth.uid()` simulé pour un membre owner du workspace de test.
+Chemin validé :
+- assessment G0 système/IA ;
+- confirmation humaine ciblée via `confirm_idea_blueprint_fit_v1` ;
+- acteur humain conservé ;
+- revision incrémentée ;
+- stale-safety ;
+- aucune fixture persistante après harness transactionnel.
 
-Scénario :
-1. fixture Idea non classifiée ;
-2. assessment `AMBIGUOUS / MEDIUM` créée côté système ;
-3. appel réel `confirm_idea_blueprint_fit_v1` sous rôle `authenticated` ;
-4. vérification :
-   - `blueprint_id = SITE_VITRINE` ;
-   - `blueprint_version = 0.4` ;
-   - `blueprint_status = active` ;
-   - `engine_revision` incrémentée ;
-   - Decision G0 `decided_by_actor = HUMAN` ;
-   - `decided_by = auth.uid()` ;
-   - assessment devient `resolved` ;
-5. `ROLLBACK` complet.
-
-Résultat : `G0_HUMAN_CONFIRMATION_ROLLBACK_PASS`.
-
-Aucune fixture résiduelle.
+Résultat historique : `G0_HUMAN_CONFIRMATION_ROLLBACK_PASS`.
 
 ## 2. Register source URL — PASS
 
-Test transactionnel sous rôle `authenticated` :
-1. fixture Idea `SITE_VITRINE 0.4 / active` ;
-2. appel `register_idea_source_v1` avec source kind `url` ;
-3. vérification source `registered` ;
-4. vérification `engine_revision 0 → 1` ;
-5. rollback.
+Chemin validé sous rôle `authenticated` :
+- `register_idea_source_v1` ;
+- source URL enregistrée ;
+- sensibilité explicite ;
+- `engine_revision` mise à jour ;
+- stale revision rejetée ;
+- rollback transactionnel propre.
 
-Résultat : `SOURCE_REGISTER_AUTHENTICATED_ROLLBACK_PASS`.
+Résultats historiques :
+- `SOURCE_REGISTER_AUTHENTICATED_ROLLBACK_PASS` ;
+- `SOURCE_REGISTER_STALE_GUARD_ROLLBACK_PASS`.
 
-## 3. Source stale guard — PASS
+## 3. G1 Foundation — architecture implémentée
 
-Test séparé : Idea à `engine_revision=1`, appel source avec `p_expected_engine_revision=0`.
+Backend canonique contient les migrations :
+- `20260913063230_idea_engine_acquisition_traceability_v1` ;
+- `20260913063548_idea_engine_target_fingerprints_v1` ;
+- `20260913063741_idea_engine_requirement_resolution_refs_v1` ;
+- `20260913064148_idea_engine_g1_foundation_planner_v1` ;
+- `20260913064618_idea_engine_foundation_raw_input_v1` ;
+- `20260913065006_idea_engine_action_retry_v1` ;
+- `20260913070345_idea_engine_foundation_unknown_rescue_v1`.
 
-Résultat attendu et obtenu : `STALE_ENGINE` capturé ; aucune source créée.
+Le planner `plan_idea_foundation_v1` produit :
+- état du gate G1 ;
+- Requirements manquantes ;
+- actions système éligibles ;
+- fingerprints ciblés ;
+- au maximum une `dominant_user_action`.
 
-Résultat du harness transactionnel : `SOURCE_REGISTER_STALE_GUARD_ROLLBACK_PASS`.
+Il ne dérive donc pas une question d'un simple compteur `UNRESOLVED`.
 
-## 4. Frontend Workspace actions 0.2.0
+## 4. Adapter G1 — 0.2.0
+
+`src/idea-engine-adapter.js` accepte désormais uniquement :
+- `blueprint_fit.assess` ;
+- `foundation.advance`.
+
+Pour `foundation.advance` :
+1. la projection user-scoped vérifie l'accès et `can_write` ;
+2. le planner G1 est interrogé côté service ;
+3. une voie RAW éligible peut déclencher un Action Run ;
+4. l'IA ne peut proposer qu'une extraction explicitement supportée par le RAW ;
+5. `support_text` doit être retrouvé dans le texte source avant acceptation ;
+6. la mutation proposée est attachée à sa Requirement et à sa provenance ;
+7. fingerprints + revision empêchent une promotion stale ;
+8. la réponse utilisateur n'est demandée qu'en présence d'une `dominant_user_action` déterministe.
+
+Le secret Supabase service-role reste Worker-only et est envoyé dans `apikey`, jamais en Bearer.
+
+## 5. Red-team adapter G1 — HARNESS PRESENT
+
+Harness : `scripts/test_workspace_privileged_adapter_v0_2.mjs`.
+
+Il couvre notamment :
+- endpoint sans authentification → `401` ;
+- human-required → aucune exécution IA/action système parasite ;
+- extraction RAW explicitement supportée → mutations ciblées et promotion ;
+- faux `support_text` absent du RAW → aucune promotion ;
+- mauvais lifecycle → refus ;
+- stale Requirement fingerprint → `STALE_STATE` ;
+- service secret uniquement dans `apikey` ;
+- aucun secret/token renvoyé dans le payload.
+
+Le harness est inclus dans `npm run check` du dépôt canonique.
+
+Cette preuve reste une **validation déterministe de code/harness**, pas un E2E navigateur authentifié de production.
+
+## 6. Frontend Workspace actions 0.3.0
 
 Fichier : `site/assets/ideas-workspace-v3-actions.js`.
 
-Ajouts :
-- G0 assessment via Worker ;
-- G0 human confirmation directe via RPC user-scoped ;
-- source URL directe via `register_idea_source_v1` ;
-- sensibilité source `public | internal | personal | sensitive` ;
-- validation navigateur HTTP/HTTPS ;
-- idempotency keys déterministes basées sur contenu + revision ;
+Fonctions actives :
+- G0 assessment + confirmation ;
+- source URL ;
+- déclenchement `foundation.advance` ;
+- état pending automatique ;
+- question last-mile uniquement depuis `dominant_user_action` ;
+- réponse via `apply_human_information_v1` ciblée sur la Requirement ;
+- `Je ne sais pas / plus tard` via `accept_idea_requirement_unknown_v1` ;
+- erreur récupérable ;
+- état Foundation ready ;
+- idempotency déterministe ;
 - aucun secret service-role dans le browser.
 
-Le formulaire source rappelle explicitement qu'un lien enregistré n'est pas automatiquement une preuve validée.
+Le shell canonique charge maintenant JS/CSS avec cache-busting `0.3.0`.
 
-## 5. Renderer stability fix
+## 7. Release 544
 
-La version 0.1.0 pouvait rappeler `onRoute()` de façon inutile dans les modes où aucun panneau G0 n'était rendu, car le MutationObserver vérifiait seulement l'existence de `[data-iwv3-g0]`.
+Release candidate transport :
+- runtime `v4.5.12-workspace-foundation-g1-p1` ;
+- build `544` ;
+- source runtime canonique `b0754db9f3d6b42fb970514a8c2ad00e6e7b798d` ;
+- transport commit `6e3720a0444b9b1b427c0c26a62485a304592133`.
 
-Version 0.2.0 :
-- ajoute un marqueur `[data-iwv3-actions-marker=<idea_id>]` ;
-- ne rerend que si ce marqueur disparaît après un vrai rerender de la surface ;
-- retire/reconstruit proprement les panneaux interactifs lors d'un refresh canonique.
+Gate Cloudflare 544 vérifie :
+- manifeste/source SHA ;
+- syntaxe runtime ;
+- actions/shell 0.3.0 ;
+- allowlist G0 + G1 ;
+- marqueurs Foundation ;
+- secret `apikey-only` ;
+- aucun secret dans le browser ;
+- endpoints G0/G1 non authentifiés → `401` ;
+- smoke des assets sur le runtime déployé.
 
-## 6. Pourquoi `apply_human_information_v1` n'est pas encore branché automatiquement
+GitHub n'expose aucun statut Cloudflare exploitable (`statuses=[]`). En conséquence :
 
-La projection 1.2 expose des agrégats de Requirements mais ne persiste pas encore, pour chaque Requirement unresolved, le plan d'acquisition détaillé / `human_required` / question last-mile calculé par le planner déterministe R0.
+> **build 544 ne doit pas être appelé certifié tant qu'une preuve runtime indépendante n'est pas disponible.**
 
-Invariant : **Requirement unresolved ≠ question utilisateur**.
+La baseline explicitement certifiée reste build 540.
 
-Il serait incorrect de fabriquer une question depuis `resolution_state=UNRESOLVED` ou depuis un compteur de blockers.
+## 8. Reste à valider avant G2
 
-La prochaine extension doit donc projeter un `Next Best Human Action` issu du planner déterministe ou d'un contrat persistant équivalent, avec :
-- requirement cible ;
-- raison de l'intervention humaine ;
-- question/interaction typée ;
-- revision/fingerprint ;
-- preuve que les voies auto `MEM/RAW/SRC/WEB/CONN/CALC/AI-H/AI-R` sont épuisées/non pertinentes ;
-- une seule action humaine dominante à la fois.
-
-## 7. Release
-
-Build 543 candidate :
-- Workspace actions `0.2.0` ;
-- adapter `0.1.1` inchangé ;
-- G0 + source URL ;
-- Cloudflare gate vérifie syntaxe, `configured=true`, secret `apikey-only`, endpoint 401 sans JWT, shell/actions 0.2.0 et marqueurs source/render.
-
-Source runtime candidate : `085c9c12cbf45bab396a3a05f58de160311d5d95`.
-
-Tant qu'aucune preuve runtime Cloudflare n'est observable via les outils distants disponibles, build 543 reste **release candidate**, pas baseline certifiée.
+- résultat observable de build/runtime 544 ;
+- E2E authentifié `foundation.advance` sur une Idea contrôlée ;
+- réponse humaine ciblée ;
+- `Je ne sais pas / plus tard` ;
+- extraction RAW réelle ;
+- stale/retry côté runtime ;
+- desktop + mobile ;
+- rollback vers Workspace V3 read-only / release précédente.
 
 ## Conclusion
 
-PASS :
+PASS établi :
 - G0 human confirmation ;
 - URL source registration ;
-- stale guard source ;
-- deterministic browser idempotency ;
-- no service-role browser exposure ;
-- renderer marker fix.
+- source stale guard ;
+- architecture/planner G1 présente dans Supabase ;
+- adapter G1 allowlisté et red-team harnessé ;
+- UI G1 ciblée, non questionnaire ;
+- cache-busting actions 0.3.0 ;
+- aucune exposition service-role navigateur.
 
-NEXT :
-- deterministic Next Best Human Action projection ;
-- puis branchement ciblé de `apply_human_information_v1` ;
-- ingestion source / system actions ;
-- authenticated browser E2E + desktop/mobile.
+PENDING :
+- certification runtime build 544 ;
+- E2E authentifié G1 ;
+- desktop/mobile G1.
+
+NEXT après ces preuves : **G2 Evidence / Market**, en conservant la même discipline d'acquisition automatique d'abord, intervention humaine seulement lorsqu'elle est réellement nécessaire.
