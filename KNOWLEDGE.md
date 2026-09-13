@@ -16,7 +16,12 @@ Use it for canonical repository identity, canonical Supabase backend, transport-
 
 Current **certified** transport production baseline remains **v4.5.12-workspace-engine-adapter-p1 / build 540** until a newer release receives independent runtime certification.
 
-Current active release candidate: **v4.5.12-workspace-source-actions-p1 / build 543**, Workspace actions `0.2.0`, adapter `0.1.1`, runtime secret provisioned, G0 + source URL interaction included.
+Current active release candidate: **v4.5.12-workspace-foundation-g1-p1 / build 544**, Workspace actions `0.3.0`, deterministic G1 Foundation, adapter functional surface `workspace-engine-adapter-0.2.0`, runtime secret provisioned, G0 + source URL + G1 interaction included.
+
+Runtime source commit for build 544: `b0754db9f3d6b42fb970514a8c2ad00e6e7b798d`.
+Transport commit: `6e3720a0444b9b1b427c0c26a62485a304592133`.
+
+Build 544 remains **release candidate** because GitHub exposes no usable Cloudflare status and no independent runtime smoke result is currently observable through the connected tools.
 
 Supporting operational sources include notably:
 - `docs/RECOVERY_BASELINE_20260911.md`
@@ -134,30 +139,17 @@ Migrations:
 - `20260913035423_idea_engine_r5_decision_audit_fix`
 - `20260913035644_idea_engine_r5_feedback_resolution`
 
-Persistent objects: `idea_decision_packages`, `idea_decision_feedback`, `idea_decision_records_v2`.
-
-Validated: exact decision lineage, package freshness, cosmetic vs material feedback, explicit feedback closure, neutral outcomes, false-GO rejection and `promotable` without Project Definition side-effect.
+Validated: exact decision lineage, package freshness, feedback closure, neutral outcomes, false-GO rejection and promotability without Project Definition side-effect.
 
 ## R6 — PASS_PROJECT_DEFINITION_BASELINE
 
-Docs:
+Doc authority:
 - `R6_PROJECT_DEFINITION_BASELINE_IMPLEMENTATION_PLAN_V0_1.md`
 - `R6_PROJECT_DEFINITION_BASELINE_VALIDATION_REPORT_20260913.md`
 
 Migration: `20260913035836_idea_engine_r6_project_definition_baseline`.
 
-Validated:
-- latest promotable Decision Record only ;
-- exact engine/package/snapshot freshness ;
-- no open review feedback ;
-- condition classes and blocking semantics ;
-- immutable `APPROVED_IDEA_SNAPSHOT` ;
-- immutable Project Definition baseline ;
-- explicit artifact promotion classification ;
-- inherited artifacts become new `FOR_PROJECT / PROJECT_DEFINITION` versions ;
-- execution-planning keys blocked ;
-- no `projects`, milestones or tasks created ;
-- nominal and red-team transactional tests PASS with clean rollback.
+Validated: latest promotable Decision Record only, exact freshness, immutable `APPROVED_IDEA_SNAPSHOT`, immutable Project Definition baseline, controlled artifact promotion, no execution tasks/milestones created.
 
 ## R7 — PASS_BUILD_READY_RUNTIME_BASELINE
 
@@ -172,24 +164,7 @@ Migrations:
 - `20260913040802_idea_engine_r7_r6_artifact_linkage`
 - `20260913040853_idea_engine_r7_artifact_rpc_fix`
 
-Validated runtime semantics:
-- 28 Project Requirement states matérialisés depuis la baseline R6 ;
-- context/applicability et `definition_revision` contrôlés ;
-- `ACCEPTED_UNKNOWN` n'est pas une fausse résolution structurelle ;
-- G8 Product, G9 Experience, G10 Tech/NFR, G11 Traceability/Acceptance et G12 Ready sont évalués explicitement ;
-- décisions D16 delivery approach, D18 accessibility target, D20 implementation discretion et Ready approval nécessitent autorité humaine ;
-- expert signoff conditionnel ne peut pas être simulé par SYSTEM ;
-- artefacts A19→A24 sont `FOR_PROJECT / PROJECT_DEFINITION` ; A25 seul est `FOR_BUILD / BUILD_SPEC` ;
-- fingerprints exacts empêchent la réutilisation silencieuse d'un artefact stale ;
-- `BUILD_READY_SNAPSHOT` immuable seulement après ambiguity audit PASS, human READY approval et Gates satisfaites ;
-- finalisation ne crée aucun Project d'exécution.
-
-Validation :
-- `R7_HAPPY_PATH_PASS` ;
-- bug réel dans l'Artifact RPC détecté et corrigé par migration additive ;
-- `R7_REDTEAM_PASS` 5/5 ;
-- RPCs R7 critiques service-role only ;
-- fixtures transactionnelles rollbackées proprement.
+Validated: G8→G12 explicit, authority humaine/expert preserved, artifact freshness/fingerprints enforced, immutable `BUILD_READY_SNAPSHOT` only after ambiguity audit + human Ready approval, no execution Project created.
 
 Implementation sequence complete:
 `R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ → R5 ✅ → R6 ✅ → R7 ✅`.
@@ -199,7 +174,7 @@ Implementation sequence complete:
 ## Workspace integration / cutover — ACTIVE
 
 Active UX/integration authority:
-- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V1.md` — **projection active 1.2** ;
+- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V1.md` — projection active **1.2** ;
 - `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md` ;
 - `docs/idea-engine/ux/WORKSPACE_PRIVILEGED_ADAPTER_CONTRACT_V0_1.md`.
 
@@ -209,121 +184,95 @@ Validation evidence:
 
 ### Slice 1 — Canonical read projection — VALIDATED
 
-`get_idea_workspace_projection_v1(idea_id)` is the canonical read model for the new workspace.
-
-It aggregates R0→R7 into lifecycle/signals/Requirements/system micro-status/sources/artifacts/decision/Project Definition without exposing raw LLM/action payloads and without `phase`, `step`, global `progress` or completion percentage.
-
-ACL transversal and projection-shape red-team tests passed.
+`get_idea_workspace_projection_v1(idea_id)` is the canonical read model for the new workspace. It aggregates R0→R7 without raw LLM/action payloads and without `phase`, `step`, global `progress` or completion percentage.
 
 ### Slice 2 — G0 Blueprint Fit — VALIDATED
 
-Persistent objects:
-- `idea_blueprint_fit_assessments` ;
-- `idea_blueprint_fit_decisions`.
+Rules validated: no forced Site vitrine; assessment AI/system ≠ human truth; auto-apply only HIGH/non-ambiguous/explicitly auto-applicable; targeted human confirmation otherwise; mismatch preserves RAW/history; material change triggers `BLUEPRINT_MIGRATION_REQUIRED`; affected state invalidation is targeted.
 
-Rules validated:
-- Site vitrine is never forced by default ;
-- assessment IA/system ≠ human truth ;
-- auto-apply only for HIGH, non-ambiguous, explicitly auto-applicable assessment ;
-- otherwise targeted human confirmation ;
-- mismatch preserves RAW/history ;
-- stale assessment cannot be applied ;
-- material Idea change triggers `BLUEPRINT_MIGRATION_REQUIRED` and G0 reclassification before Blueprint reuse.
-
-Change-intelligence compatibility validated:
-- obsolete unpromoted Action Runs become stale ;
-- affected Requirements preserve historical resolution but move to `REVIEW_REQUIRED` ;
-- draft/current Decision Packages become stale ;
-- unresolved Blueprint assessment is superseded ;
-- post-Project Definition structural editing through the legacy pre-GO editor is blocked pending controlled change workflow.
-
-Canonical integration migration sequence is aligned with Supabase migration history:
-- `20260913043039_idea_workspace_projection_v1`
-- `20260913043203_idea_workspace_projection_v1_boolean_fix`
-- `20260913043603_idea_blueprint_fit_g0_v1`
-- `20260913043734_idea_workspace_projection_g0_v1`
-- `20260913043819_idea_blueprint_fit_g0_fk_index`
-- `20260913044946_idea_blueprint_fit_reclassification_v1`
-- `20260913045028_idea_content_change_runtime_compat_v1`
-
-### Slice 3 — Parallel workspace V3 — VALIDATED PREVIEW
+### Slice 3 — Parallel Workspace V3 — VALIDATED PREVIEW
 
 Frontend:
 - `site/assets/ideas-workspace-v3-preview.js`
 - `site/assets/ideas-workspace-v3-preview.css`
-- additive wiring in `site/index.html`.
+- route `#/ideas/<idea_id>/workspace-v3`.
 
-Route: `#/ideas/<idea_id>/workspace-v3`.
-Feature preview: `?workspacev3=1` or localStorage `2b2c.idea.workspace.v3=1`.
+Production build **539** was the first directly certified Workspace V3 preview.
 
-Production build **539** was certified directly on 2026-09-13: `/health` OK, shell references Workspace V3, JS marker present, CSS marker present.
+### Slice 4 — Privileged adapter — SECURITY BASELINE ACTIVE
 
-### Slice 4 — Privileged adapter — 0.1.1 / SECRET PROVISIONED
+Worker route: `POST /api/ideas/engine`.
 
-Implementation:
-- `src/idea-engine-adapter.js`
-- Worker route `POST /api/ideas/engine`
-- command allowlist: only `blueprint_fit.assess`.
-
-Security behavior:
-- JWT required ;
-- strict payload allowlist ;
-- user-scoped projection/access check before elevation ;
-- write capability required ;
-- server-derived idempotency ;
-- stale errors preserved ;
+Security invariants:
+- JWT user required ;
+- strict command/body allowlist ;
+- user-scoped access projection before elevation ;
+- `can_write` required ;
+- server-derived idempotency and stale-safety ;
 - no generic RPC/table/SQL selector ;
-- no client-chosen authority identity ;
-- secret never returned ;
-- human/expert authority excluded from the generic adapter.
+- no client-chosen privileged authority ;
+- service secret Worker-only ;
+- modern `sb_secret_...` key sent only in `apikey` ;
+- human/expert authority excluded from generic adapter.
 
-Historical build **540** remains the current certified baseline: adapter 0.1.0 was deployed fail-closed and unauthenticated calls were rejected with `401`.
+Build 540 remains certified baseline. `/health` still exposes a compatibility marker `idea_engine_adapter_v0_1.code=0.1.1`; current functional G1 adapter surface is separately identified by the real allowlist/tool version.
 
-Runtime secret `SUPABASE_SERVICE_ROLE_KEY` is provisioned in Cloudflare Worker runtime bindings as a `Secret`, outside GitHub.
+### Slice 5A — G0 interaction — VALIDATED
 
-Critical compatibility correction: modern Supabase `sb_secret_...` keys are not JWTs. Adapter 0.1.1 sends the secret **only as `apikey`**, never as `Authorization: Bearer`. User JWTs remain Bearer tokens with the publishable key in `apikey`.
+Backend/browser contract includes targeted human G0 confirmation with stale-safety.
 
-Build 541 was withdrawn after this issue was detected. Build 542 was superseded by 543 before becoming certified.
+### Slice 5B — URL source interaction — VALIDATED BACKEND
 
-### Slice 5 — Idea workspace interactions — PARTIAL PASS / ACTIVE
+`register_idea_source_v1`, sensitivity selection, deterministic idempotency and stale guard are active.
 
-Canonical interaction assets:
-- `site/assets/ideas-workspace-v3-actions.js` — **0.2.0** ;
-- `site/assets/ideas-workspace-v3-actions.css` ;
-- additive wiring in `site/index.html`.
+### Slice 5C — Deterministic G1 Foundation — IMPLEMENTED / RELEASE CANDIDATE
 
-Validated backend paths:
-- `G0_HUMAN_CONFIRMATION_ROLLBACK_PASS` under real `authenticated` role / `auth.uid()` ;
-- `SOURCE_REGISTER_AUTHENTICATED_ROLLBACK_PASS` ;
-- `SOURCE_REGISTER_STALE_GUARD_ROLLBACK_PASS`.
+Current migrations present in canonical backend:
+- `20260913063230_idea_engine_acquisition_traceability_v1`
+- `20260913063548_idea_engine_target_fingerprints_v1`
+- `20260913063741_idea_engine_requirement_resolution_refs_v1`
+- `20260913064148_idea_engine_g1_foundation_planner_v1`
+- `20260913064618_idea_engine_foundation_raw_input_v1`
+- `20260913065006_idea_engine_action_retry_v1`
+- `20260913070345_idea_engine_foundation_unknown_rescue_v1`
 
-Workspace actions 0.2.0:
-- no assessment → Worker `blueprint_fit.assess` ;
-- HIGH auto-applicable → system resolution allowed ;
-- ambiguous/medium → inline human confirmation ;
-- confirmation uses authenticated `confirm_idea_blueprint_fit_v1` with current `engine_revision` ;
-- active Idea Engine mode exposes a user-initiated URL source form ;
-- URL source uses authenticated `register_idea_source_v1` ;
-- user chooses source sensitivity (`public/internal/personal/sensitive`) ;
-- idempotency keys are deterministic from revision + content ;
-- a render marker prevents redundant MutationObserver rerenders ;
-- no service secret exists in browser assets.
+Current frontend actions: `site/assets/ideas-workspace-v3-actions.js` **0.3.0**.
 
-Current active release candidate: **build 543** (`v4.5.12-workspace-source-actions-p1`) with runtime source SHA `085c9c12cbf45bab396a3a05f58de160311d5d95`.
+Current adapter allowlist:
+- `blueprint_fit.assess`
+- `foundation.advance`
 
-Its Cloudflare gate validates syntax, adapter 0.1.1 + `configured=true`, apikey-only secret semantics, 401 without JWT, shell actions 0.2.0, source-RPC markers and renderer marker.
+G1 behavior:
+- deterministic `plan_idea_foundation_v1` ;
+- RAW automatic acquisition attempted before a human question when eligible ;
+- traceable/stale-safe Action Runs ;
+- Requirement-level target fingerprints ;
+- extracted `support_text` must exist in persisted RAW before promotion ;
+- targeted human question only from planner `dominant_user_action` ;
+- targeted `apply_human_information_v1` ;
+- `Je ne sais pas / plus tard` via `accept_idea_requirement_unknown_v1` ;
+- no generic unresolved-counter question heuristic.
 
-Cloudflare does not currently publish a usable GitHub status and no Cloudflare connector is installed; therefore build 543 must not be called certified until an independent runtime result is available.
+Red-team harness: `scripts/test_workspace_privileged_adapter_v0_2.mjs`, included in `npm run check`.
 
-### Next architectural requirement — deterministic Next Best Human Action
+### Release candidate 544
 
-The projection currently exposes Requirement aggregates but does **not** persist/project the acquisition planner detail that proves a human question is necessary.
+Transport runtime: `v4.5.12-workspace-foundation-g1-p1 / build 544`.
 
-Do not wire `apply_human_information_v1` from a generic unresolved/blocker counter.
+Gate validates source SHA, actions/shell 0.3.0, G1 allowlist/tool markers, apikey-only server secret semantics, browser secret absence, unauthenticated G0/G1 rejection, and post-deploy asset smoke.
 
-Next extension must expose one deterministic human action only when justified, including target Requirement, reason, typed interaction/question, revision/fingerprint and proof that automatic acquisition paths are exhausted or inappropriate.
+GitHub exposes no Cloudflare commit status; build 544 remains uncertified until an independent runtime result is observable.
 
-Invariant remains: **Requirement unresolved ≠ question utilisateur**.
+### Next architectural requirement
+
+Before widening to **G2 Evidence / Market**:
+1. observe/certify build 544 runtime ;
+2. run authenticated G1 E2E ;
+3. validate mobile/desktop G1 states ;
+4. prove no human question appears while an admissible automatic acquisition path remains ;
+5. preserve rollback.
+
+Then extend the same pattern to Evidence/Market: Requirements → admissible acquisition paths → traceable Action Runs → provenance/freshness → human last-mile only.
 
 Legacy workspace/orchestrator remains compatibility only until parallel workspace equivalence, desktop/mobile tests, authenticated E2E and rollback are validated.
 
