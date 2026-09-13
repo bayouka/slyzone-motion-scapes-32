@@ -14,6 +14,8 @@ Primary source: `README.md`.
 
 Use it for canonical repository identity, canonical Supabase backend, transport-mirror status, runtime ownership, deployment/release chain and current production baseline.
 
+Current certified transport production baseline: **v4.5.12-workspace-engine-adapter-p1 / build 540**.
+
 Supporting operational sources include notably:
 - `docs/RECOVERY_BASELINE_20260911.md`
 - `docs/RUNTIME_OWNERSHIP_20260911.md`
@@ -196,7 +198,11 @@ Implementation sequence complete:
 
 Active UX/integration authority:
 - `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V1.md` — **projection active 1.2** ;
-- `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md`.
+- `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md` ;
+- `docs/idea-engine/ux/WORKSPACE_PRIVILEGED_ADAPTER_CONTRACT_V0_1.md`.
+
+Validation evidence:
+- `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALIDATION_20260913.md`.
 
 ### Slice 1 — Canonical read projection — VALIDATED
 
@@ -237,7 +243,7 @@ Canonical integration migration sequence is aligned with Supabase migration hist
 - `20260913044946_idea_blueprint_fit_reclassification_v1`
 - `20260913045028_idea_content_change_runtime_compat_v1`
 
-### Slice 3 — Parallel workspace V3 — IMPLEMENTED / PREVIEW
+### Slice 3 — Parallel workspace V3 — VALIDATED PREVIEW
 
 Frontend:
 - `site/assets/ideas-workspace-v3-preview.js`
@@ -249,22 +255,45 @@ Feature preview: `?workspacev3=1` or localStorage `2b2c.idea.workspace.v3=1`.
 
 The preview reads the canonical projection and coexists with legacy `ideas-v1.js` / `ideas-orchestrator-v2.js`. It does not yet call privileged engine mutations.
 
-Transport build **539** was prepared with JS syntax and V3 shell/assets smoke checks and the normal Cloudflare release path was triggered. No Cloudflare status/check is observable through GitHub and no Cloudflare connector is available in the current environment, so **runtime certification remains unproven** until an external smoke result is available. Do not silently upgrade that status to certified.
+Production build **539** was certified directly on 2026-09-13: `/health` OK, shell references Workspace V3, JS marker present, CSS marker present.
 
-### Current active mission — Slice 4 server-side privileged adapter
+### Slice 4 — Privileged adapter V0.1 — PASS_CODE_AND_DEPLOYED_FAIL_CLOSED
 
-The next implementation target is the authenticated server-side boundary for selected R3→R7 service-role-only operations.
+Implementation:
+- `src/idea-engine-adapter.js`
+- Worker route `POST /api/ideas/engine`
+- command allowlist: only `blueprint_fit.assess`.
 
-Required properties:
-1. authenticate user JWT ;
-2. verify Idea/Project Definition access ;
-3. explicit operation allowlist ;
-4. revision/fingerprint/idempotency guards end-to-end ;
-5. service-role secret stays server-side ;
-6. minimal UX response ;
-7. audit/security red-team before interactive cutover.
+Exact canonical red-team harness result: `WORKSPACE_PRIVILEGED_ADAPTER_V0_1_REDTEAM_PASS`.
 
-Do not relax engine RPC ACLs to make browser integration easier.
+Security behavior validated:
+- JWT required ;
+- strict payload allowlist ;
+- user-scoped projection/access check before elevation ;
+- write capability required ;
+- server-derived idempotency ;
+- stale errors preserved ;
+- no generic RPC/table/SQL selector ;
+- no client-chosen authority identity ;
+- secret never returned ;
+- human/expert authority excluded from the generic adapter.
+
+Production build **540** is deployed and certified:
+- `/health` exposes adapter code `0.1.0` ;
+- command `blueprint_fit.assess` advertised ;
+- `service_role_browser_exposed=false` ;
+- unauthenticated `POST /api/ideas/engine` returns `401 UNAUTHORIZED`.
+
+Activation state: **`configured=false`** because Worker secret `SUPABASE_SERVICE_ROLE_KEY` is not currently provisioned. This is intentionally fail-closed; do not weaken RPC ACLs or embed the key in client/config files. An automated attempt to access the secret value was blocked by the security layer before disclosure and was not bypassed.
+
+### Current active mission
+
+Close Slice 4 activation safely:
+1. provision `SUPABASE_SERVICE_ROLE_KEY` through an authorized Worker-secret path, never through repo/browser/chat ;
+2. verify `/health` reports `configured=true` ;
+3. execute authenticated controlled E2E for G0 HIGH auto-apply and AMBIGUOUS human-confirmation paths ;
+4. only then wire `blueprint_fit.assess` into Workspace V3 interaction ;
+5. continue Slice 5 incrementally without turning the server adapter into a generic privileged proxy.
 
 Legacy workspace/orchestrator remains compatibility only until parallel workspace equivalence, desktop/mobile tests, authenticated E2E and rollback are validated.
 
@@ -294,6 +323,7 @@ Legacy workspace/orchestrator remains compatibility only until parallel workspac
 - post-Project Definition structural change requires controlled change management ;
 - canonical writes require provenance, authorization, idempotency and stale-safety ;
 - service-role secrets and service-role-only engine RPCs never belong in browser code ;
+- generic server adapters never accept client-chosen privileged RPC/function/authority identifiers ;
 - LLM/providers never own canonical state ;
 - Remote Desktop availability is never a normal project dependency.
 
