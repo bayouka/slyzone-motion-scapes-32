@@ -8,10 +8,11 @@ Statut : **TARGETED PASS — NON ACTIVE — FULL R0 REPLAY PENDING**
 
 Valider sans modifier le Blueprint actif `SITE_VITRINE@0.4` une évolution candidate destinée à G2 Evidence / Market.
 
-Le candidat corrige deux problèmes distincts :
+Le candidat corrige trois problèmes :
 
 1. `SV.D05.COMPETITOR_SET` était déclaré conditionnel au Gate G2 mais restait `ACTIVE` par défaut, donc effectivement requis dans tous les dossiers par le moteur R0 ;
-2. `requires_all` / `requires_any` influençaient les fingerprints et le Change Impact, mais n'étaient pas encore utilisés comme préconditions d'action ni comme garde-fous supplémentaires de Gate.
+2. `requires_all` / `requires_any` influençaient les fingerprints et le Change Impact, mais n'étaient pas encore utilisés comme préconditions d'action ni comme garde-fous supplémentaires de Gate ;
+3. la matérialité d'une recherche concurrentielle ne doit pas être fournie librement par un caller ni décidée par un LLM : elle doit être calculée déterministement.
 
 Aucun fichier runtime production, aucune migration Supabase et aucun Worker n'est modifié par ce candidat.
 
@@ -43,15 +44,40 @@ Predicate :
 - `INACTIVE` par défaut ;
 - `ACTIVE` seulement lorsque `NEEDS_COMPETITIVE_EVIDENCE` est actif.
 
-Le fait `research.competitive_evidence_material` appartient au futur planner déterministe G2. Une réponse libre d'un LLM ne peut pas l'écrire directement.
-
 Cette règle ne signifie pas « les concurrents sont facultatifs ». Elle signifie :
 
 > la recherche concurrentielle est obligatoire lorsqu'elle possède encore une valeur décisionnelle matérielle et ne doit pas être exécutée mécaniquement lorsqu'un autre socle de preuve suffisant permet déjà G2.
 
 ---
 
-## 3. Dépendances désormais préconditions candidates
+## 3. Matérialité concurrentielle déterministe
+
+Le moteur candidat calcule lui-même `research.competitive_evidence_material`. Une valeur fournie dans l'état d'entrée est écrasée par ce calcul candidat.
+
+Règle conservatrice actuelle :
+
+### TRUE par défaut
+
+Pour une création / greenfield, le benchmark reste matériel tant qu'aucun socle équivalent n'est démontré.
+
+### TRUE forcé lorsque
+
+- `decision.market_comparison_required == true` ;
+- un `COMPETITOR_SET` current existe déjà en `SOURCE_BACKED` ou `OBSERVED` afin de conserver ce Requirement actif ;
+- l'audit alternatif est stale, conflicted ou insuffisant.
+
+### FALSE seulement si
+
+- la situation est une refonte ;
+- `SV.D04.EXISTING_AUDIT` est current en `OBSERVED` ;
+- `SV.D04.EVIDENCE_QUALITY` est current en `CALCULATED` ;
+- aucune comparaison marché n'est explicitement requise.
+
+Cette policy est volontairement conservatrice. Une future extension pourra reconnaître d'autres baselines équivalentes, mais uniquement avec une règle déterministe versionnée et testée.
+
+---
+
+## 4. Dépendances désormais préconditions candidates
 
 Le moteur candidat ajoute une vérification déterministe des `requires_all` et `requires_any` avant :
 - l'exécution d'une System Action sur le Requirement dépendant ;
@@ -69,11 +95,11 @@ Une valeur déjà présente pour `PATTERN_GAP_SYNTHESIS` ne suffit plus si son s
 
 ---
 
-## 4. Validation ciblée exécutée
+## 5. Validations ciblées exécutées
 
-Simulation déterministe locale de la chaîne de dépendances candidate :
+### A. Chaîne de dépendances
 
-### Cas A — création sans baseline externe
+#### Création sans baseline externe — red-team synthétique
 
 - `COMPETITOR_SET = NOT_RELEVANT`
 - `EXISTING_AUDIT = NOT_RELEVANT`
@@ -85,9 +111,9 @@ Résultat :
 - dépendances manquantes : `COMPETITOR_SET`, `EXISTING_AUDIT`
 - `RESEARCH_SUFFICIENCY dependency_ready = false` par transitivité
 
-**PASS** : une synthèse artificiellement remplie ne permet pas de contourner l'absence de socle de preuve.
+**PASS** : une synthèse artificiellement remplie ne contourne pas l'absence de socle de preuve.
 
-### Cas B — refonte avec audit existant
+#### Refonte avec audit existant
 
 - `COMPETITOR_SET = NOT_RELEVANT`
 - `EXISTING_AUDIT = RESOLVED / OBSERVED`
@@ -96,9 +122,9 @@ Résultat :
 - `PATTERN_GAP_SYNTHESIS dependency_ready = true`
 - `RESEARCH_SUFFICIENCY dependency_ready = true`
 
-**PASS** : un audit réellement exploitable peut constituer l'alternative prévue par `requires_any` sans imposer un benchmark redondant.
+**PASS** : l'alternative prévue par `requires_any` fonctionne.
 
-### Cas C — création avec evidence concurrentielle
+#### Création avec evidence concurrentielle
 
 - `COMPETITOR_SET = RESOLVED / SOURCE_BACKED`
 - `EXISTING_AUDIT = NOT_RELEVANT`
@@ -107,33 +133,49 @@ Résultat :
 - `PATTERN_GAP_SYNTHESIS dependency_ready = true`
 - `RESEARCH_SUFFICIENCY dependency_ready = true`
 
-**PASS** : le chemin marché standard reste valide.
+**PASS**.
+
+### B. Calcul de matérialité concurrentielle
+
+Résultats ciblés exécutés :
+
+| Cas | `competitive_evidence_material` |
+|---|---:|
+| création sans baseline | `true` |
+| refonte + audit OBSERVED + evidence quality CALCULATED | `false` |
+| refonte + audit stale | `true` |
+| refonte + comparaison marché explicitement requise | `true` |
+| competitor set déjà SOURCE_BACKED | `true` |
+
+**PASS** : un caller ne peut pas transformer une création en dossier « sans benchmark » par simple booléen arbitraire.
 
 ---
 
-## 5. Suite de tests codifiée
+## 6. Suite de tests codifiée
 
-`scripts/test_r0_engine_v0_4_candidate.py` contient 7 scénarios :
+`scripts/test_r0_engine_v0_4_candidate.py` contient désormais 8 scénarios :
 
 1. le Blueprint actif reste 0.4 et le candidat est 0.5 ;
-2. `COMPETITOR_SET` devient contextuel uniquement dans le candidat ;
-3. une création ne peut pas supprimer tout socle externe puis déclarer G2 prêt ;
-4. un audit existant peut remplacer légitimement le benchmark lorsqu'il est suffisant ;
+2. une création ne peut pas désactiver arbitrairement le Requirement concurrentiel ;
+3. un audit frais et suffisant peut désactiver un benchmark redondant ;
+4. un besoin explicite de comparaison marché le réactive ;
 5. lorsque le benchmark est matériel, WEB est planifié avant toute question humaine ;
 6. un `COMPETITOR_SET SOURCE_BACKED` débloque la chaîne transitive G2 ;
-7. `RESEARCH_SUFFICIENCY` ne peut pas être calculé prématurément si son socle transitive est invalide.
+7. un audit stale ne peut pas désactiver le benchmark ;
+8. `RESEARCH_SUFFICIENCY` ne peut pas reposer sur une chaîne de dépendance orpheline.
 
 Ces tests ne sont pas ajoutés au `npm run check` de production tant que le candidat 0.5 n'est pas promu.
 
 ---
 
-## 6. Limite de la preuve actuelle
+## 7. Limite de la preuve actuelle
 
 Le checkout complet du dépôt canonique n'est pas directement disponible dans l'environnement d'exécution local utilisé pendant cette passe. Le connecteur GitHub reste la source canonique accessible ; Remote Desktop Commander n'a pas été utilisé et n'est pas nécessaire.
 
 Conséquence :
 - syntaxe du moteur/test candidat : vérifiée ;
 - logique de dépendances transitive ciblée : exécutée et PASS ;
+- matérialité concurrentielle ciblée : exécutée et PASS ;
 - diff GitHub candidat : contrôlé ;
 - **replay complet `test_r0_engine_v0_3.py + test_r0_engine_v0_4_candidate.py` sur le checkout canonique : encore PENDING**.
 
@@ -141,7 +183,7 @@ Il est interdit de présenter le candidat 0.5 comme `PASS_REFERENCE` avant ce re
 
 ---
 
-## 7. Aucun impact production
+## 8. Aucun impact production
 
 Le candidat :
 - n'est référencé par aucun runtime Worker ;
@@ -157,7 +199,8 @@ Le candidat :
 
 **TARGETED PASS** pour la direction machine G2 :
 
-- recherche concurrentielle adaptative ;
+- recherche concurrentielle adaptative mais conservative ;
+- matérialité calculée déterministement ;
 - aucune synthèse sans prerequisites ;
 - dépendances transitives ;
 - system-first ;
@@ -166,6 +209,6 @@ Le candidat :
 
 Avant promotion du candidat :
 1. full R0 replay ;
-2. red-team des dépendances/applicability ;
-3. formalisation exacte du calcul `competitive_evidence_material` dans le planner G2 ;
+2. red-team supplémentaire dependencies/applicability ;
+3. transposition de la policy `competitive_evidence_material` dans le futur planner G2 backend ;
 4. G1 build/runtime 544 + E2E satisfaits selon le cutover plan.
