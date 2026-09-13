@@ -60,9 +60,11 @@ validation_status:
   automated_yaml_syntax_validation: PASS_2026_09_13
   automated_reference_validation: PASS_2026_09_13
   automated_cycle_detection: PASS_2026_09_13
-  backend_mapping: NOT_STARTED
+  backend_mapping: ARCHITECTURE_MAPPED_NON_IMPLEMENTED_2026_09_13
 
 validation_support:
   - ../../validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md
   - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md
   - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md
+  - ../../runtime/RUNTIME_EXECUTION_MAPPING_V0_1.md
+  - ../../runtime/RUNTIME_EXECUTION_MAPPING_RED_TEAM_20260913.md
