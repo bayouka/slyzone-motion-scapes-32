@@ -1,0 +1,246 @@
+schema_version: '0.1'
+blueprint: SITE_VITRINE
+scope: Z4_Z6
+status: CANDIDATE_NON_CANONICAL
+
+requirements:
+  - id: SV.PF.CONCEPT_JOURNEY
+    type: SPEC
+    domain_id: D08
+    lifecycle_zone: Z4
+    title: Parcours conceptuel principal
+    purpose: Rendre la direction compréhensible avant Project.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.D06.PREFIGURATION_TARGET, SV.D03.PRIMARY_AUDIENCE, SV.D02.USER_OUTCOME]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: REQUIRED}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: AI_RECOMMENDATION}
+    state_policy: {first_lock_gate: G5_DECISION_CONCEPT_READY, decision_snapshot: true, project_promotable: true, build_freezable: false}
+    deliverables: {contributes_to: [A08_CONCEPT_PREFIGURATION, A16_DECISION_PACKAGE]}
+
+  - id: SV.PF.CONCEPT_SITEMAP
+    type: SPEC
+    domain_id: D09
+    lifecycle_zone: Z4
+    title: Sitemap conceptuel
+    purpose: Matérialiser les pages/surfaces probables à partir du marché, des besoins et de la stratégie.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R2, R5], preferred_paths: [AUDIT, WEB, AI_R], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.PF.CONCEPT_JOURNEY, SV.D07.MACRO_SCOPE], benefits_from: [SV.D05.PATTERN_GAP_SYNTHESIS]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: REQUIRED}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: AI_RECOMMENDATION}
+    state_policy: {first_lock_gate: G5_DECISION_CONCEPT_READY, decision_snapshot: true, project_promotable: true, build_freezable: false}
+    validation: {method: concept_surface_value_check, pass_condition: Each surface serves an outcome, journey, content or discoverability requirement; competitor frequency alone is insufficient.}
+
+  - id: SV.PF.MESSAGE_HIERARCHY
+    type: SPEC
+    domain_id: D10
+    lifecycle_zone: Z4
+    title: Hiérarchie de message conceptuelle
+    purpose: Tester la proposition de valeur et rendre la direction tangible.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D06.RECOMMENDATION, SV.D07.OFFER_PRIORITY]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: REQUIRED}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: AI_RECOMMENDATION}
+    validation: {method: claims_integrity_check, pass_condition: Factual claims are sourced or explicitly marked placeholders/hypotheses.}
+
+  - id: SV.PF.SEO_CONCEPT
+    type: ANALYSIS
+    domain_id: D11
+    lifecycle_zone: Z4
+    title: Carte SEO/discoverability conceptuelle
+    purpose: Révéler les implications structurelles SEO avant Project sans produire les metas finales.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R2, R4, R5], preferred_paths: [WEB, CONN, AUDIT, AI_H, AI_R], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.PF.CONCEPT_SITEMAP, SV.D03.PRIMARY_AUDIENCE]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: CONDITIONAL}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: WORKING_ASSUMPTION}
+
+  - id: SV.PF.CAPABILITY_SET
+    type: SPEC
+    domain_id: D12
+    lifecycle_zone: Z4
+    title: Ensemble de capacités conceptuelles
+    purpose: Classer fonctions CORE_CONCEPT, OPTIONAL_VALUE, LATER, NOT_RECOMMENDED.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.PF.CONCEPT_JOURNEY, SV.D07.MACRO_SCOPE]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: REQUIRED}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: AI_RECOMMENDATION}
+    validation: {method: value_complexity_check, pass_condition: Every capability has a traceable user/business purpose or is explicitly exploratory.}
+
+  - id: SV.PF.VISUAL_TERRITORIES
+    type: ANALYSIS
+    domain_id: D15
+    lifecycle_zone: Z4
+    title: Territoires visuels candidats
+    purpose: Remplacer un questionnaire esthétique abstrait par 1–3 directions concrètes.
+    applicability: {default: INACTIVE, any_of_contexts: [NEEDS_VISUAL_PREFIGURATION]}
+    resolution: {allowed_classes: [R1, R5, R7], preferred_paths: [SRC, AI_R, HUM], default_human_interaction: EXPLICIT_CHOICE}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: CONDITIONAL}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: ACCEPTED_AS_CURRENT}
+
+  - id: SV.PF.HIFI_CONCEPT
+    type: SPEC
+    domain_id: D15
+    lifecycle_zone: Z4
+    title: Maquettes haute fidélité de décision
+    purpose: Montrer juste assez du futur produit pour comparer/comprendre une direction.
+    applicability: {default: INACTIVE, any_of_contexts: [NEEDS_VISUAL_PREFIGURATION]}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.PF.CONCEPT_SITEMAP, SV.PF.MESSAGE_HIERARCHY], requires_any: [SV.PF.VISUAL_TERRITORIES, SV.D06.PREFIGURATION_TARGET]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: CONDITIONAL}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: AI_RECOMMENDATION}
+    validation: {method: prefiguration_safeguard_check, pass_condition: Artifact is labelled CONCEPT_NOT_FINAL_SPEC and rationale/assumptions are accessible.}
+
+  - id: SV.PF.FEASIBILITY_ENVELOPE
+    type: ANALYSIS
+    domain_id: D16
+    lifecycle_zone: Z4
+    title: Enveloppe de faisabilité
+    purpose: Détecter dépendances, niveau de complexité et impossibilités avant approbation.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R2, R4, R5, R9], preferred_paths: [AUDIT, WEB, AI_H, AI_R, EXPERT], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.PF.CAPABILITY_SET]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: REQUIRED}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: AI_RECOMMENDATION}
+
+  - id: SV.PF.RISK_PROBE
+    type: ANALYSIS
+    domain_id: D17
+    lifecycle_zone: Z4
+    title: Probe sécurité/réglementaire décisionnelle
+    purpose: Détecter ce qui peut invalider la direction avant Project.
+    applicability: {default: INACTIVE, any_of_contexts: [HAS_REGULATORY_CONSTRAINT, HAS_SENSITIVE_DATA, HIGH_TRUST_DECISION]}
+    resolution: {allowed_classes: [R4, R9], preferred_paths: [WEB, AI_H, EXPERT], default_human_interaction: EXPERT_SIGNOFF}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: CONDITIONAL}
+    minimum_resolution_by_gate: {G5_DECISION_CONCEPT_READY: EXPERT_SIGNOFF}
+
+  - id: SV.PF.SUCCESS_MODEL
+    type: SPEC
+    domain_id: D19
+    lifecycle_zone: Z4
+    title: Modèle de succès conceptuel
+    purpose: Relier objectif → comportement → conversion → mesure candidate.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3, R5], preferred_paths: [CALC, AI_R], default_human_interaction: OPTIONAL_CORRECTION}
+    dependencies: {requires_all: [SV.D02.PRIMARY_OBJECTIVE, SV.PF.CONCEPT_JOURNEY]}
+    criticality_by_gate: {G5_DECISION_CONCEPT_READY: REQUIRED}
+
+  - id: SV.D21.BASELINE_INPUTS
+    type: INFO
+    domain_id: D21
+    lifecycle_zone: Z4
+    title: Inputs économiques observés
+    purpose: Éviter les projections décoratives.
+    applicability: {default: INACTIVE, any_of_contexts: [NEEDS_FINANCIAL_CASE]}
+    resolution: {allowed_classes: [R1, R3, R6], preferred_paths: [CONN, SRC, CALC, HUM], default_human_interaction: NONE}
+    criticality_by_gate: {G6_DECISION_PACKAGE_READY: CONDITIONAL}
+    minimum_resolution_by_gate: {G6_DECISION_PACKAGE_READY: SOURCE_BACKED}
+    sensitivity: {class: CONFIDENTIAL, may_use_for_web_search: false, may_send_to_external_ai: POLICY_DEPENDENT}
+
+  - id: SV.D21.SCENARIO_MODEL
+    type: ANALYSIS
+    domain_id: D21
+    lifecycle_zone: Z4
+    title: Scénarios downside/base/upside
+    purpose: Donner des ranges et sensibilité plutôt qu'un faux chiffre unique.
+    applicability: {default: INACTIVE, any_of_contexts: [NEEDS_FINANCIAL_CASE]}
+    resolution: {allowed_classes: [R3, R4], preferred_paths: [CALC, AI_H], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D21.BASELINE_INPUTS]}
+    criticality_by_gate: {G6_DECISION_PACKAGE_READY: CONDITIONAL}
+    validation: {method: no_fabricated_precision, pass_condition: Every number is SOURCE_BACKED, CALCULATED or explicitly ESTIMATED with assumptions and sensitivity.}
+
+  - id: SV.CV.USER_VALIDATION_PLAN
+    type: SPEC
+    domain_id: D03
+    lifecycle_zone: Z4B
+    title: Plan de validation concept utilisateur
+    purpose: Tester une risky assumption auprès de vrais utilisateurs lorsque nécessaire.
+    applicability: {default: INACTIVE, any_of_contexts: [NEEDS_CONCEPT_VALIDATION]}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_any: [SV.PF.HIFI_CONCEPT, SV.PF.MESSAGE_HIERARCHY, SV.PF.CONCEPT_JOURNEY]}
+    criticality_by_gate: {G5B_CONCEPT_VALIDATION_SUFFICIENT: REQUIRED}
+
+  - id: SV.CV.USER_VALIDATION_EVIDENCE
+    type: INFO
+    domain_id: D03
+    lifecycle_zone: Z4B
+    title: Evidence de validation réelle
+    purpose: Distinguer validation équipe et evidence utilisateur réelle.
+    applicability: {default: INACTIVE, any_of_contexts: [NEEDS_CONCEPT_VALIDATION]}
+    resolution: {allowed_classes: [R1], preferred_paths: [SRC, CONN, HUM], default_human_interaction: NONE}
+    dependencies: {requires_all: [SV.CV.USER_VALIDATION_PLAN]}
+    criticality_by_gate: {G5B_CONCEPT_VALIDATION_SUFFICIENT: REQUIRED}
+    validation: {method: real_user_evidence_check, pass_condition: Synthetic AI personas are not counted as user evidence.}
+
+  - id: SV.D22.PACKAGE_MODE
+    type: ANALYSIS
+    domain_id: D22
+    lifecycle_zone: Z5
+    title: Mode de Decision Package
+    purpose: Proportionner les livrables au contexte de gouvernance.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3], preferred_paths: [CALC], default_human_interaction: NONE}
+    criticality_by_gate: {G6_DECISION_PACKAGE_READY: REQUIRED}
+    validation: {method: package_mode_selector, pass_condition: Mode is SOLO_DECISION_BRIEF, TEAM_DECISION_PACKAGE or COMMITTEE_INVESTMENT_PACKAGE based on governance and decision question.}
+
+  - id: SV.D22.EXECUTIVE_MEMO
+    type: SPEC
+    domain_id: D22
+    lifecycle_zone: Z5
+    title: Executive Decision Memo
+    purpose: Permettre de comprendre la recommandation sans réunion.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D22.PACKAGE_MODE, SV.D06.RECOMMENDATION, SV.PF.FEASIBILITY_ENVELOPE]}
+    criticality_by_gate: {G6_DECISION_PACKAGE_READY: REQUIRED}
+
+  - id: SV.D22.DECISION_DECK
+    type: SPEC
+    domain_id: D22
+    lifecycle_zone: Z5
+    title: Présentation de décision
+    purpose: Rendre le dossier compréhensible, challengeable et décisionnel.
+    applicability: {default: INACTIVE, any_of_contexts: [NEEDS_PRESENTATION]}
+    resolution: {allowed_classes: [R5], preferred_paths: [AI_R], default_human_interaction: LIGHT_REVIEW}
+    dependencies: {requires_all: [SV.D22.EXECUTIVE_MEMO, SV.PF.CONCEPT_SITEMAP, SV.PF.CAPABILITY_SET]}
+    criticality_by_gate: {G6_DECISION_PACKAGE_READY: REQUIRED}
+    validation: {method: decision_deck_traceability, pass_condition: Strategic claims and numbers are traceable; deck ends with an explicit decision ask.}
+
+  - id: SV.D22.PRESENTATION_FRESHNESS
+    type: VERIFY
+    domain_id: D22
+    lifecycle_zone: Z5
+    title: Fraîcheur du package de décision
+    purpose: Empêcher une réunion sur une version obsolète.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R3], preferred_paths: [CALC], default_human_interaction: NONE}
+    dependencies: {requires_any: [SV.D22.EXECUTIVE_MEMO, SV.D22.DECISION_DECK]}
+    criticality_by_gate: {G6_DECISION_PACKAGE_READY: BLOCKING}
+    validation: {method: snapshot_diff_check, pass_condition: All decision artifacts reference the current DECISION_SNAPSHOT_ID or are explicitly stale.}
+
+  - id: SV.D22.REVIEW_FEEDBACK
+    type: INFO
+    domain_id: D22
+    lifecycle_zone: Z5
+    title: Retours de présentation structurés
+    purpose: Transformer corrections, idées et objections en change objects traçables.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R1, R6], preferred_paths: [RAW, SRC, HUM], default_human_interaction: NONE}
+    criticality_by_gate: {G7_IDEA_APPROVAL_READY: REQUIRED}
+
+  - id: SV.D22.APPROVAL_OUTCOME
+    type: DECISION
+    domain_id: D22
+    lifecycle_zone: Z5
+    title: Décision Idea → Project
+    purpose: Créer ou non une baseline Project approuvée.
+    applicability: {default: ACTIVE}
+    resolution: {allowed_classes: [R8], preferred_paths: [HUM], default_human_interaction: FORMAL_APPROVAL, human_only_reason: formal_idea_approval}
+    authority: {ai_may_extract: false, ai_may_hypothesize: false, ai_may_recommend: true, ai_may_decide: false, decision_authority: DECISION_OWNER}
+    dependencies: {requires_all: [SV.D22.REVIEW_FEEDBACK, SV.D22.PRESENTATION_FRESHNESS]}
+    criticality_by_gate: {G7_IDEA_APPROVAL_READY: BLOCKING}
+    minimum_resolution_by_gate: {G7_IDEA_APPROVAL_READY: HUMAN_DECISION}
+    state_policy: {first_lock_gate: G7_IDEA_APPROVAL_READY, decision_snapshot: true, project_promotable: true, build_freezable: false}
