@@ -2,7 +2,7 @@
 
 Date : 2026-09-13
 
-Statut : **VALIDATED INTEGRATION BASELINE — ACTIVE — PROJECTION 1.1**
+Statut : **VALIDATED INTEGRATION BASELINE — ACTIVE — PROJECTION 1.2**
 
 Ce contrat remplace les anciennes projections UX séquentielles comme direction active. Il ne fige pas encore le polish visuel final ; il fige la relation **runtime R0→R7 → état UX**.
 
@@ -26,6 +26,7 @@ Cette projection est read-only, authentifiée, contrôlée par `can_access_idea`
 - les preuves, sources, provenance et détails sont accessibles en profondeur progressive ;
 - une zone d'entrée libre reste disponible pour corriger, ajouter, questionner ou changer l'intention ;
 - `BLUEPRINT_MISMATCH` est un état légitime, jamais une erreur à masquer ;
+- `BLUEPRINT_MIGRATION_REQUIRED` est un état de reclassification explicite après changement matériel, pas une erreur technique ;
 - Idea, Approved Idea, Project Definition et Build Ready restent des objets/états distincts ;
 - une assessment IA de Blueprint n'est jamais présentée comme une déclaration humaine.
 
@@ -35,14 +36,14 @@ La projection expose uniquement un mode de maturité structurelle, pas une étap
 
 - `CAPTURED_UNCLASSIFIED` — capture persistée, Blueprint fit non encore établi ;
 - `BLUEPRINT_MISMATCH` — l'idée n'est pas correctement couverte par le Blueprint disponible ;
-- `BLUEPRINT_MIGRATION_REQUIRED` — Blueprint existant mais migration/reclassification requise ;
+- `BLUEPRINT_MIGRATION_REQUIRED` — une modification matérielle impose une nouvelle évaluation du fit avant réutilisation du Blueprint ;
 - `IDEA_ENGINE` — Idea Decision Dossier actif ;
 - `PROJECT_DEFINITION` — Idea approuvée promue en définition de projet ;
 - `BUILD_READY` — snapshot Build Ready formel créé.
 
 Ces modes peuvent modifier la navigation et les capacités disponibles, mais ne créent pas une séquence de pages obligatoire.
 
-## 4. Shape active — projection 1.1
+## 4. Shape active — projection 1.2
 
 La projection contient :
 
@@ -61,6 +62,8 @@ La projection contient :
 - `decision` : dernier package et dernier Decision Record sous forme minimale ;
 - `project_definition` : état, révision, Build Ready snapshot et Gates G8→G12 si applicables.
 
+La v1.2 définit `blueprint_fit_needed=true` aussi bien pour `CAPTURED_UNCLASSIFIED` que pour `BLUEPRINT_MIGRATION_REQUIRED`.
+
 ## 5. Données volontairement NON exposées
 
 La projection ne fournit pas :
@@ -75,14 +78,18 @@ La projection ne fournit pas :
 
 Les détails utiles devront être obtenus par des projections/read models dédiés avec la même discipline d'autorisation.
 
-## 6. G0 Blueprint Fit
+## 6. G0 Blueprint Fit et reclassification
 
-La projection 1.1 expose le minimum nécessaire au workspace :
+La projection 1.2 expose le minimum nécessaire au workspace :
 
 - si aucune assessment n'existe : l'UI peut montrer un micro-status de classification sans bloquer le dossier ;
 - si une assessment HIGH et auto-applicable est appliquée : aucune question humaine n'est créée ;
 - si l'assessment est MEDIUM/LOW ou AMBIGUOUS : `blueprint_fit_requires_human=true` et une seule clarification/confirmation ciblée peut être montrée ;
-- si la résolution est `BLUEPRINT_MISMATCH` : l'UI explique que le type de projet n'est pas encore couvert plutôt que de simuler un Site vitrine.
+- si la résolution est `BLUEPRINT_MISMATCH` : l'UI explique que le type de projet n'est pas encore couvert plutôt que de simuler un Site vitrine ;
+- après une modification matérielle d'une Idea déjà classifiée, le lifecycle devient `BLUEPRINT_MIGRATION_REQUIRED`, l'assessment précédente est superseded, les travaux non promus devenus invalides sont rendus stale, les Requirements concernés passent en `REVIEW_REQUIRED`, puis G0 doit reclasser l'Idea avant reprise ;
+- une reclassification peut maintenir `SITE_VITRINE` ou conclure `BLUEPRINT_MISMATCH` ; aucune continuité silencieuse sous un ancien Blueprint n'est autorisée.
+
+Une Idea ayant déjà une Project Definition ne doit plus être structurellement modifiée via l'ancien éditeur : un workflow de change control dédié est requis.
 
 ## 7. Projection visuelle recommandée
 
@@ -99,6 +106,8 @@ Des sections comme Comprendre, Preuves & marché, Options & challenge, Concept, 
 ## 8. Compatibilité
 
 `ideas.status`, `idea_items`, `idea_reviews`, l'orchestrateur `clarify/strengthen/prove/share/decide` et les anciens écrans restent temporairement des surfaces de compatibilité pendant le cutover. Ils ne sont plus l'autorité du nouveau workspace.
+
+`update_idea_content_v2` reste une frontière de compatibilité pré-GO. Lorsqu'une modification matérielle intervient, elle doit respecter les règles de reclassification/stale-safety ci-dessus.
 
 ## 9. Sécurité
 
@@ -120,5 +129,5 @@ Aucun ancien orchestrateur ne doit être retiré avant qu'une surface parallèle
 - tests desktop/mobile ;
 - access control ;
 - états empty/loading/error ;
-- scénarios novice, dossier riche, conflit, mismatch, décision et Project Definition ;
+- scénarios novice, dossier riche, conflit, mismatch, reclassification, décision et Project Definition ;
 - rollback de feature flag.
