@@ -37,6 +37,9 @@ state_policy:
   dependency_prerequisites_required_for_actions: true
   dependency_prerequisites_required_for_gate_satisfaction: true
   dependency_prerequisites_transitive: true
+  requirement_input_fingerprint_semantics: basis_not_own_output
+  machine_result_current_only_when_target_basis_matches: true
+  accepted_unknown_scoped_to_current_basis_for_g2: true
 
 research_policy:
   system_first: true
@@ -50,7 +53,8 @@ research_policy:
     - existing_audit_has_OBSERVED_resolution
     - evidence_quality_has_CALCULATED_resolution
     - no_explicit_market_comparison_requirement
-  existing_source_backed_competitor_evidence_keeps_requirement_active: true
+    - no_material_market_conflict_requires_triangulation
+  existing_competitor_output_does_not_force_own_applicability: true
   stale_or_conflicted_audit_cannot_disable_competitor_requirement: true
   free_form_llm_cannot_set_materiality_fact: true
   web_evidence_requires_persisted_source: true
@@ -67,6 +71,8 @@ machine_contract_invariants:
   - AI_inference_not_human_truth
   - source_backed_web_evidence_has_persisted_source
   - requirement_dependencies_are_runtime_preconditions
+  - requirement_basis_excludes_own_output
+  - stale_machine_result_requires_basis_match
   - prefiguration_is_FOR_DECISION
   - real_user_evidence_distinct_from_AI_simulation
   - presentation_uses_current_snapshot
@@ -79,8 +85,8 @@ machine_contract_invariants:
   - no_free_text_rule_eval
 
 r0_candidate_contract:
-  engine: scripts/r0_engine_v0_4_candidate.py
-  tests: scripts/test_r0_engine_v0_4_candidate.py
+  engine: scripts/r0_engine_v0_5_candidate.py
+  tests: scripts/test_r0_engine_v0_5_candidate.py
   context_dsl: CONTEXT_OVERLAYS_V0_3.yaml
   active_production_blueprint_unchanged: SITE_VITRINE@0.4
 
@@ -88,6 +94,8 @@ validation_status:
   status: TARGETED_PASS_FULL_R0_REPLAY_PENDING
   targeted_competitor_context_logic: PASS_2026_09_13
   deterministic_competitor_materiality: PASS_TARGETED_2026_09_13
+  basis_fingerprint_stale_safety: PASS_TARGETED_2026_09_13
+  current_basis_inflight_deduplication: PASS_TARGETED_2026_09_13
   transitive_dependency_runtime_semantics: PASS_TARGETED_2026_09_13
   full_r0_candidate_replay: PENDING
   production_activation: FORBIDDEN_UNTIL_G1_RUNTIME_E2E_AND_V0_5_R0_PASS
@@ -97,3 +105,5 @@ validation_support:
   - ../../runtime/G2_EVIDENCE_MARKET_BACKEND_GAP_AUDIT_20260913.md
   - ../../runtime/G2_EVIDENCE_MARKET_ACQUISITION_MATRIX_V0_1.md
   - ../../runtime/G2_BLUEPRINT_V0_5_CANDIDATE_VALIDATION_20260913.md
+  - ../../runtime/G2_REQUIREMENT_BASIS_FINGERPRINT_CONTRACT_V0_1.md
+  - ../../runtime/G2_BASIS_FINGERPRINT_VALIDATION_20260913.md
