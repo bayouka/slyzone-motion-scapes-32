@@ -93,7 +93,7 @@ Report: `docs/project-definition/runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
 
 ---
 
-# Runtime status — R3 PASS / R4 CURRENT PRIORITY
+# Runtime status — R4 PASS / R5 CURRENT PRIORITY
 
 Runtime authority/index: `docs/project-definition/runtime/README.md`.
 
@@ -152,14 +152,31 @@ Server-only boundaries:
 
 Validated: service-role-only execution, lifecycle/idempotency, stale before/during/promotion, permission-scope allowlist, machine-provenance allowlist, atomic promotion with action lineage and revision-guarded Requirement-cache materialization. Providers/LLMs still never write canonical state directly.
 
-## R4 — current priority
+## R4 — PASS_PREFIGURATION_ARTIFACT_BASELINE
 
-R4 is the prefiguration/artifact layer. It must provide artifact versioning, immutable historical lineage, controlled current/frozen/stale transitions and exact freshness checks while preserving `FOR_DECISION` vs `FOR_BUILD` separation.
+Docs:
+- `R4_PREFIGURATION_ARTIFACTS_IMPLEMENTATION_PLAN_V0_1.md`
+- `R4_PREFIGURATION_ARTIFACTS_VALIDATION_REPORT_20260913.md`
 
-No high-fidelity concept may silently become a final build specification or substitute for real-user evidence.
+Migration: `20260913034602_idea_engine_r4_prefiguration_artifacts`.
+
+Server-only boundaries:
+- `create_prefiguration_artifact_v1`
+- `promote_prefiguration_artifact_v1`
+- `mark_prefiguration_artifact_stale_v1`
+- `freeze_prefiguration_artifact_v1`
+- `assess_prefiguration_artifact_freshness_v1`
+
+Validated: immutable artifact versions, lineage/versioning, one current version per artifact key, idempotency, exact freshness fingerprints, controlled current/frozen/stale transitions, `FOR_DECISION / CONCEPT_NOT_FINAL_SPEC` separation and explicit protection that HIFI concepts are not real-user evidence. R4 does not resolve Gates by artifact existence and does not create an execution Project.
+
+## R5 — current priority
+
+R5 owns Decision Package / immutable Decision Snapshot / package freshness / review feedback and neutral approval outcomes.
+
+It must consume only explicitly versioned/fresh artifacts, preserve traceability, refuse stale package inputs, and keep approval separate from Project Definition creation until the outcome is genuinely promotable.
 
 Implementation sequence:
-`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 prefiguration/artifacts → R5 decision package → R6 project definition → R7 build ready`.
+`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ → R5 decision package → R6 project definition → R7 build ready`.
 
 ---
 
@@ -170,7 +187,7 @@ Historical candidates only:
 - `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_3.md`
 - `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
 
-R0–R3 are validated, but the professional runtime is not complete. Do not promote a new post-capture workspace UX until the runtime semantics required by that surface are explicitly validated.
+R0–R4 are validated, but the professional runtime is not complete. Do not promote a new post-capture workspace UX until the runtime semantics required by that surface are explicitly validated.
 
 ---
 
@@ -187,6 +204,7 @@ R0–R3 are validated, but the professional runtime is not complete. Do not prom
 - approval of a prefigured Idea ≠ Ready for Development ;
 - Project inherits valid Idea artifacts instead of restarting ;
 - synthetic personas are not user evidence ;
+- high-fidelity concept artifacts are not real-user evidence ;
 - generic Requirement resolution never substitutes for stricter Gate-specific minimum ;
 - canonical writes require provenance, authorization, idempotency and stale-safety ;
 - LLM/providers never own canonical state ;
