@@ -56,16 +56,24 @@ machine_contract_invariants:
   - deterministic_context_rules_only
   - no_free_text_rule_eval
 
+r0_active_contract:
+  engine: scripts/r0_engine_v0_3.py
+  tests: scripts/test_r0_engine_v0_3.py
+  context_dsl: CONTEXT_OVERLAYS_V0_2.yaml
+  previous_engines: HISTORICAL_REGRESSION_ONLY
+
 validation_status:
   professional_coverage: PASS_CANDIDATE
   scenario_simulation: PASS_WITH_LOCAL_CORRECTIONS_APPLIED
-  automated_yaml_syntax_validation: PASS_2026_09_13_ON_V0_3
-  automated_reference_validation: PASS_2026_09_13_ON_V0_3
-  automated_cycle_detection: PASS_2026_09_13_ON_V0_3
+  v0_3_machine_yaml_reference_cycle_validation: PASS_2026_09_13
   backend_mapping: ARCHITECTURE_MAPPED_NON_IMPLEMENTED_2026_09_13
-  r0_engine: IMPLEMENTATION_IN_PROGRESS
+  r0_isolated_algorithm_suite: PASS_12_OF_12_2026_09_13
+  r0_real_repo_v0_4_replay: PENDING_FRESH_EXECUTION_ENVIRONMENT
+  r0_reference_status: NOT_YET_PASS_REFERENCE
+  r1_persistence_implementation: BLOCKED_UNTIL_R0_PASS_REFERENCE
 
 validation_support:
   - ../../validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md
   - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md
   - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md
+  - ../../runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md
