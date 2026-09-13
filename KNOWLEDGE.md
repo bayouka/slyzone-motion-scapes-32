@@ -26,33 +26,30 @@ Supporting operational sources include notably:
 
 `docs/REMOTE_DESKTOP_POLICY.md`
 
-Canonical work proceeds through GitHub and the relevant remote services/connectors (notably Supabase and Cloudflare). Remote Desktop Commander is last-resort/local-only tooling and its absence must never block normal project progress.
+Canonical work proceeds through GitHub and the relevant remote services/connectors. Remote Desktop Commander is local-only/last-resort and its absence must never block normal project progress.
 
 ---
 
 ## Idea Engine — canonical product target
 
-Current canonical sources:
+Canonical sources:
 1. `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md`
 2. `docs/idea-engine/canonical/WORKFLOW_V7_1_CONSOLIDATED.md`
 3. `docs/idea-engine/canonical/INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
 4. `docs/idea-engine/canonical/CAPTURE_INGESTION_MEMORY_CONTRACT_V1_2.md`
 5. `docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
 
-The validated reference Blueprint is `Site vitrine`.
+Validated reference Blueprint: `Site vitrine`.
 
 Matrix V5 remains canonical for the current Idea-level dossier model, but is not the future master referential through `READY_FOR_DEVELOPMENT`.
-
-Coverage audit: `docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`.
 
 ---
 
 ## Professional lifecycle / referential
 
-Current architecture candidate:
-`docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4.md`
+Current architecture candidate: `docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4.md`.
 
-Lifecycle candidate:
+Lifecycle:
 `Capture → Foundation → Evidence/Market → Strategy/Options → Prefiguration/Concept Alpha → conditional Concept Validation → Decision Package/Presentation/Review → Approved Idea → Project Baseline → Project Definition → Build Ready`.
 
 Domain/requirement sources:
@@ -60,7 +57,7 @@ Domain/requirement sources:
 - `docs/project-definition/04_PREFIGURATION_DECISION_PACKAGE_REGISTRY_V0_1.md`
 - `docs/project-definition/04A_REQUIREMENT_REGISTRY_PROJECT_PRODUCT_V0_1.md`
 - `docs/project-definition/04B_REQUIREMENT_REGISTRY_PROJECT_TECH_BUILDREADY_V0_1.md`
-- detail index: `docs/project-definition/detail/05_MASTER_DETAIL_INDEX_V0_1.md`
+- `docs/project-definition/detail/05_MASTER_DETAIL_INDEX_V0_1.md`
 
 Cross-cutting sources:
 - `docs/project-definition/06_CONTEXT_OVERLAY_CATALOG_V0_1.md`
@@ -85,13 +82,11 @@ Active engine/tests/validator:
 - `scripts/test_r0_engine_v0_3.py`
 - `scripts/validate_site_vitrine_blueprint.py`
 
-Fresh canonical result (2026-09-13): 77 Requirements / 21 Contexts / 14 Gates / 19 Deliverables / 5 Overrides / 0 errors / 0 warnings / 12 of 12 engine tests PASS.
-
-Report: `docs/project-definition/runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md`.
+Fresh canonical result: 77 Requirements / 21 Contexts / 14 Gates / 19 Deliverables / 5 Overrides / 0 errors / 0 warnings / 12 of 12 engine tests PASS.
 
 ---
 
-# Runtime status — R5 PASS / R6 CURRENT PRIORITY
+# Runtime status — R6 PASS / R7 CURRENT PRIORITY
 
 Runtime authority/index: `docs/project-definition/runtime/README.md`.
 
@@ -104,69 +99,75 @@ Core contracts:
 
 ## R1 — PASS_PERSISTENCE_BASELINE
 
-Docs: `R1_PERSISTENCE_IMPLEMENTATION_PLAN_V0_1.md`, `R1_PERSISTENCE_VALIDATION_REPORT_20260913.md`.
 Migrations: `20260913031001_idea_engine_r1_persistence_core`, `20260913031053_idea_engine_r1_fk_indexes`.
 
-Persistent core: Blueprint/engine metadata on `ideas`, sources, atomic information, Requirement-state cache, Action Runs, snapshots, Project Definitions, artifacts and ledger. RLS/no-generic-client-write baseline validated.
+Persistent core, RLS/no-generic-client-write baseline validated.
 
 ## R2 — PASS_INGESTION_BASELINE
 
-Docs: `R2_INGESTION_IMPLEMENTATION_PLAN_V0_1.md`, `R2_INGESTION_VALIDATION_REPORT_20260913.md`.
 Migration: `20260913031644_idea_engine_r2_ingestion_rpcs`.
 
-Boundaries: `initialize_idea_engine_v1`, `register_idea_source_v1`, `commit_source_ingestion_v1`, `supersede_source_v1`, `apply_human_information_v1`.
-
-RAW-first, idempotency, revision/source stale guards, explicit supersession and authorization were transactionally validated.
+RAW-first, idempotency, revision/source stale guards, explicit supersession and authorization validated.
 
 ## R3 — PASS_ACTION_LIFECYCLE_BASELINE
 
-Docs: `R3_ACTIONS_IMPLEMENTATION_PLAN_V0_1.md`, `R3_ACTIONS_VALIDATION_REPORT_20260913.md`.
 Migration: `20260913032224_idea_engine_r3_action_lifecycle`.
 
-Server-only boundaries: `create_action_run_v1`, `start_action_run_v1`, `complete_action_run_v1`, `fail_action_run_v1`, `mark_action_run_stale_v1`, `materialize_requirement_states_v1`, `promote_action_result_v1`.
-
-Validated: service-role-only execution, lifecycle/idempotency, stale before/during/promotion, permission-scope allowlist, machine-provenance allowlist, atomic promotion with action lineage and revision-guarded Requirement-cache materialization.
+Server-only lifecycle, stale-safety, permission scope, machine provenance, atomic promotion and Requirement-cache materialization validated.
 
 ## R4 — PASS_PREFIGURATION_ARTIFACT_BASELINE
 
-Docs: `R4_PREFIGURATION_ARTIFACTS_IMPLEMENTATION_PLAN_V0_1.md`, `R4_PREFIGURATION_ARTIFACTS_VALIDATION_REPORT_20260913.md`.
 Migration: `20260913034602_idea_engine_r4_prefiguration_artifacts`.
 
-Server-only boundaries: `create_prefiguration_artifact_v1`, `promote_prefiguration_artifact_v1`, `mark_prefiguration_artifact_stale_v1`, `freeze_prefiguration_artifact_v1`, `assess_prefiguration_artifact_freshness_v1`.
-
-Validated: immutable artifact versions, lineage/versioning, one current version per artifact key, idempotency, exact freshness fingerprints, controlled current/frozen/stale transitions, `FOR_DECISION / CONCEPT_NOT_FINAL_SPEC` separation and HIFI concept ≠ real-user evidence.
+Immutable artifact versions, lineage, one current version, exact freshness, `FOR_DECISION / CONCEPT_NOT_FINAL_SPEC` and HIFI ≠ real-user evidence validated.
 
 ## R5 — PASS_DECISION_PACKAGE_BASELINE
 
-Docs:
-- `R5_DECISION_PACKAGE_IMPLEMENTATION_PLAN_V0_1.md`
-- `R5_DECISION_PACKAGE_VALIDATION_REPORT_20260913.md`
+Docs: `R5_DECISION_PACKAGE_IMPLEMENTATION_PLAN_V0_1.md`, `R5_DECISION_PACKAGE_VALIDATION_REPORT_20260913.md`.
 
 Migrations:
 - `20260913035101_idea_engine_r5_decision_package`
 - `20260913035423_idea_engine_r5_decision_audit_fix`
+- `20260913035644_idea_engine_r5_feedback_resolution`
 
 Persistent objects: `idea_decision_packages`, `idea_decision_feedback`, `idea_decision_records_v2`.
 
-Server-only boundaries:
-- `create_decision_snapshot_v1`
-- `create_decision_package_v1`
-- `assess_decision_package_freshness_v1`
-- `promote_decision_package_v1`
-- `mark_decision_package_stale_v1`
-- `record_decision_feedback_v1`
-- `record_idea_decision_v2`
+Server-only boundaries include Decision Snapshot, Decision Package generation/freshness/promotion, feedback record/resolve and immutable Decision Record.
 
-Validated: immutable Decision Snapshot on exact artifact versions, versioned Decision Package outputs, package freshness, cosmetic vs material review feedback, neutral outcomes, false-GO rejection when G7 is not ready, immutable Decision Record, and explicit `promotable` without creating Project Definition.
+Validated: exact decision lineage, package freshness, cosmetic vs material feedback, explicit feedback closure, neutral outcomes, false-GO rejection and `promotable` without Project Definition side-effect.
 
-## R6 — current priority
+## R6 — PASS_PROJECT_DEFINITION_BASELINE
 
-R6 owns `Approved Idea → Project Definition baseline`.
+Docs:
+- `R6_PROJECT_DEFINITION_BASELINE_IMPLEMENTATION_PLAN_V0_1.md`
+- `R6_PROJECT_DEFINITION_BASELINE_VALIDATION_REPORT_20260913.md`
 
-It may execute only from an R5 Decision Record with `promotable = true`, must create an immutable `APPROVED_IDEA_SNAPSHOT`, preserve the complete decision lineage, inherit only valid/fresh artifacts under the Promotion Contract, and create a Project Definition baseline without milestones/tasks/owners or an execution Project.
+Migration: `20260913035836_idea_engine_r6_project_definition_baseline`.
+
+Server-only boundary: `promote_approved_idea_to_project_definition_v1`.
+
+Validated:
+- latest promotable Decision Record only ;
+- exact engine/package/snapshot freshness ;
+- no open review feedback ;
+- condition classes and blocking semantics ;
+- immutable `APPROVED_IDEA_SNAPSHOT` ;
+- immutable Project Definition baseline ;
+- explicit artifact promotion classification ;
+- inherited artifacts become new `FOR_PROJECT / PROJECT_DEFINITION` versions ;
+- Decision Package outputs do not become specs ;
+- execution-planning keys blocked ;
+- no `projects`, milestones or tasks created ;
+- nominal and red-team transactional tests PASS with clean rollback.
+
+## R7 — current priority
+
+R7 owns Project Definition completion → Build Ready.
+
+It must consume the R6 baseline without restarting, resolve/deepen Project Requirements D08→D20, evaluate G8→G12 with Gate-specific minimums, manage progressive locks and only create a `BUILD_READY_SNAPSHOT` when the development team can build without inventing structural decisions.
 
 Implementation sequence:
-`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ → R5 ✅ → R6 project definition → R7 build ready`.
+`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ → R5 ✅ → R6 ✅ → R7 build ready`.
 
 ---
 
@@ -177,7 +178,7 @@ Historical candidates only:
 - `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V0_3.md`
 - `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
 
-R0–R5 are validated, but the professional runtime is not complete. Do not promote a new post-capture workspace UX until the runtime semantics required by that surface are explicitly validated.
+R0–R6 are validated, but the professional runtime is not complete. Do not promote a new post-capture workspace UX until the runtime semantics required by that surface are explicitly validated.
 
 ---
 
@@ -197,6 +198,8 @@ R0–R5 are validated, but the professional runtime is not complete. Do not prom
 - high-fidelity concept artifacts are not real-user evidence ;
 - Decision Package freshness is bound to an exact snapshot/revision ;
 - an approval is promotable only if required decision authority and Gate conditions are satisfied ;
+- `FOR_PROJECT / PROJECT_DEFINITION` ≠ `FOR_BUILD / BUILD_SPEC` ;
+- Project Definition baseline never contains execution roadmap/tasks by default ;
 - generic Requirement resolution never substitutes for stricter Gate-specific minimum ;
 - canonical writes require provenance, authorization, idempotency and stale-safety ;
 - LLM/providers never own canonical state ;
