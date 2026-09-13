@@ -1,0 +1,71 @@
+schema_version: '0.2'
+blueprint_id: SITE_VITRINE
+blueprint_version: '0.4'
+status: R0_EXECUTABLE_CANDIDATE_NON_CANONICAL
+parent_architecture: PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4
+atom_schema: ../REQUIREMENT_ATOM_SCHEMA_V0_2.md
+
+load_order:
+  - CONTEXT_OVERLAYS_V0_2.yaml
+  - REQUIREMENTS_IDEA_V0_1.yaml
+  - REQUIREMENTS_PREFIGURATION_DECISION_V0_1.yaml
+  - REQUIREMENTS_PROJECT_BUILD_V0_1.yaml
+  - DELIVERABLE_CONTRACTS_V0_1.yaml
+  - GATES_V0_1.yaml
+  - GATE_BINDINGS_V0_1.yaml
+  - OVERRIDES_V0_1.yaml
+
+role_refs:
+  IDEA_DECISION_OWNER: approves Idea decisions and Idea→Project promotion
+  BUILD_READY_OWNER: approves Ready for Development handoff
+  CONTENT_OWNER: owns factual/delayed content
+  TECH_OWNER: owns technical constraints where required
+  PRIVACY_OWNER: owns privacy/compliance choices where required
+  EXPERT_ROLE: supplies specialist signoff when activated
+
+question_policy:
+  requirement_exists_does_not_mean_user_question: true
+  ask_only_if_human_authority_or_private_intent_required_and_material_now: true
+  one_dominant_user_action_at_a_time: true
+  no_global_question_count_cap: true
+
+state_policy:
+  targeted_recompute_only: true
+  accepted_unknown_if_non_blocking: true
+  stale_result_cannot_overwrite_current: true
+  progressive_lock: true
+
+mismatch_policy:
+  preserve_history: true
+  stop_false_site_vitrine_coverage: true
+  require_blueprint_remap: true
+
+machine_contract_invariants:
+  - exhaustive_internal_not_visible_form
+  - human_question_last_mile
+  - research_stops_on_decision_sufficiency
+  - AI_inference_not_human_truth
+  - prefiguration_is_FOR_DECISION
+  - real_user_evidence_distinct_from_AI_simulation
+  - presentation_uses_current_snapshot
+  - project_inherits_valid_idea_artifacts
+  - structural_approval_condition_blocks_promotion
+  - requirement_spec_verify_traceability
+  - Idea_owner_may_differ_from_Build_Ready_owner
+  - developer_implementation_discretion_preserved_for_non_structural_choices
+  - deterministic_context_rules_only
+  - no_free_text_rule_eval
+
+validation_status:
+  professional_coverage: PASS_CANDIDATE
+  scenario_simulation: PASS_WITH_LOCAL_CORRECTIONS_APPLIED
+  automated_yaml_syntax_validation: PASS_2026_09_13_ON_V0_3
+  automated_reference_validation: PASS_2026_09_13_ON_V0_3
+  automated_cycle_detection: PASS_2026_09_13_ON_V0_3
+  backend_mapping: ARCHITECTURE_MAPPED_NON_IMPLEMENTED_2026_09_13
+  r0_engine: IMPLEMENTATION_IN_PROGRESS
+
+validation_support:
+  - ../../validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md
+  - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md
+  - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md
