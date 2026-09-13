@@ -42,26 +42,54 @@ def load_site_vitrine_blueprint(repo_root: str | Path) -> dict:
     }
 
 
-def _dependency_usable(row: dict | None) -> bool:
-    return bool(
+def _dependency_usable(
+    dependency_id: str,
+    requirement_states: dict,
+    blueprint: dict,
+    seen: set[str],
+) -> bool:
+    row = requirement_states.get(dependency_id)
+    if not (
         row
         and row.get("applicable")
         and row.get("status") == "RESOLVED"
         and row.get("authority_ok", True)
+    ):
+        return False
+    if dependency_id in seen:
+        return False
+    dependency_requirement = blueprint["requirements"].get(dependency_id)
+    if not dependency_requirement:
+        return True
+    nested = dependency_status(
+        dependency_requirement,
+        requirement_states,
+        blueprint,
+        seen | {dependency_id},
     )
+    return nested["ready"]
 
 
-def dependency_status(requirement: dict, requirement_states: dict) -> dict:
+def dependency_status(
+    requirement: dict,
+    requirement_states: dict,
+    blueprint: dict,
+    seen: set[str] | None = None,
+) -> dict:
     dependencies = requirement.get("dependencies") or {}
     requires_all = [item for item in dependencies.get("requires_all", []) if item in requirement_states]
     requires_any = [item for item in dependencies.get("requires_any", []) if item in requirement_states]
     missing = []
+    seen = set(seen or ())
+    requirement_id = requirement.get("id")
+    if requirement_id:
+        seen.add(requirement_id)
 
     for dependency_id in requires_all:
         row = requirement_states[dependency_id]
         if not row.get("applicable") or row.get("status") == "NOT_RELEVANT":
             continue
-        if not _dependency_usable(row):
+        if not _dependency_usable(dependency_id, requirement_states, blueprint, seen):
             missing.append(dependency_id)
 
     if requires_any:
@@ -71,7 +99,10 @@ def dependency_status(requirement: dict, requirement_states: dict) -> dict:
             if requirement_states[dependency_id].get("applicable")
             and requirement_states[dependency_id].get("status") != "NOT_RELEVANT"
         ]
-        if not any(_dependency_usable(requirement_states[item]) for item in applicable):
+        if not any(
+            _dependency_usable(item, requirement_states, blueprint, seen)
+            for item in applicable
+        ):
             # If every alternative is NOT_RELEVANT, the dependent Requirement is orphaned and
             # cannot be treated as evidence-ready merely because its own payload exists.
             missing.extend(applicable or requires_any)
@@ -98,7 +129,7 @@ def evaluate_gates(blueprint: dict, state: dict, requirement_states: dict, conte
             )
             if not satisfied:
                 continue
-            deps = dependency_status(requirement, requirement_states)
+            deps = dependency_status(requirement, requirement_states, blueprint)
             if deps["ready"]:
                 continue
             marker = f"dependency:{requirement_id}"
@@ -130,7 +161,7 @@ def plan_actions(
             continue
         if requirement_state["status"] in {"NOT_RELEVANT", "ACCEPTED_UNKNOWN"}:
             continue
-        if not dependency_status(requirement, requirement_states)["ready"]:
+        if not dependency_status(requirement, requirement_states, blueprint)["ready"]:
             continue
 
         satisfied, _ = base._requirement_satisfies(
