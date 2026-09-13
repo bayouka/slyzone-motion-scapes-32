@@ -13,19 +13,22 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 
 Current **certified** production transport release: **v4.5.12-workspace-engine-adapter-p1 / build 540**.
 
-Current active release candidate: **v4.5.12-workspace-g0-actions-p2 / build 542**.
+Current active release candidate: **v4.5.12-workspace-source-actions-p1 / build 543**.
 
-Build 542 contains:
-- Workspace V3 G0 interactive actions ;
+Build 543 contains:
+- Workspace V3 actions `0.2.0` ;
+- G0 assessment + targeted human confirmation ;
+- authenticated URL source registration through `register_idea_source_v1` ;
+- deterministic browser idempotency keys tied to revision/content ;
+- renderer marker preventing redundant MutationObserver rerenders ;
 - Idea Engine adapter `0.1.1` ;
 - runtime `SUPABASE_SERVICE_ROLE_KEY` provisioned as a Cloudflare Worker Secret ;
 - modern Supabase secret-key handling: `sb_secret_...` is sent only in the `apikey` header, never as a Bearer token ;
-- health metadata aligned to `v4.5.12-workspace-g0-actions-p2` ;
-- release gates requiring `configured=true`, `service_role_browser_exposed=false`, unauthenticated adapter rejection and G0 assets present.
+- release gates requiring `configured=true`, `service_role_browser_exposed=false`, unauthenticated adapter rejection and Workspace actions 0.2.0 assets present.
 
-Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. It is not a certified baseline.
+Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Build 542 was superseded by 543 before becoming the certified baseline.
 
-Build 542 must not be called production-certified until the Cloudflare release/runtime smoke result is independently observable. GitHub currently receives no usable Cloudflare commit status through the available integration.
+Build 543 must not be called production-certified until the Cloudflare release/runtime smoke result is independently observable. GitHub currently receives no usable Cloudflare commit status through the available integration.
 
 A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and the production runtime smoke checks pass.
 
@@ -46,7 +49,7 @@ A release is production-verified only when the transport manifest matches the in
 - `site/assets/library-workspace-v1.js` — global file library enhancement.
 - `site/assets/design-v5.css` — current global V5 Soft Spatial Workspace design layer, loaded last.
 - `site/assets/ideas-workspace-v3-preview.js` + `.css` — parallel, feature-flagged post-capture workspace projection using the canonical R0→R7 read model; not yet default.
-- `site/assets/ideas-workspace-v3-actions.js` + `.css` — additive G0 interaction layer for Blueprint assessment and targeted human confirmation.
+- `site/assets/ideas-workspace-v3-actions.js` + `.css` — additive interaction layer; version 0.2.0 supports G0 and URL-source registration without service-role exposure.
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
 - `src/worker.js` — Cloudflare Worker, API routes, health endpoint, SPA fallback and response hardening.
 - `src/idea-engine-adapter.js` — command-allowlisted server boundary for selected `service_role only` Idea Engine capabilities; adapter 0.1.1 exposes only `blueprint_fit.assess`.
@@ -139,7 +142,8 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
 - authenticated multi-user browser E2E coverage remains incomplete because a safe dedicated E2E Auth identity lifecycle is not yet available through the connected tooling;
-- build 542 runtime certification and authenticated production G0 E2E are still pending observable evidence;
+- build 543 runtime certification and authenticated production G0 E2E are still pending observable evidence;
+- the projection does not yet expose a deterministic per-Requirement Next Best Human Action, so `apply_human_information_v1` must not be wired from a generic unresolved counter or heuristic frontend question;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
 
 Reduce these items incrementally behind executable checks. Do not perform a destructive rewrite of the runtime.
