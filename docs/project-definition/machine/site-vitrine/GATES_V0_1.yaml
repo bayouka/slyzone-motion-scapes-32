@@ -1,0 +1,201 @@
+schema_version: '0.1'
+blueprint: SITE_VITRINE
+status: CANDIDATE_NON_CANONICAL
+
+gates:
+  - id: G0_BLUEPRINT_FIT_SUFFICIENT
+    zone: Z0_CAPTURE
+    ready_when_all:
+      - project_type is identified enough to select SITE_VITRINE or BLUEPRINT_MISMATCH
+      - raw idea and provenance are persisted
+    outcomes:
+      - CONTINUE_SITE_VITRINE
+      - BLUEPRINT_MISMATCH
+
+  - id: G1_FOUNDATION_LOCKABLE
+    zone: Z1_IDEA_DISCOVERY_FOUNDATION
+    ready_when_all:
+      - business_context >= WORKING_ASSUMPTION
+      - primary_problem_or_opportunity >= WORKING_ASSUMPTION
+      - primary_outcome >= ACCEPTED_AS_CURRENT_OR_EXPLICIT_WORKING_ASSUMPTION
+      - primary_audience >= WORKING_ASSUMPTION
+      - offer_context >= WORKING_ASSUMPTION
+      - hard_constraints materially known or ACCEPTED_UNKNOWN
+      - no hidden critical source conflict
+    effect:
+      - allow LOCKED_FOR_DEPENDENTS on stable foundation atoms
+      - unlock existing audit and targeted market research
+
+  - id: G2_EVIDENCE_CONTEXT_SUFFICIENT
+    zone: Z2_IDEA_EVIDENCE_MARKET
+    ready_when_all:
+      - facts_claims_hypotheses separated
+      - existing audit complete enough for decision question OR NOT_RELEVANT
+      - audience_need_evidence sufficient for decision question
+      - MARKET_CONTEXT_SUFFICIENT_FOR_STRATEGY == true
+      - research_stopping_rule == SATISFIED
+      - critical conflicts resolved or explicit
+      - provenance and freshness sufficient
+    outcomes:
+      - CONTINUE_STRATEGY
+      - DEEPEN_RESEARCH
+      - EARLY_STOP_OR_PAUSE_READY
+
+  - id: G3_STRATEGIC_OPTIONS_READY
+    zone: Z3_IDEA_STRATEGY_OPTIONS
+    ready_when_all_for_launch_path:
+      - challenge_of_original_idea completed
+      - opportunity_synthesis completed
+      - at_least_one_viable_direction exists
+      - tradeoffs and risky_assumptions visible
+      - critical feasibility/regulatory probes resolved enough
+      - macro_scope and non_goals available
+      - recommendation_or_explicit_insufficiency available
+    ready_when_for_stop_path:
+      - evidence sufficient to justify STOP, PAUSE or INSUFFICIENT_INFORMATION
+    effect:
+      - unlock prefiguration target selection
+
+  - id: G4_PREFIGURATION_TARGET_SELECTED
+    zone: Z3_TO_Z4
+    authority: DECISION_OWNER_OR_ACCEPTED_RECOMMENDATION
+    ready_when_all:
+      - one_or_more_directions selected for concept work
+      - prefiguration_budget defined
+      - no direction is selected only because of visual preference
+    effect:
+      - unlock decision-time previews D08-D19
+
+  - id: G5_DECISION_CONCEPT_READY
+    zone: Z4_IDEA_PREFIGURATION
+    ready_when_all:
+      - concept_journey sufficient OR NOT_NEEDED_FOR_DECISION
+      - concept_sitemap sufficient OR NOT_NEEDED_FOR_DECISION
+      - macro_capabilities sufficient
+      - representative_message/content sufficient
+      - visual_concept sufficient OR NOT_NEEDED_FOR_DECISION
+      - feasibility_envelope sufficient
+      - success_model sufficient
+      - financial_case sufficient OR NOT_RELEVANT
+      - all concept artifacts labelled FOR_DECISION not FOR_BUILD
+    effect:
+      - evaluate NEEDS_CONCEPT_VALIDATION
+
+  - id: G5B_CONCEPT_VALIDATION_SUFFICIENT
+    zone: Z4B_CONCEPT_VALIDATION
+    applies_when:
+      - NEEDS_CONCEPT_VALIDATION == true
+    ready_when_all:
+      - validation_method appropriate to risky assumption
+      - real_user_evidence collected OR explicitly impossible
+      - synthetic_ai_personas not counted as user evidence
+      - residual uncertainty classified
+      - blocking uncertainty resolved or accepted by authority
+    effect:
+      - unlock decision package
+
+  - id: G6_DECISION_PACKAGE_READY
+    zone: Z5_DECISION_PACKAGE
+    ready_when_all:
+      - decision_question explicit
+      - executive_summary current
+      - key evidence current
+      - recommendation and alternatives current
+      - prefiguration artifacts current
+      - projections current OR NOT_RELEVANT
+      - risks_unknowns current
+      - explicit decision ask present
+      - PRESENTATION_FRESHNESS_CHECK == PASS
+      - strategic claims traceable
+    effect:
+      - freeze DECISION_SNAPSHOT
+      - allow presentation/review
+
+  - id: G7_IDEA_APPROVAL_READY
+    zone: Z5_REVIEW_APPROVAL
+    authority: DECISION_OWNER
+    ready_when_all:
+      - review_feedback classified
+      - material corrections applied or explicitly rejected by authority
+      - conflicts resolved enough
+      - conditional_approval requirements classified
+      - decision record ready
+    allowed_outcomes:
+      - APPROVE_TO_PROJECT
+      - APPROVE_WITH_CONDITIONS
+      - REVISE
+      - DEEPEN_RESEARCH
+      - PAUSE
+      - STOP
+      - INSUFFICIENT_INFORMATION
+    promotion_rule:
+      - APPROVE_TO_PROJECT promotes immediately
+      - APPROVE_WITH_CONDITIONS promotes only if all conditions are PROJECT_RESOLVABLE or NON_BLOCKING
+      - STRUCTURAL unresolved condition blocks promotion
+
+  - id: G8_PROJECT_PRODUCT_DEFINITION_STABLE
+    zone: Z7_PROJECT_DEFINITION
+    ready_when_all:
+      - approved idea baseline imported
+      - detailed scope and non_goals current
+      - user journeys current
+      - sitemap/page model current
+      - content requirements and ownership current
+      - SEO/discoverability requirements current OR NOT_RELEVANT
+      - functional rules and UI states current
+      - data/CMS/roles current OR NOT_RELEVANT
+      - integrations current OR NOT_RELEVANT
+    effect:
+      - lock product definition for downstream experience/technical detail
+
+  - id: G9_PROJECT_EXPERIENCE_DEFINITION_STABLE
+    zone: Z7_PROJECT_DEFINITION
+    ready_when_all:
+      - wireframes/projections sufficient for structural UX decisions
+      - visual direction accepted
+      - design-system level required for build defined
+      - responsive behavior defined
+      - critical interaction states defined
+      - no critical product decision hidden in final visual artifacts
+    effect:
+      - unlock final build-level experience validation
+
+  - id: G10_PROJECT_TECH_NFR_STABLE
+    zone: Z7_PROJECT_DEFINITION
+    ready_when_all:
+      - delivery approach selected
+      - architecture satisfies product/data/integration constraints
+      - environment/hosting responsibilities defined
+      - security/privacy/legal applicable requirements defined
+      - accessibility target defined
+      - performance/reliability/compatibility requirements defined
+      - measurement/observability defined OR NOT_RELEVANT
+      - no hidden critical feasibility probe remains
+
+  - id: G11_TRACEABILITY_AND_ACCEPTANCE_READY
+    zone: Z8_BUILD_READY
+    ready_when_all:
+      - each critical requirement maps to active spec
+      - each build-critical spec maps to VERIFY or acceptance rule
+      - risks and accepted unknowns visible
+      - owners and authorities valid
+      - source_of_truth_manifest current
+      - implementation_discretion explicit
+      - stale/superseded artifacts excluded
+      - change_after_freeze_policy defined
+
+  - id: G12_READY_FOR_DEVELOPMENT
+    zone: Z8_BUILD_READY
+    authority: AUTHORIZED_OWNER
+    ready_when_all:
+      - G8_PROJECT_PRODUCT_DEFINITION_STABLE == READY
+      - G9_PROJECT_EXPERIENCE_DEFINITION_STABLE == READY
+      - G10_PROJECT_TECH_NFR_STABLE == READY
+      - G11_TRACEABILITY_AND_ACCEPTANCE_READY == READY
+      - no unowned critical blocker
+      - remaining unknowns explicitly non_blocking_or_accepted
+      - BUILD_READY_SNAPSHOT created
+      - handoff package references only current artifacts
+      - developer_ambiguity_audit == PASS
+    outcome:
+      - READY_FOR_DEVELOPMENT
