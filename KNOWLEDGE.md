@@ -69,7 +69,7 @@ Its historical state chain is not a mandatory wizard.
 
 V5 remains a valuable Idea information registry, not a visible questionnaire.
 
-**Current audit note:** V5 is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`. It has now been coverage-mapped against the candidate Project Definition architecture. No significant Idea-level need was intentionally dropped; many Project/Build-Ready needs must be added beyond V5.
+**Current audit note:** V5 is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`. It has been coverage-mapped against the candidate Project Definition architecture. No significant Idea-level need was intentionally dropped; many Prefiguration/Project/Build-Ready needs extend beyond V5.
 
 Coverage audit:
 
@@ -93,44 +93,48 @@ The capture surface remains validated functionally. No regression to a giant que
 
 ---
 
-## Professional Idea → Project → Build Ready architecture — CURRENT PRIORITY
+## Professional Idea → Prefiguration → Decision → Project → Build Ready architecture — CURRENT PRIORITY
 
 Workspace UX work is **paused** until the professional referential architecture and requirement coverage are validated.
 
 ### Current architecture candidate
 
-`docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_2.md`
+`docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4.md`
 
-Status: **NON CANONIQUE / CANDIDATE À VALIDER**.
+Status: **NON CANONIQUE / CURRENT ARCHITECTURE CANDIDATE À VALIDER**.
 
-It proposes:
+V0.4 supersedes V0.3/V0.2 as the active candidate. It proposes:
 
-- three lifecycle zones: `IDEA_DECISION / PROJECT_DEFINITION / BUILD_READY` ;
+- lifecycle zones `Capture → Discovery Foundation → Evidence/Market → Strategy/Options → Prefiguration/Concept Alpha → conditional Concept Validation → Decision Package/Presentation/Review → Approved Idea/Project Baseline → Project Definition → Build Ready` ;
 - five atom types: `INFO / ANALYSIS / DECISION / SPEC / VERIFY` ;
 - Domains separate from Gates and Deliverables ;
-- Core + Blueprint Overlays + Context Overlays + Delivery Profile Overlays + Standard Profiles ;
-- 20 professional Domains ;
-- G0→G9 dependency Gates ;
-- exploratory vs provisional/current/frozen artifacts ;
+- 22 professional Domains D01→D22 ;
+- G0→G12 dependency Gates ;
+- pre-GO provisional journeys/sitemap/capabilities/content/visual mockups/feasibility/projections when useful to decision ;
+- `Prefiguration Budget` so Idea does not become a hidden full Project ;
+- conditional real-user Concept Validation ;
+- Decision Package modes for solo/team/committee ;
+- Review feedback objects + targeted Change Impact ;
+- `APPROVE_WITH_CONDITIONS` ;
+- progressive lock/freeze snapshots ;
+- artifact promotion Idea → Project rather than restart ;
 - traceability `Requirement → Spec → Verify` ;
-- decision authority / owner / criticality by Gate ;
-- Change Impact ;
 - explicit `READY_FOR_DEVELOPMENT` contract ;
-- `IMPLEMENTATION_DISCRETION` so developers are not over-specified while product ambiguity is removed.
-
-### Domain Registry
-
-`docs/project-definition/01_DOMAIN_REGISTRY_V0_1.md`
-
-Current candidate definition of D01→D20, their missions, boundaries, dependencies and principal deliverables.
+- `IMPLEMENTATION_DISCRETION` for developer choices that do not alter product behavior/constraints.
 
 ### Requirement registries — current candidates
 
-**IDEA — current consolidated candidate:**
+**IDEA — consolidated candidate:**
 
 `docs/project-definition/03_REQUIREMENT_REGISTRY_IDEA_V0_2.md`
 
-Supersedes V0.1 as the active Idea candidate. Covers D01→D07 and G1→G4. Incorporates red-team corrections and Matrix V5 coverage mapping, including Decision Question, explicit non-goals, research stopping rule, conflict groups, regulatory probes, research invalidation and early STOP/PAUSE readiness.
+Covers D01→D07 through strategic direction/macro scope, including Decision Question, target, evidence, market/competition, challenge, options, risk/assumptions, non-goals and early STOP/PAUSE readiness.
+
+**PREFIGURATION / DECISION PACKAGE:**
+
+`docs/project-definition/04_PREFIGURATION_DECISION_PACKAGE_REGISTRY_V0_1.md`
+
+Covers provisional decision-time subsets of D08–D19 plus D21 Business Case/Forecasts and D22 Decision Package/Presentation/Review. Includes concept sitemap/journey/features/content, visual territories, hi-fi concept mockups, feasibility envelope, scenario models, PPTX/PDF decision deck, feedback capture and artifact promotion.
 
 **PROJECT — product/experience candidate:**
 
@@ -142,11 +146,32 @@ Covers D08→D15: journeys, IA/page model, content, SEO/migration, functional re
 
 `docs/project-definition/04B_REQUIREMENT_REGISTRY_PROJECT_TECH_BUILDREADY_V0_1.md`
 
-Covers D16→D20: technical architecture, security/privacy/legal, accessibility/performance/reliability, measurement/analytics, QA/acceptance/handoff and candidate G7→G9 `READY_FOR_DEVELOPMENT`.
+Covers D16→D20: technical architecture, security/privacy/legal, accessibility/performance/reliability, measurement/analytics, QA/acceptance/handoff.
+
+### Progressive lock / freeze / promotion
+
+`docs/project-definition/PROGRESSIVE_LOCK_PROMOTION_MODEL_V0_1.md`
+
+Current candidate states include:
+
+`WORKING → AI_PROPOSED → VALIDATED_CURRENT → LOCKED_FOR_DEPENDENTS → FROZEN_IN_DECISION_SNAPSHOT → APPROVED_FOR_PROJECT → FROZEN_FOR_BUILD`, plus `REVIEW_REQUIRED / STALE / SUPERSEDED / REJECTED`.
+
+Business/problem/target may be locked early for downstream work but are not made irreversibly immutable; new evidence can trigger targeted review.
+
+### AI vs Human resolution
+
+`docs/project-definition/AI_HUMAN_RESOLUTION_POLICY_V0_1.md`
+
+Key invariant:
+
+> `Requirement exists ≠ question user`.
+
+2b2c should prefer source/audit/research/calculation/hypothesis/recommendation before asking the human, while preserving human authority for internal intent, material preferences, conflicts and decisions.
 
 ### Validation support
 
 - `docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_RED_TEAM_20260913.md`
+- `docs/project-definition/PREFIGURATION_DECISION_PACKAGE_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/IDEA_REQUIREMENT_REGISTRY_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`
 - `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
@@ -155,11 +180,11 @@ Covers D16→D20: technical architecture, security/privacy/legal, accessibility/
 
 `docs/idea-engine/validation/PROFESSIONAL_REQUIREMENTS_MASTER_MATRIX_V0_1.md`
 
-Historical exploratory inventory created before the reference architecture was stabilized. Do not treat it as the active schema; use the current registries above.
+Historical exploratory inventory created before the reference architecture was stabilized. Do not treat it as the active schema.
 
 ### Current status
 
-The architecture and registries are now substantial enough for systematic coverage/red-team work, but remain **non-canonical candidates** until explicit validation. No production/backend implementation is authorized from them yet.
+The architecture now explicitly models the missing zone between strategic Idea and Project: **Prefiguration + Decision Package + Review**. It remains **non-canonical** until explicit validation. No production/backend implementation is authorized from it yet.
 
 ---
 
@@ -213,11 +238,14 @@ Unless explicitly reopened through the architecture audit:
 - GO is not privileged over revise/pause/stop ;
 - the system should do more work than the novice user ;
 - Idea is not Project ;
-- GO to Project is not Ready for Development ;
+- approval of a prefigured Idea is not Ready for Development ;
 - development execution is not Project Definition ;
 - requirements/standards must be proportional to applicability and risk ;
 - requirements that matter structurally should be traceable to specification and verification ;
-- developers retain implementation discretion where it does not change product behavior or constraints.
+- developers retain implementation discretion where it does not change product behavior or constraints ;
+- a high-fidelity mockup before Project is a decision artifact, not final UI truth ;
+- synthetic/AI user simulation is not real user evidence ;
+- Project inherits valid Idea artifacts instead of restarting by default.
 
 ---
 
