@@ -93,6 +93,26 @@ Active engine/tests/validator:
 
 Fresh canonical result: 77 Requirements / 21 Contexts / 14 Gates / 19 Deliverables / 5 Overrides / 0 errors / 0 warnings / 12 of 12 engine tests PASS.
 
+### Non-active G2 candidate — SITE_VITRINE@0.5
+
+Prepared only for Evidence/Market design; **not production authority**:
+- `docs/project-definition/machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_5_CANDIDATE.yaml`
+- `docs/project-definition/machine/site-vitrine/CONTEXT_OVERLAYS_V0_3.yaml`
+- `docs/project-definition/machine/site-vitrine/OVERRIDES_V0_2_G2_CANDIDATE.yaml`
+- `scripts/r0_engine_v0_4_candidate.py`
+- `scripts/test_r0_engine_v0_4_candidate.py`
+- `docs/project-definition/runtime/G2_BLUEPRINT_V0_5_CANDIDATE_VALIDATION_20260913.md`
+
+Candidate semantics:
+- `COMPETITOR_SET` is decision-material, not mechanically mandatory ;
+- greenfield defaults to competitive evidence being material ;
+- a fresh `EXISTING_AUDIT=OBSERVED` + `EVIDENCE_QUALITY=CALCULATED` can make a redundant benchmark non-material unless market comparison is explicitly required ;
+- stale/conflicted audit cannot disable competitive evidence ;
+- `requires_all/requires_any` are transitive preconditions for candidate actions/Gate satisfaction ;
+- caller/LLM cannot arbitrarily set research materiality.
+
+Status: **TARGETED PASS / full R0 candidate replay pending / non active**. Do not replace 0.4 or use 0.5 in runtime until explicit promotion criteria are satisfied.
+
 ---
 
 # Runtime status — R7 PASS / WORKSPACE CUTOVER ACTIVE
@@ -263,16 +283,32 @@ Gate validates source SHA, actions/shell 0.3.0, G1 allowlist/tool markers, apike
 
 GitHub exposes no Cloudflare commit status; build 544 remains uncertified until an independent runtime result is observable.
 
-### Next architectural requirement
+### G2 Evidence / Market — PREPARED, NON ACTIVE
 
-Before widening to **G2 Evidence / Market**:
+Preparation authority:
+- `docs/project-definition/runtime/G2_EVIDENCE_MARKET_RUNTIME_DESIGN_V0_1.md`
+- `docs/project-definition/runtime/G2_EVIDENCE_MARKET_BACKEND_GAP_AUDIT_20260913.md`
+- `docs/project-definition/runtime/G2_EVIDENCE_MARKET_ACQUISITION_MATRIX_V0_1.md`
+- `docs/project-definition/runtime/G2_RESEARCH_ACTION_ATOMIC_PROMOTION_CONTRACT_V0_1.md`
+- Blueprint 0.5 candidate listed above.
+
+Critical backend decision: **do not create/ingest canonical WEB Sources during an Action Run before promotion**. `commit_source_ingestion_v1` increments `engine_revision` and would create self-staleness risk. Future G2 research must use:
+
+`plan → Action Run → external work in memory → complete with SOURCE/observation proposals → atomic promotion → one revision`.
+
+Atomic promotion must validate current Idea revision + target Requirement fingerprints before creating any Source/Information Item. A stale run writes zero canonical research state. `WEB_RESEARCH + SOURCE_BACKED/OBSERVED` requires a canonical Source in that same transaction.
+
+No G2 migration, Worker command or production asset is active yet.
+
+### Activation prerequisites before widening runtime to G2
+
 1. observe/certify build 544 runtime ;
 2. run authenticated G1 E2E ;
 3. validate mobile/desktop G1 states ;
 4. prove no human question appears while an admissible automatic acquisition path remains ;
-5. preserve rollback.
-
-Then extend the same pattern to Evidence/Market: Requirements → admissible acquisition paths → traceable Action Runs → provenance/freshness → human last-mile only.
+5. preserve rollback ;
+6. full R0 replay/red-team for Blueprint 0.5 candidate ;
+7. prepare SQL rollback/red-team for atomic research promotion before applying any G2 migration.
 
 Legacy workspace/orchestrator remains compatibility only until parallel workspace equivalence, desktop/mobile tests, authenticated E2E and rollback are validated.
 
@@ -305,6 +341,8 @@ Legacy workspace/orchestrator remains compatibility only until parallel workspac
 - Supabase `sb_secret_...` server keys are `apikey` headers, never Bearer tokens ;
 - generic server adapters never accept client-chosen privileged RPC/function/authority identifiers ;
 - unresolved Requirement state alone never justifies a human question ;
+- research sources discovered by a system Action Run are promoted atomically with their observations, not written canonically mid-run ;
+- WEB evidence cannot be source-backed without a canonical Source ;
 - LLM/providers never own canonical state ;
 - Remote Desktop availability is never a normal project dependency.
 
