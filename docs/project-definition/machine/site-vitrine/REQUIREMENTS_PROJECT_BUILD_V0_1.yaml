@@ -236,6 +236,7 @@ requirements:
     purpose: Empêcher l'IA d'être autorité finale sur des obligations à haute conséquence.
     applicability: {default: INACTIVE, any_of_contexts: [HAS_REGULATORY_CONSTRAINT, HAS_SENSITIVE_DATA]}
     resolution: {allowed_classes: [R9], preferred_paths: [EXPERT], default_human_interaction: EXPERT_SIGNOFF}
+    authority: {ai_may_extract: false, ai_may_hypothesize: false, ai_may_recommend: false, ai_may_decide: false, decision_authority: EXPERT_ROLE}
     criticality_by_gate: {G10_PROJECT_TECH_NFR_STABLE: BLOCKING}
     minimum_resolution_by_gate: {G10_PROJECT_TECH_NFR_STABLE: EXPERT_SIGNOFF}
 
