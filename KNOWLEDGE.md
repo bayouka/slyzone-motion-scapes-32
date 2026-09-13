@@ -24,6 +24,12 @@ Supporting dated operational sources include notably:
 
 Dated evidence does not automatically override a newer explicit canonical contract.
 
+### Remote-tool workflow
+
+`docs/REMOTE_DESKTOP_POLICY.md`
+
+Canonical work proceeds through GitHub and the relevant remote services/connectors (notably Supabase and Cloudflare). Remote Desktop Commander is last-resort/local-only tooling and its absence must never block normal project progress.
+
 ---
 
 ## Idea Engine — current canonical target
@@ -38,18 +44,18 @@ Current canonical sources remain:
 
 The reference Blueprint currently validated is `Site vitrine`.
 
-Important: the professional boundary beyond the current Idea Engine is under controlled redesign. Do **not** mutate the canonical Master Blueprint/Matrix from the candidate Project Definition work until explicit validation/promotion.
+Important: the professional boundary beyond the current canonical Idea Engine remains under controlled redesign/implementation. Do **not** mutate the canonical Master Blueprint/Matrix from Project Definition work unless explicitly validated/promoted.
 
-Matrix V5 remains valuable and canonical for the current Idea-level model, but is no longer assumed to be the future master referential through `READY_FOR_DEVELOPMENT`.
+Matrix V5 remains canonical for the current Idea-level model, but is not the future master referential through `READY_FOR_DEVELOPMENT`.
 
 Coverage audit:
 `docs/project-definition/validation/MATRIX_V5_TO_REFERENCE_ARCHITECTURE_COVERAGE_AUDIT_20260913.md`
 
 ---
 
-# Professional Idea → Prefiguration → Decision → Project → Build Ready — CURRENT DESIGN PRIORITY
+# Professional Idea → Prefiguration → Decision → Project → Build Ready
 
-Workspace UX work remains **paused** while this referential is designed and validated.
+Workspace UX work remains **paused** while the professional referential/runtime is implemented and validated beyond the current R1 baseline.
 
 ## Current architecture candidate
 
@@ -95,7 +101,7 @@ These catalogs are **not visible questionnaires**. Their internal questions are 
 
 ---
 
-## Cross-cutting candidate mechanisms
+## Cross-cutting mechanisms
 
 - Context applicability: `docs/project-definition/06_CONTEXT_OVERLAY_CATALOG_V0_1.md`
 - Approved Idea → Project promotion: `docs/project-definition/07_APPROVED_IDEA_TO_PROJECT_PROMOTION_CONTRACT_V0_1.md`
@@ -113,15 +119,13 @@ And:
 
 ---
 
-# Machine-readable Site vitrine Blueprint — CURRENT R0 CANDIDATE
-
-The machine-readable layer is **non-canonical** and does not authorize backend/runtime implementation yet.
+# Machine-readable Site vitrine Blueprint — R0 PASS_REFERENCE
 
 ## Active machine manifest
 
 `docs/project-definition/machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_4.yaml`
 
-V0.4 is the active executable candidate for R0. It supersedes V0.3 as the active manifest because context derivation is now machine-readable rather than semi-textual.
+V0.4 is the active executable R0 reference. Context derivation is machine-readable and deterministic.
 
 Load set:
 - `CONTEXT_OVERLAYS_V0_2.yaml`
@@ -148,81 +152,93 @@ No free-text rule interpretation, no Python/JS `eval`, no LLM authority.
 
 Supports alternative acceptable resolution forms per Gate, versioned overrides and separate `IDEA_DECISION_OWNER` / `BUILD_READY_OWNER` role references.
 
-## Previous machine validation
+## R0 validation
 
-`scripts/validate_site_vitrine_blueprint.py`
+Active validator: `scripts/validate_site_vitrine_blueprint.py`
 
-Report:
-`docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md`
+Active engine: `scripts/r0_engine_v0_3.py`
 
-V0.3 fresh-clone result before Context DSL V0.2:
+Active tests: `scripts/test_r0_engine_v0_3.py`
+
+Result on fresh canonical `main` (2026-09-13):
 - 77 Requirements ;
 - 21 Contexts ;
 - 14 Gates ;
 - 19 Deliverables ;
 - 5 Overrides ;
-- 0 errors / 0 warnings.
+- 0 errors / 0 warnings ;
+- engine replay: **12/12 PASS** ;
+- R0 status: **PASS_REFERENCE**.
 
-This does **not** by itself promote V0.4 to final R0 PASS.
+Report:
+`docs/project-definition/runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
+
+Older `scripts/r0_engine.py`, `scripts/r0_engine_v0_2.py` and `tests/r0/*` remain historical/regression material only.
 
 ---
 
-# Runtime architecture / R0 — CURRENT EXECUTION PRIORITY
+# Runtime architecture — R1 PASS / R2 CURRENT EXECUTION PRIORITY
 
-Runtime architecture index:
+Runtime authority/index:
 `docs/project-definition/runtime/README.md`
 
 Supporting contracts:
 - `RUNTIME_EXECUTION_MAPPING_V0_1.md`
 - `PERSISTENCE_MODEL_V0_1.md`
+- `R1_PERSISTENCE_IMPLEMENTATION_PLAN_V0_1.md`
+- `R1_PERSISTENCE_VALIDATION_REPORT_20260913.md`
 - `DETERMINISTIC_ENGINE_CONTRACT_V0_1.md`
 - `MUTATION_RPC_BOUNDARIES_V0_1.md`
 - `RUNTIME_EXECUTION_MAPPING_RED_TEAM_20260913.md`
 
-## Active R0 engine
+## R1 persistence — PASS_PERSISTENCE_BASELINE
 
-**Only active candidate:** `scripts/r0_engine_v0_3.py`
+Applied canonical migrations:
+- `20260913031001_idea_engine_r1_persistence_core`
+- `20260913031053_idea_engine_r1_fk_indexes`
 
-**Active test suite:** `scripts/test_r0_engine_v0_3.py`
+R1 added Blueprint/engine metadata to `ideas` and the additive persistent core:
+- `idea_sources`
+- `idea_information_items`
+- `idea_requirement_states`
+- `idea_action_runs`
+- `idea_snapshots`
+- `project_definitions`
+- `idea_artifacts`
+- `idea_ledger_entries`
 
-Report:
-`docs/project-definition/runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
+Security baseline:
+- RLS on every new table ;
+- no generic `anon/authenticated` writes ;
+- internal engine tables not exposed by client grants ;
+- engine-owned `ideas` fields protected ;
+- snapshots immutable ;
+- R1 FK coverage checked/corrected after Supabase advisor run.
 
-Older `scripts/r0_engine.py`, `scripts/r0_engine_v0_2.py` and `tests/r0/*` remain historical/regression material. Do not use them as active engine contracts for new work.
+R1 did not backfill historical Ideas and did not switch frontend/Worker behavior.
 
-V0.3 fixes a material planning bug found during testing: a Requirement may be generically resolved yet still fail the minimum level demanded by the current Gate. Action planning must therefore compare against the **current Gate minimum**, not merely `RESOLVED` status.
+## R2 — current priority
 
-Current R0 validation state:
-- deterministic Context DSL: implemented ;
-- contexts/applicability/Requirement fingerprints/Gates/Change Impact/stale guards: implemented as local reference ;
-- isolated algorithmic suite: **12/12 PASS** ;
-- actual replay of `scripts/test_r0_engine_v0_3.py` on fresh `main` + V0.4: **PENDING** because the authorized remote execution device became unavailable ;
-- R0: **NOT_YET_PASS_REFERENCE** ;
-- R1 persistence/Supabase: **BLOCKED until R0 PASS_REFERENCE**.
+R2 implements RAW-first ingestion and human/source mutation boundaries without introducing autonomous AI orchestration yet.
 
-No production backend, Worker, frontend or Supabase schema has been changed by R0.
-
----
-
-## Runtime mapping decisions already established
-
-- reuse backend additively, do not rewrite it ;
-- existing Idea RLS, decisions, optimistic concurrency, audit and stale approval logic are useful ;
-- `ideas.status/readiness`, `idea_items` and old `clarify → strengthen → prove → share → decide` are too coarse to be the new canonical engine state ;
-- candidate persistent additions include `idea_sources`, `idea_information_items`, `idea_requirement_states`, `idea_action_runs`, `idea_artifacts`, `idea_snapshots`, `idea_ledger_entries`, `project_definitions` ;
-- the 77 Requirements stay in the versioned Blueprint, not duplicated as canonical DB configuration ;
-- LLM/workflows never mutate canonical state directly ;
-- new GO creates a **Project Definition baseline**, not milestones/tasks ;
-- future mutations use narrow, versioned, idempotent, stale-safe RPC boundaries.
+Target scope:
+- safe Blueprint assignment/initialization ;
+- `register_idea_source_v1` ;
+- source ingestion/version/supersession ;
+- `apply_human_information_v1` ;
+- deterministic `engine_revision` increments ;
+- minimal audit/change lineage ;
+- targeted stale impact ;
+- permission/idempotency/stale-safety tests.
 
 Future implementation order:
-`R0 deterministic engine → R1 persistence → R2 ingestion → R3 autonomous actions → R4 prefiguration/artifacts → R5 decision package → R6 project definition → R7 build ready`.
+`R0 deterministic engine ✅ → R1 persistence ✅ → R2 ingestion → R3 autonomous actions → R4 prefiguration/artifacts → R5 decision package → R6 project definition → R7 build ready`.
 
 ---
 
 ## Validation support
 
-Current relevant validation material includes:
+Relevant material includes:
 - `docs/project-definition/PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_RED_TEAM_20260913.md`
 - `docs/project-definition/PREFIGURATION_DECISION_PACKAGE_RED_TEAM_20260913.md`
 - `docs/project-definition/validation/IDEA_REQUIREMENT_REGISTRY_RED_TEAM_20260913.md`
@@ -232,6 +248,7 @@ Current relevant validation material includes:
 - `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md`
 - `docs/project-definition/validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md`
 - `docs/project-definition/runtime/R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
+- `docs/project-definition/runtime/R1_PERSISTENCE_VALIDATION_REPORT_20260913.md`
 - `docs/idea-engine/validation/IDEA_TO_PROJECT_PROFESSIONAL_LIFECYCLE_AUDIT_20260913.md`
 
 Earlier exploratory inventory:
@@ -249,7 +266,7 @@ Historical only:
 - `docs/idea-engine/ux/WORKSPACE_WIREFRAMES_V0_1.md`
 - associated prototype/red-team docs.
 
-No new workspace prototype should be promoted or implemented until the professional lifecycle/master referential and R0 semantics are explicitly validated.
+R0 is validated, but the professional runtime is only at R1. Do not promote or implement a new post-capture workspace UX until the required runtime semantics for that surface are explicitly validated.
 
 ---
 
@@ -258,10 +275,12 @@ No new workspace prototype should be promoted or implemented until the professio
 Do not conflate:
 - current production implementation ;
 - current canonical Idea Engine ;
-- non-canonical Project Definition architecture/registries ;
-- non-canonical machine-readable Blueprint/R0 reference engine.
+- Project Definition architecture/registries ;
+- R0 deterministic reference ;
+- R1 persistence baseline ;
+- future R2+ runtime capabilities.
 
-No production/backend implementation is authorized from these candidates yet unless explicitly decided.
+A validated lower runtime layer does not authorize unimplemented higher-layer behavior.
 
 ---
 
@@ -285,7 +304,9 @@ No production/backend implementation is authorized from these candidates yet unl
 - developers retain implementation discretion when it does not alter product behavior/constraints ;
 - Idea approval authority and Build Ready approval authority may be different roles ;
 - Context rules used by R0 must be deterministic structured predicates ;
-- generic Requirement resolution never substitutes for satisfying a stricter Gate-specific minimum.
+- generic Requirement resolution never substitutes for satisfying a stricter Gate-specific minimum ;
+- canonical writes use provenance, idempotency and stale-safety boundaries ;
+- Remote Desktop availability is never a normal project dependency.
 
 ---
 
