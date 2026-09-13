@@ -2,7 +2,7 @@
 
 Date : 2026-09-13
 
-Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–2 VALIDATED**
+Statut : **ACTIVE IMPLEMENTATION PLAN — SLICES 1–2 VALIDATED / SLICE 3 IMPLEMENTED IN PARALLEL**
 
 Objectif : remplacer progressivement le workspace Idea historique par une projection fidèle au runtime R0→R7 sans big-bang, sans baisse de sécurité et sans rendre l'application inutilisable pendant la transition.
 
@@ -13,9 +13,10 @@ Objectif : remplacer progressivement le workspace Idea historique par une projec
 - aucune réouverture de Capture V5 sans problème réel ;
 - aucun assouplissement des RPCs `service_role only` pour simplifier le frontend ;
 - chaque slice est additive, testable et rollbackable ;
-- l'ancien orchestrateur est retiré seulement après équivalence fonctionnelle et UX validée.
+- l'ancien orchestrateur est retiré seulement après équivalence fonctionnelle et UX validée ;
+- l'historique des migrations GitHub doit correspondre exactement à `supabase_migrations.schema_migrations` ; aucun faux/no-op de rattrapage n'est accepté.
 
-## Slice 1 — Canonical read projection — DONE
+## Slice 1 — Canonical read projection — DONE / VALIDATED
 
 Livrable : `get_idea_workspace_projection_v1`.
 
@@ -23,7 +24,9 @@ Effet : une seule source UX agrège le runtime R0→R7 sans exposer les internal
 
 Validation : accès autorisé, accès transversal refusé, état non classifié, état `IDEA_ENGINE`, aucune clé `phase/step/progress/completion_percentage`.
 
-## Slice 2 — G0 / Blueprint Fit — DONE
+Projection active après durcissements G0/change intelligence : **1.2**.
+
+## Slice 2 — G0 / Blueprint Fit — DONE / VALIDATED
 
 Livrables :
 - `idea_blueprint_fit_assessments` ;
@@ -31,7 +34,7 @@ Livrables :
 - `record_idea_blueprint_fit_assessment_v1` — service-role only ;
 - `apply_assessed_blueprint_fit_v1` — service-role only ;
 - `confirm_idea_blueprint_fit_v1` — confirmation humaine contrôlée ;
-- projection workspace `1.1` avec état G0 minimal.
+- projection workspace 1.2 avec état G0/reclassification minimal.
 
 Garanties validées :
 - Site vitrine n'est jamais assigné par défaut à toute Idea ;
@@ -39,28 +42,51 @@ Garanties validées :
 - auto-application uniquement `HIGH + non ambiguous + auto_applicable` ;
 - confidence MEDIUM/LOW ou `AMBIGUOUS` ne peut pas être auto-appliquée ;
 - l'humain peut corriger l'assessment ;
-- une assessment devient stale si l'entrée matérielle change ;
+- une assessment devient stale/superseded si l'entrée matérielle change ;
 - mismatch conserve RAW/source et historique au lieu de forcer le Blueprint disponible ;
+- après modification matérielle, `BLUEPRINT_MIGRATION_REQUIRED` force une reclassification G0 avant réutilisation du Blueprint ;
+- les Action Runs non promus devenus invalides passent stale et les Requirements concernés passent `REVIEW_REQUIRED` sans perdre leur historique ;
+- une Idea déjà promue en Project Definition n'est plus structurellement modifiable via l'ancien éditeur ;
 - aucune fixture de test résiduelle.
 
-## Slice 3 — Parallel workspace shell — CURRENT
+Migrations d'intégration alignées avec l'historique Supabase :
+- `20260913043039_idea_workspace_projection_v1` ;
+- `20260913043203_idea_workspace_projection_v1_boolean_fix` ;
+- `20260913043603_idea_blueprint_fit_g0_v1` ;
+- `20260913043734_idea_workspace_projection_g0_v1` ;
+- `20260913043819_idea_blueprint_fit_g0_fk_index` ;
+- `20260913044946_idea_blueprint_fit_reclassification_v1` ;
+- `20260913045028_idea_content_change_runtime_compat_v1`.
 
-Créer une nouvelle surface additive basée exclusivement sur la projection canonique, derrière une route/feature flag parallèle.
+## Slice 3 — Parallel workspace shell — IMPLEMENTED / PREVIEW
 
-Première version : lecture + navigation sémantique + states loading/error/empty, sans mutation moteur privilégiée.
+Livrables frontend :
+- `site/assets/ideas-workspace-v3-preview.js` ;
+- `site/assets/ideas-workspace-v3-preview.css` ;
+- wiring additif dans `site/index.html`.
 
-Structure cible :
+Route parallèle : `#/ideas/<idea_id>/workspace-v3`.
+
+Activation preview :
+- query `?workspacev3=1`, ou
+- localStorage `2b2c.idea.workspace.v3=1`.
+
+La surface lit exclusivement `get_idea_workspace_projection_v1` et reste volontairement read-only pour les mutations privilégiées. Elle expose :
 - Header Idea + lifecycle badge ;
-- HUMAN_INPUT_INLINE si nécessaire ;
+- HUMAN_INPUT_INLINE si réellement nécessaire ;
 - VALUE_NOW central ;
 - SYSTEM_MICROSTATUS compact ;
 - navigation sémantique non bloquante ;
-- provenance/evidence en profondeur progressive ;
-- FREE_INPUT persistant.
+- agrégats provenance/sources/artefacts ;
+- décision neutre ;
+- Project Definition / Gates lorsqu'ils existent ;
+- retour vers l'éditeur de compatibilité.
 
-La route parallèle doit pouvoir coexister avec `ideas-v1.js` et `ideas-orchestrator-v2.js` sans changer leurs routes historiques. Aucun lien principal n'est basculé avant validation de la nouvelle surface.
+Coexistence vérifiée : la route `workspace-v3` ne matche pas la regex historique de `ideas-v1.js`; aucun lien principal n'est basculé.
 
-## Slice 4 — Privileged action adapter
+Transport : build 539 préparé avec validation syntaxique et smoke checks dédiés aux assets V3. La chaîne Cloudflare a été déclenchée via le miroir normal, mais aucun statut/check Cloudflare n'est observable depuis GitHub et aucun connecteur Cloudflare n'est disponible dans l'environnement courant. **Ne pas déclarer la preview runtime certifiée tant qu'une preuve de smoke production n'est pas disponible.**
+
+## Slice 4 — Privileged action adapter — NEXT
 
 Les RPCs R3→R7 restent `service_role only`.
 
@@ -73,7 +99,14 @@ Créer une frontière serveur qui :
 6. journalise l'acte ;
 7. n'expose jamais la clé service-role au navigateur.
 
-Le Worker Cloudflare est la cible architecturale préférée si le secret service-role peut être provisionné proprement. Ne pas coder de contournement client.
+Le Worker Cloudflare est la cible architecturale préférée si le secret service-role peut être provisionné proprement. Ne pas coder de contournement client et ne pas élargir les ACL des RPCs moteur pour faciliter l'UI.
+
+Avant activation :
+- vérifier le mécanisme de secret Worker disponible ;
+- définir une allowlist explicite des opérations moteur exposables ;
+- distinguer lecture utilisateur, mutation humaine, action système et autorité humaine/expert ;
+- préserver revision/fingerprint/idempotency de bout en bout ;
+- tester ACL transversal, stale request, idempotency reuse et absence de fuite du service-role.
 
 ## Slice 5 — Idea workspace interactions
 
@@ -116,5 +149,5 @@ Chaque retrait exige un smoke test de la nouvelle surface et un rollback simple.
 - aucune décision humaine escamotée ;
 - aucun Blueprint forcé ;
 - aucun appel browser à une RPC service-role ;
-- les changements matériels rendent seulement les descendants concernés stale ;
+- un changement matériel déclenche une reclassification et une invalidation ciblée, jamais une continuité silencieuse sous un Blueprint potentiellement faux ;
 - les utilisateurs peuvent toujours comprendre où en est leur idée et ce qui nécessite réellement leur attention.
