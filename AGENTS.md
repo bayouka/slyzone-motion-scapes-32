@@ -18,7 +18,7 @@ Before any substantial change:
 6. read validated UX snapshot(s) for the surface ;
 7. inspect current implementation before changing it.
 
-For **Idea → understanding/enrichment → candidate proposition → decision → optional Project Draft**, read at minimum:
+For **Idea → understanding/enrichment → candidate proposition → decision → optional Project Definition**, read at minimum:
 
 - `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md`
 - `docs/idea-engine/canonical/INFORMATION_MATRIX_V5_OUTPUT_DRIVEN.md`
@@ -28,6 +28,11 @@ For **Idea → understanding/enrichment → candidate proposition → decision �
 For initial capture UX also read:
 
 - `docs/idea-engine/ux/CAPTURE_UX_V5_VALIDATED.md`
+
+For **post-capture workspace, integration or cutover work**, also read:
+
+- `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V1.md`
+- `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md`
 
 Do not reconstruct product logic from memory or old production UI.
 
@@ -40,6 +45,9 @@ Do not reconstruct product logic from memory or old production UI.
 - `INFORMATION_MATRIX_V4_1.md` = historical/superseded matrix only ;
 - other `docs/idea-engine/canonical/*` = authoritative domain contracts according to their status ;
 - `docs/idea-engine/ux/*_VALIDATED.md` = functionally validated UX surfaces unless explicitly reopened ;
+- `WORKSPACE_PROJECTION_CONTRACT_V1.md` = active authority for runtime R0→R7 → workspace UX projection during cutover ;
+- `WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md` = active integration/cutover sequence and rollback discipline ;
+- old workspace prototypes, `ideas-orchestrator-v2.js` progression and historical sequential UX are compatibility evidence only, not product authority ;
 - dated audits/prototypes/walkthroughs = supporting evidence unless promoted ;
 - current code describes production today but does not automatically override newer canonical product contracts.
 
@@ -75,8 +83,10 @@ If Workflow V7.1 or historical Matrix V4.1 appears to imply a rigid sequence, **
 26. **Change Intelligence is targeted.** Recalculate only affected dependencies.
 27. **Presentation, workshop and concept projection may be NOT_RELEVANT.**
 28. **GO is not privileged.** Deepen, revise, pause and stop are valid successful outcomes.
-29. **Project Draft exists only after explicit launch.** Transfer active useful context selectively; rejected/superseded material stays historical.
+29. **Project Definition exists only after explicit approved GO.** Transfer active useful context selectively; rejected/superseded material stays historical.
 30. **The LLM is not the sole state engine.** Persistence, provenance, dependency/readiness rules, permissions, stale-safety and important mutations require deterministic system/application/database behavior.
+31. **Blueprint fit is re-evaluated after material Idea change.** Do not silently keep using an old Blueprint; `BLUEPRINT_MIGRATION_REQUIRED` must lead through G0 before downstream reuse.
+32. **Post-Project Definition structural change requires controlled change management.** Do not route it through the legacy pre-GO Idea editor.
 
 ## Capture-specific validated rules
 
@@ -103,6 +113,8 @@ Every analysis targets identifiable input/source versions. If a newer version ex
 
 Important mutations are idempotent and stale-safe.
 
+A material Idea edit must preserve historical evidence while invalidating only affected downstream state and requiring Blueprint reclassification when appropriate.
+
 AI failure never destroys raw data or blocks continuity; analysis can retry.
 
 ## Production and code safety
@@ -114,6 +126,8 @@ AI failure never destroys raw data or blocks continuity; analysis can retry.
 - never use Remote Desktop merely to read/modify canonical GitHub, administer Supabase, trigger the normal Cloudflare release path or work around an available connector ;
 - transport mirror is not canonical development source ;
 - do not reintroduce GitHub Actions as production release mechanism unless explicitly changed/validated ;
+- browser code must never receive the Supabase `service_role` secret or call service-role-only engine RPCs directly ;
+- privileged engine actions require an authenticated server-side adapter with explicit allowlist, authorization, revision/fingerprint checks and idempotency ;
 - follow root release/recovery chain before production changes.
 
 ## Documentation governance
@@ -127,6 +141,7 @@ When a structural rule changes:
 3. update `KNOWLEDGE.md` when authority/path/version/status changes ;
 4. update `AGENTS.md` only when agent working rules or precedence change ;
 5. preserve history/superseded states ;
-6. never silently erase reasoning/history when supersession is required.
+6. keep GitHub migration filenames/versions aligned with the canonical Supabase migration history ;
+7. never silently erase reasoning/history when supersession is required.
 
 `AGENTS.md` and `KNOWLEDGE.md` are navigation/governance files, not competing specifications.
