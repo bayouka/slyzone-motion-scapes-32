@@ -57,11 +57,12 @@ machine_contract_invariants:
 validation_status:
   professional_coverage: PASS_CANDIDATE
   scenario_simulation: PASS_WITH_LOCAL_CORRECTIONS_APPLIED
-  automated_yaml_syntax_validation: PENDING
-  automated_reference_validation: PENDING
-  automated_cycle_detection: PENDING
+  automated_yaml_syntax_validation: PASS_2026_09_13
+  automated_reference_validation: PASS_2026_09_13
+  automated_cycle_detection: PASS_2026_09_13
   backend_mapping: NOT_STARTED
 
 validation_support:
   - ../../validation/SITE_VITRINE_DETAILED_REFERENTIAL_COVERAGE_AUDIT_20260913.md
   - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_SIMULATION_20260913.md
+  - ../../validation/SITE_VITRINE_MACHINE_BLUEPRINT_AUTOMATED_VALIDATION_20260913.md
