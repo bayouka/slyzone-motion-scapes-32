@@ -2,7 +2,7 @@
 
 Date de mise à jour : 2026-09-13
 
-Statut global : **R0 PASS_REFERENCE / R1→R7 VALIDATED BASELINES / WORKSPACE CUTOVER ACTIVE / G1 FOUNDATION RELEASE CANDIDATE / G2 EVIDENCE-MARKET DESIGN VALIDATED BY ROLLBACK TESTS — NON ACTIVE**.
+Statut global : **R0 PASS_REFERENCE / R1→R7 VALIDATED BASELINES / WORKSPACE CUTOVER ACTIVE / G1 FOUNDATION RELEASE CANDIDATE / G2 EVIDENCE-MARKET CANDIDATE VALIDATED BY ROLLBACK + R0 DELTA-EQUIVALENCE — NON ACTIVE**.
 
 Ce dossier indexe l'architecture runtime professionnelle de 4b4c. Les spécifications détaillées restent dans leurs documents propriétaires ; ce README ne les remplace pas.
 
@@ -12,10 +12,10 @@ Ce dossier indexe l'architecture runtime professionnelle de 4b4c. Les spécifica
 - Moteur R0 actif : `scripts/r0_engine_v0_3.py` — référence validée 12/12.
 - Baselines backend R1→R7 : validées.
 - Workspace V3 / cutover : actif en parallèle du legacy.
-- G0 Blueprint Fit : validé.
+- G0 Blueprint Fit : validé ; un gap de matérialisation `CREATION_OR_REDESIGN` a été identifié pour G2 et possède un resolver candidat rollback-validé.
 - G1 Foundation déterministe : implémenté ; build 544 reste **release candidate** tant qu'une preuve Cloudflare/runtime indépendante + E2E authentifié ne sont pas disponibles.
 - Dernière baseline transport explicitement certifiée : build 540.
-- G2 Evidence / Market : architecture, Blueprint 0.5 candidat et SQL de promotion research préparés/red-teamés, mais **aucune migration, commande Worker ou UI G2 n'est active**.
+- G2 Evidence / Market : architecture, Blueprint 0.5 candidat, planner/recompute à basis fingerprint et SQL de promotion research préparés/red-teamés, mais **aucune migration, commande Worker ou UI G2 n'est active**.
 
 Invariant permanent : `Requirement exists ≠ question user`.
 
@@ -40,8 +40,18 @@ Pour G2 candidat seulement :
 - `G2_RESEARCH_ACTION_ATOMIC_PROMOTION_CONTRACT_V0_1.md`
 - `G2_ATOMIC_RESEARCH_PROMOTION_REDTEAM_PLAN_V0_1.md`
 - `G2_ATOMIC_RESEARCH_PROMOTION_VALIDATION_REPORT_20260913.md`
+- `G2_REQUIREMENT_BASIS_FINGERPRINT_CONTRACT_V0_1.md`
+- `G2_BASIS_FINGERPRINT_VALIDATION_20260913.md`
+- `G0_CREATION_REDESIGN_RUNTIME_GAP_AUDIT_20260913.md`
+- `G0_CREATION_REDESIGN_RESOLVER_VALIDATION_20260913.md`
+- `G2_EVIDENCE_RECOMPUTE_VALIDATION_20260913.md`
+- `G2_EVIDENCE_PLANNER_INTEGRATED_VALIDATION_20260913.md`
+- `R0_BLUEPRINT_0_5_DELTA_EQUIVALENCE_VALIDATION_20260913.md`
 - `sql-candidates/G2_ATOMIC_RESEARCH_PROMOTION_V0_2_HARDENING.sql`
 - `sql-candidates/G2_RESEARCH_ACTION_V0_3_TARGET_GUARD.sql`
+- `sql-candidates/G2_EVIDENCE_RECOMPUTE_V0_2_BASIS_FINGERPRINT.sql`
+- `sql-candidates/G2_EVIDENCE_PLANNER_V0_5_BASIS_INFLIGHT.sql`
+- `sql-candidates/G2_REQUIREMENT_CRITICALITY_PARITY_V0_1.sql`
 
 ---
 
@@ -57,10 +67,20 @@ Le candidat `SITE_VITRINE@0.5` est isolé et **non actif**. Il prépare G2 avec 
 - `COMPETITOR_SET` matériel plutôt que mécaniquement obligatoire ;
 - recherche concurrentielle requise par défaut en greenfield ;
 - audit frais pouvant remplacer un benchmark redondant en refonte lorsque la décision n'en dépend plus ;
+- existing competitor output qui ne peut plus forcer sa propre applicabilité ;
 - dépendances `requires_all/requires_any` comme préconditions transitives ;
+- basis fingerprints séparés des signatures de résolution ;
+- stale machine result qui ne peut satisfaire le basis courant ;
 - calcul de matérialité déterministe, non contrôlable librement par un LLM/caller.
 
-Statut 0.5 : **TARGETED PASS / full R0 candidate replay pending**.
+Statut 0.5 : **R0 DELTA-EQUIVALENCE PASS — NON ACTIVE**.
+
+Preuves :
+- baseline 0.4 inchangée ;
+- corpus partagé Requirements/Deliverables/Gates/Bindings identique entre manifests 0.4 et 0.5 ;
+- delta Context/Override explicitement red-teamé ;
+- replay algorithmique : **22/22 PASS** (12 invariants actifs + 10 invariants candidat) ;
+- byte-for-byte checkout replay non exécuté dans le runtime cloud courant et explicitement distingué de la preuve d'équivalence.
 
 ---
 
@@ -68,7 +88,7 @@ Statut 0.5 : **TARGETED PASS / full R0 candidate replay pending**.
 
 Migrations :
 - `20260913031001_idea_engine_r1_persistence_core`
-- `20260913031053_idea_engine_r1_fk_indexes`
+- `20260913031053_idea_engine_r1_fk_indexes`.
 
 Persistance moteur, RLS, protection des colonnes système et snapshots immuables validés.
 
@@ -95,7 +115,7 @@ Artefacts versionnés/immutables, freshness exacte, `FOR_DECISION / CONCEPT_NOT_
 Migrations :
 - `20260913035101_idea_engine_r5_decision_package`
 - `20260913035423_idea_engine_r5_decision_audit_fix`
-- `20260913035644_idea_engine_r5_feedback_resolution`
+- `20260913035644_idea_engine_r5_feedback_resolution`.
 
 Decision lineage, package freshness, review/feedback, outcomes neutres et faux GO bloqué validés.
 
@@ -112,7 +132,7 @@ Migrations :
 - `20260913040724_idea_engine_r7_gate_semantics_hardening`
 - `20260913040751_idea_engine_r7_human_decision_authority`
 - `20260913040802_idea_engine_r7_r6_artifact_linkage`
-- `20260913040853_idea_engine_r7_artifact_rpc_fix`
+- `20260913040853_idea_engine_r7_artifact_rpc_fix`.
 
 G8→G12, autorités humaines/expertes, fingerprints exacts, ambiguity audit, approbation Ready et `BUILD_READY_SNAPSHOT` immuable validés.
 
@@ -147,7 +167,7 @@ Build 544 : **release candidate seulement**. GitHub n'expose toujours aucun stat
 
 ---
 
-# G2 Evidence / Market — VALIDATED DESIGN, NON ACTIVE
+# G2 Evidence / Market — VALIDATED CANDIDATE DESIGN, NON ACTIVE
 
 ## Architecture retenue
 
@@ -158,6 +178,29 @@ Acquisition paths :
 `RAW / SRC / AUDIT / CONN / WEB / CALC / AI_H / AI_R`.
 
 L'utilisateur n'est pas transformé en chercheur ou benchmarkeur lorsqu'une voie système fiable existe.
+
+Chaîne backend candidate désormais validée en rollback ciblé :
+
+`creation/redesign resolver → recompute basis-aware → deterministic planner → Action Run → executor → atomic research promotion`.
+
+Le resolver demande à l'humain uniquement après une vraie ambiguïté RAW ; il ne transforme pas un échec automatique temporaire en question utilisateur.
+
+## Basis Fingerprint / stale-safety
+
+Pour G2, `idea_requirement_states.input_fingerprint` représente les **inputs** : contexte, applicabilité, parent resolution signatures et source/evidence inputs explicitement pertinents.
+
+Il exclut le résultat propre de la Requirement.
+
+La résolution reste distincte via `resolution_state`, `resolution_levels`, `resolution_refs`, `lock_state`, `authority_ok`.
+
+Validations rollbackées :
+- own output change → own basis stable ;
+- parent resolution change → child basis change ;
+- Source inventory change → `EVIDENCE_QUALITY` basis change ;
+- ancien résultat machine → historique conservé mais non current sur nouveau basis ;
+- `ACCEPTED_UNKNOWN` G2 → scoped à l'exact basis accepté ;
+- unrelated Foundation fingerprint reste inchangé ;
+- inflight deduplication = Requirement + current basis, non path-only.
 
 ## Promotion research atomique
 
@@ -188,8 +231,11 @@ La transaction promeut ensemble les Sources, observations, Requirement refs et L
 - zéro fixture/DDL candidat persistant après rollback.
 
 Hardening courant :
-- V0.2 : promotion atomique sécurisée ;
-- V0.3 : target Requirement guard avant lancement de recherche.
+- promotion V0.2 : promotion atomique sécurisée ;
+- research Action V0.3 : target Requirement guard avant recherche ;
+- recompute V0.2 : basis fingerprint causal ;
+- planner V0.5 : basis-aware inflight guard ;
+- criticality parity : candidat permettant `ENHANCER / NOT_RELEVANT` sans modifier encore la contrainte production.
 
 **Aucun de ces fichiers n'est une migration active.**
 
@@ -203,12 +249,13 @@ L'advisory transaction lock protège la même identité `(Idea + source_kind + n
 
 1. build 544 : preuve runtime indépendante ;
 2. G1 : E2E authentifié desktop/mobile + human-last-mile vérifié ;
-3. Blueprint 0.5 : full R0 replay + red-team complet ;
-4. promotion research : test concurrence multi-session ;
-5. consolider V0.2 + V0.3 + lineage dans un seul candidat migration ;
-6. rejouer rollback SQL du candidat consolidé ;
-7. seulement ensuite envisager migration Supabase G2 ;
-8. puis planner G2 → executors → adapter `evidence.advance` → A03/A04/A05 → UI → E2E → release certification.
+3. promotion research : test concurrence multi-session réel ;
+4. consolider lineage + criticality parity + resolver/recompute/planner + research promotion dans un package migration propre, en conservant les frontières G1 ;
+5. rejouer rollback SQL du candidat consolidé ;
+6. seulement ensuite envisager migration Supabase G2 ;
+7. puis executors → adapter `evidence.advance` → A03/A04/A05 → UI → E2E → release certification.
+
+Réserve R0 non bloquante pour la préparation : un checkout privé byte-for-byte pourra rejouer les suites 0.5 dès qu'un runtime distant GitHub authentifié sera disponible ; la preuve delta-equivalence est celle utilisée aujourd'hui et reste explicitement tracée.
 
 ---
 
