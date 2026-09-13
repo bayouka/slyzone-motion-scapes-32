@@ -14,7 +14,9 @@ Primary source: `README.md`.
 
 Use it for canonical repository identity, canonical Supabase backend, transport-mirror status, runtime ownership, deployment/release chain and current production baseline.
 
-Current certified transport production baseline: **v4.5.12-workspace-engine-adapter-p1 / build 540**.
+Current **certified** transport production baseline remains **v4.5.12-workspace-engine-adapter-p1 / build 540** until build 542 receives independent runtime certification.
+
+Current active release candidate: **v4.5.12-workspace-g0-actions-p2 / build 542**, adapter `0.1.1`, runtime secret provisioned, G0 interactive assets included.
 
 Supporting operational sources include notably:
 - `docs/RECOVERY_BASELINE_20260911.md`
@@ -253,20 +255,16 @@ Frontend:
 Route: `#/ideas/<idea_id>/workspace-v3`.
 Feature preview: `?workspacev3=1` or localStorage `2b2c.idea.workspace.v3=1`.
 
-The preview reads the canonical projection and coexists with legacy `ideas-v1.js` / `ideas-orchestrator-v2.js`. It does not yet call privileged engine mutations.
-
 Production build **539** was certified directly on 2026-09-13: `/health` OK, shell references Workspace V3, JS marker present, CSS marker present.
 
-### Slice 4 — Privileged adapter V0.1 — PASS_CODE_AND_DEPLOYED_FAIL_CLOSED
+### Slice 4 — Privileged adapter — 0.1.1 / SECRET PROVISIONED / BUILD 542 CERTIFICATION PENDING
 
 Implementation:
 - `src/idea-engine-adapter.js`
 - Worker route `POST /api/ideas/engine`
 - command allowlist: only `blueprint_fit.assess`.
 
-Exact canonical red-team harness result: `WORKSPACE_PRIVILEGED_ADAPTER_V0_1_REDTEAM_PASS`.
-
-Security behavior validated:
+Security behavior:
 - JWT required ;
 - strict payload allowlist ;
 - user-scoped projection/access check before elevation ;
@@ -278,22 +276,44 @@ Security behavior validated:
 - secret never returned ;
 - human/expert authority excluded from the generic adapter.
 
-Production build **540** is deployed and certified:
-- `/health` exposes adapter code `0.1.0` ;
-- command `blueprint_fit.assess` advertised ;
-- `service_role_browser_exposed=false` ;
-- unauthenticated `POST /api/ideas/engine` returns `401 UNAUTHORIZED`.
+Historical build **540** remains the current certified baseline: adapter 0.1.0 was deployed fail-closed and unauthenticated calls were rejected with `401`.
 
-Activation state: **`configured=false`** because Worker secret `SUPABASE_SERVICE_ROLE_KEY` is not currently provisioned. This is intentionally fail-closed; do not weaken RPC ACLs or embed the key in client/config files. An automated attempt to access the secret value was blocked by the security layer before disclosure and was not bypassed.
+Runtime secret `SUPABASE_SERVICE_ROLE_KEY` is now provisioned in Cloudflare Worker runtime bindings as a `Secret`, outside GitHub.
 
-### Current active mission
+Critical compatibility correction: modern Supabase `sb_secret_...` keys are not JWTs. Adapter 0.1.1 sends the secret **only as `apikey`**, never as `Authorization: Bearer`. User JWTs remain Bearer tokens with the publishable key in `apikey`.
 
-Close Slice 4 activation safely:
-1. provision `SUPABASE_SERVICE_ROLE_KEY` through an authorized Worker-secret path, never through repo/browser/chat ;
-2. verify `/health` reports `configured=true` ;
-3. execute authenticated controlled E2E for G0 HIGH auto-apply and AMBIGUOUS human-confirmation paths ;
-4. only then wire `blueprint_fit.assess` into Workspace V3 interaction ;
-5. continue Slice 5 incrementally without turning the server adapter into a generic privileged proxy.
+Build 541 was withdrawn after this issue was detected and is not a certified baseline.
+
+Build **542** is the active release candidate:
+- runtime `v4.5.12-workspace-g0-actions-p2` ;
+- adapter `0.1.1` ;
+- source runtime SHA `abf11adf85586aa47f4de3f9f65f74d6e3b20a44` ;
+- Cloudflare release gate requires `configured=true`, `service_role_browser_exposed=false`, `apikey-only` secret semantics, 401 without JWT, and G0 action assets served.
+
+Cloudflare does not currently publish a usable GitHub status and no Cloudflare connector is installed; therefore build 542 must not be called certified until an independent runtime result is available.
+
+### Slice 5 — Idea workspace interactions — STARTED
+
+Canonical G0 interaction assets:
+- `site/assets/ideas-workspace-v3-actions.js`
+- `site/assets/ideas-workspace-v3-actions.css`
+- additive wiring in `site/index.html`.
+
+G0 behavior:
+- no assessment → `Analyser le type de projet` calls Worker `blueprint_fit.assess` ;
+- HIGH auto-applicable → system resolution allowed ;
+- ambiguous/medium → inline human confirmation ;
+- human confirmation uses authenticated `confirm_idea_blueprint_fit_v1` with current `engine_revision` ;
+- no service secret in browser assets.
+
+Next Slice 5 work after runtime certification / controlled E2E:
+- human information via `apply_human_information_v1` ;
+- sources via `register_idea_source_v1` ;
+- last-mile responses ;
+- system actions ;
+- prefiguration artifacts ;
+- review/feedback ;
+- Decision Package / decision.
 
 Legacy workspace/orchestrator remains compatibility only until parallel workspace equivalence, desktop/mobile tests, authenticated E2E and rollback are validated.
 
@@ -323,6 +343,7 @@ Legacy workspace/orchestrator remains compatibility only until parallel workspac
 - post-Project Definition structural change requires controlled change management ;
 - canonical writes require provenance, authorization, idempotency and stale-safety ;
 - service-role secrets and service-role-only engine RPCs never belong in browser code ;
+- Supabase `sb_secret_...` server keys are `apikey` headers, never Bearer tokens ;
 - generic server adapters never accept client-chosen privileged RPC/function/authority identifiers ;
 - LLM/providers never own canonical state ;
 - Remote Desktop availability is never a normal project dependency.
