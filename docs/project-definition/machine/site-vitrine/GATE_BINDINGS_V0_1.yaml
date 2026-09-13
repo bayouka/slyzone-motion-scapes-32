@@ -1,0 +1,185 @@
+schema_version: '0.2'
+blueprint: SITE_VITRINE
+status: CANDIDATE_NON_CANONICAL
+
+bindings:
+  G0_BLUEPRINT_FIT_SUFFICIENT:
+    system_conditions:
+      - RAW_IDEA_PERSISTED
+      - PROVENANCE_PERSISTED
+      - BLUEPRINT_CLASSIFICATION_AVAILABLE
+    required_atoms:
+      - SV.D04.CREATION_OR_REDESIGN
+    blockers:
+      - BLUEPRINT_MISMATCH_UNRESOLVED
+
+  G1_FOUNDATION_LOCKABLE:
+    required_atoms:
+      - SV.D02.ORG_CONTEXT
+      - SV.D02.DECLARED_PROBLEM
+      - SV.D02.PRIMARY_OBJECTIVE
+      - SV.D02.USER_OUTCOME
+      - SV.D03.PRIMARY_AUDIENCE
+      - SV.D04.OFFER_BASELINE
+    conditional_atoms:
+      - SV.D02.HARD_CONSTRAINTS
+    ledger_conditions:
+      - no_unresolved_critical_conflict_affecting_foundation
+
+  G2_EVIDENCE_CONTEXT_SUFFICIENT:
+    required_atoms:
+      - SV.D03.PRIMARY_NEED
+      - SV.D04.EVIDENCE_QUALITY
+      - SV.D05.MARKET_CONTEXT
+      - SV.D05.PATTERN_GAP_SYNTHESIS
+      - SV.D05.RESEARCH_SUFFICIENCY
+    conditional_atoms:
+      - SV.D04.EXISTING_AUDIT
+      - SV.D05.COMPETITOR_SET
+    ledger_conditions:
+      - strategic_claims_have_provenance_or_hypothesis_label
+      - no_unresolved_critical_evidence_conflict
+
+  G3_STRATEGIC_OPTIONS_READY:
+    required_atoms_for_launch_path:
+      - SV.D01.DECISION_QUESTION
+      - SV.D06.ORIGINAL_IDEA_CHALLENGE
+      - SV.D06.OPPORTUNITY_SYNTHESIS
+      - SV.D06.POSITIONING_OPTIONS
+      - SV.D06.RISKS_ASSUMPTIONS
+      - SV.D06.RECOMMENDATION
+      - SV.D07.OFFER_PRIORITY
+      - SV.D07.MACRO_SCOPE
+    alternative_stop_path:
+      ledger_conditions:
+        - stop_pause_or_insufficient_conclusion_is_evidence_backed
+      bypasses:
+        - SV.D06.POSITIONING_OPTIONS
+        - SV.D07.MACRO_SCOPE
+
+  G4_PREFIGURATION_TARGET_SELECTED:
+    required_atoms:
+      - SV.D06.PREFIGURATION_TARGET
+    ledger_conditions:
+      - prefiguration_budget_defined
+      - selected_direction_not_based_on_visual_preference_only
+
+  G5_DECISION_CONCEPT_READY:
+    required_atoms:
+      - SV.PF.CONCEPT_JOURNEY
+      - SV.PF.CONCEPT_SITEMAP
+      - SV.PF.MESSAGE_HIERARCHY
+      - SV.PF.CAPABILITY_SET
+      - SV.PF.FEASIBILITY_ENVELOPE
+      - SV.PF.SUCCESS_MODEL
+    conditional_atoms:
+      - SV.PF.SEO_CONCEPT
+      - SV.PF.VISUAL_TERRITORIES
+      - SV.PF.HIFI_CONCEPT
+      - SV.PF.RISK_PROBE
+      - SV.D21.SCENARIO_MODEL
+    ledger_conditions:
+      - all_visual_artifacts_labelled_FOR_DECISION
+
+  G5B_CONCEPT_VALIDATION_SUFFICIENT:
+    applies_when_context:
+      - NEEDS_CONCEPT_VALIDATION
+    required_atoms:
+      - SV.CV.USER_VALIDATION_PLAN
+      - SV.CV.USER_VALIDATION_EVIDENCE
+    ledger_conditions:
+      - synthetic_user_simulation_not_counted_as_real_evidence
+      - residual_uncertainty_classified
+
+  G6_DECISION_PACKAGE_READY:
+    required_atoms:
+      - SV.D01.DECISION_QUESTION
+      - SV.D06.RECOMMENDATION
+      - SV.D22.PACKAGE_MODE
+      - SV.D22.EXECUTIVE_MEMO
+      - SV.D22.PRESENTATION_FRESHNESS
+    conditional_atoms:
+      - SV.D22.DECISION_DECK
+      - SV.D21.SCENARIO_MODEL
+      - SV.CV.USER_VALIDATION_EVIDENCE
+    required_deliverables:
+      - A16_DECISION_PACKAGE
+    ledger_conditions:
+      - decision_ask_explicit
+      - key_claims_traceable
+      - no_current_artifact_points_to_stale_dependency
+
+  G7_IDEA_APPROVAL_READY:
+    required_atoms:
+      - SV.D22.REVIEW_FEEDBACK
+      - SV.D22.APPROVAL_OUTCOME
+    required_deliverables:
+      - A17_IDEA_DECISION_RECORD
+    ledger_conditions:
+      - material_feedback_resolved_or_explicitly_rejected_by_authority
+      - structural_approval_conditions_resolved_before_promotion
+
+  G8_PROJECT_PRODUCT_DEFINITION_STABLE:
+    required_atoms:
+      - SV.PRJ.APPROVED_BASELINE
+      - SV.D08.JOURNEY_SPEC
+      - SV.D09.PAGE_MANIFEST
+      - SV.D10.CONTENT_REQUIREMENTS
+      - SV.D12.FUNCTIONAL_REQUIREMENTS
+      - SV.D12.UI_STATES
+    conditional_atoms:
+      - SV.D11.SEO_PAGE_MAP
+      - SV.D11.REDIRECT_MAP
+      - SV.D12.BUSINESS_RULES
+      - SV.D13.CONTENT_DATA_MODEL
+      - SV.D13.ROLE_PERMISSION_MATRIX
+      - SV.D14.INTEGRATION_CONTRACTS
+
+  G9_PROJECT_EXPERIENCE_DEFINITION_STABLE:
+    required_atoms:
+      - SV.D15.WIREFRAME_BASELINE
+      - SV.D15.DESIGN_DEFINITION
+      - SV.D15.RESPONSIVE_BEHAVIOR
+    ledger_conditions:
+      - no_structural_product_decision_hidden_in_visual_artifact
+
+  G10_PROJECT_TECH_NFR_STABLE:
+    required_atoms:
+      - SV.D16.DELIVERY_APPROACH
+      - SV.D16.ARCHITECTURE
+      - SV.D16.ENV_HOSTING_OPS
+      - SV.D17.PRIVACY_SECURITY
+      - SV.D18.ACCESSIBILITY_TARGET
+      - SV.D18.PERFORMANCE_RELIABILITY
+    conditional_atoms:
+      - SV.D17.EXPERT_SIGNOFF
+      - SV.D19.MEASUREMENT_PLAN
+      - SV.D13.CONTENT_DATA_MODEL
+      - SV.D14.INTEGRATION_CONTRACTS
+
+  G11_TRACEABILITY_AND_ACCEPTANCE_READY:
+    required_atoms:
+      - SV.D20.ACCEPTANCE_CRITERIA
+      - SV.D20.SOURCE_OF_TRUTH_MANIFEST
+      - SV.D20.IMPLEMENTATION_DISCRETION
+    ledger_conditions:
+      - every_critical_requirement_has_active_spec
+      - every_build_critical_spec_has_verify_or_acceptance_rule
+      - accepted_unknowns_are_non_blocking_or_formally_accepted
+      - stale_or_superseded_artifacts_excluded
+
+  G12_READY_FOR_DEVELOPMENT:
+    required_gates:
+      - G8_PROJECT_PRODUCT_DEFINITION_STABLE
+      - G9_PROJECT_EXPERIENCE_DEFINITION_STABLE
+      - G10_PROJECT_TECH_NFR_STABLE
+      - G11_TRACEABILITY_AND_ACCEPTANCE_READY
+    required_atoms:
+      - SV.D20.DEVELOPER_AMBIGUITY_AUDIT
+      - SV.D20.READY_APPROVAL
+    required_deliverables:
+      - A25_BUILD_READY_PROJECT_SPECIFICATION
+    ledger_conditions:
+      - no_unowned_critical_blocker
+      - BUILD_READY_SNAPSHOT_ID_exists
+      - handoff_references_current_artifacts_only
