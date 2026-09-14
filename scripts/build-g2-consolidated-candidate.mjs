@@ -21,7 +21,7 @@ const SOURCES = [
   ['sql-candidates/G2_ACCEPTED_UNKNOWN_V0_1_BASIS.sql', 'bc9efd2428c6f7b01ce3385620b450dee080c98f'],
   ['sql-candidates/G2_SYSTEM_ACTION_BOUNDARY_V0_1.sql', '0d6b344ff5aa24c4a925ef2bb8123ea58655085e'],
   ['sql-candidates/G2_ACTION_LIFECYCLE_V0_2_UNIFIED.sql', 'c2c99b930bf5a2c11f7b4b0184d8c757e6e1ec0e'],
-  ['sql-candidates/G2_RESEARCH_PROMOTION_CORE_V0_1_FINAL.sql', 'be192725a1fe9dc80a180c1b691cc4884e514db6'],
+  ['sql-candidates/G2_ATOMIC_RESEARCH_PROMOTION_V0_2_HARDENING.sql', '96a79139a2dd75976dd1824858f6e5bfb8dd3c19'],
   ['sql-candidates/G2_RESEARCH_ACTION_V0_4_BLUEPRINT_GUARD.sql', '75b5605fc61e909ce997044df7ece5170a50fb27'],
   ['sql-candidates/G2_RESEARCH_PROMOTION_V0_3_BLUEPRINT_GUARD.sql', '7f37fb85a531b3a2e0a8973ddbbac066843dad60'],
 ];
@@ -73,11 +73,13 @@ async function main() {
   const header = `-- 4b4c / 2b2c — G2 CONSOLIDATED MIGRATION CANDIDATE V0.1\n` +
     `-- GENERATED FILE — DO NOT EDIT BY HAND.\n` +
     `-- Generator: scripts/build-g2-consolidated-candidate.mjs\n` +
-    `-- Authority: docs/project-definition/runtime/G2_MIGRATION_PACKAGE_MANIFEST_V0_2.md\n` +
+    `-- Authority: docs/project-definition/runtime/G2_MIGRATION_PACKAGE_MANIFEST_V0_3.md\n` +
     `-- STATUS: NON ACTIVE — DO NOT APPLY TO PRODUCTION.\n` +
     `-- This file intentionally contains no BEGIN/COMMIT. Validation harnesses must wrap it\n` +
     `-- in an explicit transaction and ROLLBACK until activation authority is granted.\n` +
-    `-- Source count: ${SOURCES.length}\n`;
+    `-- Source count: ${SOURCES.length}\n` +
+    `-- Assembly invariant: source #12 MUST follow source #11 so the final create_action_run_v4\n` +
+    `-- definition is the Blueprint/target-basis guarded V0.4 implementation.\n`;
 
   await mkdir(dirname(OUT), { recursive: true });
   await writeFile(OUT, header + pieces.join(''), 'utf8');
@@ -87,6 +89,7 @@ async function main() {
       {
         ok: true,
         output: OUT,
+        authority: 'G2_MIGRATION_PACKAGE_MANIFEST_V0_3.md',
         sourceCount: SOURCES.length,
         verified,
       },
