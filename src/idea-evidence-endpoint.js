@@ -36,8 +36,8 @@ function mapError(error){
 }
 
 function executorCapabilities(env){
-  // AI_H has an implementation candidate but remains deliberately non-active until
-  // the contract's authenticated fresh-Idea activation gate is proven.
+  // AI_H and SRC have implementation candidates but remain deliberately non-active until
+  // their authenticated activation gates are proven. Production stays CALC + RAW.
   return {AI:env?.AI,G2_RAW:Boolean(env?.AI)};
 }
 
@@ -71,9 +71,11 @@ async function settlePromotionRecovery(rpc,idea,env){
   }
 
   if(disposition==='PROMOTE'){
-    const promotion=G2_RESEARCH_PATHS.has(path)
-      ?await rpc('promote_research_action_result_v3',{p_action_run_id:runId,p_current_input_fingerprint:inputFp})
-      :await rpc('promote_g2_system_action_result_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});
+    const promotion=path==='SRC'
+      ?await rpc('promote_g2_src_action_result_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp})
+      :G2_RESEARCH_PATHS.has(path)
+        ?await rpc('promote_research_action_result_v3',{p_action_run_id:runId,p_current_input_fingerprint:inputFp})
+        :await rpc('promote_g2_system_action_result_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});
     return {disposition,path,status:clean(promotion?.status||'promoted',80)};
   }
 
