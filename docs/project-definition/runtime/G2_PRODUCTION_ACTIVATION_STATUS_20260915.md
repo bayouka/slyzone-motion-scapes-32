@@ -1,6 +1,6 @@
 # 4b4c / 2b2c — G2 production activation status — 2026-09-15
 
-Status: **BACKEND ACTIVE / BUILD 550 RUNTIME-CERTIFIED / CALC+RAW+AI_H ACTIVE**
+Status: **BACKEND ACTIVE / BUILD 551 RUNTIME-CERTIFIED / CALC+RAW ACTIVE / AI_H CANDIDATE INACTIVE**
 
 ## Production backend
 
@@ -16,32 +16,33 @@ The Blueprint resolver assigns `SITE_VITRINE@0.5` to new compatible Site-vitrine
 
 The V0.8 classifier is service-role only. It distinguishes normal promotion, honest `NO_RESOLUTION` finalization, already-finalized work and invalid/non-promotable recovery states without exposing raw Action Run payloads to the browser.
 
-## Build 550 — runtime-certified production baseline
+## Build 551 — runtime-certified production baseline
 
-Production runtime: `v4.5.13-workspace-evidence-g2-p4`.
-Transport build: **550**.
-Adapter: **0.3.2**.
-Executor tool: **evidence-adapter-0.3.0**.
+Production runtime: `v4.5.13-workspace-evidence-g2-p5`.
+Transport build: **551**.
+Adapter: **0.3.3**.
+Executor tool: **evidence-adapter-0.3.1**.
 
 Independent production observations on 2026-09-15 confirmed:
 - `/health` HTTP 200 ;
-- runtime `v4.5.13-workspace-evidence-g2-p4` ;
-- Cloudflare version id `8d8b8b78-dee6-4eb5-be06-2be215317fd6` after the byte-aligned transport resync ;
-- adapter `0.3.2`, configured, browser service-role exposure false ;
+- runtime `v4.5.13-workspace-evidence-g2-p5` ;
+- Cloudflare version id `4cacaaa5-628d-46e5-b2e4-e4f14a84b695` ;
+- adapter `0.3.3`, configured, browser service-role exposure false ;
 - commands `blueprint_fit.assess`, `foundation.advance`, `evidence.advance` ;
 - `SITE_VITRINE@0.5`, G2 backend `v0.7`, promotion disposition `v0.8` ;
-- explicit executor scope `g2_executor_paths=['CALC','RAW','AI_H']` ;
-- `g2_hypothesis_targets=['SV.D03.PRIMARY_NEED','SV.D03.OBJECTIONS_TRUST']` ;
-- `g2_hypothesis_resolution='WORKING_ASSUMPTION'` ;
+- explicit active executor scope `g2_executor_paths=['CALC','RAW']` ;
+- `g2_ai_h_candidate='v0.1'` and `g2_ai_h_active=false` ;
+- AI_H candidate target limited to `SV.D03.PRIMARY_NEED` with candidate resolution `WORKING_ASSUMPTION` ;
 - product surface `g2_user_surface='evidence-market'` ;
-- root shell contains `ideas-workspace-g2-live.js?v=1.1.0` and `boot.js?build=550` ;
+- root shell contains `ideas-workspace-g2-live.js?v=1.1.0` and `boot.js?build=551` ;
+- Evidence/Market asset HTTP 200 with **Preuves & marché** copy and asset version `1.1.0` ;
 - unauthenticated `evidence.advance` returns HTTP 401 with `UNAUTHORIZED`.
 
-This proves Worker/shell/API deployment and the declared executor surface. It does **not** replace the still-required authenticated fresh-Idea G0 → G1 → G2 end-to-end proof.
+This certifies Worker, shell, asset and unauthenticated API boundaries. It does **not** replace the still-required authenticated fresh-Idea G0 → G1 → G2 end-to-end proof.
 
 ## RAW executor scope
 
-RAW remains a strict extraction path, not an inference path:
+RAW remains the only active AI-assisted G2 executor and is a strict extraction path, not an inference path:
 - Workers AI parses persisted human RAW input ;
 - supported RAW targets are `SV.D03.PRIMARY_NEED` and `SV.D04.EXISTING_SITE` ;
 - promoted provenance is `SOURCE_EXTRACTED` ;
@@ -49,45 +50,77 @@ RAW remains a strict extraction path, not an inference path:
 - every accepted finding requires a support quote actually present in persisted RAW ;
 - unsupported or inferred findings end in explicit `NO_RESOLUTION` rather than fabricated evidence.
 
-## AI_H executor scope
+## AI_H candidate scope — intentionally non-active
 
-AI_H is now operational as a deliberately bounded **working-hypothesis** path.
+`G2_AI_H_EXECUTOR_CONTRACT_V0_1.md` is authoritative for the first hypothesis executor candidate.
 
-Its production invariants are:
-- resolving targets are limited to `SV.D03.PRIMARY_NEED` and `SV.D03.OBJECTIONS_TRUST` ;
-- AI_H consumes only current structured Information Items referenced by current Requirement states ;
+Its candidate implementation is deliberately narrower than general policy compatibility:
+- only `SV.D03.PRIMARY_NEED` is in V0.1 scope ;
+- candidate provenance is `AI_INFERRED` ;
+- candidate resolution is `WORKING_ASSUMPTION` ;
+- current audience plus at least one material supporting context item is required ;
 - `personal` and `sensitive` Information Items are excluded from the model basis ;
-- recursive AI speculation is excluded from the basis: only human/source/connector/web/calculated provenance classes are accepted as hypothesis inputs ;
-- the model output must cite one or more Requirement IDs that were actually present in the supplied basis ;
-- confidence is capped at `MEDIUM` ;
-- promoted provenance is always `AI_INFERRED` ;
-- promoted resolution is always `WORKING_ASSUMPTION` ;
-- no source-backed, observed, calculated, human-validated or human-decision claim can be produced by AI_H ;
-- insufficient or invalid basis terminates as explicit `NO_RESOLUTION`.
+- recursive AI speculation is excluded from the basis ;
+- no source-backed, observed, calculated, human-validated or human-decision claim may be produced by AI_H ;
+- insufficient or invalid basis must terminate as explicit `NO_RESOLUTION`.
 
-Deterministic red-team coverage verifies a positive AI_H promotion, rejection of an invented basis Requirement ID, exclusion of a sensitive Information Item from the model prompt, preservation of RAW provenance rules, and absence of undeclared SRC/AI_R/WEB capability exposure at the endpoint.
+The implementation candidate remains present behind deterministic/red-team tests, but the production endpoint does **not** pass `G2_AI_H` to the adapter and `/health` explicitly reports `g2_ai_h_active=false`.
+
+Activation remains blocked until the contract's authenticated fresh-Idea E2E gate is proven.
+
+## Build 550 correction
+
+Build 550 was runtime-observed with `CALC + RAW + AI_H`, but subsequent contract audit found that this exceeded `G2_AI_H_EXECUTOR_CONTRACT_V0_1.md`: it exposed two hypothesis targets and activated AI_H before the required authenticated fresh-Idea proof.
+
+Build 551 corrects that mismatch rather than treating deployed code as higher authority than the frozen contract. The endpoint is again the explicit capability authority and exposes only `CALC + RAW` in production.
+
+The first Build 551 transport attempts also exposed two release-gate defects before deployment:
+- the transport adapter was initially not byte-aligned with the corrected canonical adapter ;
+- the release script still asserted the pre-correction AI_H semantic key.
+
+Both were fixed before the successful p5 deployment. This is exactly the intended fail-closed behavior of the release gate.
 
 ## Capability authority
 
-The production endpoint is the authority for executor availability. Build 550 passes only `{ AI, G2_RAW, G2_AI_H }` to the orchestration adapter when Workers AI is bound.
+The production endpoint is authoritative for executor availability.
 
-`SRC`, `AI_R`, `WEB`, `AUDIT`, `CONN` and `MEM` remain unavailable through the production endpoint. Dormant internal feature flags or scaffolding are not operational capability and must not be advertised as such.
+Active through `evidence.advance`:
+- `CALC` ;
+- `RAW` when Workers AI is bound.
 
-## Transport integrity
+Not active:
+- `AI_H` — implementation candidate only ;
+- `SRC` ;
+- `AI_R` ;
+- `WEB` ;
+- `AUDIT` ;
+- `CONN` ;
+- `MEM`.
 
-After the initial Build 550 deployment, the transport copy of `idea-evidence-adapter-candidate.js` was re-synced byte-for-byte with canonical GitHub. The canonical and transport blobs now match for the G2 adapter, endpoint, Worker entry, G2 red-team test and shell index used by this release.
+Dormant internal feature flags or implementation scaffolding are not operational capability and must not be advertised as such.
+
+## Source-backed execution gap
+
+The next executor cannot honestly be called `SOURCE_BACKED` yet.
+
+The current `idea_sources` production table persists source identity, kind, locator, title/note, content hash, version, fetched/freshness timestamps, status and sensitivity, but it does not provide a general persisted source-body contract for arbitrary SRC extraction.
+
+`ideas.original_text` is a special RAW exception; it is not a general source-content store.
+
+Before activating SRC, the architecture must add a bounded, versioned source-content/snapshot persistence contract tied to `idea_sources.id + source_version + content_hash`, with sensitivity, freshness, stale invalidation and service-role-only extraction boundaries. A URL or hash alone must never be treated as source-backed evidence.
 
 ## Remaining hardening
 
 Before calling G2 broadly operational:
 1. run authenticated G0 → G1 → G2 smoke on a fresh `SITE_VITRINE@0.5` Idea ;
-2. exercise real RAW and AI_H actions with an authenticated production Idea and inspect Action Run, provenance and Requirement lineage ;
+2. exercise a real RAW action with an authenticated production Idea and inspect Action Run, Source, Information Item and Requirement lineage ;
 3. verify desktop/mobile Evidence & Market states including ready, blocked, stale and recoverable outcomes ;
-4. implement and test SRC before any source-backed path is advertised ;
-5. implement WEB/research through persisted Sources plus atomic research promotion, not direct model claims ;
-6. implement AI_R separately from AI_H and preserve `AI_RECOMMENDATION` semantics ;
-7. keep stale/fingerprint/attempt-fencing and transport byte-alignment release gates intact.
+4. prove the authenticated AI_H V0.1 candidate end-to-end before any production activation ;
+5. design and implement the persisted source-content boundary before advertising SRC ;
+6. implement WEB/research only through persisted Sources plus atomic research promotion, not direct model claims ;
+7. implement AI_R separately from AI_H and preserve `AI_RECOMMENDATION` semantics ;
+8. keep stale/fingerprint/attempt-fencing and transport byte-alignment release gates intact.
 
 ## Authority note
 
-This status document records the actual activation state reached on 2026-09-15. Older documents describing G2 as non-active, CALC-only, CALC+RAW-only, or Build 547–549 as current production are historical and must not be used to infer the present runtime state.
+This status document records the actual activation state reached on 2026-09-15. Build 551 supersedes Build 550 as the production baseline. Older documents describing G2 as non-active, CALC-only, CALC+RAW-only, or CALC+RAW+AI_H active are historical and must not be used to infer the current runtime state without checking their date/status.
