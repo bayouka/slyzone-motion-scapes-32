@@ -11,25 +11,25 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current **runtime-certified production transport release**: **v4.5.13-workspace-evidence-g2-p1 / build 547**.
+Current **runtime-certified production transport release**: **v4.5.13-workspace-evidence-g2-p2 / build 548**.
 
-Current active release candidate: **v4.5.13-workspace-evidence-g2-p2 / build 548**.
-
-Build 547 was independently observed in production on 2026-09-15 with:
-- `/health` HTTP 200 and runtime `v4.5.13-workspace-evidence-g2-p1` ;
-- Cloudflare version metadata present ;
+Build 548 was independently observed in production on 2026-09-15 with:
+- `/health` HTTP 200 and runtime `v4.5.13-workspace-evidence-g2-p2` ;
+- Cloudflare version id `aa2ced9c-0e67-4e63-9f52-fcb82241a528` ;
 - adapter `0.3.0` configured with `blueprint_fit.assess`, `foundation.advance`, `evidence.advance` ;
 - `SITE_VITRINE@0.5`, G2 backend `v0.7`, promotion disposition `v0.8` ;
-- shell `boot.js?build=547` and Evidence/Market asset present ;
+- explicit health scope `g2_executor_paths=['CALC']` and `g2_user_surface='evidence-market'` ;
+- shell `ideas-workspace-g2-live.js?v=1.1.0` and `boot.js?build=548` ;
+- Evidence/Market asset HTTP 200 with product-facing **Preuves & marché** / **Approfondir les preuves** copy and no visible `G2 actif` test wording ;
 - unauthenticated `evidence.advance` rejected with HTTP 401 / `UNAUTHORIZED`.
 
-Build 548 is the production-polish successor. It keeps the same fail-closed G2 backend boundary but replaces internal G2/test wording in the user interface with the product surface **Preuves & marché**, asset `1.1.0`, and exposes the certified executor scope `CALC` in `/health`. It must not be called production-certified until the deployed runtime independently reports `v4.5.13-workspace-evidence-g2-p2`, the build-548 shell and the 1.1.0 asset.
+Build 547 was the first independently observed production runtime carrying `evidence.advance`; build 548 supersedes it with the production user-facing Evidence/Market polish and explicit executor-scope observability.
 
 The currently active G2 execution boundary is intentionally narrow: only deterministic `CALC` is advertised. RAW/SRC/AI_H/AI_R/WEB/AUDIT/CONN remain unavailable to `evidence.advance` until their executors and contracts are implemented and tested. The runtime must prefer an honest capability limit over fabricated evidence.
 
 The `/health` compatibility object still exposes the historical `idea_engine_adapter_v0_1.code=0.1.1` marker. It is preserved for compatibility and must never be used as sole proof of the current adapter surface.
 
-Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Builds 542–546 were superseded during the G1/G2 cutover. Build 547 is the first independently observed production runtime carrying `evidence.advance`; build 548 is its user-facing polish candidate.
+Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Builds 542–546 were superseded during the G1/G2 cutover.
 
 A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and production smoke checks prove `/health`, shell/assets and unauthenticated API boundaries.
 
@@ -51,7 +51,7 @@ A release is production-verified only when the transport manifest matches the in
 - `site/assets/design-v5.css` — current global V5 Soft Spatial Workspace design layer, loaded last.
 - `site/assets/ideas-workspace-v3-preview.js` + `.css` — parallel post-capture workspace projection using the canonical R0→R7 read model.
 - `site/assets/ideas-workspace-v3-actions.js` + `.css` — interaction layer `0.3.0` for G0, URL-source registration and deterministic G1 Foundation without browser service-role exposure.
-- `site/assets/ideas-workspace-g2-live.js` — additive Evidence/Market interaction surface; canonical version `1.1.0` removes internal G2/test jargon from the user-facing UI while retaining internal runtime markers.
+- `site/assets/ideas-workspace-g2-live.js` — additive Evidence/Market interaction surface; active version `1.1.0` hides internal G2/test jargon and exposes only user-relevant evidence work.
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
 - `src/worker.js` — Cloudflare Worker, API routes, health endpoint, SPA fallback and response hardening.
 - `src/idea-engine-adapter.js` — command-allowlisted server boundary for G0/G1 privileged capabilities.
@@ -159,9 +159,9 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 - `ideas-orchestrator-v2.js` still renders the historical `Clarifier → Renforcer → Étayer → Partager → Décider` progression and remains compatibility-only during Workspace V3 cutover;
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
-- authenticated multi-user browser E2E coverage remains incomplete; build 547 has runtime/API smoke proof but not a full authenticated G0→G1→G2 user journey proof;
+- authenticated multi-user browser E2E coverage remains incomplete; build 548 has runtime/API/shell/asset smoke proof but not a full authenticated G0→G1→G2 user journey proof;
 - non-CALC G2 executors are deliberately not operational yet; WEB/AI/source-backed evidence must not be advertised until implemented with atomic promotion and source provenance tests;
-- build 548 still requires independent runtime certification before replacing build 547 as the certified production baseline;
+- Supabase security/performance advisors still report broader historical debt (intentional SECURITY DEFINER API surfaces, leaked-password protection disabled, several RLS/index optimization notices); classify and remediate deliberately rather than mass-changing access semantics ;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
 
 Reduce these items incrementally behind executable checks. Do not perform a destructive rewrite of the runtime.
