@@ -1,6 +1,6 @@
 # 4b4c / 2b2c — G2 production activation status — 2026-09-15
 
-Status: **BACKEND ACTIVE / WORKER+UI RELEASE PENDING RUNTIME CERTIFICATION**
+Status: **BACKEND ACTIVE / BUILD 547 WORKER+UI RELEASE PENDING RUNTIME CERTIFICATION**
 
 ## Production backend
 
@@ -18,7 +18,8 @@ The V0.8 classifier is service-role only. It distinguishes normal promotion, hon
 
 ## Worker / UI release candidate
 
-Prepared runtime version: `v4.5.13-workspace-evidence-g2`.
+Prepared runtime version: `v4.5.13-workspace-evidence-g2-p1`.
+Prepared transport build: **547**.
 
 Prepared adapter surface:
 - `blueprint_fit.assess`
@@ -42,11 +43,11 @@ This fail-closed restriction prevents the planner from selecting a provider path
 ## Remaining hardening
 
 Before calling G2 fully operational:
-1. deploy and runtime-certify the Worker/UI release;
+1. deploy and runtime-certify build 547;
 2. run authenticated G0 → G1 → G2 smoke on a fresh `SITE_VITRINE@0.5` Idea;
 3. implement and test real non-CALC executors before advertising them;
 4. preserve atomic research promotion and stale/fingerprint guards;
-5. reconcile transport mirror with canonical source before certification.
+5. verify transport mirror remains byte-aligned with canonical runtime files used by build 547.
 
 ## Authority note
 
