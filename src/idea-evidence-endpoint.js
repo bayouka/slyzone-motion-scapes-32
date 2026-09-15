@@ -36,10 +36,11 @@ function mapError(error){
 }
 
 function executorCapabilities(env){
-  return {AI:env?.AI,G2_RAW:Boolean(env?.AI)};
+  const ai=env?.AI;
+  return {AI:ai,G2_RAW:Boolean(ai),G2_AI_H:Boolean(ai)};
 }
 
-function executorPaths(env){return env?.AI?['CALC','RAW']:['CALC'];}
+function executorPaths(env){return env?.AI?['CALC','RAW','AI_H']:['CALC'];}
 
 async function settlePromotionRecovery(rpc,idea,env){
   const paths=executorPaths(env);
@@ -91,8 +92,9 @@ export async function handleEvidenceAdvance(request,env,body){
     const recoverySettlement=await settlePromotionRecovery(rpc,projection.idea,env);
     if(recoverySettlement)projection=await refreshProjection();
 
-    // Production executor scope is explicit. RAW uses Workers AI only as a strict parser of
-    // verbatim human input; it cannot promote a finding unless its support quote exists in RAW.
+    // Production capability authority is explicit at this boundary.
+    // RAW is verbatim extraction. AI_H creates only revisable WORKING_ASSUMPTION items
+    // from current non-sensitive structured context; it cannot claim evidence or human truth.
     const result=await advanceEvidenceCandidate({env:executorCapabilities(env),idea:projection.idea,canWrite:true,rpc,refreshProjection});
     return json({ok:true,command:'evidence.advance',status:result.plan?.gate_status||'IN_PROGRESS',recovery_settlement:recoverySettlement,...result});
   }catch(error){const e=mapError(error);return json({ok:false,error:e.code},e.status)}
