@@ -1,14 +1,14 @@
 import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 
-const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p2';
+const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p3';
 const ADAPTER=Object.freeze({
-  code:'0.3.0',
+  code:'0.3.1',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
   blueprint:'SITE_VITRINE@0.5',
   g2_backend:'v0.7',
   g2_promotion_disposition:'v0.8',
-  g2_executor_paths:['CALC'],
+  g2_executor_tool:'evidence-adapter-0.2.0',
   g2_user_surface:'evidence-market',
   service_role_browser_exposed:false
 });
@@ -18,6 +18,7 @@ function versionMetadata(env){
   if(!meta||typeof meta!=='object')return null;
   return {id:meta.id||null,tag:meta.tag||null,timestamp:meta.timestamp||null};
 }
+function executorPaths(env){return env?.AI?['CALC','RAW']:['CALC'];}
 
 async function health(request,env,ctx){
   const base=await worker.fetch(request,env,ctx);
@@ -27,7 +28,7 @@ async function health(request,env,ctx){
   payload.cloudflare_version=versionMetadata(env);
   payload.ui_shell=payload.ui_shell&&typeof payload.ui_shell==='object'?payload.ui_shell:{};
   if(payload.ui_shell.idea_engine_adapter_v0_1){payload.ui_shell.idea_engine_adapter_v0_1={...payload.ui_shell.idea_engine_adapter_v0_1,compatibility_marker:true};}
-  payload.ui_shell.idea_engine_adapter_v0_3={...ADAPTER,configured:Boolean(env?.SUPABASE_SERVICE_ROLE_KEY)};
+  payload.ui_shell.idea_engine_adapter_v0_3={...ADAPTER,g2_executor_paths:executorPaths(env),configured:Boolean(env?.SUPABASE_SERVICE_ROLE_KEY)};
   const headers=new Headers(base.headers);headers.set('content-type','application/json; charset=utf-8');headers.set('cache-control','no-store');
   return new Response(JSON.stringify(payload),{status:base.status,statusText:base.statusText,headers});
 }
