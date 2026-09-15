@@ -5,16 +5,28 @@ const G2_MAX_ACTIONS=2;
 const G2_MAX_RESEARCH_ACTIONS=1;
 const G2_RESEARCH_PATHS=new Set(['WEB','AUDIT','CONN']);
 const G2_SYSTEM_PATHS=new Set(['RAW','SRC','CALC','AI_H','AI_R']);
-const G2_TOOL_VERSION='evidence-adapter-0.2.0';
+const G2_TOOL_VERSION='evidence-adapter-0.3.0';
 const G2_SCHEMA_VERSION='g2-evidence-v0.7';
 const G2_RAW_PROMPT_VERSION='g2-raw-v1';
 const G2_RAW_SCHEMA_VERSION='g2-raw-v1';
+const G2_AI_H_PROMPT_VERSION='g2-ai-h-v1';
+const G2_AI_H_SCHEMA_VERSION='g2-ai-h-v1';
 const G2_AI_MODEL='@cf/google/gemma-4-26b-a4b-it';
 
 const G2_RAW_TARGETS=Object.freeze({
   'SV.D03.PRIMARY_NEED':{semantic_key:'primary_need',item_type:'DECISION_INPUT',label:'besoin ou job principal de l’audience'},
   'SV.D04.EXISTING_SITE':{semantic_key:'existing_site',item_type:'FACT',label:'site existant explicitement déclaré'}
 });
+
+const G2_AI_H_TARGETS=Object.freeze({
+  'SV.D03.PRIMARY_NEED':{semantic_key:'primary_need_hypothesis',label:'besoin ou job principal de l’audience'},
+  'SV.D03.OBJECTIONS_TRUST':{semantic_key:'objections_trust_hypothesis',label:'objections et besoins de confiance'}
+});
+
+const G2_AI_H_BASIS_PROVENANCE=new Set([
+  'HUMAN_DECLARED','HUMAN_GUIDED_ANSWER','SOURCE_EXTRACTED',
+  'CONNECTOR_EXTRACTED','WEB_RESEARCH','SYSTEM_CALCULATED'
+]);
 
 export class G2CandidateError extends Error{
   constructor(status,code,internal=''){super(code);this.status=status;this.code=code;this.internal=internal;}
@@ -62,6 +74,7 @@ function assertExecutableAction(action,env){
   if(!G2_SYSTEM_PATHS.has(path)&&!G2_RESEARCH_PATHS.has(path))throw new G2CandidateError(502,'G2_PATH_UNSUPPORTED');
   if(!availablePaths(env).includes(path))throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
   if(!text(action.requirement_id,120)||!text(action.target_fingerprint,160))throw new G2CandidateError(502,'G2_PLAN_ACTION_INCOMPLETE');
+  if(path==='AI_H'&&!G2_AI_H_TARGETS[action.requirement_id])throw new G2CandidateError(502,'G2_AI_H_TARGET_UNSUPPORTED');
   return path;
 }
 
@@ -81,8 +94,8 @@ async function createRun(env,rpc,idea,plan,action){
     p_permission_scope:{allowed_mutation_kinds:['INFORMATION_ITEM','LEDGER_ENTRY']},
     p_provider:path==='CALC'?'2b2c-deterministic':aiBacked?'cloudflare-workers-ai':'2b2c-provider',
     p_model:aiBacked?G2_AI_MODEL:null,
-    p_prompt_version:path==='RAW'?G2_RAW_PROMPT_VERSION:'g2-evidence-v1',
-    p_schema_version:path==='RAW'?G2_RAW_SCHEMA_VERSION:G2_SCHEMA_VERSION,
+    p_prompt_version:path==='RAW'?G2_RAW_PROMPT_VERSION:path==='AI_H'?G2_AI_H_PROMPT_VERSION:'g2-evidence-v1',
+    p_schema_version:path==='RAW'?G2_RAW_SCHEMA_VERSION:path==='AI_H'?G2_AI_H_SCHEMA_VERSION:G2_SCHEMA_VERSION,
     p_tool_version:G2_TOOL_VERSION,p_idempotency_key:idempotency
   };
   if(G2_RESEARCH_PATHS.has(path))return {run:await rpc('create_action_run_v4',common),inputFp,path};
@@ -173,10 +186,126 @@ async function executeRaw(env,input){
   return normalizeRawExecution(aiResult,input,target);
 }
 
+function aiHBasis(input,target){
+  const itemById=new Map(arr(input?.current_information_items).map(item=>[text(item?.id,80),item]));
+  const rows=[];
+  const seen=new Set();
+  for(const state of arr(input?.context_requirement_states)){
+    const requirementId=text(state?.requirement_id,120);
+    if(!requirementId||requirementId===target||state?.applicability_state!=='ACTIVE')continue;
+    for(const ref of arr(state?.resolution_refs)){
+      const itemId=text(ref?.information_item_id,80);
+      const item=itemById.get(itemId);
+      if(!item||seen.has(`${requirementId}:${itemId}`)||item?.state!=='ACTIVE')continue;
+      if(!['public','internal'].includes(item?.sensitivity))continue;
+      if(!G2_AI_H_BASIS_PROVENANCE.has(item?.provenance_type))continue;
+      const value=item?.value;
+      if(value&&typeof value==='object'&&value._truncated===true)continue;
+      const serialized=text(JSON.stringify(value),1800);
+      if(!serialized)continue;
+      seen.add(`${requirementId}:${itemId}`);
+      rows.push({
+        requirement_id:requirementId,
+        semantic_key:text(item?.semantic_key,120),
+        item_type:text(item?.item_type,60),
+        provenance_type:text(item?.provenance_type,60),
+        confidence_class:text(item?.confidence_class,40),
+        value
+      });
+      if(rows.length>=18)break;
+    }
+    if(rows.length>=18)break;
+  }
+  return rows;
+}
+
+function aiHSchema(target,basisIds){
+  return {
+    type:'object',additionalProperties:false,
+    properties:{
+      hypothesis:{anyOf:[
+        {type:'null'},
+        {type:'object',additionalProperties:false,properties:{
+          requirement_id:{type:'string',enum:[target]},
+          value:{type:'string',maxLength:1200},
+          rationale:{type:'string',maxLength:700},
+          basis_requirement_ids:{type:'array',items:{type:'string',enum:basisIds},maxItems:6},
+          confidence:{type:'string',enum:['LOW','MEDIUM']}
+        },required:['requirement_id','value','rationale','basis_requirement_ids','confidence']}
+      ]}
+    },
+    required:['hypothesis']
+  };
+}
+
+function aiHPrompt(target,basisIds){
+  const spec=G2_AI_H_TARGETS[target];
+  return `Tu proposes une hypothèse de travail 2b2c, jamais un fait ni une preuve.\n\nRequirement ciblé : ${target} — ${spec?.label||target}.\n\nRègles absolues :\n- Utilise uniquement le contexte structuré fourni.\n- hypothesis=null si le contexte ne suffit pas à produire une hypothèse utile et raisonnable.\n- N'affirme jamais qu'une hypothèse vient d'une étude, du marché, d'une source externe ou d'une déclaration utilisateur si ce n'est pas explicitement dans le contexte.\n- N'invente ni nom propre, métrique, chiffre, concurrent, URL ou fait externe.\n- basis_requirement_ids doit contenir uniquement des IDs réellement fournis dans le contexte : ${basisIds.join(', ')}.\n- La confiance ne peut être que LOW ou MEDIUM.\n- Le résultat restera une WORKING_ASSUMPTION révisable ; ne le formule pas comme une décision acquise.\n- Réponds uniquement selon le schéma JSON demandé.`;
+}
+
+function normalizeAIHExecution(raw,target,basisIds){
+  const spec=G2_AI_H_TARGETS[target];
+  if(!spec)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'AI_H_TARGET_UNSUPPORTED',proposed_mutations:[]};
+  let payload=raw?.response??raw;
+  if(typeof payload==='string'){
+    try{payload=JSON.parse(payload)}catch{throw new G2CandidateError(502,'G2_AI_H_OUTPUT_INVALID')}
+  }
+  if(!payload||typeof payload!=='object'||Array.isArray(payload)||!Object.prototype.hasOwnProperty.call(payload,'hypothesis'))throw new G2CandidateError(502,'G2_AI_H_OUTPUT_INVALID');
+  const hypothesis=payload.hypothesis;
+  if(hypothesis===null)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_BASIS_INSUFFICIENT',proposed_mutations:[]};
+  if(!hypothesis||typeof hypothesis!=='object'||hypothesis.requirement_id!==target)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_NOT_USABLE',proposed_mutations:[]};
+
+  const value=text(hypothesis.value,1200);
+  const rationale=text(hypothesis.rationale,700);
+  const confidence=text(hypothesis.confidence,20);
+  const basis=arr(hypothesis.basis_requirement_ids).map(x=>text(x,120)).filter(Boolean);
+  const allowed=new Set(basisIds);
+  if(!value||!rationale||!['LOW','MEDIUM'].includes(confidence)||basis.length===0||basis.length>6||basis.some(id=>!allowed.has(id))){
+    return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_NOT_USABLE',proposed_mutations:[]};
+  }
+
+  return {
+    terminal_outcome:'RESOLVED',
+    result:{target,hypothesis:true,basis_requirement_ids:[...new Set(basis)],confidence},
+    proposed_mutations:[{
+      kind:'INFORMATION_ITEM',semantic_key:spec.semantic_key,item_type:'ASSUMPTION',
+      value:{hypothesis:value,rationale,basis_requirement_ids:[...new Set(basis)]},
+      provenance_type:'AI_INFERRED',confidence_class:confidence,sensitivity:'internal',
+      target_requirement_id:target,resolution_levels:['WORKING_ASSUMPTION']
+    }]
+  };
+}
+
+async function executeAIH(env,input){
+  const target=input?.action_run?.target_requirement_ids?.[0];
+  if(!G2_AI_H_TARGETS[target])return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'AI_H_TARGET_UNSUPPORTED',proposed_mutations:[]};
+  if(!env.AI||env.G2_AI_H!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
+  const basis=aiHBasis(input,target);
+  const basisIds=[...new Set(basis.map(x=>x.requirement_id))];
+  if(!basis.length||!basisIds.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_BASIS_INSUFFICIENT',proposed_mutations:[]};
+  let aiResult;
+  try{
+    aiResult=await env.AI.run(G2_AI_MODEL,{
+      messages:[
+        {role:'system',content:aiHPrompt(target,basisIds)},
+        {role:'user',content:`Contexte structuré courant :\n${JSON.stringify({basis})}`}
+      ],
+      response_format:{type:'json_schema',json_schema:aiHSchema(target,basisIds)},temperature:0.15,max_completion_tokens:700,
+      chat_template_kwargs:{enable_thinking:false}
+    });
+  }catch(error){
+    const message=String(error?.message||error||'');
+    if(/3040|quota|limit|capacity|neuron/i.test(message))throw new G2CandidateError(429,'AI_CAPACITY');
+    throw new G2CandidateError(502,'AI_ERROR');
+  }
+  return normalizeAIHExecution(aiResult,target,basisIds);
+}
+
 async function executeRun(env,rpc,runId,inputFp,attempt,path){
   const input=await rpc('get_g2_action_input_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt});
   if(path==='CALC')return deterministicCalc(input);
   if(path==='RAW')return executeRaw(env,input);
+  if(path==='AI_H')return executeAIH(env,input);
   throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
 }
 
