@@ -55,8 +55,8 @@ assert.equal(config.preview_urls,false);
 assert.deepEqual(config.compatibility_flags,['global_fetch_strictly_public']);
 assert.ok(config.compatibility_date>='2024-04-03');
 
-const mainConfig=await fs.readFile(new URL('../wrangler.jsonc',import.meta.url),'utf8');
-assert.doesNotMatch(mainConfig,/global_fetch_strictly_public/);
-assert.doesNotMatch(mainConfig,/4b4c-source-fetch|SOURCE_FETCH/);
+const mainConfig=JSON.parse(await fs.readFile(new URL('../wrangler.jsonc',import.meta.url),'utf8'));
+assert.ok(!Array.isArray(mainConfig.compatibility_flags)||!mainConfig.compatibility_flags.includes('global_fetch_strictly_public'));
+assert.deepEqual(mainConfig.services,[{binding:'SOURCE_FETCH',service:'4b4c-source-fetch'}]);
 
 console.log('G2 isolated strictly-public source-fetch service V0.1 candidate tests PASS');
