@@ -1,9 +1,9 @@
 import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 
-const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p5';
+const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p6';
 const ADAPTER=Object.freeze({
-  code:'0.3.3',
+  code:'0.3.4',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
   blueprint:'SITE_VITRINE@0.5',
   g2_backend:'v0.7',
@@ -14,6 +14,11 @@ const ADAPTER=Object.freeze({
   g2_ai_h_active:false,
   g2_ai_h_candidate_target:'SV.D03.PRIMARY_NEED',
   g2_ai_h_candidate_resolution:'WORKING_ASSUMPTION',
+  g2_src_candidate:'v0.2',
+  g2_src_active:false,
+  g2_src_snapshot_backend:'v0.2',
+  g2_src_candidate_target:'SV.D03.PRIMARY_NEED',
+  g2_src_candidate_resolution:'SOURCE_BACKED',
   service_role_browser_exposed:false
 });
 
