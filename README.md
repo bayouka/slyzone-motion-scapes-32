@@ -11,27 +11,34 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current **runtime-certified production transport release**: **v4.5.13-workspace-evidence-g2-p2 / build 548**.
+Current **runtime-certified production transport release**: **v4.5.13-workspace-evidence-g2-p4 / build 550**.
 
-Build 548 was independently observed in production on 2026-09-15 with:
-- `/health` HTTP 200 and runtime `v4.5.13-workspace-evidence-g2-p2` ;
-- Cloudflare version id `aa2ced9c-0e67-4e63-9f52-fcb82241a528` ;
-- adapter `0.3.0` configured with `blueprint_fit.assess`, `foundation.advance`, `evidence.advance` ;
+Build 550 was independently observed in production on 2026-09-15 with:
+- `/health` HTTP 200 and runtime `v4.5.13-workspace-evidence-g2-p4` ;
+- Cloudflare version id `8d8b8b78-dee6-4eb5-be06-2be215317fd6` after byte-aligned transport resync ;
+- adapter `0.3.2` configured with `blueprint_fit.assess`, `foundation.advance`, `evidence.advance` ;
 - `SITE_VITRINE@0.5`, G2 backend `v0.7`, promotion disposition `v0.8` ;
-- explicit health scope `g2_executor_paths=['CALC']` and `g2_user_surface='evidence-market'` ;
-- shell `ideas-workspace-g2-live.js?v=1.1.0` and `boot.js?build=548` ;
-- Evidence/Market asset HTTP 200 with product-facing **Preuves & marché** / **Approfondir les preuves** copy and no visible `G2 actif` test wording ;
+- explicit health scope `g2_executor_paths=['CALC','RAW','AI_H']` and `g2_user_surface='evidence-market'` ;
+- AI hypothesis scope limited to `SV.D03.PRIMARY_NEED` and `SV.D03.OBJECTIONS_TRUST`, always as `WORKING_ASSUMPTION` ;
+- shell `ideas-workspace-g2-live.js?v=1.1.0` and `boot.js?build=550` ;
+- Evidence/Market surface served as **Preuves & marché** / **Approfondir les preuves** ;
 - unauthenticated `evidence.advance` rejected with HTTP 401 / `UNAUTHORIZED`.
 
-Build 547 was the first independently observed production runtime carrying `evidence.advance`; build 548 supersedes it with the production user-facing Evidence/Market polish and explicit executor-scope observability.
+Build 549 introduced the first strict non-CALC executor (`RAW`). Build 550 supersedes it by adding the bounded `AI_H` hypothesis executor while preserving the same authentication, stale-state and promotion boundaries.
 
-The currently active G2 execution boundary is intentionally narrow: only deterministic `CALC` is advertised. RAW/SRC/AI_H/AI_R/WEB/AUDIT/CONN remain unavailable to `evidence.advance` until their executors and contracts are implemented and tested. The runtime must prefer an honest capability limit over fabricated evidence.
+The active G2 execution boundary remains intentionally narrow:
+- `CALC` produces deterministic `SYSTEM_CALCULATED / CALCULATED` results only where policy permits ;
+- `RAW` extracts only directly supported human input with persisted-source lineage ;
+- `AI_H` produces only revisable `AI_INFERRED / WORKING_ASSUMPTION` items, with confidence capped at `MEDIUM` and sensitive/personal basis excluded from the model context ;
+- `SRC`, `AI_R`, `WEB`, `AUDIT`, `CONN` and `MEM` remain unavailable through the production endpoint until their executor contracts and tests exist.
+
+The runtime must prefer an honest capability limit over fabricated evidence. An AI hypothesis is not evidence, a source locator is not source-backed proof, and a model-generated competitor is not an active competitor set without persisted evidence.
 
 The `/health` compatibility object still exposes the historical `idea_engine_adapter_v0_1.code=0.1.1` marker. It is preserved for compatibility and must never be used as sole proof of the current adapter surface.
 
-Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Builds 542–546 were superseded during the G1/G2 cutover.
+Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Builds 542–549 are superseded historical cutover/release baselines.
 
-A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and production smoke checks prove `/health`, shell/assets and unauthenticated API boundaries.
+A release is production-verified only when the transport manifest matches the intended runtime, the Cloudflare build deploys Worker `4b4c`, and production smoke checks prove `/health`, shell/assets and unauthenticated API boundaries. Authenticated user-flow claims require a real authenticated session; runtime smoke alone is not an authenticated E2E proof.
 
 ## Production architecture
 
@@ -55,7 +62,7 @@ A release is production-verified only when the transport manifest matches the in
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
 - `src/worker.js` — Cloudflare Worker, API routes, health endpoint, SPA fallback and response hardening.
 - `src/idea-engine-adapter.js` — command-allowlisted server boundary for G0/G1 privileged capabilities.
-- `src/idea-evidence-endpoint.js` — authenticated server boundary for `evidence.advance`; verifies user-scoped projection/write authority before service-role execution and keeps provider paths fail-closed.
+- `src/idea-evidence-endpoint.js` — authenticated server boundary for `evidence.advance`; verifies user-scoped projection/write authority before service-role execution and is the authority for operational G2 executor capabilities.
 - `src/idea-evidence-adapter-candidate.js` — G2 planner/action orchestration implementation; despite its historical filename, it is imported by the current Worker entry. Only endpoint-advertised capabilities are operational.
 - `src/worker-entry.js` — observable runtime wrapper and `/health` contract for the active adapter surface.
 - `wrangler.jsonc` — canonical Worker configuration named `4b4c`.
@@ -80,6 +87,8 @@ G1 integration history includes:
 Current production G2 activation/hardening includes:
 - `20260915100519_activate_g2_backend_v07_blueprint_05` — activates the frozen G2 backend package and assigns new compatible Site-vitrine Ideas to Blueprint 0.5 without silently rewriting existing Ideas ;
 - `20260915124420_g2_promotion_disposition_v08` — bounded classification of recoverable succeeded/unpromoted G2 runs before normal promotion vs explicit `NO_RESOLUTION` finalization.
+
+Build 550 adds no new database migration. Its RAW and AI_H capability widening remains constrained by the existing G2 provenance/resolution enforcement in production Postgres and by the endpoint capability boundary.
 
 Do not reconstruct, reorder or replay production migrations from memory. GitHub migration filenames/versions must match `supabase_migrations.schema_migrations`. New schema changes must start from the verified live/canonical baseline and preserve RLS/least-privilege invariants.
 
@@ -138,16 +147,17 @@ npm run check
 
 `npm run check` must describe the effective runtime, not require legacy implementations merely because they still physically exist.
 
-Idea Engine/workspace integration changes additionally require domain-specific deterministic/red-team harnesses. Current checks include G1 privileged adapter harnesses and `scripts/test_g2_evidence_adapter_v0_1.mjs`, which asserts the CALC-only advertised boundary, write-authority guard, recovery classifier wiring, no-resolution path and production Evidence/Market UI copy.
+Idea Engine/workspace integration changes additionally require domain-specific deterministic/red-team harnesses. Current G2 checks include `scripts/test_g2_evidence_adapter_v0_1.mjs`, which covers CALC-only fallback, bounded CALC+RAW+AI_H capability, write-authority and recovery wiring, strict RAW support-quote provenance, AI_H basis validation, sensitive-context exclusion, hypothesis confidence/provenance limits and Evidence/Market UI copy.
 
 GitHub Actions are not used for production. The verified release chain is:
 
 1. validate canonical source;
 2. mirror only validated runtime files to `bayouka/2b2c/4b4c/`;
-3. update `4b4c/TRANSPORT_RELEASE.txt`;
-4. let Cloudflare Workers Builds run `scripts/deploy-4b4c-direct.sh`;
-5. that script removes Cloudflare CI Worker-name overrides, explicitly deploys `--name 4b4c`, then verifies `/health`, the shell build and mandatory production assets/API markers;
-6. any failed syntax/manifest/deployment/runtime-smoke assertion must fail the Cloudflare build.
+3. byte-align effective canonical and transport runtime files used by the release;
+4. update `4b4c/TRANSPORT_RELEASE.txt`;
+5. let Cloudflare Workers Builds run `scripts/deploy-4b4c-direct.sh`;
+6. that script removes Cloudflare CI Worker-name overrides, explicitly deploys `--name 4b4c`, then verifies `/health`, the shell build and mandatory production assets/API markers;
+7. any failed syntax/manifest/deployment/runtime-smoke assertion must fail the Cloudflare build.
 
 Historical one-off GitHub workflows remain archived/non-executable and must not be used for production.
 
@@ -159,8 +169,10 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 - `ideas-orchestrator-v2.js` still renders the historical `Clarifier → Renforcer → Étayer → Partager → Décider` progression and remains compatibility-only during Workspace V3 cutover;
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
-- authenticated multi-user browser E2E coverage remains incomplete; build 548 has runtime/API/shell/asset smoke proof but not a full authenticated G0→G1→G2 user journey proof;
-- non-CALC G2 executors are deliberately not operational yet; WEB/AI/source-backed evidence must not be advertised until implemented with atomic promotion and source provenance tests;
+- authenticated multi-user browser E2E coverage remains incomplete; build 550 has runtime/API/shell smoke proof but not a full authenticated G0→G1→G2 user journey proof;
+- real authenticated production execution of the new RAW and AI_H G2 paths still needs lineage inspection on a fresh `SITE_VITRINE@0.5` Idea;
+- `SRC`, `WEB`, `AI_R`, `AUDIT` and `CONN` executors are deliberately not operational yet; source-backed evidence must not be advertised until actual persisted source content, source lineage and atomic promotion are implemented and tested;
+- the current `idea_sources` baseline persists source identity/status/hash/version/freshness metadata but does not itself provide a general persisted source-body contract for SRC extraction; this must be solved explicitly rather than extracting claims from a URL/hash alone;
 - Supabase security/performance advisors still report broader historical debt (intentional SECURITY DEFINER API surfaces, leaked-password protection disabled, several RLS/index optimization notices); classify and remediate deliberately rather than mass-changing access semantics ;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
 
