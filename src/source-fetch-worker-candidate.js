@@ -19,7 +19,7 @@ export default class SourceFetchWorker extends WorkerEntrypoint {
     };
   }
 
-  async fetch(){
+  async fetch(_request){
     return new Response('Not found',{status:404,headers:{'cache-control':'no-store'}});
   }
 }
