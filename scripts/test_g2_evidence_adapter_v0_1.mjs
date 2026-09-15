@@ -36,4 +36,12 @@ assert.match(endpoint,/finalize_g2_action_no_resolution_candidate_v1/);
 assert.match(endpoint,/promote_g2_system_action_result_candidate_v1/);
 assert.match(endpoint,/if\(!projection\.capabilities\?\.can_write\)throw new G2CandidateError\(403,'IDEA_WRITE_REQUIRED'\)/);
 
-console.log('G2 evidence adapter guard tests PASS');
+const ui=await fs.readFile(new URL('../site/assets/ideas-workspace-g2-live.js',import.meta.url),'utf8');
+assert.match(ui,/VERSION='1\.1\.0'/);
+assert.match(ui,/Preuves & marché/);
+assert.match(ui,/Approfondir les preuves/);
+assert.match(ui,/sans transformer les inconnues en certitudes/);
+assert.doesNotMatch(ui,/G2 actif|G2 prêt à être testé|Analyse G2 en cours/);
+assert.doesNotMatch(ui,/SUPABASE_SERVICE_ROLE_KEY/);
+
+console.log('G2 evidence adapter and Evidence Market UX guard tests PASS');
