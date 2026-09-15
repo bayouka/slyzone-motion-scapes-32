@@ -87,368 +87,43 @@ function assertExecutableAction(action,env){
   return path;
 }
 
-async function actionInputFingerprint(idea,plan,action){
-  return sha256(JSON.stringify({idea_id:idea.id,engine_revision:idea.engine_revision,projection_fingerprint:plan.projection_fingerprint,action_type:action.action_type,acquisition_path:action.acquisition_path,requirement_id:action.requirement_id,target_fingerprint:action.target_fingerprint}));
-}
+async function actionInputFingerprint(idea,plan,action){return sha256(JSON.stringify({idea_id:idea.id,engine_revision:idea.engine_revision,projection_fingerprint:plan.projection_fingerprint,action_type:action.action_type,acquisition_path:action.acquisition_path,requirement_id:action.requirement_id,target_fingerprint:action.target_fingerprint}));}
 
 async function createRun(env,rpc,idea,plan,action){
   const path=assertExecutableAction(action,env);
-
   if(path==='SRC'){
-    const candidate=await rpc('list_g2_src_snapshot_candidates_candidate_v2',{
-      p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_requirement_id:action.requirement_id,p_limit:3
-    });
+    const candidate=await rpc('list_g2_src_snapshot_candidates_candidate_v2',{p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_requirement_id:action.requirement_id,p_limit:3});
     const snapshotIds=arr(candidate?.snapshots).map(x=>text(x?.snapshot_id,80)).filter(Boolean).slice(0,3);
     if(!snapshotIds.length)throw new G2CandidateError(409,'G2_SRC_SNAPSHOT_REQUIRED');
-    const srcSeed=await sha256(JSON.stringify({
-      idea_id:idea.id,engine_revision:idea.engine_revision,projection_fingerprint:plan.projection_fingerprint,
-      requirement_id:action.requirement_id,target_fingerprint:action.target_fingerprint,snapshot_ids:snapshotIds
-    }));
+    const srcSeed=await sha256(JSON.stringify({idea_id:idea.id,engine_revision:idea.engine_revision,projection_fingerprint:plan.projection_fingerprint,requirement_id:action.requirement_id,target_fingerprint:action.target_fingerprint,snapshot_ids:snapshotIds}));
     const idempotency=`g2:${idea.id}:r${idea.engine_revision}:${action.requirement_id}:SRC:${srcSeed.slice(0,24)}`;
-    const run=await rpc('create_g2_src_action_run_candidate_v2',{
-      p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_requirement_id:action.requirement_id,
-      p_target_fingerprint:action.target_fingerprint,p_projection_fingerprint:plan.projection_fingerprint,
-      p_snapshot_ids:snapshotIds,p_idempotency_key:idempotency
-    });
-    const inputFp=text(run?.input_fingerprint,160);
-    if(!inputFp)throw new G2CandidateError(502,'G2_SRC_RUN_INPUT_FINGERPRINT_MISSING');
-    return {run,inputFp,path};
+    const run=await rpc('create_g2_src_action_run_candidate_v2',{p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_requirement_id:action.requirement_id,p_target_fingerprint:action.target_fingerprint,p_projection_fingerprint:plan.projection_fingerprint,p_snapshot_ids:snapshotIds,p_idempotency_key:idempotency});
+    const inputFp=text(run?.input_fingerprint,160);if(!inputFp)throw new G2CandidateError(502,'G2_SRC_RUN_INPUT_FINGERPRINT_MISSING');return {run,inputFp,path};
   }
-
-  const inputFp=await actionInputFingerprint(idea,plan,action);
-  const idempotency=`g2:${idea.id}:r${idea.engine_revision}:${action.requirement_id}:${path}:${inputFp.slice(0,24)}`;
-  const aiBacked=path==='RAW'||path.startsWith('AI_');
-  const common={
-    p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_action_type:action.action_type,p_acquisition_path:path,
-    p_target_requirement_ids:[action.requirement_id],p_target_requirement_fingerprints:{[action.requirement_id]:action.target_fingerprint},
-    p_target_artifact_keys:arr(action.target_artifact_keys),p_input_fingerprint:inputFp,p_projection_fingerprint:plan.projection_fingerprint,
-    p_permission_scope:{allowed_mutation_kinds:['INFORMATION_ITEM','LEDGER_ENTRY']},
-    p_provider:path==='CALC'?'2b2c-deterministic':aiBacked?'cloudflare-workers-ai':'2b2c-provider',
-    p_model:aiBacked?G2_AI_MODEL:null,
-    p_prompt_version:path==='RAW'?G2_RAW_PROMPT_VERSION:path==='AI_H'?G2_AI_H_PROMPT_VERSION:'g2-evidence-v1',
-    p_schema_version:path==='RAW'?G2_RAW_SCHEMA_VERSION:path==='AI_H'?G2_AI_H_SCHEMA_VERSION:G2_SCHEMA_VERSION,
-    p_tool_version:G2_TOOL_VERSION,p_idempotency_key:idempotency
-  };
-  if(G2_RESEARCH_PATHS.has(path))return {run:await rpc('create_action_run_v4',common),inputFp,path};
-  return {run:await rpc('create_g2_system_action_run_candidate_v1',common),inputFp,path};
+  const inputFp=await actionInputFingerprint(idea,plan,action),idempotency=`g2:${idea.id}:r${idea.engine_revision}:${action.requirement_id}:${path}:${inputFp.slice(0,24)}`,aiBacked=path==='RAW'||path.startsWith('AI_');
+  const common={p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_action_type:action.action_type,p_acquisition_path:path,p_target_requirement_ids:[action.requirement_id],p_target_requirement_fingerprints:{[action.requirement_id]:action.target_fingerprint},p_target_artifact_keys:arr(action.target_artifact_keys),p_input_fingerprint:inputFp,p_projection_fingerprint:plan.projection_fingerprint,p_permission_scope:{allowed_mutation_kinds:['INFORMATION_ITEM','LEDGER_ENTRY']},p_provider:path==='CALC'?'2b2c-deterministic':aiBacked?'cloudflare-workers-ai':'2b2c-provider',p_model:aiBacked?G2_AI_MODEL:null,p_prompt_version:path==='RAW'?G2_RAW_PROMPT_VERSION:path==='AI_H'?G2_AI_H_PROMPT_VERSION:'g2-evidence-v1',p_schema_version:path==='RAW'?G2_RAW_SCHEMA_VERSION:path==='AI_H'?G2_AI_H_SCHEMA_VERSION:G2_SCHEMA_VERSION,p_tool_version:G2_TOOL_VERSION,p_idempotency_key:idempotency};
+  if(G2_RESEARCH_PATHS.has(path))return {run:await rpc('create_action_run_v4',common),inputFp,path};return {run:await rpc('create_g2_system_action_run_candidate_v1',common),inputFp,path};
 }
 
-function deterministicCalc(input){
-  const target=input?.action_run?.target_requirement_ids?.[0];
-  const states=arr(input?.context_requirement_states);
-  const byId=new Map(states.map(s=>[s.requirement_id,s]));
-  const resolved=id=>{const s=byId.get(id);return s&&['RESOLVED','NOT_RELEVANT'].includes(s.resolution_state)};
-  let value=null;
-  if(target==='SV.D04.EVIDENCE_QUALITY'){
-    const sources=arr(input?.current_sources).filter(s=>['registered','ingested'].includes(s.status));
-    if(!sources.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};
-    value={status:'SUFFICIENT_FOR_CURRENT_DECISION',source_count:sources.length,basis:'canonical_current_sources'};
-  }else if(target==='SV.D05.MARKET_CONTEXT'){
-    if(!resolved('SV.D03.PRIMARY_AUDIENCE')||!resolved('SV.D04.OFFER_BASELINE'))return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'DETERMINISTIC_NOT_DECIDABLE',proposed_mutations:[]};
-    value={status:'CONTEXT_BASIS_AVAILABLE',basis_requirements:['SV.D03.PRIMARY_AUDIENCE','SV.D04.OFFER_BASELINE']};
-  }else if(target==='SV.D05.RESEARCH_SUFFICIENCY'){
-    const required=['SV.D03.PRIMARY_NEED','SV.D03.OBJECTIONS_TRUST','SV.D04.EVIDENCE_QUALITY','SV.D05.MARKET_CONTEXT','SV.D05.COMPETITOR_SET','SV.D05.PATTERN_GAP_SYNTHESIS'];
-    const unresolved=required.filter(id=>{const s=byId.get(id);return s?.applicability_state==='ACTIVE'&&!['RESOLVED','NOT_RELEVANT'].includes(s?.resolution_state)});
-    value={status:unresolved.length?'MORE_EVIDENCE_REQUIRED':'STOP_RULE_SATISFIED',unresolved_requirements:unresolved};
-  }else return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'DETERMINISTIC_NOT_DECIDABLE',proposed_mutations:[]};
-  return {terminal_outcome:'RESOLVED',result:{target,value},proposed_mutations:[{kind:'INFORMATION_ITEM',semantic_key:`g2.${target.toLowerCase().replaceAll('.','_')}`,item_type:'EVIDENCE',value,provenance_type:'SYSTEM_CALCULATED',confidence_class:'DIRECT',sensitivity:'internal',target_requirement_id:target,resolution_levels:['CALCULATED']}]};
-}
+function deterministicCalc(input){const target=input?.action_run?.target_requirement_ids?.[0],states=arr(input?.context_requirement_states),byId=new Map(states.map(s=>[s.requirement_id,s])),resolved=id=>{const s=byId.get(id);return s&&['RESOLVED','NOT_RELEVANT'].includes(s.resolution_state)};let value=null;if(target==='SV.D04.EVIDENCE_QUALITY'){const sources=arr(input?.current_sources).filter(s=>['registered','ingested'].includes(s.status));if(!sources.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};value={status:'SUFFICIENT_FOR_CURRENT_DECISION',source_count:sources.length,basis:'canonical_current_sources'};}else if(target==='SV.D05.MARKET_CONTEXT'){if(!resolved('SV.D03.PRIMARY_AUDIENCE')||!resolved('SV.D04.OFFER_BASELINE'))return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'DETERMINISTIC_NOT_DECIDABLE',proposed_mutations:[]};value={status:'CONTEXT_BASIS_AVAILABLE',basis_requirements:['SV.D03.PRIMARY_AUDIENCE','SV.D04.OFFER_BASELINE']};}else if(target==='SV.D05.RESEARCH_SUFFICIENCY'){const required=['SV.D03.PRIMARY_NEED','SV.D03.OBJECTIONS_TRUST','SV.D04.EVIDENCE_QUALITY','SV.D05.MARKET_CONTEXT','SV.D05.COMPETITOR_SET','SV.D05.PATTERN_GAP_SYNTHESIS'];const unresolved=required.filter(id=>{const s=byId.get(id);return s?.applicability_state==='ACTIVE'&&!['RESOLVED','NOT_RELEVANT'].includes(s?.resolution_state)});value={status:unresolved.length?'MORE_EVIDENCE_REQUIRED':'STOP_RULE_SATISFIED',unresolved_requirements:unresolved};}else return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'DETERMINISTIC_NOT_DECIDABLE',proposed_mutations:[]};return {terminal_outcome:'RESOLVED',result:{target,value},proposed_mutations:[{kind:'INFORMATION_ITEM',semantic_key:`g2.${target.toLowerCase().replaceAll('.','_')}`,item_type:'EVIDENCE',value,provenance_type:'SYSTEM_CALCULATED',confidence_class:'DIRECT',sensitivity:'internal',target_requirement_id:target,resolution_levels:['CALCULATED']}]};}
+function rawSchema(target){return {type:'object',additionalProperties:false,properties:{finding:{anyOf:[{type:'null'},{type:'object',additionalProperties:false,properties:{requirement_id:{type:'string',enum:[target]},value:{type:'string',maxLength:1200},support_text:{type:'string',maxLength:320},direct:{type:'boolean'}},required:['requirement_id','value','support_text','direct']}]}},required:['finding']};}
+function rawPrompt(target){const spec=G2_RAW_TARGETS[target];return `Tu extrais une information uniquement si elle est explicitement déclarée dans le texte humain brut d'une Idea 2b2c.\n\nRequirement ciblé : ${target} — ${spec?.label||target}.\n\nRègles absolues :\n- N'invente rien et ne complète rien par vraisemblance.\n- finding=null si le texte ne permet pas de répondre directement.\n- direct=true uniquement pour une information explicite et non ambiguë.\n- support_text doit recopier un court passage réellement présent dans le texte source.\n- Si l'information exige une interprétation, une hypothèse ou une déduction, retourne finding=null.\n- Pour un site existant, exige une mention explicite du site, de son URL ou de son existence.\n- Réponds uniquement selon le schéma JSON demandé.`;}
+function normalizeRawExecution(raw,input,target){const spec=G2_RAW_TARGETS[target];if(!spec)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};let payload=raw?.response??raw;if(typeof payload==='string'){try{payload=JSON.parse(payload)}catch{throw new G2CandidateError(502,'G2_RAW_OUTPUT_INVALID')}}if(!payload||typeof payload!=='object'||Array.isArray(payload)||!Object.prototype.hasOwnProperty.call(payload,'finding'))throw new G2CandidateError(502,'G2_RAW_OUTPUT_INVALID');const finding=payload.finding;if(finding===null)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};if(!finding||typeof finding!=='object'||finding.requirement_id!==target||finding.direct!==true)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};const sourceId=text(input?.raw_input?.source_id,80),sourceText=normalizedText(input?.raw_input?.original_text,22000),support=normalizedText(finding.support_text,320),extracted=text(finding.value,1200),uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;if(!uuid.test(sourceId)||!sourceText||!support||!extracted)throw new G2CandidateError(502,'G2_RAW_INPUT_INVALID');if(support.length<3||!sourceText.toLocaleLowerCase('fr-FR').includes(support.toLocaleLowerCase('fr-FR')))return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};return {terminal_outcome:'RESOLVED',result:{target,source_id:sourceId,direct:true},proposed_mutations:[{kind:'INFORMATION_ITEM',semantic_key:spec.semantic_key,item_type:spec.item_type,value:{value:extracted},provenance_type:'SOURCE_EXTRACTED',source_id:sourceId,confidence_class:'DIRECT',sensitivity:'internal',target_requirement_id:target,resolution_levels:['RAW_HUMAN','ACCEPTED_AS_CURRENT']}]};}
+async function executeRaw(env,input){const target=input?.action_run?.target_requirement_ids?.[0];if(!G2_RAW_TARGETS[target])return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};if(!env.AI||env.G2_RAW!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');const rawText=String(input?.raw_input?.original_text??'').slice(0,22000);if(!rawText.trim())return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};let aiResult;try{aiResult=await env.AI.run(G2_AI_MODEL,{messages:[{role:'system',content:rawPrompt(target)},{role:'user',content:`Texte humain brut :\n${rawText}`}],response_format:{type:'json_schema',json_schema:rawSchema(target)},temperature:0,max_completion_tokens:650,chat_template_kwargs:{enable_thinking:false}});}catch(error){const message=String(error?.message||error||'');if(/3040|quota|limit|capacity|neuron/i.test(message))throw new G2CandidateError(429,'AI_CAPACITY');throw new G2CandidateError(502,'AI_ERROR');}return normalizeRawExecution(aiResult,input,target);}
 
-function rawSchema(target){
-  return {type:'object',additionalProperties:false,properties:{finding:{anyOf:[{type:'null'},{type:'object',additionalProperties:false,properties:{requirement_id:{type:'string',enum:[target]},value:{type:'string',maxLength:1200},support_text:{type:'string',maxLength:320},direct:{type:'boolean'}},required:['requirement_id','value','support_text','direct']}]}},required:['finding']};
-}
+function srcSchema(target,snapshotIds){return {type:'object',additionalProperties:false,properties:{finding:{anyOf:[{type:'null'},{type:'object',additionalProperties:false,properties:{requirement_id:{type:'string',enum:[target]},snapshot_id:{type:'string',enum:snapshotIds},value:{type:'string',maxLength:1200},support_text:{type:'string',maxLength:320},direct:{type:'boolean'}},required:['requirement_id','snapshot_id','value','support_text','direct']}]}},required:['finding']};}
+function srcPrompt(target,snapshotIds){const spec=G2_SRC_TARGETS[target];return `Tu extrais une preuve uniquement depuis les extraits de sources persistés fournis par 2b2c.\n\nRequirement ciblé : ${target} — ${spec?.label||target}.\nSnapshots autorisés : ${snapshotIds.join(', ')}.\n\nRègles absolues :\n- N'utilise aucune connaissance externe.\n- N'invente ni statistique, source, concurrent, citation ou fait.\n- finding=null si aucune source ne formule directement une information utile pour le Requirement.\n- snapshot_id doit être exactement l'un des snapshots autorisés.\n- support_text doit recopier mot pour mot un court passage réellement présent dans ce snapshot.\n- direct=true uniquement si le passage supporte directement la valeur extraite, sans inférence.\n- Réponds uniquement selon le schéma JSON demandé.`;}
+function normalizeSRCExecution(raw,input,target){const spec=G2_SRC_TARGETS[target];if(!spec)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'SRC_TARGET_UNSUPPORTED',proposed_mutations:[]};const snapshots=arr(input?.source_snapshots);if(!snapshots.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};const bySnapshot=new Map(snapshots.map(s=>[text(s?.snapshot_id,80),s]));let payload=raw?.response??raw;if(typeof payload==='string'){try{payload=JSON.parse(payload)}catch{throw new G2CandidateError(502,'G2_SRC_OUTPUT_INVALID')}}if(!payload||typeof payload!=='object'||Array.isArray(payload)||!Object.prototype.hasOwnProperty.call(payload,'finding'))throw new G2CandidateError(502,'G2_SRC_OUTPUT_INVALID');const finding=payload.finding;if(finding===null)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};if(!finding||typeof finding!=='object'||finding.requirement_id!==target||finding.direct!==true)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};const snapshotId=text(finding.snapshot_id,80),snapshot=bySnapshot.get(snapshotId);if(!snapshot)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'SRC_SNAPSHOT_NOT_PINNED',proposed_mutations:[]};const sourceId=text(snapshot?.source_id,80),sourceText=String(snapshot?.extracted_text??''),support=String(finding.support_text??'').trim().slice(0,320),extracted=text(finding.value,1200),sensitivity=text(snapshot?.sensitivity,20),uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;if(!uuid.test(snapshotId)||!uuid.test(sourceId)||!sourceText||!support||!extracted||!['public','internal'].includes(sensitivity))throw new G2CandidateError(502,'G2_SRC_INPUT_INVALID');if(support.length<3||!sourceText.includes(support))return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};return {terminal_outcome:'RESOLVED',result:{target,source_id:sourceId,snapshot_id:snapshotId,direct:true,tool_version:G2_SRC_TOOL_VERSION},proposed_mutations:[{kind:'INFORMATION_ITEM',semantic_key:spec.semantic_key,item_type:spec.item_type,value:{value:extracted,support_text:support,snapshot_id:snapshotId},provenance_type:'SOURCE_EXTRACTED',source_id:sourceId,confidence_class:'DIRECT',sensitivity,target_requirement_id:target,resolution_levels:['SOURCE_BACKED']}]};}
+async function executeSRC(env,input){const target=input?.action_run?.target_requirement_ids?.[0];if(!G2_SRC_TARGETS[target])return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'SRC_TARGET_UNSUPPORTED',proposed_mutations:[]};if(!env.AI||env.G2_SRC!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');const snapshots=arr(input?.source_snapshots).slice(0,3);if(!snapshots.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};const snapshotIds=snapshots.map(s=>text(s?.snapshot_id,80)).filter(Boolean);if(snapshotIds.length!==snapshots.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};const bounded=snapshots.map(s=>({snapshot_id:s.snapshot_id,source_id:s.source_id,locator:text(s.locator,2048),title:text(s.title,400),extracted_text:String(s.extracted_text??'').slice(0,40000),content_truncated:Boolean(s.content_truncated)}));let aiResult;try{aiResult=await env.AI.run(G2_AI_MODEL,{messages:[{role:'system',content:srcPrompt(target,snapshotIds)},{role:'user',content:`Sources persistées :\n${JSON.stringify({snapshots:bounded})}`}],response_format:{type:'json_schema',json_schema:srcSchema(target,snapshotIds)},temperature:0,max_completion_tokens:650,chat_template_kwargs:{enable_thinking:false}});}catch(error){const message=String(error?.message||error||'');if(/3040|quota|limit|capacity|neuron/i.test(message))throw new G2CandidateError(429,'AI_CAPACITY');throw new G2CandidateError(502,'AI_ERROR');}return normalizeSRCExecution(aiResult,input,target);}
 
-function rawPrompt(target){
-  const spec=G2_RAW_TARGETS[target];
-  return `Tu extrais une information uniquement si elle est explicitement déclarée dans le texte humain brut d'une Idea 2b2c.\n\nRequirement ciblé : ${target} — ${spec?.label||target}.\n\nRègles absolues :\n- N'invente rien et ne complète rien par vraisemblance.\n- finding=null si le texte ne permet pas de répondre directement.\n- direct=true uniquement pour une information explicite et non ambiguë.\n- support_text doit recopier un court passage réellement présent dans le texte source.\n- Si l'information exige une interprétation, une hypothèse ou une déduction, retourne finding=null.\n- Pour un site existant, exige une mention explicite du site, de son URL ou de son existence.\n- Réponds uniquement selon le schéma JSON demandé.`;
-}
+function aiHBasis(input,target){const itemById=new Map(arr(input?.current_information_items).map(item=>[text(item?.id,80),item]));const rows=[],seen=new Set();for(const state of arr(input?.context_requirement_states)){const requirementId=text(state?.requirement_id,120);if(!requirementId||requirementId===target||state?.applicability_state!=='ACTIVE')continue;for(const ref of arr(state?.resolution_refs)){const itemId=text(ref?.information_item_id,80),item=itemById.get(itemId);if(!item||seen.has(`${requirementId}:${itemId}`)||item?.state!=='ACTIVE')continue;if(!['public','internal'].includes(item?.sensitivity))continue;if(!G2_AI_H_BASIS_PROVENANCE.has(item?.provenance_type))continue;const value=item?.value;if(value&&typeof value==='object'&&value._truncated===true)continue;const serialized=text(JSON.stringify(value),1800);if(!serialized)continue;seen.add(`${requirementId}:${itemId}`);rows.push({requirement_id:requirementId,semantic_key:text(item?.semantic_key,120),item_type:text(item?.item_type,60),provenance_type:text(item?.provenance_type,60),confidence_class:text(item?.confidence_class,40),value});if(rows.length>=18)break;}if(rows.length>=18)break;}return rows;}
+function aiHSchema(target,basisIds){return {type:'object',additionalProperties:false,properties:{hypothesis:{anyOf:[{type:'null'},{type:'object',additionalProperties:false,properties:{requirement_id:{type:'string',enum:[target]},value:{type:'string',maxLength:1200},rationale:{type:'string',maxLength:700},basis_requirement_ids:{type:'array',items:{type:'string',enum:basisIds},maxItems:6},confidence:{type:'string',enum:['LOW','MEDIUM']}},required:['requirement_id','value','rationale','basis_requirement_ids','confidence']}]}},required:['hypothesis']};}
+function aiHPrompt(target,basisIds){const spec=G2_AI_H_TARGETS[target];return `Tu proposes une hypothèse de travail 2b2c, jamais un fait ni une preuve.\n\nRequirement ciblé : ${target} — ${spec?.label||target}.\n\nRègles absolues :\n- Utilise uniquement le contexte structuré fourni.\n- hypothesis=null si le contexte ne suffit pas à produire une hypothèse utile et raisonnable.\n- N'affirme jamais qu'une hypothèse vient d'une étude, du marché, d'une source externe ou d'une déclaration utilisateur si ce n'est pas explicitement dans le contexte.\n- N'invente ni nom propre, métrique, chiffre, concurrent, URL ou fait externe.\n- basis_requirement_ids doit contenir uniquement des IDs réellement fournis dans le contexte : ${basisIds.join(', ')}.\n- La confiance ne peut être que LOW ou MEDIUM.\n- Le résultat restera une WORKING_ASSUMPTION révisable ; ne le formule pas comme une décision acquise.\n- Réponds uniquement selon le schéma JSON demandé.`;}
+function normalizeAIHExecution(raw,target,basisIds){const spec=G2_AI_H_TARGETS[target];if(!spec)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'AI_H_TARGET_UNSUPPORTED',proposed_mutations:[]};let payload=raw?.response??raw;if(typeof payload==='string'){try{payload=JSON.parse(payload)}catch{throw new G2CandidateError(502,'G2_AI_H_OUTPUT_INVALID')}}if(!payload||typeof payload!=='object'||Array.isArray(payload)||!Object.prototype.hasOwnProperty.call(payload,'hypothesis'))throw new G2CandidateError(502,'G2_AI_H_OUTPUT_INVALID');const hypothesis=payload.hypothesis;if(hypothesis===null)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_BASIS_INSUFFICIENT',proposed_mutations:[]};if(!hypothesis||typeof hypothesis!=='object'||hypothesis.requirement_id!==target)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_NOT_USABLE',proposed_mutations:[]};const value=text(hypothesis.value,1200),rationale=text(hypothesis.rationale,700),confidence=text(hypothesis.confidence,20),basis=arr(hypothesis.basis_requirement_ids).map(x=>text(x,120)).filter(Boolean),allowed=new Set(basisIds);if(!value||!rationale||!['LOW','MEDIUM'].includes(confidence)||basis.length===0||basis.length>6||basis.some(id=>!allowed.has(id)))return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_NOT_USABLE',proposed_mutations:[]};return {terminal_outcome:'RESOLVED',result:{target,hypothesis:true,basis_requirement_ids:[...new Set(basis)],confidence},proposed_mutations:[{kind:'INFORMATION_ITEM',semantic_key:spec.semantic_key,item_type:'ASSUMPTION',value:{hypothesis:value,rationale,basis_requirement_ids:[...new Set(basis)]},provenance_type:'AI_INFERRED',confidence_class:confidence,sensitivity:'internal',target_requirement_id:target,resolution_levels:['WORKING_ASSUMPTION']}]};}
+async function executeAIH(env,input){const target=input?.action_run?.target_requirement_ids?.[0];if(!G2_AI_H_TARGETS[target])return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'AI_H_TARGET_UNSUPPORTED',proposed_mutations:[]};if(!env.AI||env.G2_AI_H!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');const basis=aiHBasis(input,target),basisIds=[...new Set(basis.map(x=>x.requirement_id))],audienceCurrent=basisIds.includes('SV.D03.PRIMARY_AUDIENCE'),supportingContext=basisIds.some(id=>['SV.D02.DECLARED_PROBLEM','SV.D02.PRIMARY_OBJECTIVE','SV.D02.USER_OUTCOME','SV.D04.OFFER_BASELINE'].includes(id));if(!basis.length||!audienceCurrent||!supportingContext)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};let aiResult;try{aiResult=await env.AI.run(G2_AI_MODEL,{messages:[{role:'system',content:aiHPrompt(target,basisIds)},{role:'user',content:`Contexte structuré courant :\n${JSON.stringify({basis})}`}],response_format:{type:'json_schema',json_schema:aiHSchema(target,basisIds)},temperature:0.15,max_completion_tokens:700,chat_template_kwargs:{enable_thinking:false}});}catch(error){const message=String(error?.message||error||'');if(/3040|quota|limit|capacity|neuron/i.test(message))throw new G2CandidateError(429,'AI_CAPACITY');throw new G2CandidateError(502,'AI_ERROR');}return normalizeAIHExecution(aiResult,target,basisIds);}
 
-function normalizeRawExecution(raw,input,target){
-  const spec=G2_RAW_TARGETS[target];
-  if(!spec)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
-  let payload=raw?.response??raw;
-  if(typeof payload==='string'){
-    try{payload=JSON.parse(payload)}catch{throw new G2CandidateError(502,'G2_RAW_OUTPUT_INVALID')}
-  }
-  if(!payload||typeof payload!=='object'||Array.isArray(payload)||!Object.prototype.hasOwnProperty.call(payload,'finding'))throw new G2CandidateError(502,'G2_RAW_OUTPUT_INVALID');
-  const finding=payload.finding;
-  if(finding===null)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
-  if(!finding||typeof finding!=='object'||finding.requirement_id!==target||finding.direct!==true)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
+async function executeRun(env,rpc,runId,inputFp,attempt,path){const input=path==='SRC'?await rpc('get_g2_src_action_input_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt}):await rpc('get_g2_action_input_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt});if(path==='CALC')return deterministicCalc(input);if(path==='RAW')return executeRaw(env,input);if(path==='SRC')return executeSRC(env,input);if(path==='AI_H')return executeAIH(env,input);throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');}
+async function completeAndFinalize(rpc,runId,inputFp,attempt,path,execution){const noResolution=execution.terminal_outcome==='NO_RESOLUTION',result=noResolution?{terminal_outcome:'NO_RESOLUTION',terminal_reason:execution.terminal_reason}:execution.result||{terminal_outcome:'RESOLVED'},mutations=arr(execution.proposed_mutations);await rpc('complete_g2_action_run_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt,p_result:result,p_proposed_mutations:mutations,p_latency_ms:null,p_cost_metadata:{tool_version:path==='SRC'?G2_SRC_TOOL_VERSION:G2_TOOL_VERSION}});if(noResolution)return rpc('finalize_g2_action_no_resolution_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt,p_terminal_reason:execution.terminal_reason});if(path==='SRC')return rpc('promote_g2_src_action_result_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});if(G2_RESEARCH_PATHS.has(path))return rpc('promote_research_action_result_v3',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});return rpc('promote_g2_system_action_result_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});}
+async function resume(rpc,recovery){const runId=recovery.action_run_id,inputFp=recovery.input_fingerprint,path=recovery.acquisition_path;let attempt=Number(recovery.attempt||1);if(recovery.mode==='PROMOTE')return {status:'PROMOTION_REQUIRES_RESULT_CLASSIFICATION',run_id:runId,path};if(recovery.mode==='RECOVER_EXPIRED'){const recovered=await rpc('recover_g2_action_run_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt,p_lease_seconds:300});if(recovered.status!=='queued')return recovered;attempt=Number(recovered.attempt);}const started=await rpc('start_g2_action_run_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});return {status:started.status,run_id:runId,path,input_fingerprint:inputFp,attempt:Number(started.attempt)};}
 
-  const sourceId=text(input?.raw_input?.source_id,80);
-  const sourceText=normalizedText(input?.raw_input?.original_text,22000);
-  const support=normalizedText(finding.support_text,320);
-  const extracted=text(finding.value,1200);
-  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if(!uuid.test(sourceId)||!sourceText||!support||!extracted)throw new G2CandidateError(502,'G2_RAW_INPUT_INVALID');
-  if(support.length<3||!sourceText.toLocaleLowerCase('fr-FR').includes(support.toLocaleLowerCase('fr-FR'))){
-    return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
-  }
-
-  return {
-    terminal_outcome:'RESOLVED',
-    result:{target,source_id:sourceId,direct:true},
-    proposed_mutations:[{
-      kind:'INFORMATION_ITEM',semantic_key:spec.semantic_key,item_type:spec.item_type,value:{value:extracted},
-      provenance_type:'SOURCE_EXTRACTED',source_id:sourceId,confidence_class:'DIRECT',sensitivity:'internal',
-      target_requirement_id:target,resolution_levels:['RAW_HUMAN','ACCEPTED_AS_CURRENT']
-    }]
-  };
-}
-
-async function executeRaw(env,input){
-  const target=input?.action_run?.target_requirement_ids?.[0];
-  if(!G2_RAW_TARGETS[target])return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
-  if(!env.AI||env.G2_RAW!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
-  const rawText=String(input?.raw_input?.original_text??'').slice(0,22000);
-  if(!rawText.trim())return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};
-  let aiResult;
-  try{
-    aiResult=await env.AI.run(G2_AI_MODEL,{
-      messages:[{role:'system',content:rawPrompt(target)},{role:'user',content:`Texte humain brut :\n${rawText}`}],
-      response_format:{type:'json_schema',json_schema:rawSchema(target)},temperature:0,max_completion_tokens:650,
-      chat_template_kwargs:{enable_thinking:false}
-    });
-  }catch(error){
-    const message=String(error?.message||error||'');
-    if(/3040|quota|limit|capacity|neuron/i.test(message))throw new G2CandidateError(429,'AI_CAPACITY');
-    throw new G2CandidateError(502,'AI_ERROR');
-  }
-  return normalizeRawExecution(aiResult,input,target);
-}
-
-function srcSchema(target,snapshotIds){
-  return {type:'object',additionalProperties:false,properties:{finding:{anyOf:[{type:'null'},{type:'object',additionalProperties:false,properties:{requirement_id:{type:'string',enum:[target]},snapshot_id:{type:'string',enum:snapshotIds},value:{type:'string',maxLength:1200},support_text:{type:'string',maxLength:320},direct:{type:'boolean'}},required:['requirement_id','snapshot_id','value','support_text','direct']}]}},required:['finding']};
-}
-
-function srcPrompt(target,snapshotIds){
-  const spec=G2_SRC_TARGETS[target];
-  return `Tu extrais une preuve uniquement depuis les extraits de sources persistés fournis par 2b2c.\n\nRequirement ciblé : ${target} — ${spec?.label||target}.\nSnapshots autorisés : ${snapshotIds.join(', ')}.\n\nRègles absolues :\n- N'utilise aucune connaissance externe.\n- N'invente ni statistique, source, concurrent, citation ou fait.\n- finding=null si aucune source ne formule directement une information utile pour le Requirement.\n- snapshot_id doit être exactement l'un des snapshots autorisés.\n- support_text doit recopier mot pour mot un court passage réellement présent dans ce snapshot.\n- direct=true uniquement si le passage supporte directement la valeur extraite, sans inférence.\n- Réponds uniquement selon le schéma JSON demandé.`;
-}
-
-function normalizeSRCExecution(raw,input,target){
-  const spec=G2_SRC_TARGETS[target];
-  if(!spec)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'SRC_TARGET_UNSUPPORTED',proposed_mutations:[]};
-  const snapshots=arr(input?.source_snapshots);
-  if(!snapshots.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};
-  const bySnapshot=new Map(snapshots.map(s=>[text(s?.snapshot_id,80),s]));
-  let payload=raw?.response??raw;
-  if(typeof payload==='string'){
-    try{payload=JSON.parse(payload)}catch{throw new G2CandidateError(502,'G2_SRC_OUTPUT_INVALID')}
-  }
-  if(!payload||typeof payload!=='object'||Array.isArray(payload)||!Object.prototype.hasOwnProperty.call(payload,'finding'))throw new G2CandidateError(502,'G2_SRC_OUTPUT_INVALID');
-  const finding=payload.finding;
-  if(finding===null)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
-  if(!finding||typeof finding!=='object'||finding.requirement_id!==target||finding.direct!==true)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
-
-  const snapshotId=text(finding.snapshot_id,80);
-  const snapshot=bySnapshot.get(snapshotId);
-  if(!snapshot)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'SRC_SNAPSHOT_NOT_PINNED',proposed_mutations:[]};
-  const sourceId=text(snapshot?.source_id,80);
-  const sourceText=String(snapshot?.extracted_text??'');
-  const support=String(finding.support_text??'').trim().slice(0,320);
-  const extracted=text(finding.value,1200);
-  const sensitivity=text(snapshot?.sensitivity,20);
-  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if(!uuid.test(snapshotId)||!uuid.test(sourceId)||!sourceText||!support||!extracted||!['public','internal'].includes(sensitivity))throw new G2CandidateError(502,'G2_SRC_INPUT_INVALID');
-  if(support.length<3||!sourceText.includes(support))return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'NO_SUPPORTED_FINDING',proposed_mutations:[]};
-
-  return {
-    terminal_outcome:'RESOLVED',
-    result:{target,source_id:sourceId,snapshot_id:snapshotId,direct:true,tool_version:G2_SRC_TOOL_VERSION},
-    proposed_mutations:[{
-      kind:'INFORMATION_ITEM',semantic_key:spec.semantic_key,item_type:spec.item_type,
-      value:{value:extracted,support_text:support,snapshot_id:snapshotId},
-      provenance_type:'SOURCE_EXTRACTED',source_id:sourceId,confidence_class:'DIRECT',sensitivity,
-      target_requirement_id:target,resolution_levels:['SOURCE_BACKED']
-    }]
-  };
-}
-
-async function executeSRC(env,input){
-  const target=input?.action_run?.target_requirement_ids?.[0];
-  if(!G2_SRC_TARGETS[target])return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'SRC_TARGET_UNSUPPORTED',proposed_mutations:[]};
-  if(!env.AI||env.G2_SRC!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
-  const snapshots=arr(input?.source_snapshots).slice(0,3);
-  if(!snapshots.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};
-  const snapshotIds=snapshots.map(s=>text(s?.snapshot_id,80)).filter(Boolean);
-  if(snapshotIds.length!==snapshots.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};
-  const bounded=snapshots.map(s=>({snapshot_id:s.snapshot_id,source_id:s.source_id,locator:text(s.locator,2048),title:text(s.title,400),extracted_text:String(s.extracted_text??'').slice(0,40000),content_truncated:Boolean(s.content_truncated)}));
-  let aiResult;
-  try{
-    aiResult=await env.AI.run(G2_AI_MODEL,{
-      messages:[{role:'system',content:srcPrompt(target,snapshotIds)},{role:'user',content:`Sources persistées :\n${JSON.stringify({snapshots:bounded})}`}],
-      response_format:{type:'json_schema',json_schema:srcSchema(target,snapshotIds)},temperature:0,max_completion_tokens:650,
-      chat_template_kwargs:{enable_thinking:false}
-    });
-  }catch(error){
-    const message=String(error?.message||error||'');
-    if(/3040|quota|limit|capacity|neuron/i.test(message))throw new G2CandidateError(429,'AI_CAPACITY');
-    throw new G2CandidateError(502,'AI_ERROR');
-  }
-  return normalizeSRCExecution(aiResult,input,target);
-}
-
-function aiHBasis(input,target){
-  const itemById=new Map(arr(input?.current_information_items).map(item=>[text(item?.id,80),item]));
-  const rows=[];
-  const seen=new Set();
-  for(const state of arr(input?.context_requirement_states)){
-    const requirementId=text(state?.requirement_id,120);
-    if(!requirementId||requirementId===target||state?.applicability_state!=='ACTIVE')continue;
-    for(const ref of arr(state?.resolution_refs)){
-      const itemId=text(ref?.information_item_id,80);
-      const item=itemById.get(itemId);
-      if(!item||seen.has(`${requirementId}:${itemId}`)||item?.state!=='ACTIVE')continue;
-      if(!['public','internal'].includes(item?.sensitivity))continue;
-      if(!G2_AI_H_BASIS_PROVENANCE.has(item?.provenance_type))continue;
-      const value=item?.value;
-      if(value&&typeof value==='object'&&value._truncated===true)continue;
-      const serialized=text(JSON.stringify(value),1800);
-      if(!serialized)continue;
-      seen.add(`${requirementId}:${itemId}`);
-      rows.push({requirement_id:requirementId,semantic_key:text(item?.semantic_key,120),item_type:text(item?.item_type,60),provenance_type:text(item?.provenance_type,60),confidence_class:text(item?.confidence_class,40),value});
-      if(rows.length>=18)break;
-    }
-    if(rows.length>=18)break;
-  }
-  return rows;
-}
-
-function aiHSchema(target,basisIds){
-  return {type:'object',additionalProperties:false,properties:{hypothesis:{anyOf:[{type:'null'},{type:'object',additionalProperties:false,properties:{requirement_id:{type:'string',enum:[target]},value:{type:'string',maxLength:1200},rationale:{type:'string',maxLength:700},basis_requirement_ids:{type:'array',items:{type:'string',enum:basisIds},maxItems:6},confidence:{type:'string',enum:['LOW','MEDIUM']}},required:['requirement_id','value','rationale','basis_requirement_ids','confidence']}]}},required:['hypothesis']};
-}
-
-function aiHPrompt(target,basisIds){
-  const spec=G2_AI_H_TARGETS[target];
-  return `Tu proposes une hypothèse de travail 2b2c, jamais un fait ni une preuve.\n\nRequirement ciblé : ${target} — ${spec?.label||target}.\n\nRègles absolues :\n- Utilise uniquement le contexte structuré fourni.\n- hypothesis=null si le contexte ne suffit pas à produire une hypothèse utile et raisonnable.\n- N'affirme jamais qu'une hypothèse vient d'une étude, du marché, d'une source externe ou d'une déclaration utilisateur si ce n'est pas explicitement dans le contexte.\n- N'invente ni nom propre, métrique, chiffre, concurrent, URL ou fait externe.\n- basis_requirement_ids doit contenir uniquement des IDs réellement fournis dans le contexte : ${basisIds.join(', ')}.\n- La confiance ne peut être que LOW ou MEDIUM.\n- Le résultat restera une WORKING_ASSUMPTION révisable ; ne le formule pas comme une décision acquise.\n- Réponds uniquement selon le schéma JSON demandé.`;
-}
-
-function normalizeAIHExecution(raw,target,basisIds){
-  const spec=G2_AI_H_TARGETS[target];
-  if(!spec)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'AI_H_TARGET_UNSUPPORTED',proposed_mutations:[]};
-  let payload=raw?.response??raw;
-  if(typeof payload==='string'){
-    try{payload=JSON.parse(payload)}catch{throw new G2CandidateError(502,'G2_AI_H_OUTPUT_INVALID')}
-  }
-  if(!payload||typeof payload!=='object'||Array.isArray(payload)||!Object.prototype.hasOwnProperty.call(payload,'hypothesis'))throw new G2CandidateError(502,'G2_AI_H_OUTPUT_INVALID');
-  const hypothesis=payload.hypothesis;
-  if(hypothesis===null)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_BASIS_INSUFFICIENT',proposed_mutations:[]};
-  if(!hypothesis||typeof hypothesis!=='object'||hypothesis.requirement_id!==target)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_NOT_USABLE',proposed_mutations:[]};
-
-  const value=text(hypothesis.value,1200);
-  const rationale=text(hypothesis.rationale,700);
-  const confidence=text(hypothesis.confidence,20);
-  const basis=arr(hypothesis.basis_requirement_ids).map(x=>text(x,120)).filter(Boolean);
-  const allowed=new Set(basisIds);
-  if(!value||!rationale||!['LOW','MEDIUM'].includes(confidence)||basis.length===0||basis.length>6||basis.some(id=>!allowed.has(id))){
-    return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_NOT_USABLE',proposed_mutations:[]};
-  }
-
-  return {terminal_outcome:'RESOLVED',result:{target,hypothesis:true,basis_requirement_ids:[...new Set(basis)],confidence},proposed_mutations:[{kind:'INFORMATION_ITEM',semantic_key:spec.semantic_key,item_type:'ASSUMPTION',value:{hypothesis:value,rationale,basis_requirement_ids:[...new Set(basis)]},provenance_type:'AI_INFERRED',confidence_class:confidence,sensitivity:'internal',target_requirement_id:target,resolution_levels:['WORKING_ASSUMPTION']}]};
-}
-
-async function executeAIH(env,input){
-  const target=input?.action_run?.target_requirement_ids?.[0];
-  if(!G2_AI_H_TARGETS[target])return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'AI_H_TARGET_UNSUPPORTED',proposed_mutations:[]};
-  if(!env.AI||env.G2_AI_H!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
-  const basis=aiHBasis(input,target);
-  const basisIds=[...new Set(basis.map(x=>x.requirement_id))];
-  const audienceCurrent=basisIds.includes('SV.D03.PRIMARY_AUDIENCE');
-  const supportingContext=basisIds.some(id=>['SV.D02.DECLARED_PROBLEM','SV.D02.PRIMARY_OBJECTIVE','SV.D02.USER_OUTCOME','SV.D04.OFFER_BASELINE'].includes(id));
-  if(!basis.length||!audienceCurrent||!supportingContext)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};
-  let aiResult;
-  try{
-    aiResult=await env.AI.run(G2_AI_MODEL,{
-      messages:[{role:'system',content:aiHPrompt(target,basisIds)},{role:'user',content:`Contexte structuré courant :\n${JSON.stringify({basis})}`}],
-      response_format:{type:'json_schema',json_schema:aiHSchema(target,basisIds)},temperature:0.15,max_completion_tokens:700,
-      chat_template_kwargs:{enable_thinking:false}
-    });
-  }catch(error){
-    const message=String(error?.message||error||'');
-    if(/3040|quota|limit|capacity|neuron/i.test(message))throw new G2CandidateError(429,'AI_CAPACITY');
-    throw new G2CandidateError(502,'AI_ERROR');
-  }
-  return normalizeAIHExecution(aiResult,target,basisIds);
-}
-
-async function executeRun(env,rpc,runId,inputFp,attempt,path){
-  const input=path==='SRC'
-    ?await rpc('get_g2_src_action_input_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt})
-    :await rpc('get_g2_action_input_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt});
-  if(path==='CALC')return deterministicCalc(input);
-  if(path==='RAW')return executeRaw(env,input);
-  if(path==='SRC')return executeSRC(env,input);
-  if(path==='AI_H')return executeAIH(env,input);
-  throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
-}
-
-async function completeAndFinalize(rpc,runId,inputFp,attempt,path,execution){
-  const noResolution=execution.terminal_outcome==='NO_RESOLUTION';
-  const result=noResolution?{terminal_outcome:'NO_RESOLUTION',terminal_reason:execution.terminal_reason}:execution.result||{terminal_outcome:'RESOLVED'};
-  const mutations=arr(execution.proposed_mutations);
-  await rpc('complete_g2_action_run_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt,p_result:result,p_proposed_mutations:mutations,p_latency_ms:null,p_cost_metadata:{tool_version:path==='SRC'?G2_SRC_TOOL_VERSION:G2_TOOL_VERSION}});
-  if(noResolution)return rpc('finalize_g2_action_no_resolution_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt,p_terminal_reason:execution.terminal_reason});
-  if(path==='SRC')return rpc('promote_g2_src_action_result_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});
-  if(G2_RESEARCH_PATHS.has(path))return rpc('promote_research_action_result_v3',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});
-  return rpc('promote_g2_system_action_result_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});
-}
-
-async function resume(rpc,recovery){
-  const runId=recovery.action_run_id,inputFp=recovery.input_fingerprint,path=recovery.acquisition_path;
-  let attempt=Number(recovery.attempt||1);
-  if(recovery.mode==='PROMOTE')return {status:'PROMOTION_REQUIRES_RESULT_CLASSIFICATION',run_id:runId,path};
-  if(recovery.mode==='RECOVER_EXPIRED'){
-    const recovered=await rpc('recover_g2_action_run_candidate_v1',{p_action_run_id:runId,p_current_input_fingerprint:inputFp,p_expected_attempt:attempt,p_lease_seconds:300});
-    if(recovered.status!=='queued')return recovered;
-    attempt=Number(recovered.attempt);
-  }
-  const started=await rpc('start_g2_action_run_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:inputFp});
-  return {status:started.status,run_id:runId,path,input_fingerprint:inputFp,attempt:Number(started.attempt)};
-}
-
-export async function advanceEvidenceCandidate({env={},idea,canWrite,rpc,refreshProjection}){
-  if(!canWrite)throw new G2CandidateError(403,'IDEA_WRITE_REQUIRED');
-  if(idea?.blueprint_id!=='SITE_VITRINE'||idea?.blueprint_version!=='0.5'||idea?.blueprint_status!=='active')throw new G2CandidateError(409,'G2_BLUEPRINT_0_5_NOT_ACTIVE');
-  const paths=availablePaths(env);
-  let actions=0,researchActions=0;
-  const trace=[];
-  let plan=await rpc('plan_idea_evidence_context_candidate_v11',{p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_available_paths:paths,p_raw_context_available:paths.includes('RAW')});
-
-  while(actions<G2_MAX_ACTIONS){
-    const recovery=arr(plan?.recoverable_action_runs)[0];
-    if(recovery){
-      const recoveryPath=text(recovery.acquisition_path,20);
-      if(recovery.mode!=='PROMOTE'&&!paths.includes(recoveryPath)){
-        trace.push({kind:'RECOVERY',mode:recovery.mode,path:recoveryPath,status:'EXECUTOR_CAPABILITY_UNAVAILABLE'});
-        break;
-      }
-      const resumed=await resume(rpc,recovery);
-      trace.push({kind:'RECOVERY',mode:recovery.mode,path:recoveryPath,status:resumed.status});
-      if(resumed.status==='PROMOTION_REQUIRES_RESULT_CLASSIFICATION')break;
-      if(resumed.status!=='running')break;
-      const execution=await executeRun(env,rpc,resumed.run_id,resumed.input_fingerprint,resumed.attempt,resumed.path);
-      await completeAndFinalize(rpc,resumed.run_id,resumed.input_fingerprint,resumed.attempt,resumed.path,execution);
-      actions++; if(G2_RESEARCH_PATHS.has(resumed.path))researchActions++;
-    }else{
-      if(arr(plan?.inflight_requirements).length||arr(plan?.recovery_blocked_action_runs).length)break;
-      const action=arr(plan?.eligible_system_actions)[0];
-      if(!action)break;
-      const path=assertExecutableAction(action,env);
-      if(G2_RESEARCH_PATHS.has(path)&&researchActions>=G2_MAX_RESEARCH_ACTIONS)break;
-      const created=await createRun(env,rpc,idea,plan,action);
-      const runId=created.run.action_run_id;
-      const started=await rpc('start_g2_action_run_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:created.inputFp});
-      if(started.status!=='running')break;
-      const execution=await executeRun(env,rpc,runId,created.inputFp,Number(started.attempt),path);
-      await completeAndFinalize(rpc,runId,created.inputFp,Number(started.attempt),path,execution);
-      trace.push({kind:'ACTION',requirement_id:action.requirement_id,path,outcome:execution.terminal_outcome});
-      actions++; if(G2_RESEARCH_PATHS.has(path))researchActions++;
-    }
-    const projection=await refreshProjection();
-    idea=projection.idea;
-    plan=await rpc('plan_idea_evidence_context_candidate_v11',{p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_available_paths:paths,p_raw_context_available:paths.includes('RAW')});
-  }
-
-  return {candidate:false,tool_version:G2_TOOL_VERSION,available_paths:paths,executed_actions:actions,executed_research_actions:researchActions,trace,plan:safePlan(plan),projection:await refreshProjection()};
-}
+export async function advanceEvidenceCandidate({env={},idea,canWrite,rpc,refreshProjection}){if(!canWrite)throw new G2CandidateError(403,'IDEA_WRITE_REQUIRED');if(idea?.blueprint_id!=='SITE_VITRINE'||idea?.blueprint_version!=='0.5'||idea?.blueprint_status!=='active')throw new G2CandidateError(409,'G2_BLUEPRINT_0_5_NOT_ACTIVE');const paths=availablePaths(env);let actions=0,researchActions=0;const trace=[];let plan=await rpc('plan_idea_evidence_context_candidate_v11',{p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_available_paths:paths,p_raw_context_available:paths.includes('RAW')});while(actions<G2_MAX_ACTIONS){const recovery=arr(plan?.recoverable_action_runs)[0];if(recovery){const recoveryPath=text(recovery.acquisition_path,20);if(recovery.mode!=='PROMOTE'&&!paths.includes(recoveryPath)){trace.push({kind:'RECOVERY',mode:recovery.mode,path:recoveryPath,status:'EXECUTOR_CAPABILITY_UNAVAILABLE'});break;}const resumed=await resume(rpc,recovery);trace.push({kind:'RECOVERY',mode:recovery.mode,path:recoveryPath,status:resumed.status});if(resumed.status==='PROMOTION_REQUIRES_RESULT_CLASSIFICATION')break;if(resumed.status!=='running')break;const execution=await executeRun(env,rpc,resumed.run_id,resumed.input_fingerprint,resumed.attempt,resumed.path);await completeAndFinalize(rpc,resumed.run_id,resumed.input_fingerprint,resumed.attempt,resumed.path,execution);actions++;if(G2_RESEARCH_PATHS.has(resumed.path))researchActions++;}else{if(arr(plan?.inflight_requirements).length||arr(plan?.recovery_blocked_action_runs).length)break;const action=arr(plan?.eligible_system_actions)[0];if(!action)break;const path=assertExecutableAction(action,env);if(G2_RESEARCH_PATHS.has(path)&&researchActions>=G2_MAX_RESEARCH_ACTIONS)break;const created=await createRun(env,rpc,idea,plan,action),runId=created.run.action_run_id,started=await rpc('start_g2_action_run_candidate_v2',{p_action_run_id:runId,p_current_input_fingerprint:created.inputFp});if(started.status!=='running')break;const execution=await executeRun(env,rpc,runId,created.inputFp,Number(started.attempt),path);await completeAndFinalize(rpc,runId,created.inputFp,Number(started.attempt),path,execution);trace.push({kind:'ACTION',requirement_id:action.requirement_id,path,outcome:execution.terminal_outcome});actions++;if(G2_RESEARCH_PATHS.has(path))researchActions++;}const projection=await refreshProjection();idea=projection.idea;plan=await rpc('plan_idea_evidence_context_candidate_v11',{p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_available_paths:paths,p_raw_context_available:paths.includes('RAW')});}return {candidate:false,tool_version:G2_TOOL_VERSION,available_paths:paths,executed_actions:actions,executed_research_actions:researchActions,trace,plan:safePlan(plan),projection:await refreshProjection()};}
