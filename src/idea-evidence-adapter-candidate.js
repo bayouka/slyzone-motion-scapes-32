@@ -5,7 +5,7 @@ const G2_MAX_ACTIONS=2;
 const G2_MAX_RESEARCH_ACTIONS=1;
 const G2_RESEARCH_PATHS=new Set(['WEB','AUDIT','CONN']);
 const G2_SYSTEM_PATHS=new Set(['RAW','SRC','CALC','AI_H','AI_R']);
-const G2_TOOL_VERSION='evidence-adapter-0.3.0';
+const G2_TOOL_VERSION='evidence-adapter-0.3.1';
 const G2_SCHEMA_VERSION='g2-evidence-v0.7';
 const G2_RAW_PROMPT_VERSION='g2-raw-v1';
 const G2_RAW_SCHEMA_VERSION='g2-raw-v1';
@@ -18,9 +18,9 @@ const G2_RAW_TARGETS=Object.freeze({
   'SV.D04.EXISTING_SITE':{semantic_key:'existing_site',item_type:'FACT',label:'site existant explicitement déclaré'}
 });
 
+// V0.1 contract is deliberately narrower than policy compatibility: only PRIMARY_NEED.
 const G2_AI_H_TARGETS=Object.freeze({
-  'SV.D03.PRIMARY_NEED':{semantic_key:'primary_need_hypothesis',label:'besoin ou job principal de l’audience'},
-  'SV.D03.OBJECTIONS_TRUST':{semantic_key:'objections_trust_hypothesis',label:'objections et besoins de confiance'}
+  'SV.D03.PRIMARY_NEED':{semantic_key:'primary_need',label:'besoin ou job principal de l’audience'}
 });
 
 const G2_AI_H_BASIS_PROVENANCE=new Set([
@@ -282,7 +282,9 @@ async function executeAIH(env,input){
   if(!env.AI||env.G2_AI_H!==true)throw new G2CandidateError(503,'G2_EXECUTOR_UNAVAILABLE');
   const basis=aiHBasis(input,target);
   const basisIds=[...new Set(basis.map(x=>x.requirement_id))];
-  if(!basis.length||!basisIds.length)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'HYPOTHESIS_BASIS_INSUFFICIENT',proposed_mutations:[]};
+  const audienceCurrent=basisIds.includes('SV.D03.PRIMARY_AUDIENCE');
+  const supportingContext=basisIds.some(id=>['SV.D02.DECLARED_PROBLEM','SV.D02.PRIMARY_OBJECTIVE','SV.D02.USER_OUTCOME','SV.D04.OFFER_BASELINE'].includes(id));
+  if(!basis.length||!audienceCurrent||!supportingContext)return {terminal_outcome:'NO_RESOLUTION',terminal_reason:'INPUTS_INSUFFICIENT',proposed_mutations:[]};
   let aiResult;
   try{
     aiResult=await env.AI.run(G2_AI_MODEL,{
