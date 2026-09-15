@@ -36,8 +36,8 @@ function mapError(error){
 }
 
 function executorCapabilities(env){
-  // AI_H and SRC have implementation candidates but remain deliberately non-active until
-  // their authenticated activation gates are proven. Production stays CALC + RAW.
+  // AI_H remains behind the authenticated fresh-Idea activation gate; SRC has its own
+  // authenticated snapshot/ingestion activation gate. Production stays CALC + RAW.
   return {AI:env?.AI,G2_RAW:Boolean(env?.AI)};
 }
 
