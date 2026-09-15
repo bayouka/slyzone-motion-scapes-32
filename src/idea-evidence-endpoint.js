@@ -35,9 +35,16 @@ function mapError(error){
   return new G2CandidateError(502,'G2_ENGINE_ERROR');
 }
 
-async function settlePromotionRecovery(rpc,idea){
+function executorCapabilities(env){
+  return {AI:env?.AI,G2_RAW:Boolean(env?.AI)};
+}
+
+function executorPaths(env){return env?.AI?['CALC','RAW']:['CALC'];}
+
+async function settlePromotionRecovery(rpc,idea,env){
+  const paths=executorPaths(env);
   const plan=await rpc('plan_idea_evidence_context_candidate_v11',{
-    p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_available_paths:['CALC'],p_raw_context_available:false
+    p_idea_id:idea.id,p_expected_engine_revision:idea.engine_revision,p_available_paths:paths,p_raw_context_available:paths.includes('RAW')
   });
   const recovery=arr(plan?.recoverable_action_runs)[0];
   if(!recovery||recovery.mode!=='PROMOTE')return null;
@@ -81,13 +88,12 @@ export async function handleEvidenceAdvance(request,env,body){
     const rpc=(name,args)=>sb(env,`/rest/v1/rpc/${encodeURIComponent(name)}`,{service:true,body:args});
     const refreshProjection=()=>sb(env,'/rest/v1/rpc/get_idea_workspace_projection_v1',{token:a.token,body:{p_idea_id:ideaId}});
 
-    const recoverySettlement=await settlePromotionRecovery(rpc,projection.idea);
+    const recoverySettlement=await settlePromotionRecovery(rpc,projection.idea,env);
     if(recoverySettlement)projection=await refreshProjection();
 
-    // G2 production currently has only the deterministic CALC executor certified.
-    // Provider/research bindings remain unavailable to the orchestrator until their contracts and tests pass.
-    const executorCapabilities={};
-    const result=await advanceEvidenceCandidate({env:executorCapabilities,idea:projection.idea,canWrite:true,rpc,refreshProjection});
+    // Production executor scope is explicit. RAW uses Workers AI only as a strict parser of
+    // verbatim human input; it cannot promote a finding unless its support quote exists in RAW.
+    const result=await advanceEvidenceCandidate({env:executorCapabilities(env),idea:projection.idea,canWrite:true,rpc,refreshProjection});
     return json({ok:true,command:'evidence.advance',status:result.plan?.gate_status||'IN_PROGRESS',recovery_settlement:recoverySettlement,...result});
   }catch(error){const e=mapError(error);return json({ok:false,error:e.code},e.status)}
 }
