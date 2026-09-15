@@ -11,34 +11,27 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current **certified** production transport release: **v4.5.12-workspace-engine-adapter-p1 / build 540**.
+Current **runtime-certified production transport release**: **v4.5.13-workspace-evidence-g2-p1 / build 547**.
 
-Current active release candidate: **v4.5.12-workspace-foundation-g1-p1 / build 544**.
+Current active release candidate: **v4.5.13-workspace-evidence-g2-p2 / build 548**.
 
-Build 544 contains:
-- Workspace V3 actions `0.3.0` ;
-- G0 assessment + targeted human confirmation ;
-- authenticated URL source registration through `register_idea_source_v1` ;
-- deterministic G1 Foundation planning ;
-- privileged `foundation.advance` execution with RAW-first automatic acquisition ;
-- Requirement-level fingerprints, Action Run traceability and stale-safety ;
-- targeted human last-mile answer through `apply_human_information_v1` only when the deterministic planner returns a dominant human action ;
-- explicit `Je ne sais pas / plus tard` through `accept_idea_requirement_unknown_v1` ;
-- deterministic browser idempotency keys tied to revision/content ;
-- renderer marker preventing redundant MutationObserver rerenders ;
-- functional Idea Engine adapter surface `workspace-engine-adapter-0.2.0` with allowlisted commands `blueprint_fit.assess` and `foundation.advance` ;
-- runtime `SUPABASE_SERVICE_ROLE_KEY` provisioned as a Cloudflare Worker Secret ;
-- modern Supabase secret-key handling: `sb_secret_...` is sent only in the `apikey` header, never as a Bearer token ;
-- shell cache-busting aligned to Workspace actions `0.3.0` ;
-- Cloudflare gate checking syntax, manifest/source SHA, G1 markers, unauthenticated rejection and deployed shell/assets.
+Build 547 was independently observed in production on 2026-09-15 with:
+- `/health` HTTP 200 and runtime `v4.5.13-workspace-evidence-g2-p1` ;
+- Cloudflare version metadata present ;
+- adapter `0.3.0` configured with `blueprint_fit.assess`, `foundation.advance`, `evidence.advance` ;
+- `SITE_VITRINE@0.5`, G2 backend `v0.7`, promotion disposition `v0.8` ;
+- shell `boot.js?build=547` and Evidence/Market asset present ;
+- unauthenticated `evidence.advance` rejected with HTTP 401 / `UNAUTHORIZED`.
 
-The `/health` compatibility object still exposes the historical `idea_engine_adapter_v0_1.code=0.1.1` marker. It is temporarily preserved for compatibility and must not be used as the sole proof of the current G1 adapter surface; release gates also inspect the real adapter allowlist/tool version and runtime assets.
+Build 548 is the production-polish successor. It keeps the same fail-closed G2 backend boundary but replaces internal G2/test wording in the user interface with the product surface **Preuves & marché**, asset `1.1.0`, and exposes the certified executor scope `CALC` in `/health`. It must not be called production-certified until the deployed runtime independently reports `v4.5.13-workspace-evidence-g2-p2`, the build-548 shell and the 1.1.0 asset.
 
-Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Build 542 was superseded by 543. Build 543 was itself superseded by the G1 release candidate 544 before becoming the certified baseline.
+The currently active G2 execution boundary is intentionally narrow: only deterministic `CALC` is advertised. RAW/SRC/AI_H/AI_R/WEB/AUDIT/CONN remain unavailable to `evidence.advance` until their executors and contracts are implemented and tested. The runtime must prefer an honest capability limit over fabricated evidence.
 
-Build 544 must not be called production-certified until the Cloudflare release/runtime smoke result is independently observable. GitHub currently receives no usable Cloudflare commit status through the available integration.
+The `/health` compatibility object still exposes the historical `idea_engine_adapter_v0_1.code=0.1.1` marker. It is preserved for compatibility and must never be used as sole proof of the current adapter surface.
 
-A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and the production runtime smoke checks pass.
+Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Builds 542–546 were superseded during the G1/G2 cutover. Build 547 is the first independently observed production runtime carrying `evidence.advance`; build 548 is its user-facing polish candidate.
+
+A release is production-verified only when the transport manifest matches the intended runtime, the direct Wrangler deployment targets Worker `4b4c`, and production smoke checks prove `/health`, shell/assets and unauthenticated API boundaries.
 
 ## Production architecture
 
@@ -56,22 +49,26 @@ A release is production-verified only when the transport manifest matches the in
 - `site/assets/approval-route-v1.js` — routes validation entry points from Home/My Work/project views into Resources V2.
 - `site/assets/library-workspace-v1.js` — global file library enhancement.
 - `site/assets/design-v5.css` — current global V5 Soft Spatial Workspace design layer, loaded last.
-- `site/assets/ideas-workspace-v3-preview.js` + `.css` — parallel, feature-flagged post-capture workspace projection using the canonical R0→R7 read model; not yet default.
-- `site/assets/ideas-workspace-v3-actions.js` + `.css` — additive interaction layer; version `0.3.0` supports G0, URL-source registration and deterministic G1 Foundation without service-role exposure in the browser.
+- `site/assets/ideas-workspace-v3-preview.js` + `.css` — parallel post-capture workspace projection using the canonical R0→R7 read model.
+- `site/assets/ideas-workspace-v3-actions.js` + `.css` — interaction layer `0.3.0` for G0, URL-source registration and deterministic G1 Foundation without browser service-role exposure.
+- `site/assets/ideas-workspace-g2-live.js` — additive Evidence/Market interaction surface; canonical version `1.1.0` removes internal G2/test jargon from the user-facing UI while retaining internal runtime markers.
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
 - `src/worker.js` — Cloudflare Worker, API routes, health endpoint, SPA fallback and response hardening.
-- `src/idea-engine-adapter.js` — command-allowlisted server boundary for selected `service_role only` Idea Engine capabilities; current functional surface accepts only `blueprint_fit.assess` and `foundation.advance`.
+- `src/idea-engine-adapter.js` — command-allowlisted server boundary for G0/G1 privileged capabilities.
+- `src/idea-evidence-endpoint.js` — authenticated server boundary for `evidence.advance`; verifies user-scoped projection/write authority before service-role execution and keeps provider paths fail-closed.
+- `src/idea-evidence-adapter-candidate.js` — G2 planner/action orchestration implementation; despite its historical filename, it is imported by the current Worker entry. Only endpoint-advertised capabilities are operational.
+- `src/worker-entry.js` — observable runtime wrapper and `/health` contract for the active adapter surface.
 - `wrangler.jsonc` — canonical Worker configuration named `4b4c`.
 
-Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their capture-phase handlers stop the historical handlers from executing, while the old code remains physically present until authenticated browser coverage permits safe deletion.
+Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their capture-phase handlers stop the historical handlers from executing, while old code remains physically present until authenticated browser coverage permits safe deletion.
 
 ## Backend baseline
 
-The production migration history recovered during the 2026-09-11 audit is represented in the canonical repository through `20260909093700_revoke_public_call_heartbeat.sql` and guarded by `scripts/migration-history-check.mjs`.
+The production migration history recovered during the 2026-09-11 audit is represented canonically and guarded by `scripts/migration-history-check.mjs`.
 
-The additive Idea Engine / Project Definition runtime R1→R7 and workspace-integration migrations applied on 2026-09-13 are represented canonically in `supabase/migrations/`.
+The additive Idea Engine / Project Definition runtime R1→R7 and workspace-integration migrations applied on 2026-09-13 remain the canonical baseline.
 
-Current G1 integration history is aligned through:
+G1 integration history includes:
 - `20260913063230_idea_engine_acquisition_traceability_v1` ;
 - `20260913063548_idea_engine_target_fingerprints_v1` ;
 - `20260913063741_idea_engine_requirement_resolution_refs_v1` ;
@@ -79,6 +76,10 @@ Current G1 integration history is aligned through:
 - `20260913064618_idea_engine_foundation_raw_input_v1` ;
 - `20260913065006_idea_engine_action_retry_v1` ;
 - `20260913070345_idea_engine_foundation_unknown_rescue_v1`.
+
+Current production G2 activation/hardening includes:
+- `20260915100519_activate_g2_backend_v07_blueprint_05` — activates the frozen G2 backend package and assigns new compatible Site-vitrine Ideas to Blueprint 0.5 without silently rewriting existing Ideas ;
+- `20260915124420_g2_promotion_disposition_v08` — bounded classification of recoverable succeeded/unpromoted G2 runs before normal promotion vs explicit `NO_RESOLUTION` finalization.
 
 Do not reconstruct, reorder or replay production migrations from memory. GitHub migration filenames/versions must match `supabase_migrations.schema_migrations`. New schema changes must start from the verified live/canonical baseline and preserve RLS/least-privilege invariants.
 
@@ -137,7 +138,7 @@ npm run check
 
 `npm run check` must describe the effective runtime, not require legacy implementations merely because they still physically exist.
 
-Idea Engine/workspace integration changes additionally require the domain-specific deterministic/red-team harnesses documented by the owning runtime/UX contracts. The G1 adapter harness `scripts/test_workspace_privileged_adapter_v0_2.mjs` is part of the canonical check command.
+Idea Engine/workspace integration changes additionally require domain-specific deterministic/red-team harnesses. Current checks include G1 privileged adapter harnesses and `scripts/test_g2_evidence_adapter_v0_1.mjs`, which asserts the CALC-only advertised boundary, write-authority guard, recovery classifier wiring, no-resolution path and production Evidence/Market UI copy.
 
 GitHub Actions are not used for production. The verified release chain is:
 
@@ -158,10 +159,9 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 - `ideas-orchestrator-v2.js` still renders the historical `Clarifier → Renforcer → Étayer → Partager → Décider` progression and remains compatibility-only during Workspace V3 cutover;
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
-- authenticated multi-user browser E2E coverage remains incomplete because a safe dedicated E2E Auth identity lifecycle is not yet available through the connected tooling;
-- build 544 runtime certification and authenticated production G1 E2E remain pending observable evidence;
-- the `/health` Idea Engine adapter version marker is a compatibility marker and lags the functional G1 adapter surface ;
-- G2 Evidence/Market acquisition has not yet been wired through the deterministic acquisition/action-run pattern ;
+- authenticated multi-user browser E2E coverage remains incomplete; build 547 has runtime/API smoke proof but not a full authenticated G0→G1→G2 user journey proof;
+- non-CALC G2 executors are deliberately not operational yet; WEB/AI/source-backed evidence must not be advertised until implemented with atomic promotion and source provenance tests;
+- build 548 still requires independent runtime certification before replacing build 547 as the certified production baseline;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
 
 Reduce these items incrementally behind executable checks. Do not perform a destructive rewrite of the runtime.
