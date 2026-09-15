@@ -31,5 +31,9 @@ await assert.rejects(
 const endpoint=await fs.readFile(new URL('../src/idea-evidence-endpoint.js',import.meta.url),'utf8');
 assert.match(endpoint,/const executorCapabilities=\{\};/);
 assert.match(endpoint,/advanceEvidenceCandidate\(\{env:executorCapabilities/);
+assert.match(endpoint,/classify_g2_action_promotion_candidate_v1/);
+assert.match(endpoint,/finalize_g2_action_no_resolution_candidate_v1/);
+assert.match(endpoint,/promote_g2_system_action_result_candidate_v1/);
+assert.match(endpoint,/if\(!projection\.capabilities\?\.can_write\)throw new G2CandidateError\(403,'IDEA_WRITE_REQUIRED'\)/);
 
 console.log('G2 evidence adapter guard tests PASS');
