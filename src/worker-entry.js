@@ -1,12 +1,13 @@
 import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 
-const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2';
+const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p1';
 const ADAPTER=Object.freeze({
   code:'0.3.0',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
   blueprint:'SITE_VITRINE@0.5',
   g2_backend:'v0.7',
+  g2_promotion_disposition:'v0.8',
   service_role_browser_exposed:false
 });
 
