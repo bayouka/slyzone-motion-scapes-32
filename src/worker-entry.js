@@ -1,15 +1,17 @@
 import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 
-const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p3';
+const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p4';
 const ADAPTER=Object.freeze({
-  code:'0.3.1',
+  code:'0.3.2',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
   blueprint:'SITE_VITRINE@0.5',
   g2_backend:'v0.7',
   g2_promotion_disposition:'v0.8',
-  g2_executor_tool:'evidence-adapter-0.2.0',
+  g2_executor_tool:'evidence-adapter-0.3.0',
   g2_user_surface:'evidence-market',
+  g2_hypothesis_targets:['SV.D03.PRIMARY_NEED','SV.D03.OBJECTIONS_TRUST'],
+  g2_hypothesis_resolution:'WORKING_ASSUMPTION',
   service_role_browser_exposed:false
 });
 
@@ -18,7 +20,7 @@ function versionMetadata(env){
   if(!meta||typeof meta!=='object')return null;
   return {id:meta.id||null,tag:meta.tag||null,timestamp:meta.timestamp||null};
 }
-function executorPaths(env){return env?.AI?['CALC','RAW']:['CALC'];}
+function executorPaths(env){return env?.AI?['CALC','RAW','AI_H']:['CALC'];}
 
 async function health(request,env,ctx){
   const base=await worker.fetch(request,env,ctx);
