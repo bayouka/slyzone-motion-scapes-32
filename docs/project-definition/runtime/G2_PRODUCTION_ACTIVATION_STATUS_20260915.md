@@ -1,126 +1,129 @@
 # 4b4c / 2b2c — G2 production activation status — 2026-09-15
 
-Status: **BACKEND ACTIVE / BUILD 551 RUNTIME-CERTIFIED / CALC+RAW ACTIVE / AI_H CANDIDATE INACTIVE**
+Status: **BUILD 551 RUNTIME-CERTIFIED / CALC+RAW ACTIVE / AI_H INACTIVE / SRC V0.2 BACKEND DORMANT**
 
-## Production backend
+## Production runtime
 
-Supabase production has G2 backend package V0.7 active for `SITE_VITRINE@0.5` plus the V0.8 promotion-disposition hardening migration.
+Current production runtime remains:
 
-Verified active functions include:
-- `plan_idea_evidence_context_candidate_v11`
-- `get_g2_action_input_candidate_v2`
-- `finalize_g2_action_no_resolution_candidate_v1`
-- `classify_g2_action_promotion_candidate_v1`
-
-The Blueprint resolver assigns `SITE_VITRINE@0.5` to new compatible Site-vitrine Ideas. Existing Ideas are not silently rewritten.
-
-The V0.8 classifier is service-role only. It distinguishes normal promotion, honest `NO_RESOLUTION` finalization, already-finalized work and invalid/non-promotable recovery states without exposing raw Action Run payloads to the browser.
-
-## Build 551 — runtime-certified production baseline
-
-Production runtime: `v4.5.13-workspace-evidence-g2-p5`.
-Transport build: **551**.
-Adapter: **0.3.3**.
-Executor tool: **evidence-adapter-0.3.1**.
-
-Independent production observations on 2026-09-15 confirmed:
-- `/health` HTTP 200 ;
 - runtime `v4.5.13-workspace-evidence-g2-p5` ;
-- Cloudflare version id `4cacaaa5-628d-46e5-b2e4-e4f14a84b695` ;
-- adapter `0.3.3`, configured, browser service-role exposure false ;
-- commands `blueprint_fit.assess`, `foundation.advance`, `evidence.advance` ;
-- `SITE_VITRINE@0.5`, G2 backend `v0.7`, promotion disposition `v0.8` ;
-- explicit active executor scope `g2_executor_paths=['CALC','RAW']` ;
-- `g2_ai_h_candidate='v0.1'` and `g2_ai_h_active=false` ;
-- AI_H candidate target limited to `SV.D03.PRIMARY_NEED` with candidate resolution `WORKING_ASSUMPTION` ;
-- product surface `g2_user_surface='evidence-market'` ;
-- root shell contains `ideas-workspace-g2-live.js?v=1.1.0` and `boot.js?build=551` ;
-- Evidence/Market asset HTTP 200 with **Preuves & marché** copy and asset version `1.1.0` ;
-- unauthenticated `evidence.advance` returns HTTP 401 with `UNAUTHORIZED`.
+- transport build **551** ;
+- adapter `0.3.3` ;
+- executor tool `evidence-adapter-0.3.1` ;
+- Blueprint `SITE_VITRINE@0.5` ;
+- G2 backend `v0.7` ;
+- promotion disposition `v0.8` ;
+- active executor paths exactly `['CALC','RAW']` ;
+- product surface `evidence-market` ;
+- `g2_ai_h_candidate='v0.1'`, `g2_ai_h_active=false` ;
+- service-role secret not exposed to browser ;
+- unauthenticated `evidence.advance` remains `401 UNAUTHORIZED`.
 
-This certifies Worker, shell, asset and unauthenticated API boundaries. It does **not** replace the still-required authenticated fresh-Idea G0 → G1 → G2 end-to-end proof.
+Latest independent `/health` observation after installation of the dormant SRC backend infrastructure still reported Build 551 and exactly `CALC + RAW`, proving that the backend preparation did not silently widen the Worker capability surface.
 
-## RAW executor scope
+## Active G2 semantics
 
-RAW remains the only active AI-assisted G2 executor and is a strict extraction path, not an inference path:
-- Workers AI parses persisted human RAW input ;
-- supported RAW targets are `SV.D03.PRIMARY_NEED` and `SV.D04.EXISTING_SITE` ;
-- promoted provenance is `SOURCE_EXTRACTED` ;
-- resolution levels are `RAW_HUMAN` + `ACCEPTED_AS_CURRENT` ;
-- every accepted finding requires a support quote actually present in persisted RAW ;
-- unsupported or inferred findings end in explicit `NO_RESOLUTION` rather than fabricated evidence.
+`CALC` remains deterministic only.
 
-## AI_H candidate scope — intentionally non-active
+`RAW` remains the only active AI-assisted G2 path. It is a strict parser of persisted human RAW text:
 
-`G2_AI_H_EXECUTOR_CONTRACT_V0_1.md` is authoritative for the first hypothesis executor candidate.
+- supported targets: `SV.D03.PRIMARY_NEED`, `SV.D04.EXISTING_SITE` ;
+- provenance: `SOURCE_EXTRACTED` ;
+- resolution: `RAW_HUMAN + ACCEPTED_AS_CURRENT` ;
+- accepted finding requires a support quote actually present in persisted RAW ;
+- inference or unsupported text ends in explicit `NO_RESOLUTION`.
 
-Its candidate implementation is deliberately narrower than general policy compatibility:
-- only `SV.D03.PRIMARY_NEED` is in V0.1 scope ;
-- candidate provenance is `AI_INFERRED` ;
-- candidate resolution is `WORKING_ASSUMPTION` ;
-- current audience plus at least one material supporting context item is required ;
-- `personal` and `sensitive` Information Items are excluded from the model basis ;
-- recursive AI speculation is excluded from the basis ;
-- no source-backed, observed, calculated, human-validated or human-decision claim may be produced by AI_H ;
-- insufficient or invalid basis must terminate as explicit `NO_RESOLUTION`.
+## AI_H V0.1 — implementation candidate, not active
 
-The implementation candidate remains present behind deterministic/red-team tests, but the production endpoint does **not** pass `G2_AI_H` to the adapter and `/health` explicitly reports `g2_ai_h_active=false`.
+`G2_AI_H_EXECUTOR_CONTRACT_V0_1.md` remains authoritative.
 
-Activation remains blocked until the contract's authenticated fresh-Idea E2E gate is proven.
+The implementation candidate is limited to `SV.D03.PRIMARY_NEED` and can only produce `AI_INFERRED / WORKING_ASSUMPTION`. It requires current audience plus material supporting context, excludes personal/sensitive basis, and cannot produce source-backed or human-authority claims.
 
-## Build 550 correction
+Production endpoint does not pass `G2_AI_H`; `/health` reports `g2_ai_h_active=false`.
 
-Build 550 was runtime-observed with `CALC + RAW + AI_H`, but subsequent contract audit found that this exceeded `G2_AI_H_EXECUTOR_CONTRACT_V0_1.md`: it exposed two hypothesis targets and activated AI_H before the required authenticated fresh-Idea proof.
+Build 550's temporary wider exposure is historical and superseded by Build 551.
 
-Build 551 corrects that mismatch rather than treating deployed code as higher authority than the frozen contract. The endpoint is again the explicit capability authority and exposes only `CALC + RAW` in production.
+## SRC V0.2 — dormant backend infrastructure now installed
 
-The first Build 551 transport attempts also exposed two release-gate defects before deployment:
-- the transport adapter was initially not byte-aligned with the corrected canonical adapter ;
-- the release script still asserted the pre-correction AI_H semantic key.
+A source-backed executor must never turn a URL, title or hash into evidence without preserving the exact source body used for the claim.
 
-Both were fixed before the successful p5 deployment. This is exactly the intended fail-closed behavior of the release gate.
+The V0.2 architecture is fixed by:
 
-## Capability authority
+- `G2_SRC_EXECUTOR_CONTRACT_V0_2.md` ;
+- `G2_SOURCE_SNAPSHOT_PERSISTENCE_CANDIDATE_V0_2.sql` ;
+- candidate Git blob SHA-1 `c1fa9f9043d5075415339c4c0e64f6bd2c5897c6`.
 
-The production endpoint is authoritative for executor availability.
+Rollback validation passed before installation. The exact candidate blob was fetched from canonical GitHub, its Git blob SHA-1 was recomputed inside PostgreSQL, the SQL compiled and was exercised against transaction-only fixtures, then rolled back.
 
-Active through `evidence.advance`:
-- `CALC` ;
-- `RAW` when Workers AI is bound.
+Production migration history now includes:
 
-Not active:
-- `AI_H` — implementation candidate only ;
-- `SRC` ;
-- `AI_R` ;
-- `WEB` ;
-- `AUDIT` ;
-- `CONN` ;
-- `MEM`.
+`20260915164534_g2_src_snapshot_infrastructure_v02`
 
-Dormant internal feature flags or implementation scaffolding are not operational capability and must not be advertised as such.
+This migration installs **dormant service-role-only infrastructure**:
 
-## Source-backed execution gap
+- immutable `idea_source_snapshots` bodies keyed by exact Source/version/hash ;
+- SHA-256 verification over canonical extracted text ;
+- 256 KiB UTF-8 source-text persistence bound ;
+- no anon/authenticated snapshot-body SELECT ;
+- no anon/authenticated execution of privileged snapshot/SRC promotion RPCs ;
+- exact current snapshot candidate listing ;
+- exact Action Run source pinning through `input_refs` ;
+- bounded SRC action input revalidation ;
+- dedicated SRC promotion enforcing `SOURCE_EXTRACTED / SOURCE_BACKED`, pinned Source lineage, direct confidence and monotonic sensitivity.
 
-The next executor cannot honestly be called `SOURCE_BACKED` yet.
+It intentionally does **not** modify the active G2 planner predicate and does **not** expose SRC at the Worker endpoint.
 
-The current `idea_sources` production table persists source identity, kind, locator, title/note, content hash, version, fetched/freshness timestamps, status and sensitivity, but it does not provide a general persisted source-body contract for arbitrary SRC extraction.
+Post-install transaction-only negative red-team fixtures also passed:
 
-`ideas.original_text` is a special RAW exception; it is not a general source-content store.
+- foreign-Idea snapshot pinning rejected ;
+- Source sensitivity downgrade rejected ;
+- wrong resolution class rejected ;
+- same-Idea but unpinned Source rejected ;
+- Source refresh after Action Run creation makes the old run unusable/stale.
 
-Before activating SRC, the architecture must add a bounded, versioned source-content/snapshot persistence contract tied to `idea_sources.id + source_version + content_hash`, with sensitivity, freshness, stale invalidation and service-role-only extraction boundaries. A URL or hash alone must never be treated as source-backed evidence.
+No fixture data was retained.
 
-## Remaining hardening
+## SRC Worker candidate — prepared, not transport-certified yet
 
-Before calling G2 broadly operational:
-1. run authenticated G0 → G1 → G2 smoke on a fresh `SITE_VITRINE@0.5` Idea ;
-2. exercise a real RAW action with an authenticated production Idea and inspect Action Run, Source, Information Item and Requirement lineage ;
-3. verify desktop/mobile Evidence & Market states including ready, blocked, stale and recoverable outcomes ;
-4. prove the authenticated AI_H V0.1 candidate end-to-end before any production activation ;
-5. design and implement the persisted source-content boundary before advertising SRC ;
-6. implement WEB/research only through persisted Sources plus atomic research promotion, not direct model claims ;
-7. implement AI_R separately from AI_H and preserve `AI_RECOMMENDATION` semantics ;
-8. keep stale/fingerprint/attempt-fencing and transport byte-alignment release gates intact.
+Canonical GitHub now contains dormant code candidates:
+
+- `src/idea-source-fetch-candidate.js` — HTTPS-only URL acquisition, explicit manual redirects, DNS/public-address validation, bounded streaming, content-type filter, canonical text extraction and SHA-256 ;
+- `src/idea-source-ingestion-candidate.js` — separates URL acquisition/snapshot persistence from evidence extraction ;
+- `src/idea-evidence-adapter-candidate.js` — dormant pinned-source SRC extraction path limited to `SV.D03.PRIMARY_NEED` ;
+- `src/idea-evidence-endpoint.js` — future SRC recovery promotion is routed through the dedicated SRC promotion guard, while active capabilities remain `CALC + RAW` ;
+- `scripts/test_g2_src_candidate_v0_2.mjs` — deterministic candidate harness for URL policy, ingestion, exact pinned extraction and no-fabrication behavior.
+
+The canonical repository is therefore ahead of the currently certified Build 551 transport code. These SRC Worker changes are **not live capability** until the next release candidate passes its transport/release gate.
+
+## SRC V0.2 first-runtime scope
+
+The first SRC executor remains deliberately narrow:
+
+- Source kind: URL only ;
+- Requirement: `SV.D03.PRIMARY_NEED` only ;
+- AI role: strict extraction from persisted snapshot text only ;
+- finding must select one exact pinned snapshot ;
+- support quote must occur verbatim in that snapshot ;
+- mutation: `DECISION_INPUT`, `SOURCE_EXTRACTED`, `DIRECT`, exact Source lineage, resolution exactly `SOURCE_BACKED` ;
+- unsupported/inferred output must become `NO_RESOLUTION`, never evidence.
+
+## Remaining activation gates
+
+SRC must remain non-active until all of the following are proven:
+
+1. new JS candidate harness executes successfully in the normal Cloudflare release gate ;
+2. canonical/transport runtime files are byte-aligned ;
+3. Worker release remains healthy with SRC candidate explicitly inactive ;
+4. URL/redirect/DNS/SSRF policy survives release/red-team tests ;
+5. active planner SRC predicate is deliberately switched from metadata-only to exact-current-snapshot semantics ;
+6. endpoint performs authenticated ingestion, refreshes projection/revision, then deliberately passes `G2_SRC` ;
+7. `/health` then reports exactly `CALC,RAW,SRC` only after activation ;
+8. true concurrent Source-refresh race is tested ;
+9. fresh authenticated production Idea proves registration → ingestion → re-plan → exact pinned extraction → dedicated promotion → visible lineage ;
+10. browser remains unable to read arbitrary snapshot bodies or service credentials.
+
+A real authenticated G0 → G1 → G2 proof is still outstanding. At the latest backend check there were no Ideas in production, so this proof must be created through a real authenticated user flow rather than fabricated with service-role-only fixtures.
 
 ## Authority note
 
-This status document records the actual activation state reached on 2026-09-15. Build 551 supersedes Build 550 as the production baseline. Older documents describing G2 as non-active, CALC-only, CALC+RAW-only, or CALC+RAW+AI_H active are historical and must not be used to infer the current runtime state without checking their date/status.
+Current operational truth is determined by the current README plus live `/health` and endpoint smoke. Build 551 remains the runtime baseline. The SRC V0.2 database infrastructure is installed but dormant; canonical SRC Worker code is prepared but not yet transport-certified or endpoint-active.
