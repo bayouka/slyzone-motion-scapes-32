@@ -26,10 +26,6 @@ assert.deepEqual(plannerArgs.p_available_paths,['CALC','RAW']);
 assert.equal(plannerArgs.p_raw_context_available,true);
 assert.deepEqual(pathProbe.available_paths,['CALC','RAW']);
 
-plannerArgs=null;
-await advanceEvidenceCandidate({env:{AI:{run:async()=>({})},G2_SRC:true,G2_AI_H:true,G2_AI_R:true,G2_WEB:true,TAVILY_API_KEY:'x'},idea,canWrite:true,rpc,refreshProjection});
-assert.deepEqual(plannerArgs.p_available_paths,['CALC']);
-
 await assert.rejects(
   ()=>advanceEvidenceCandidate({env:{},idea,canWrite:false,rpc,refreshProjection}),
   e=>e instanceof G2CandidateError&&e.status===403&&e.code==='IDEA_WRITE_REQUIRED'
@@ -107,6 +103,7 @@ await runRawScenario({
 const endpoint=await fs.readFile(new URL('../src/idea-evidence-endpoint.js',import.meta.url),'utf8');
 assert.match(endpoint,/G2_RAW:Boolean\(env\?\.AI\)/);
 assert.match(endpoint,/return env\?\.AI\?\['CALC','RAW'\]:\['CALC'\]/);
+assert.doesNotMatch(endpoint,/G2_SRC|G2_AI_H|G2_AI_R|G2_WEB/);
 assert.match(endpoint,/classify_g2_action_promotion_candidate_v1/);
 assert.match(endpoint,/finalize_g2_action_no_resolution_candidate_v1/);
 assert.match(endpoint,/promote_g2_system_action_result_candidate_v1/);
