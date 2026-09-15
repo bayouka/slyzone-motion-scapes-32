@@ -39,7 +39,10 @@ export async function handleEvidenceAdvance(request,env,body){
     const projection=await sb(env,'/rest/v1/rpc/get_idea_workspace_projection_v1',{token:a.token,body:{p_idea_id:ideaId}});
     const rpc=(name,args)=>sb(env,`/rest/v1/rpc/${encodeURIComponent(name)}`,{service:true,body:args});
     const refreshProjection=()=>sb(env,'/rest/v1/rpc/get_idea_workspace_projection_v1',{token:a.token,body:{p_idea_id:ideaId}});
-    const result=await advanceEvidenceCandidate({env,idea:projection.idea,canWrite:Boolean(projection.capabilities?.can_write),rpc,refreshProjection});
+    // G2 v0.7 production currently has only the deterministic CALC executor certified.
+    // Provider/research bindings remain unavailable to the orchestrator until their contracts and tests pass.
+    const executorCapabilities={};
+    const result=await advanceEvidenceCandidate({env:executorCapabilities,idea:projection.idea,canWrite:Boolean(projection.capabilities?.can_write),rpc,refreshProjection});
     return json({ok:true,command:'evidence.advance',status:result.plan?.gate_status||'IN_PROGRESS',...result});
   }catch(error){const e=mapError(error);return json({ok:false,error:e.code},e.status)}
 }
