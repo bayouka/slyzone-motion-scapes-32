@@ -1,9 +1,9 @@
 import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 
-const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p6';
+const RUNTIME_VERSION='v4.5.13-workspace-evidence-g2-p7';
 const ADAPTER=Object.freeze({
-  code:'0.3.4',
+  code:'0.3.5',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
   blueprint:'SITE_VITRINE@0.5',
   g2_backend:'v0.7',
@@ -19,6 +19,8 @@ const ADAPTER=Object.freeze({
   g2_src_snapshot_backend:'v0.2',
   g2_src_candidate_target:'SV.D03.PRIMARY_NEED',
   g2_src_candidate_resolution:'SOURCE_BACKED',
+  g2_source_fetch_service_candidate:'v0.1',
+  g2_source_fetch_service_active:false,
   service_role_browser_exposed:false
 });
 
@@ -29,6 +31,17 @@ function versionMetadata(env){
 }
 function executorPaths(env){return env?.AI?['CALC','RAW']:['CALC'];}
 
+async function sourceFetchServiceHealth(env){
+  if(!env?.SOURCE_FETCH)return {candidate:'v0.1',configured:false,reachable:false,active:false};
+  try{
+    const result=await env.SOURCE_FETCH.serviceHealth();
+    const reachable=result?.ok===true&&result?.service==='4b4c-source-fetch'&&result?.contract==='g2-source-fetch-service-v0.1'&&result?.public_network_only===true&&result?.browser_access===false;
+    return {candidate:'v0.1',configured:true,reachable,active:false,contract:result?.contract||null,public_network_only:result?.public_network_only===true,browser_access:result?.browser_access===true};
+  }catch{
+    return {candidate:'v0.1',configured:true,reachable:false,active:false};
+  }
+}
+
 async function health(request,env,ctx){
   const base=await worker.fetch(request,env,ctx);
   let payload;
@@ -37,7 +50,7 @@ async function health(request,env,ctx){
   payload.cloudflare_version=versionMetadata(env);
   payload.ui_shell=payload.ui_shell&&typeof payload.ui_shell==='object'?payload.ui_shell:{};
   if(payload.ui_shell.idea_engine_adapter_v0_1){payload.ui_shell.idea_engine_adapter_v0_1={...payload.ui_shell.idea_engine_adapter_v0_1,compatibility_marker:true};}
-  payload.ui_shell.idea_engine_adapter_v0_3={...ADAPTER,g2_executor_paths:executorPaths(env),configured:Boolean(env?.SUPABASE_SERVICE_ROLE_KEY)};
+  payload.ui_shell.idea_engine_adapter_v0_3={...ADAPTER,g2_executor_paths:executorPaths(env),g2_source_fetch_service:await sourceFetchServiceHealth(env),configured:Boolean(env?.SUPABASE_SERVICE_ROLE_KEY)};
   const headers=new Headers(base.headers);headers.set('content-type','application/json; charset=utf-8');headers.set('cache-control','no-store');
   return new Response(JSON.stringify(payload),{status:base.status,statusText:base.statusText,headers});
 }
