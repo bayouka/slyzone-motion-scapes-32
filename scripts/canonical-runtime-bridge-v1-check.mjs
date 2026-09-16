@@ -16,6 +16,9 @@ const assert = (condition, message) => {
   if (!condition) fail(message);
 };
 const unique = (values) => new Set(values).size === values.length;
+const requireMarkers = (text, label, markers) => {
+  for (const marker of markers) assert(text.includes(marker), `${label} marker missing: ${marker}`);
+};
 
 let master;
 let bridge;
@@ -23,6 +26,10 @@ let requirementMap;
 let coreGraphMigration;
 let deliveryClosureMigration;
 let closurePredicatesMigration;
+let qualityTestabilityMigration;
+let baselineHandoffMigration;
+let g4Migration;
+let g5Migration;
 try {
   master = readJson('MASTER_BLUEPRINT_V1.json');
   bridge = readJson('CANONICAL_RUNTIME_BRIDGE_V1.json');
@@ -30,6 +37,10 @@ try {
   coreGraphMigration = readText('supabase/migrations/20260916153749_project_master_blueprint_v1_core_graph_runtime.sql');
   deliveryClosureMigration = readText('supabase/migrations/20260916154153_project_master_blueprint_v1_delivery_lot_dependency_closure.sql');
   closurePredicatesMigration = readText('supabase/migrations/20260916154611_project_master_blueprint_v1_dependency_closure_predicates.sql');
+  qualityTestabilityMigration = readText('supabase/migrations/20260916155201_project_master_blueprint_v1_quality_testability_predicates.sql');
+  baselineHandoffMigration = readText('supabase/migrations/20260916155544_project_master_blueprint_v1_baseline_handoff_predicates.sql');
+  g4Migration = readText('supabase/migrations/20260916155824_project_master_blueprint_v1_g4_rfd_lot.sql');
+  g5Migration = readText('supabase/migrations/20260916155938_project_master_blueprint_v1_g5_rfd_project.sql');
 } catch (error) {
   fail(`cannot parse runtime bridge source: ${error.message}`);
   process.exit(1);
@@ -37,17 +48,21 @@ try {
 
 assert(bridge.schema_version === '1.0', 'bridge schema_version must be 1.0');
 assert(bridge.contract_id === 'PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE', 'unexpected bridge contract_id');
+assert(bridge.contract_version === '1.1', 'bridge contract_version must be 1.1');
 assert(bridge.status === 'CANONICAL_MIGRATION_CONTRACT', 'bridge must be a canonical migration contract');
 assert(bridge.source_runtime === 'R7_BUILD_READY_RUNTIME', 'bridge source runtime must stay R7');
 assert(bridge.target_contract === '4B4C_PROJECT_MASTER_BLUEPRINT_V1', 'bridge target contract mismatch');
 
 assert(bridge.coverage?.requirement_domain_classification === 'FULL_FOR_R7_REQUIREMENT_SET', 'R7 requirement classification must remain complete');
 assert(bridge.coverage?.legacy_readiness_projection === 'PARTIAL', 'legacy readiness projection must remain explicitly partial');
-assert(bridge.coverage?.core_graph === 'IMPLEMENTED_SERVICE_ONLY', 'core graph runtime must be marked service-only implemented');
+assert(bridge.coverage?.core_graph === 'IMPLEMENTED_SERVICE_ONLY', 'core graph must be service-only implemented');
 assert(bridge.coverage?.canonical_node_state_projection === 'IMPLEMENTED_R7_BRIDGE', 'canonical node state projection must remain an R7 bridge');
-assert(bridge.coverage?.delivery_lots === 'SCHEMA_IMPLEMENTED_SERVICE_ONLY', 'DeliveryLot runtime must remain service-only until an explicit activation');
-assert(bridge.coverage?.dependency_closure === 'IMPLEMENTED_PREDICATES_SERVICE_ONLY', 'DependencyClosure canonical predicates must be implemented service-only');
-assert(bridge.coverage?.canonical_formal_gates === 'NOT_RUNTIME_COMPLETE', 'canonical Formal Gates must not be declared runtime-complete');
+assert(bridge.coverage?.delivery_lots === 'IMPLEMENTED_SERVICE_ONLY', 'DeliveryLot runtime must be service-only implemented');
+assert(bridge.coverage?.dependency_closure === 'IMPLEMENTED_SERVICE_ONLY', 'DependencyClosure runtime must be service-only implemented');
+assert(bridge.coverage?.rfd_predicates === 'SEVEN_IMPLEMENTED_SERVICE_ONLY', 'all seven RFD predicates must be implemented service-only');
+assert(bridge.coverage?.baseline_handoff === 'IMPLEMENTED_SERVICE_ONLY', 'baseline/handoff runtime must be service-only implemented');
+assert(bridge.coverage?.canonical_formal_gates === 'G4_G5_IMPLEMENTED_SERVICE_ONLY', 'only canonical G4/G5 must be implemented in this slice');
+assert(bridge.coverage?.canonical_pre_g4_gates === 'G0_G3_NOT_IMPLEMENTED_IN_THIS_RUNTIME_SLICE', 'G0-G3 status must remain explicit');
 
 const expectedRuntimeObjects = {
   blueprint_pack: 'app_private.project_blueprint_packs_v1',
@@ -57,9 +72,21 @@ const expectedRuntimeObjects = {
   delivery_lot_nodes: 'app_private.project_delivery_lot_nodes_v1',
   ownership_assignments: 'app_private.project_ownership_assignments_v1',
   conflict_records: 'app_private.project_conflict_records_v1',
+  testability_policy: 'app_private.project_node_testability_policy_v1',
+  baseline_freezes: 'app_private.project_baseline_freezes_v1',
+  handoff_manifests: 'app_private.project_handoff_manifests_v1',
+  canonical_gate_states: 'app_private.project_canonical_gate_states_v1',
+  project_rfd_manifests: 'app_private.project_rfd_manifests_v1',
   canonical_graph_read: 'public.get_project_definition_canonical_graph_v1(uuid)',
   blueprint_dependency_closure: 'app_private.get_blueprint_dependency_closure_v1(text,text,text[])',
-  delivery_lot_dependency_closure: 'public.get_project_delivery_lot_dependency_closure_v1(uuid)'
+  delivery_lot_dependency_closure: 'public.get_project_delivery_lot_dependency_closure_v1(uuid)',
+  quality_testability: 'public.get_project_delivery_lot_quality_testability_v1(uuid)',
+  baseline_handoff_readiness: 'public.get_project_delivery_lot_baseline_handoff_readiness_v1(uuid)',
+  g4_readiness: 'public.get_project_delivery_lot_rfd_readiness_v1(uuid)',
+  g4_approval: 'public.approve_project_delivery_lot_rfd_v1(uuid,bigint,text,uuid)',
+  g5_manifest_candidate: 'public.create_project_rfd_manifest_candidate_v1(uuid,bigint)',
+  g5_readiness: 'public.get_project_rfd_readiness_v1(uuid)',
+  g5_approval: 'public.approve_project_rfd_v1(uuid,bigint,text,uuid)'
 };
 for (const [key, value] of Object.entries(expectedRuntimeObjects)) {
   assert(bridge.runtime_objects?.[key] === value, `runtime object ${key} mismatch`);
@@ -72,7 +99,7 @@ assert(bridge.graph_contract?.dependency_edge_count === 33, 'graph bridge must d
 assert(bridge.graph_contract?.hard_edge_count === 31, 'graph bridge must define exactly 31 HARD edges');
 assert(bridge.graph_contract?.soft_edge_count === 2, 'graph bridge must define exactly 2 SOFT edges');
 assert(bridge.graph_contract?.hard_dependency_cycles_allowed === false, 'HARD dependency cycles must remain forbidden');
-assert(bridge.graph_contract?.legacy_requirement_state_source_retained === true, 'R7 requirement state source must remain retained during bridge');
+assert(bridge.graph_contract?.legacy_requirement_state_source_retained === true, 'R7 requirement state source must remain retained');
 
 const expectedLegacyGateMappings = [
   ['G8_PROJECT_PRODUCT_DEFINITION_STABLE', 'PROJECT_PRODUCT_READY'],
@@ -80,97 +107,142 @@ const expectedLegacyGateMappings = [
   ['G10_PROJECT_TECH_NFR_STABLE', 'PROJECT_TECH_READY'],
   ['G11_TRACEABILITY_AND_ACCEPTANCE_READY', 'TRACEABILITY_READY']
 ];
-const gateMappings = Array.isArray(bridge.legacy_gate_to_readiness_predicate)
-  ? bridge.legacy_gate_to_readiness_predicate
-  : [];
-assert(gateMappings.length === expectedLegacyGateMappings.length, `expected ${expectedLegacyGateMappings.length} legacy gate mappings`);
+const gateMappings = bridge.legacy_gate_to_readiness_predicate ?? [];
+assert(gateMappings.length === expectedLegacyGateMappings.length, 'legacy gate mapping count mismatch');
 assert(unique(gateMappings.map((item) => item.legacy_gate_id)), 'legacy bridge gate ids must be unique');
-assert(unique(gateMappings.map((item) => item.canonical_predicate_id)), 'canonical bridge predicates must be unique');
 for (let index = 0; index < expectedLegacyGateMappings.length; index += 1) {
   const [legacyGateId, canonicalPredicateId] = expectedLegacyGateMappings[index];
   const actual = gateMappings[index];
-  assert(actual?.legacy_gate_id === legacyGateId, `legacy gate mapping ${index} must remain ${legacyGateId}`);
-  assert(actual?.canonical_predicate_id === canonicalPredicateId, `${legacyGateId} must map to ${canonicalPredicateId}`);
-  assert(master.readiness_predicates?.includes(canonicalPredicateId), `${canonicalPredicateId} must exist in Master Blueprint V1`);
+  assert(actual?.legacy_gate_id === legacyGateId, `${legacyGateId} mapping missing`);
+  assert(actual?.canonical_predicate_id === canonicalPredicateId, `${legacyGateId} canonical predicate mismatch`);
+  assert(master.readiness_predicates?.includes(canonicalPredicateId), `${canonicalPredicateId} missing from Master Blueprint V1`);
 }
 
-const g12Passthrough = Array.isArray(bridge.legacy_gate_passthrough_only)
-  ? bridge.legacy_gate_passthrough_only
-  : [];
+const g12Passthrough = bridge.legacy_gate_passthrough_only ?? [];
 assert(g12Passthrough.length === 1, 'exactly one legacy passthrough gate is expected');
-assert(g12Passthrough[0]?.legacy_gate_id === 'G12_READY_FOR_DEVELOPMENT', 'G12 must remain the only legacy passthrough gate');
-assert(typeof g12Passthrough[0]?.reason === 'string' && g12Passthrough[0].reason.trim(), 'G12 passthrough requires an explicit rationale');
+assert(g12Passthrough[0]?.legacy_gate_id === 'G12_READY_FOR_DEVELOPMENT', 'legacy G12 must remain passthrough-only');
+assert((g12Passthrough[0]?.reason ?? '').includes('must never be relabeled'), 'legacy G12 separation rationale required');
 
-const implementedPredicates = bridge.canonical_predicates_implemented_by_bridge ?? [];
-const expectedImplementedPredicates = ['DEPENDENCY_CLOSURE','CRITICAL_TBD_CLOSURE','OWNERSHIP_CLOSURE'];
-assert(JSON.stringify(implementedPredicates) === JSON.stringify(expectedImplementedPredicates), 'implemented canonical predicate list mismatch');
-for (const predicate of implementedPredicates) {
+const expectedRfdPredicates = [
+  'DEPENDENCY_CLOSURE',
+  'CRITICAL_TBD_CLOSURE',
+  'OWNERSHIP_CLOSURE',
+  'QUALITY_REQUIREMENTS_DEFINED',
+  'TESTABILITY_READY',
+  'BASELINE_READY',
+  'HANDOFF_INTEGRITY'
+];
+const implementedPredicates = bridge.canonical_rfd_predicates_implemented ?? [];
+assert(JSON.stringify(implementedPredicates) === JSON.stringify(expectedRfdPredicates), 'canonical RFD predicate list mismatch');
+for (const predicate of expectedRfdPredicates) {
   assert(master.readiness_predicates?.includes(predicate), `${predicate} must exist in Master Blueprint V1`);
 }
 
 assert(bridge.dependency_closure_bridge_basis?.structural_graph === 'CANONICAL_D01_D16_HARD_REQUIRES', 'DependencyClosure structural basis mismatch');
-assert(bridge.dependency_closure_bridge_basis?.fulfilment === 'R7_PROJECT_REQUIREMENT_SATISFACTION_V1', 'DependencyClosure fulfilment bridge mismatch');
 assert(bridge.dependency_closure_bridge_basis?.accepted_unknown_satisfies_structural_requirement === false, 'ACCEPTED_UNKNOWN must not satisfy structural requirements');
-assert(bridge.dependency_closure_bridge_basis?.manual_ready_flag === false, 'DependencyClosure must not use a manual Ready flag');
+assert(bridge.dependency_closure_bridge_basis?.manual_ready_flag === false, 'DependencyClosure must not use manual Ready');
 
-const notYetDerivable = bridge.canonical_predicates_not_yet_derivable_from_r7 ?? [];
-const expectedNotYetDerivable = ['QUALITY_REQUIREMENTS_DEFINED','TESTABILITY_READY','BASELINE_READY','HANDOFF_INTEGRITY'];
-assert(JSON.stringify(notYetDerivable) === JSON.stringify(expectedNotYetDerivable), 'remaining non-derivable predicate list mismatch');
-for (const predicate of notYetDerivable) {
-  assert(master.readiness_predicates?.includes(predicate), `${predicate} must exist in Master Blueprint V1`);
+const implementedGates = bridge.canonical_formal_gates_implemented ?? [];
+assert(JSON.stringify(implementedGates) === JSON.stringify(['G4_RFD_LOT','G5_RFD_PROJECT']), 'implemented canonical Formal Gates mismatch');
+for (const gateId of implementedGates) {
+  assert(master.formal_gates?.some((gate) => gate.id === gateId), `${gateId} missing from Master Blueprint V1`);
 }
-for (const implemented of implementedPredicates) {
-  assert(!notYetDerivable.includes(implemented), `${implemented} cannot be both implemented and not derivable`);
-}
+const notImplementedGates = bridge.canonical_formal_gates_not_implemented_in_this_slice ?? [];
+assert(JSON.stringify(notImplementedGates) === JSON.stringify(['G0_BLUEPRINT_FIT','G1_IDEA_DECISION_READY','G2_GO_PROJECT','G3_PROJECT_BASELINE']), 'G0-G3 non-implementation boundary mismatch');
 
-const canonicalFormalGateIds = (master.formal_gates ?? []).map((gate) => gate.id);
-const notEmitted = bridge.canonical_formal_gates_not_emitted_by_bridge ?? [];
-assert(JSON.stringify(notEmitted) === JSON.stringify(canonicalFormalGateIds), 'bridge must emit none of the canonical Formal Gates during compatibility phase');
+for (const key of [
+  'derived_readiness_required',
+  'all_seven_rfd_predicates_must_pass',
+  'expected_definition_revision_required',
+  'expected_evaluation_fingerprint_required',
+  'human_authority_required',
+  'authorized_actor_must_be_idea_creator_or_workspace_owner_admin',
+  'freezes_lot_baseline_and_handoff_atomically'
+]) assert(bridge.g4_policy?.[key] === true, `G4 policy ${key} must be true`);
 
-assert(bridge.rules?.legacy_gate_ids_are_immutable_during_bridge === true, 'legacy Gate IDs must remain immutable during bridge');
-assert(bridge.rules?.legacy_g12_is_not_canonical_rfd === true, 'legacy G12 must not be relabeled as canonical RFD');
-assert(bridge.rules?.unknown_canonical_readiness_must_not_be_coerced_to_ready === true, 'unknown canonical readiness must never be coerced to READY');
+for (const key of [
+  'at_least_one_required_delivery_lot',
+  'all_required_lots_require_current_g4_approval',
+  'all_required_lots_must_match_current_definition_revision',
+  'project_rfd_manifest_integrity_required',
+  'expected_evaluation_fingerprint_required',
+  'human_authority_required',
+  'authorized_actor_must_be_idea_creator_or_workspace_owner_admin',
+  'legacy_project_status_is_not_mutated'
+]) assert(bridge.g5_policy?.[key] === true, `G5 policy ${key} must be true`);
+
+assert(bridge.rules?.legacy_gate_ids_are_immutable_during_bridge === true, 'legacy Gate IDs must remain immutable');
+assert(bridge.rules?.legacy_g12_is_not_canonical_rfd === true, 'legacy G12 must not become canonical RFD');
+assert(bridge.rules?.unknown_canonical_readiness_must_not_be_coerced_to_ready === true, 'unknown readiness must never be coerced to Ready');
 assert(bridge.rules?.manual_ready_flag_forbidden === true, 'manual Ready flag must remain forbidden');
-assert(bridge.rules?.bridge_is_read_only === true, 'runtime bridge must remain read-only');
-assert(bridge.rules?.runtime_activation_requires_explicit_followup_migration === true, 'runtime activation must require an explicit migration');
+assert(bridge.rules?.direct_browser_access_to_canonical_runtime_forbidden === true, 'direct browser access must remain forbidden');
+assert(bridge.rules?.service_side_mutations_enabled === true, 'canonical mutations must be service-side');
+assert(bridge.rules?.human_actor_identity_must_come_from_authenticated_server_adapter === true, 'human actor identity must come from authenticated adapter');
+assert(bridge.rules?.runtime_activation_requires_explicit_adapter_cutover === true, 'adapter cutover must remain explicit');
 
 const r7Requirements = requirementMap.requirements ?? [];
 assert(r7Requirements.length === 28, `expected 28 R7 requirement mappings, got ${r7Requirements.length}`);
 assert(unique(r7Requirements.map((item) => item.requirement_id)), 'R7 requirement mapping must remain unique');
 
-for (const marker of [
+requireMarkers(coreGraphMigration, 'core graph migration', [
   'create table if not exists app_private.project_blueprint_packs_v1',
   'create table if not exists app_private.project_node_definitions_v1',
   'create table if not exists app_private.project_dependency_edges_v1',
   "'SITE_VITRINE','1.0-bridge-r7'",
   'project_blueprint_has_hard_cycle_v1',
   'get_project_definition_canonical_graph_v1'
-]) {
-  assert(coreGraphMigration.includes(marker), `core graph migration marker missing: ${marker}`);
-}
-
-for (const marker of [
+]);
+requireMarkers(deliveryClosureMigration, 'DeliveryLot/DependencyClosure migration', [
   'create table if not exists app_private.project_delivery_lots_v1',
   'create table if not exists app_private.project_delivery_lot_nodes_v1',
   'get_blueprint_dependency_closure_v1',
-  'get_project_delivery_lot_dependency_closure_v1',
-  "'canonical_dependency_closure_predicate','PARTIAL_NOT_EVALUABLE'"
-]) {
-  assert(deliveryClosureMigration.includes(marker), `DeliveryLot/DependencyClosure migration marker missing: ${marker}`);
-}
-
-for (const marker of [
-  "add column if not exists rfd_criticality text not null default 'REQUIRED'",
+  'get_project_delivery_lot_dependency_closure_v1'
+]);
+requireMarkers(closurePredicatesMigration, 'closure predicate migration', [
   'create table if not exists app_private.project_ownership_assignments_v1',
   'create table if not exists app_private.project_conflict_records_v1',
   "resolution_level in ('UNRESOLVED','WORKING_ASSUMPTION','AI_PROPOSED','ACCEPTED_UNKNOWN')",
   "'dependency_closure_predicate'",
   "'critical_tbd_closure_predicate'",
-  "'ownership_closure_predicate'",
-  "'fulfilment_mapping','BRIDGED_FROM_R7_PROJECT_REQUIREMENT_SATISFACTION_V1'"
-]) {
-  assert(closurePredicatesMigration.includes(marker), `closure predicates migration marker missing: ${marker}`);
-}
+  "'ownership_closure_predicate'"
+]);
+requireMarkers(qualityTestabilityMigration, 'quality/testability migration', [
+  'create table if not exists app_private.project_readiness_node_policy_v1',
+  "'QUALITY_REQUIREMENTS_DEFINED'",
+  "'TESTABILITY_READY'",
+  "acceptance_rule <> '{}'::jsonb",
+  "testability_mode='EXPERT_SIGNOFF'"
+]);
+requireMarkers(baselineHandoffMigration, 'baseline/handoff migration', [
+  'create table if not exists app_private.project_baseline_freezes_v1',
+  'create table if not exists app_private.project_handoff_manifests_v1',
+  'create_project_delivery_lot_baseline_candidate_v1',
+  'create_project_delivery_lot_handoff_manifest_v1',
+  "'BASELINE_READY'",
+  "'HANDOFF_INTEGRITY'"
+]);
+requireMarkers(g4Migration, 'G4 migration', [
+  'create table if not exists app_private.project_canonical_gate_states_v1',
+  "where gate_id='G4_RFD_LOT'",
+  'get_project_delivery_lot_rfd_readiness_v1',
+  'approve_project_delivery_lot_rfd_v1',
+  'G4_HUMAN_AUTHORITY_REQUIRED',
+  'STALE_G4_READINESS',
+  "status='FROZEN',frozen_at=now(),frozen_by=p_authorized_by",
+  'grant execute on function public.approve_project_delivery_lot_rfd_v1(uuid,bigint,text,uuid) to service_role'
+]);
+requireMarkers(g5Migration, 'G5 migration', [
+  'create table if not exists app_private.project_rfd_manifests_v1',
+  "where gate_id='G5_RFD_PROJECT'",
+  'get_project_rfd_pre_manifest_readiness_v1',
+  'create_project_rfd_manifest_candidate_v1',
+  'get_project_rfd_readiness_v1',
+  'approve_project_rfd_v1',
+  'G5_HUMAN_AUTHORITY_REQUIRED',
+  'STALE_G5_READINESS',
+  "'legacy_project_status_unchanged',true",
+  'grant execute on function public.approve_project_rfd_v1(uuid,bigint,text,uuid) to service_role'
+]);
 
 if (!process.exitCode) {
   console.log('[canonical-runtime-bridge-v1] PASS');
@@ -178,10 +250,9 @@ if (!process.exitCode) {
     r7_requirement_mappings: r7Requirements.length,
     canonical_nodes: bridge.graph_contract.canonical_node_count,
     dependency_edges: bridge.graph_contract.dependency_edge_count,
-    implemented_canonical_predicates: implementedPredicates,
-    remaining_predicates: notYetDerivable,
-    canonical_formal_gates_emitted: 0,
-    delivery_lots_runtime: bridge.coverage.delivery_lots,
-    dependency_closure_runtime: bridge.coverage.dependency_closure
+    canonical_rfd_predicates: implementedPredicates,
+    canonical_formal_gates_implemented: implementedGates,
+    canonical_formal_gates_pending: notImplementedGates,
+    browser_direct_access: false
   }));
 }
