@@ -35,9 +35,11 @@ try{
 
 assert(bridge.schema_version==='1.0','bridge schema version mismatch');
 assert(bridge.contract_id==='PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE','bridge id mismatch');
-assert(bridge.contract_version==='1.6','bridge contract_version must be 1.6');
+assert(bridge.contract_version==='1.7','bridge contract_version must be 1.7');
 assert(bridge.status==='CANONICAL_MIGRATION_CONTRACT','bridge status mismatch');
 assert(bridge.target_contract==='4B4C_PROJECT_MASTER_BLUEPRINT_V1','bridge target mismatch');
+assert(bridge.coverage?.canonical_preproject_worker_adapter==='P4_PRODUCTION_CERTIFIED_BUILD_557','p4 production certification coverage mismatch');
+assert(bridge.coverage?.canonical_g3_browser_promotion==='SAFE_SERVER_DERIVED_V3_PRODUCTION_CERTIFIED','G3 production coverage mismatch');
 
 const masterFormalGates=(master.formal_gates??[]).map(gate=>gate.id);
 const expectedFormalGates=['G0_BLUEPRINT_FIT','G1_IDEA_DECISION_READY','G2_GO_PROJECT','G3_PROJECT_BASELINE','G4_RFD_LOT','G5_RFD_PROJECT'];
@@ -78,19 +80,26 @@ const g2=bridge.canonical_preproject_gate_policy?.G2_GO_PROJECT;
 for(const key of ['immutable_human_decision_required','decision_must_reference_current_decision_package','decision_must_match_current_g1_evaluation_fingerprint','approve_outcome_requires_launch_path','decision_actor_injected_from_authenticated_server_adapter'])assert(g2?.[key]===true,`G2 policy ${key} must be true`);
 
 const g3=bridge.canonical_preproject_gate_policy?.G3_PROJECT_BASELINE;
-for(const key of ['canonical_g2_required','versioned_project_definition_baseline_required','baseline_manifest_completeness_required','authorized_actor_must_be_idea_creator_or_workspace_owner_admin','actor_revalidated_in_database','browser_promotion_exposed_in_p4_candidate','promotion_actor_injected_from_authenticated_server_adapter','baseline_manifest_server_derived','promotion_diff_server_derived','artifact_promotions_server_derived','client_manifest_control_forbidden','client_promotion_diff_control_forbidden','client_artifact_promotion_control_forbidden','unmapped_project_promotable_artifact_blocks'])assert(g3?.[key]===true,`G3 policy ${key} must be true`);
+for(const key of ['canonical_g2_required','versioned_project_definition_baseline_required','baseline_manifest_completeness_required','authorized_actor_must_be_idea_creator_or_workspace_owner_admin','actor_revalidated_in_database','browser_promotion_exposed','promotion_actor_injected_from_authenticated_server_adapter','baseline_manifest_server_derived','promotion_diff_server_derived','artifact_promotions_server_derived','client_manifest_control_forbidden','client_promotion_diff_control_forbidden','client_artifact_promotion_control_forbidden','unmapped_project_promotable_artifact_blocks'])assert(g3?.[key]===true,`G3 policy ${key} must be true`);
 assert(g3?.promotion_server_rpc==='promote_canonical_approved_idea_to_project_definition_v3','G3 RPC must be v3');
 assert(g3?.baseline_derivation==='SERVER_DERIVED_FROM_FROZEN_IDEA_DECISION','G3 baseline derivation mismatch');
 assert(g3?.concept_artifact_policy==='PROMOTE_AND_DEEPEN_CONCEPT_NOT_FINAL_SPEC','G3 concept promotion policy mismatch');
 assert(g3?.server_derived_migration==='20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1','G3 migration marker mismatch');
+assert(g3?.production_certified_build===557,'G3 production-certified build mismatch');
 
 assert(bridge.runtime_objects?.canonical_project_baseline_builder==='app_private.build_canonical_project_baseline_payload_v1(uuid,uuid,bigint)','G3 builder runtime object mismatch');
 assert(bridge.runtime_objects?.canonical_project_baseline_promotion==='public.promote_canonical_approved_idea_to_project_definition_v3(uuid,uuid,uuid,bigint,text)','G3 promotion runtime object mismatch');
 
-assert(bridge.production_contract?.certified_runtime_version==='v4.5.16-project-definition-preproject-p3','current certified production runtime must stay p3 until p4 cutover');
-assert(bridge.production_contract?.certified_transport_build===556,'current certified production build must stay 556');
-assert(JSON.stringify(bridge.production_contract?.certified_idea_commands)===JSON.stringify(['canonical.read','decision.record']),'certified p3 command set mismatch');
-assert(bridge.production_contract?.certified_g3_browser_promotion_exposed===false,'certified p3 must still report G3 browser promotion disabled');
+const production=bridge.production_contract;
+assert(production?.certified_runtime_version==='v4.5.17-project-definition-g3-derived-p4','certified production runtime must be p4');
+assert(production?.certified_transport_build===557,'certified production build must be 557');
+assert(production?.certified_idea_adapter_code==='0.2.0','certified adapter code mismatch');
+assert(JSON.stringify(production?.certified_idea_commands)===JSON.stringify(['canonical.read','decision.record','project.promote']),'certified p4 command set mismatch');
+assert(production?.certified_g3_browser_promotion_exposed===true,'certified p4 G3 browser promotion must be enabled');
+assert(production?.certified_g3_baseline_derivation==='SERVER_DERIVED_FROM_FROZEN_IDEA_DECISION','certified G3 derivation mismatch');
+assert(production?.certified_g3_manifest_client_controlled===false,'certified client manifest control forbidden');
+assert(production?.certified_g3_promotion_diff_client_controlled===false,'certified client promotion-diff control forbidden');
+assert(production?.certified_g3_artifact_promotions_client_controlled===false,'certified client artifact-promotion control forbidden');
 
 const adapter=bridge.adapter_contract;
 assert(adapter?.repository_runtime_version==='v4.5.17-project-definition-g3-derived-p4','p4 repository runtime mismatch');
@@ -103,7 +112,7 @@ assert(adapter?.g3_manifest_client_controlled===false,'client manifest control f
 assert(adapter?.g3_promotion_diff_client_controlled===false,'client promotion diff control forbidden');
 assert(adapter?.g3_artifact_promotions_client_controlled===false,'client artifact promotions control forbidden');
 assert(adapter?.service_role_browser_exposed===false,'service role must never be browser exposed');
-assert(adapter?.production_cutover_certified===false,'p4 must remain uncertified before live cutover');
+assert(adapter?.production_cutover_certified===true,'p4 production cutover must be certified');
 
 assert(bridge.legacy_gate_passthrough_only?.[0]?.legacy_gate_id==='G12_READY_FOR_DEVELOPMENT','legacy G12 must remain passthrough-only');
 assert((bridge.legacy_gate_passthrough_only?.[0]?.reason??'').includes('must never be relabeled'),'legacy G12 separation rationale required');
@@ -138,12 +147,12 @@ if(!process.exitCode){
   console.log(JSON.stringify({
     contract_version:bridge.contract_version,
     certified_production:bridge.production_contract.certified_runtime_version,
-    repository_candidate:bridge.adapter_contract.repository_runtime_version,
+    certified_build:bridge.production_contract.certified_transport_build,
     canonical_formal_gates:expectedFormalGates.length,
     preproject_predicates:preprojectPredicates.length,
     rfd_predicates:masterRfd.length,
     g3_server_derived:true,
     g3_client_manifest_controlled:false,
-    p4_cutover_certified:false
+    p4_cutover_certified:true
   }));
 }
