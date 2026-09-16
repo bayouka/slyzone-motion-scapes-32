@@ -5,11 +5,11 @@ import { SupabaseBrowserClient } from './supabase-client.js';
 
   const cfg=window.__4B4C_CONFIG__||{};
   const api=new SupabaseBrowserClient({url:cfg.supabaseUrl,publishableKey:cfg.supabasePublishableKey});
-  const PREVIEW_VERSION='0.1.0';
+  const PREVIEW_VERSION='0.2.0';
   const previewEnabled=()=>new URLSearchParams(location.search).get('workspacev3')==='1'||localStorage.getItem('2b2c.idea.workspace.v3')==='1';
   const route=()=>String(location.hash||'#/').replace(/^#/,'');
   const content=()=>document.querySelector('.live-content');
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const attr=esc;
   let renderToken=0;
 
@@ -23,14 +23,6 @@ import { SupabaseBrowserClient } from './supabase-client.js';
     IDEA_ENGINE:{label:'Idée en maturation',tone:'active',eyebrow:'Dossier de décision'},
     PROJECT_DEFINITION:{label:'Définition projet',tone:'project',eyebrow:'Après validation de l’idée'},
     BUILD_READY:{label:'Prêt à développer',tone:'ready',eyebrow:'Handoff validé'}
-  };
-
-  const gateLabels={
-    G8_PROJECT_PRODUCT_DEFINITION_STABLE:'Produit',
-    G9_PROJECT_EXPERIENCE_DEFINITION_STABLE:'Expérience',
-    G10_PROJECT_TECH_NFR_STABLE:'Tech & qualité',
-    G11_TRACEABILITY_AND_ACCEPTANCE_READY:'Acceptation',
-    G12_READY_FOR_DEVELOPMENT:'Build Ready'
   };
 
   function artifactLabel(key=''){
@@ -114,8 +106,8 @@ import { SupabaseBrowserClient } from './supabase-client.js';
       title='L’idée approuvée est devenue une définition de projet';
       text=projectReq.materialized?`${projectReq.validated_count||0} éléments applicables sont stabilisés ; ${projectReq.open_blocker_count||0} blocage explicite reste ouvert.`:'La baseline approuvée est préservée. La définition produit, expérience, technique et qualité peut être approfondie sans repartir de zéro.';
     }else if(mode==='BUILD_READY'){
-      title='Le handoff Build Ready est figé';
-      text='Les exigences applicables, les artefacts de build et l’approbation formelle sont liés à un snapshot versionné. Cela ne crée toujours pas automatiquement une roadmap d’exécution.';
+      title='Le handoff canonique est figé';
+      text='Les lots requis, leurs baselines, leurs handoffs et l’autorisation projet G5 sont liés à la révision courante. Cela ne crée toujours pas automatiquement une roadmap d’exécution.';
     }else if(mode==='BLUEPRINT_MISMATCH'){
       title='Le moteur s’est arrêté au bon endroit';
       text='2b2c a détecté que le Blueprint actuellement disponible ne couvre pas correctement cette idée. Continuer comme si c’était un site vitrine aurait créé un faux cadrage.';
@@ -162,8 +154,15 @@ import { SupabaseBrowserClient } from './supabase-client.js';
 
   function projectDefinition(p){
     const pd=p.project_definition;if(!pd)return '';
-    const gates=pd.gates||{};
-    return `<section class="iwv3-section" id="iwv3-project"><div class="iwv3-section-head"><div><span class="iwv3-section-kicker">Après le GO</span><h2>Définition du projet</h2></div><small>Révision ${pd.definition_revision}</small></div><div class="iwv3-gates">${Object.entries(gateLabels).map(([id,label])=>{const g=gates[id];return `<div class="${g?.status==='READY'?'ready':''}"><span>${esc(label)}</span><strong>${g?.status==='READY'?'Stable':'À approfondir'}</strong></div>`}).join('')}</div><p class="iwv3-note">Ces contrôles sont des garanties internes de dépendance et de qualité, pas une checklist que vous devez remplir dans l’ordre.</p></section>`;
+    const delivery=p.delivery||{};
+    const required=Number(delivery.required_lot_count||0);
+    const approved=Number(delivery.current_g4_approved_count||0);
+    const blocking=Number(delivery.blocking_required_lot_count||0);
+    const projectReady=delivery.project_rfd_authorized===true;
+    const hasLots=Number(delivery.lot_count||0)>0;
+    const lotsReady=required>0&&blocking===0&&approved===required;
+    const projectStatus=projectReady?'Prêt à développer':hasLots?'Handoff projet à finaliser':'Lots de livraison à définir';
+    return `<section class="iwv3-section" id="iwv3-project"><div class="iwv3-section-head"><div><span class="iwv3-section-kicker">Après le GO</span><h2>Définition du projet</h2></div><small>Révision ${pd.definition_revision}</small></div><div class="iwv3-gates"><div class="${lotsReady?'ready':''}"><span>Lots requis · G4</span><strong>${required?`${approved}/${required} validé${approved>1?'s':''}`:'À définir'}</strong></div><div class="${projectReady?'ready':''}"><span>Handoff projet · G5</span><strong>${esc(projectStatus)}</strong></div></div><p class="iwv3-note">Autorité de readiness : G4 par lot puis G5 au niveau projet, toujours liés à la révision courante. Les anciennes gates G8→G12 restent uniquement un bridge de compatibilité interne et ne déterminent plus le statut “Prêt à développer”.</p></section>`;
   }
 
   function semanticNav(p){
