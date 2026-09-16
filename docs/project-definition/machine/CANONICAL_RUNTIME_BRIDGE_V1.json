@@ -11,7 +11,7 @@
     "core_graph": "IMPLEMENTED_SERVICE_ONLY",
     "canonical_node_state_projection": "IMPLEMENTED_R7_BRIDGE",
     "delivery_lots": "SCHEMA_IMPLEMENTED_SERVICE_ONLY",
-    "dependency_closure": "STRUCTURAL_IMPLEMENTED_STATE_DIAGNOSTICS_PARTIAL",
+    "dependency_closure": "IMPLEMENTED_PREDICATES_SERVICE_ONLY",
     "canonical_formal_gates": "NOT_RUNTIME_COMPLETE"
   },
   "runtime_objects": {
@@ -20,6 +20,8 @@
     "dependency_edges": "app_private.project_dependency_edges_v1",
     "delivery_lots": "app_private.project_delivery_lots_v1",
     "delivery_lot_nodes": "app_private.project_delivery_lot_nodes_v1",
+    "ownership_assignments": "app_private.project_ownership_assignments_v1",
+    "conflict_records": "app_private.project_conflict_records_v1",
     "canonical_graph_read": "public.get_project_definition_canonical_graph_v1(uuid)",
     "blueprint_dependency_closure": "app_private.get_blueprint_dependency_closure_v1(text,text,text[])",
     "delivery_lot_dependency_closure": "public.get_project_delivery_lot_dependency_closure_v1(uuid)"
@@ -55,23 +57,27 @@
   "legacy_gate_passthrough_only": [
     {
       "legacy_gate_id": "G12_READY_FOR_DEVELOPMENT",
-      "reason": "Legacy R7 project-level build-ready semantics predate canonical DeliveryLot, full DependencyClosure and G4/G5. It must remain visible as legacy evidence only and must never be relabeled as G4_RFD_LOT or G5_RFD_PROJECT."
+      "reason": "Legacy R7 project-level build-ready semantics predate canonical DeliveryLot and G4/G5. It remains legacy evidence only and must never be relabeled as G4_RFD_LOT or G5_RFD_PROJECT."
     }
   ],
+  "canonical_predicates_implemented_by_bridge": [
+    "DEPENDENCY_CLOSURE",
+    "CRITICAL_TBD_CLOSURE",
+    "OWNERSHIP_CLOSURE"
+  ],
+  "dependency_closure_bridge_basis": {
+    "structural_graph": "CANONICAL_D01_D16_HARD_REQUIRES",
+    "fulfilment": "R7_PROJECT_REQUIREMENT_SATISFACTION_V1",
+    "accepted_unknown_satisfies_structural_requirement": false,
+    "ownership": "R7_OWNER_OR_ACCEPTED_AUTHORITY_PLUS_NATIVE_ASSIGNMENTS",
+    "conflicts": "CANONICAL_PROJECT_CONFLICT_RECORDS_V1",
+    "manual_ready_flag": false
+  },
   "canonical_predicates_not_yet_derivable_from_r7": [
     "QUALITY_REQUIREMENTS_DEFINED",
     "TESTABILITY_READY",
-    "DEPENDENCY_CLOSURE",
-    "CRITICAL_TBD_CLOSURE",
-    "OWNERSHIP_CLOSURE",
     "BASELINE_READY",
     "HANDOFF_INTEGRITY"
-  ],
-  "dependency_closure_partial_boundaries": [
-    "CRITICAL_TBD",
-    "OWNERSHIP_CLOSURE",
-    "CONFLICTS",
-    "CANONICAL_FULFILMENT"
   ],
   "canonical_formal_gates_not_emitted_by_bridge": [
     "G0_BLUEPRINT_FIT",
