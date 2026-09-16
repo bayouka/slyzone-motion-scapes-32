@@ -39,6 +39,7 @@ jobs:
           node --check site/lab2/idea-design.js
           node --check site/lab2/idea-mockups.js
           node --check site/lab2/idea-presentation.js
+          node --check site/lab2/idea-pptx.js
           node --check src/lab2-idea-understanding.js
           node --check src/lab2-idea-research.js
           node --check src/lab2-idea-improvements.js
