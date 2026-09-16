@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Accès au Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./login.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <div class="eyebrow">4b4c2 · Preview isolée</div>
+      <h1>Tester l’Atelier Idée</h1>
+      <p>Cette preview utilise Supabase uniquement pour vérifier ton identité. Elle n’expose aucune API métier de 4b4c et n’écrit aucune donnée Lab en base.</p>
+
+      <div class="status" id="statusBox">Vérification de la session…</div>
+
+      <form id="loginForm" hidden>
+        <label>Email<input id="email" type="email" autocomplete="email" required /></label>
+        <label>Mot de passe<input id="password" type="password" autocomplete="current-password" required /></label>
+        <button class="primary" type="submit">Se connecter</button>
+      </form>
+
+      <div class="actions" id="connectedActions" hidden>
+        <a class="primary link" href="./idea-studio.html">Ouvrir l’Atelier Idée</a>
+        <button class="secondary" id="logoutButton" type="button">Se déconnecter</button>
+      </div>
+
+      <p class="error" id="errorBox" hidden></p>
+      <p class="note">Si ton compte n’est pas encore autorisé côté Lab, tu pourras te connecter mais les appels IA resteront bloqués. Le site 4b4c actuel n’est pas affecté.</p>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./login.js" defer></script>
+</body>
+</html>
