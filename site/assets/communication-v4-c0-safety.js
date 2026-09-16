@@ -1,6 +1,6 @@
 import { SupabaseBrowserClient } from './supabase-client.js';
 
-const VERSION = '2b2c communication v4 c0 safety v0.1.0';
+const VERSION = '2b2c communication v4 c0 safety v0.1.1';
 const config = window.__4B4C_CONFIG__ || {};
 const api = new SupabaseBrowserClient({ url: config.supabaseUrl, publishableKey: config.supabasePublishableKey });
 const ROOT_ID = 'communication-workspace-v1';
@@ -25,7 +25,7 @@ function isCreateForm(type) { return ['direct','group','topic','meeting'].includ
 async function conversationMeta(id) {
   if (!id) return null;
   if (metaCache.has(id)) return metaCache.get(id);
-  const row = one(await api.select('conversations', `select=id,kind,is_general,project_id,linked_project_id& id=eq.${id}&limit=1`.replace('& ', '&')));
+  const row = one(await api.select('conversations', `select=id,kind,is_general,project_id,linked_project_id&id=eq.${id}&limit=1`));
   if (row) metaCache.set(id, row);
   return row || null;
 }
@@ -186,17 +186,18 @@ document.addEventListener('submit', (event) => {
   root()?.querySelector('[data-c0-call-modal]')?.remove();
 }, true);
 
-window.addEventListener('hashchange', () => {
+window.addEventListener('hashchange', (event) => {
   const r = route();
   const pendingAt = Number(sessionStorage.getItem(PENDING_CREATE_KEY) || 0);
   if (r.active && r.conversationId && pendingAt && Date.now() - pendingAt <= CREATE_TTL_MS) {
+    event.stopImmediatePropagation();
     sessionStorage.removeItem(PENDING_CREATE_KEY);
     location.reload();
     return;
   }
   if (pendingAt && Date.now() - pendingAt > CREATE_TTL_MS) sessionStorage.removeItem(PENDING_CREATE_KEY);
   scheduleReconcile();
-});
+}, true);
 
 window.addEventListener('focus', scheduleReconcile);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleReconcile(); });
