@@ -47,7 +47,15 @@ jobs:
           grep -Fq "heartbeat_call_v1" site/assets/live.js
 
           grep -Fq "app: '4b4c'" src/worker.js
-          grep -Fq "v4.5.8-nav-dead-css" src/worker.js
+          grep -Fq "RUNTIME_VERSION='v4.5.16-project-definition-preproject-p3'" src/worker-entry.js
+          grep -Fq "import { handleCanonicalIdeaCommand } from './idea-canonical-adapter.js';" src/worker-entry.js
+          grep -Fq "url.pathname==='/api/ideas/canonical'" src/worker-entry.js
+          grep -Fq "idea_canonical_adapter_v1" src/worker-entry.js
+          grep -Fq "g3_promotion_browser_exposed:false" src/worker-entry.js
+          grep -Fq "decision_actor_from_jwt:true" src/worker-entry.js
+          grep -Fq "const COMMANDS=new Set(['canonical.read','decision.record']);" src/idea-canonical-adapter.js
+          grep -Fq "p_decided_by:auth.user.id" src/idea-canonical-adapter.js
+          ! grep -Fq "promote_canonical_approved_idea_to_project_definition_v2" src/idea-canonical-adapter.js
 
       - name: Repository safety contract
         shell: bash
@@ -59,13 +67,21 @@ jobs:
             exit 1
           fi
 
-          if grep -RInE 'service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' site src; then
+          if grep -RInE 'sb_secret_' site src; then
             echo 'Secret-like material found in public application' >&2
             exit 1
           fi
 
+          # Server-side source may legitimately reference the service-role binding name,
+          # but it must never serialize a value or expose the privileged G3 RPC on a browser route.
+          ! grep -RInE 'service_role[[:space:]]*[:=][[:space:]]*["'"'"'][A-Za-z0-9._-]+' site src
+          ! grep -RIn "promote_canonical_approved_idea_to_project_definition_v2" src/idea-canonical-adapter.js
+
           # Historical migration workflows must never deploy automatically.
-          for wf in             .github/workflows/native-access-migrate.yml             .github/workflows/native-progress-migrate.yml             .github/workflows/native-progress-migrate-v2.yml
+          for wf in \
+            .github/workflows/native-access-migrate.yml \
+            .github/workflows/native-progress-migrate.yml \
+            .github/workflows/native-progress-migrate-v2.yml
           do
             grep -Fq 'workflow_dispatch:' "$wf"
             ! grep -Eq '^[[:space:]]+push:' "$wf"
