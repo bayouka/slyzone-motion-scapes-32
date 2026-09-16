@@ -1,0 +1,214 @@
+{
+  "schema_version": "1.0",
+  "mapping_id": "SITE_VITRINE_R7_REQUIREMENT_TO_CANONICAL_DOMAIN",
+  "mapping_version": "1.0",
+  "status": "CANONICAL_MIGRATION_CONTRACT",
+  "source_runtime": "R7_BUILD_READY_RUNTIME",
+  "source_contract": "SITE_VITRINE_LEGACY_D01_D22",
+  "target_contract": "4B4C_PROJECT_MASTER_BLUEPRINT_V1_D01_D16",
+  "migration_policy": {
+    "rewrite_requirement_id": false,
+    "rewrite_legacy_gate_id": false,
+    "preserve_legacy_runtime_semantics": true,
+    "canonical_classification_is_parallel": true,
+    "runtime_activation_implicit": false
+  },
+  "requirements": [
+    {
+      "requirement_id": "SV.PRJ.APPROVED_BASELINE",
+      "legacy_domain_id": "PRJ",
+      "canonical_primary_domain_id": "D06",
+      "canonical_domain_ids": ["D06", "D16"],
+      "rationale": "Approved baseline is first an authority/governance commitment; its frozen delivery identity also informs D16."
+    },
+    {
+      "requirement_id": "SV.D08.JOURNEY_SPEC",
+      "legacy_domain_id": "D08",
+      "canonical_primary_domain_id": "D10",
+      "canonical_domain_ids": ["D10"],
+      "rationale": "Journeys and service flow belong to canonical Information Architecture & UX."
+    },
+    {
+      "requirement_id": "SV.D09.PAGE_MANIFEST",
+      "legacy_domain_id": "D09",
+      "canonical_primary_domain_id": "D10",
+      "canonical_domain_ids": ["D10"],
+      "rationale": "Page/screen structure and navigation belong to canonical Information Architecture & UX."
+    },
+    {
+      "requirement_id": "SV.D10.CONTENT_REQUIREMENTS",
+      "legacy_domain_id": "D10",
+      "canonical_primary_domain_id": "D08",
+      "canonical_domain_ids": ["D08"],
+      "rationale": "Content requirements and asset needs belong to canonical Content & Assets."
+    },
+    {
+      "requirement_id": "SV.D11.SEO_PAGE_MAP",
+      "legacy_domain_id": "D11",
+      "canonical_primary_domain_id": "D09",
+      "canonical_domain_ids": ["D09"],
+      "rationale": "SEO page mapping belongs to canonical SEO & Discoverability."
+    },
+    {
+      "requirement_id": "SV.D11.REDIRECT_MAP",
+      "legacy_domain_id": "D11",
+      "canonical_primary_domain_id": "D09",
+      "canonical_domain_ids": ["D09"],
+      "rationale": "Redirect and migration preservation belong to canonical SEO & Discoverability."
+    },
+    {
+      "requirement_id": "SV.D12.FUNCTIONAL_REQUIREMENTS",
+      "legacy_domain_id": "D12",
+      "canonical_primary_domain_id": "D12",
+      "canonical_domain_ids": ["D12"],
+      "rationale": "Functional requirements remain canonical Functional Behaviour."
+    },
+    {
+      "requirement_id": "SV.D12.UI_STATES",
+      "legacy_domain_id": "D12",
+      "canonical_primary_domain_id": "D12",
+      "canonical_domain_ids": ["D12", "D11"],
+      "rationale": "Functional UI states are governed by Functional Behaviour; visual expression may be consumed by Brand, UI & Interaction."
+    },
+    {
+      "requirement_id": "SV.D12.BUSINESS_RULES",
+      "legacy_domain_id": "D12",
+      "canonical_primary_domain_id": "D12",
+      "canonical_domain_ids": ["D12"],
+      "rationale": "Business rules remain canonical Functional Behaviour."
+    },
+    {
+      "requirement_id": "SV.D13.CONTENT_DATA_MODEL",
+      "legacy_domain_id": "D13",
+      "canonical_primary_domain_id": "D13",
+      "canonical_domain_ids": ["D13", "D08"],
+      "rationale": "Persisted content/data structure belongs to Data & Integrations while editorial ownership is consumed by Content & Assets."
+    },
+    {
+      "requirement_id": "SV.D13.ROLE_PERMISSION_MATRIX",
+      "legacy_domain_id": "D13",
+      "canonical_primary_domain_id": "D13",
+      "canonical_domain_ids": ["D13", "D06"],
+      "rationale": "Data/application permissions belong to Data & Integrations; authority semantics may also inform Governance & Decisions."
+    },
+    {
+      "requirement_id": "SV.D14.INTEGRATION_CONTRACTS",
+      "legacy_domain_id": "D14",
+      "canonical_primary_domain_id": "D13",
+      "canonical_domain_ids": ["D13"],
+      "rationale": "APIs and external service contracts consolidate in Data & Integrations."
+    },
+    {
+      "requirement_id": "SV.D15.WIREFRAME_BASELINE",
+      "legacy_domain_id": "D15",
+      "canonical_primary_domain_id": "D10",
+      "canonical_domain_ids": ["D10", "D11"],
+      "rationale": "Wireframes primarily encode structure, hierarchy and UX; downstream visual treatment is D11."
+    },
+    {
+      "requirement_id": "SV.D15.DESIGN_DEFINITION",
+      "legacy_domain_id": "D15",
+      "canonical_primary_domain_id": "D11",
+      "canonical_domain_ids": ["D11"],
+      "rationale": "Visual direction, components and design-system definition belong to Brand, UI & Interaction."
+    },
+    {
+      "requirement_id": "SV.D15.RESPONSIVE_BEHAVIOR",
+      "legacy_domain_id": "D15",
+      "canonical_primary_domain_id": "D11",
+      "canonical_domain_ids": ["D11", "D10"],
+      "rationale": "Responsive component/interaction behaviour is D11 while structural responsive UX also informs D10."
+    },
+    {
+      "requirement_id": "SV.D16.DELIVERY_APPROACH",
+      "legacy_domain_id": "D16",
+      "canonical_primary_domain_id": "D14",
+      "canonical_domain_ids": ["D14", "D16"],
+      "rationale": "Legacy technical delivery approach primarily describes platform/operations; handoff implications also feed canonical D16."
+    },
+    {
+      "requirement_id": "SV.D16.ARCHITECTURE",
+      "legacy_domain_id": "D16",
+      "canonical_primary_domain_id": "D14",
+      "canonical_domain_ids": ["D14"],
+      "rationale": "Technical architecture belongs to canonical Architecture & Operations."
+    },
+    {
+      "requirement_id": "SV.D16.ENV_HOSTING_OPS",
+      "legacy_domain_id": "D16",
+      "canonical_primary_domain_id": "D14",
+      "canonical_domain_ids": ["D14"],
+      "rationale": "Environment, hosting and operations belong to canonical Architecture & Operations."
+    },
+    {
+      "requirement_id": "SV.D17.PRIVACY_SECURITY",
+      "legacy_domain_id": "D17",
+      "canonical_primary_domain_id": "D15",
+      "canonical_domain_ids": ["D15"],
+      "rationale": "Privacy and security consolidate in canonical Quality, Risk & Compliance."
+    },
+    {
+      "requirement_id": "SV.D17.EXPERT_SIGNOFF",
+      "legacy_domain_id": "D17",
+      "canonical_primary_domain_id": "D15",
+      "canonical_domain_ids": ["D15", "D06"],
+      "rationale": "Expert signoff verifies a D15 concern while its authority provenance also informs D06."
+    },
+    {
+      "requirement_id": "SV.D18.ACCESSIBILITY_TARGET",
+      "legacy_domain_id": "D18",
+      "canonical_primary_domain_id": "D15",
+      "canonical_domain_ids": ["D15"],
+      "rationale": "Accessibility quality targets consolidate in canonical Quality, Risk & Compliance."
+    },
+    {
+      "requirement_id": "SV.D18.PERFORMANCE_RELIABILITY",
+      "legacy_domain_id": "D18",
+      "canonical_primary_domain_id": "D15",
+      "canonical_domain_ids": ["D15", "D14"],
+      "rationale": "Performance/reliability targets are quality requirements; operational mechanisms may be implemented in D14."
+    },
+    {
+      "requirement_id": "SV.D19.MEASUREMENT_PLAN",
+      "legacy_domain_id": "D19",
+      "canonical_primary_domain_id": "D14",
+      "canonical_domain_ids": ["D14", "D02", "D15"],
+      "rationale": "Instrumentation/observability is operational D14; business success measures D02 and verification telemetry D15 consume it."
+    },
+    {
+      "requirement_id": "SV.D20.ACCEPTANCE_CRITERIA",
+      "legacy_domain_id": "D20",
+      "canonical_primary_domain_id": "D15",
+      "canonical_domain_ids": ["D15", "D16"],
+      "rationale": "Acceptance criteria define verifiable quality conditions and are consumed by Delivery/Handoff readiness."
+    },
+    {
+      "requirement_id": "SV.D20.SOURCE_OF_TRUTH_MANIFEST",
+      "legacy_domain_id": "D20",
+      "canonical_primary_domain_id": "D16",
+      "canonical_domain_ids": ["D16"],
+      "rationale": "Source-of-truth manifest is part of canonical delivery/handoff integrity."
+    },
+    {
+      "requirement_id": "SV.D20.IMPLEMENTATION_DISCRETION",
+      "legacy_domain_id": "D20",
+      "canonical_primary_domain_id": "D16",
+      "canonical_domain_ids": ["D16", "D06"],
+      "rationale": "Implementation discretion defines the handoff boundary and the authority delegated to build actors."
+    },
+    {
+      "requirement_id": "SV.D20.DEVELOPER_AMBIGUITY_AUDIT",
+      "legacy_domain_id": "D20",
+      "canonical_primary_domain_id": "D16",
+      "canonical_domain_ids": ["D16", "D15"],
+      "rationale": "Developer ambiguity audit validates constructibility/handoff and contributes verification evidence."
+    },
+    {
+      "requirement_id": "SV.D20.READY_APPROVAL",
+      "legacy_domain_id": "D20",
+      "canonical_primary_domain_id": "D16",
+      "canonical_domain_ids": ["D16", "D06"],
+      "rationale": "Build-ready approval is the authorized handoff decision; D16 owns readiness while D06 owns decision authority."
+    }
+  ]
+}
