@@ -59,6 +59,26 @@ assert(adapter.includes('const MAX_NODES_PER_LOT=28'),'DeliveryLot node cap mism
 assert(adapter.includes('Number.isSafeInteger(value)&&value>=0'),'definition revision validation missing');
 assert(adapter.includes("const MD5_RE=/^[0-9a-f]{32}$/i"),'evaluation fingerprint validation missing');
 
+const expectedPrebaselinePredicates=[
+  'PROJECT_PRODUCT_READY',
+  'PROJECT_EXPERIENCE_READY',
+  'PROJECT_TECH_READY',
+  'TRACEABILITY_READY',
+  'DEPENDENCY_CLOSURE',
+  'CRITICAL_TBD_CLOSURE',
+  'OWNERSHIP_CLOSURE',
+  'QUALITY_REQUIREMENTS_DEFINED',
+  'TESTABILITY_READY'
+];
+const prebaselineBlock=adapter.match(/const PREBASELINE_PREDICATES=Object\.freeze\(\[([\s\S]*?)\]\);/);
+assert(Boolean(prebaselineBlock),'PREBASELINE_PREDICATES block missing');
+if(prebaselineBlock){
+  const actual=[...prebaselineBlock[1].matchAll(/'([^']+)'/g)].map(match=>match[1]);
+  assert(JSON.stringify(actual)===JSON.stringify(expectedPrebaselinePredicates),`prebaseline predicate set mismatch: ${actual.join(', ')}`);
+}
+assert(adapter.includes("PREBASELINE_PREDICATES.every(key=>predicates[key]==='PASS')"),'prepare_rfd must require every canonical prebaseline predicate before baseline creation');
+for(const predicate of expectedPrebaselinePredicates)assert(adapter.includes(`'${predicate}'`),`missing prebaseline predicate ${predicate}`);
+
 const allowedRpcs=[
   'get_project_delivery_lot_dependency_closure_v1',
   'get_project_definition_canonical_graph_v1',
@@ -76,15 +96,20 @@ const calledRpcs=[...new Set([...adapter.matchAll(/serviceRpc\(env,'([^']+)'/g)]
 assert(JSON.stringify(calledRpcs)===JSON.stringify([...allowedRpcs].sort()),`service RPC allowlist mismatch: ${calledRpcs.join(', ')}`);
 assert(!/serviceRpc\(env\s*,\s*(?:body|rawBody|command)/.test(adapter),'client-selected RPC name forbidden');
 
-assert(adapter.includes("PREBASELINE_PREDICATES.every(key=>predicates[key]==='PASS')"),'prepare_rfd must require five prebaseline predicates before baseline creation');
 assert(adapter.includes("baselineHandoff.BASELINE_READY!=='PASS'"),'baseline preparation guard missing');
 assert(adapter.includes("baselineHandoff.HANDOFF_INTEGRITY!=='PASS'"),'handoff preparation guard missing');
 assert(adapter.includes("readiness?.required_lot_readiness?.status!=='PASS'"),'project RFD manifest must require all required lots ready');
 
+assert(entry.includes("RUNTIME_VERSION='v4.5.15-project-definition-rfd-p2'"),'Worker runtime version must expose Project Definition RFD p2');
 assert(entry.includes("import { handleProjectDefinitionCommand } from './project-definition-adapter.js';"),'Worker entry must import Project Definition adapter');
 assert(entry.includes("url.pathname==='/api/project-definition/engine'"),'Project Definition route missing');
 assert(entry.includes('project_definition_adapter_v1'),'health metadata for Project Definition adapter missing');
+assert(entry.includes("code:'0.1.1'"),'Project Definition adapter health code must be 0.1.1');
+assert(entry.includes('rfd_predicate_count:11'),'health metadata must expose all 11 Master Blueprint RFD predicates');
+assert(entry.includes('prebaseline_predicate_count:9'),'health metadata must expose nine prebaseline predicates');
+assert(entry.includes("project_readiness_bridge:'G8-G11'"),'health metadata must expose G8-G11 readiness bridge');
 assert(entry.includes('service_role_browser_exposed:false'),'health metadata must state service role is not browser-exposed');
+assert(entry.includes('legacy_g12_mutated:false'),'health metadata must preserve legacy G12 separation');
 
 const checkScript=String(pkg.scripts?.check||'');
 assert(checkScript.includes('node --check src/project-definition-adapter.js'),'npm run check must syntax-check Project Definition adapter');
@@ -92,5 +117,5 @@ assert(checkScript.includes('node scripts/project-definition-adapter-v1-check.mj
 
 if(!process.exitCode){
   console.log('[project-definition-adapter-v1] PASS');
-  console.log(JSON.stringify({commands:expectedCommands.length,service_rpcs:allowedRpcs.length,client_authorized_by:false,authenticated_rls_precheck:true}));
+  console.log(JSON.stringify({commands:expectedCommands.length,service_rpcs:allowedRpcs.length,prebaseline_predicates:expectedPrebaselinePredicates.length,rfd_predicates:11,client_authorized_by:false,authenticated_rls_precheck:true}));
 }
