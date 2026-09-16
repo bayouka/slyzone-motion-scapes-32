@@ -38,6 +38,7 @@ const requiredProductionTail = [
   '20260916155824_project_master_blueprint_v1_g4_rfd_lot.sql',
   '20260916155938_project_master_blueprint_v1_g5_rfd_project.sql',
   '20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval.sql',
+  '20260916165026_project_master_blueprint_v1_complete_rfd_predicate_set.sql',
 ];
 
 const missing = requiredProductionTail.filter((name) => !fs.existsSync(`${migrationDir}/${name}`));
@@ -155,6 +156,28 @@ for (const required of [
 ]) {
   if (!projectGateRetry.includes(required)) {
     console.error(`MIGRATION HISTORY CHECK FAILED: Project Definition G4/G5 guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const completeRfd = fs.readFileSync(`${migrationDir}/20260916165026_project_master_blueprint_v1_complete_rfd_predicate_set.sql`, 'utf8');
+for (const required of [
+  'create or replace function app_private.get_project_readiness_predicates_v1',
+  "'G8_PROJECT_PRODUCT_DEFINITION_STABLE'",
+  "'G9_PROJECT_EXPERIENCE_DEFINITION_STABLE'",
+  "'G10_PROJECT_TECH_NFR_STABLE'",
+  "'G11_TRACEABILITY_AND_ACCEPTANCE_READY'",
+  "'PROJECT_PRODUCT_READY'",
+  "'PROJECT_EXPERIENCE_READY'",
+  "'PROJECT_TECH_READY'",
+  "'TRACEABILITY_READY'",
+  "'source','R7_PROJECT_GATE_BRIDGE'",
+  "pre.payload->>'status'='PASS'",
+  'revoke all on function public.get_project_delivery_lot_rfd_readiness_v1(uuid) from authenticated',
+  'grant execute on function public.get_project_delivery_lot_rfd_readiness_v1(uuid) to service_role',
+]) {
+  if (!completeRfd.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: complete RFD predicate guard missing: ${required}`);
     process.exit(1);
   }
 }
