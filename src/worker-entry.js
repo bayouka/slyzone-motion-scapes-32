@@ -8,6 +8,7 @@ import { handleLab2IdeaImprovements } from './lab2-idea-improvements.js';
 import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
 import { handleLab2IdeaStructure } from './lab2-idea-structure.js';
 import { handleLab2IdeaDesign } from './lab2-idea-design.js';
+import { handleLab2IdeaMockups } from './lab2-idea-mockups.js';
 
 const RUNTIME_VERSION='v4.5.18-stabilization-legacy-cutover-p1';
 const ADAPTER=Object.freeze({
@@ -137,6 +138,7 @@ export default {
     if(url.pathname==='/api/lab2/brief')return withSecurityHeaders(await handleLab2IdeaBrief(request,env));
     if(url.pathname==='/api/lab2/structure')return withSecurityHeaders(await handleLab2IdeaStructure(request,env));
     if(url.pathname==='/api/lab2/design')return withSecurityHeaders(await handleLab2IdeaDesign(request,env));
+    if(url.pathname==='/api/lab2/mockups')return withSecurityHeaders(await handleLab2IdeaMockups(request,env));
     if(url.pathname==='/api/ideas/canonical')return withSecurityHeaders(await handleCanonicalIdeaCommand(request,env));
     if(url.pathname==='/api/project-definition/engine')return withSecurityHeaders(await handleProjectDefinitionCommand(request,env));
     if(url.pathname==='/api/ideas/engine'&&request.method==='POST'){
