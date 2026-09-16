@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE",
+  "contract_version": "1.0",
+  "status": "CANONICAL_MIGRATION_CONTRACT",
+  "source_runtime": "R7_BUILD_READY_RUNTIME",
+  "target_contract": "4B4C_PROJECT_MASTER_BLUEPRINT_V1",
+  "coverage": {
+    "requirement_domain_classification": "FULL_FOR_R7_REQUIREMENT_SET",
+    "legacy_readiness_projection": "PARTIAL",
+    "canonical_formal_gates": "NOT_RUNTIME_COMPLETE",
+    "delivery_lots": "NOT_IMPLEMENTED",
+    "dependency_closure": "NOT_IMPLEMENTED"
+  },
+  "legacy_gate_to_readiness_predicate": [
+    {
+      "legacy_gate_id": "G8_PROJECT_PRODUCT_DEFINITION_STABLE",
+      "canonical_predicate_id": "PROJECT_PRODUCT_READY"
+    },
+    {
+      "legacy_gate_id": "G9_PROJECT_EXPERIENCE_DEFINITION_STABLE",
+      "canonical_predicate_id": "PROJECT_EXPERIENCE_READY"
+    },
+    {
+      "legacy_gate_id": "G10_PROJECT_TECH_NFR_STABLE",
+      "canonical_predicate_id": "PROJECT_TECH_READY"
+    },
+    {
+      "legacy_gate_id": "G11_TRACEABILITY_AND_ACCEPTANCE_READY",
+      "canonical_predicate_id": "TRACEABILITY_READY"
+    }
+  ],
+  "legacy_gate_passthrough_only": [
+    {
+      "legacy_gate_id": "G12_READY_FOR_DEVELOPMENT",
+      "reason": "Legacy R7 project-level build-ready semantics predate canonical DeliveryLot, DependencyClosure and G4/G5. It must remain visible as legacy evidence only and must never be relabeled as G4_RFD_LOT or G5_RFD_PROJECT."
+    }
+  ],
+  "canonical_predicates_not_yet_derivable_from_r7": [
+    "QUALITY_REQUIREMENTS_DEFINED",
+    "TESTABILITY_READY",
+    "DEPENDENCY_CLOSURE",
+    "CRITICAL_TBD_CLOSURE",
+    "OWNERSHIP_CLOSURE",
+    "BASELINE_READY",
+    "HANDOFF_INTEGRITY"
+  ],
+  "canonical_formal_gates_not_emitted_by_bridge": [
+    "G0_BLUEPRINT_FIT",
+    "G1_IDEA_DECISION_READY",
+    "G2_GO_PROJECT",
+    "G3_PROJECT_BASELINE",
+    "G4_RFD_LOT",
+    "G5_RFD_PROJECT"
+  ],
+  "rules": {
+    "legacy_gate_ids_are_immutable_during_bridge": true,
+    "legacy_g12_is_not_canonical_rfd": true,
+    "unknown_canonical_readiness_must_not_be_coerced_to_ready": true,
+    "bridge_is_read_only": true,
+    "runtime_activation_requires_explicit_followup_migration": true
+  }
+}
