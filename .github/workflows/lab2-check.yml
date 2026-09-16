@@ -1,0 +1,50 @@
+name: Lab2 isolated checks
+
+on:
+  push:
+    branches:
+      - feature/4b4c2-idea-lab
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/lab2-*.js'
+      - 'site/lab2/**'
+      - 'scripts/test_lab2_*.mjs'
+      - 'scripts/lab2-isolation-check.mjs'
+      - 'package.json'
+      - '.github/workflows/lab2-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lab2-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        run: |
+          node --check site/lab2/idea-studio.js
+          node --check site/lab2/idea-research.js
+          node --check site/lab2/idea-improvements.js
+          node --check site/lab2/idea-brief.js
+          node --check src/lab2-idea-understanding.js
+          node --check src/lab2-idea-research.js
+          node --check src/lab2-idea-improvements.js
+          node --check src/lab2-idea-brief.js
+          node --check src/worker-entry.js
+      - name: Zero-credit contract tests
+        run: |
+          node scripts/test_lab2_understanding_v1.mjs
+          node scripts/test_lab2_research_v1.mjs
+          node scripts/test_lab2_improvements_v1.mjs
+          node scripts/test_lab2_brief_v1.mjs
+      - name: Isolation boundary
+        run: node scripts/lab2-isolation-check.mjs
