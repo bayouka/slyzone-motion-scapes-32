@@ -33,6 +33,9 @@ Supporting operational sources include notably:
 - `docs/PRODUCT_AUDIT_20260911.md`
 - `docs/UX_PRODUCT_DA_GATE_20260911.md`
 - `docs/E2E_TEST_MATRIX_20260911.md`
+- `docs/audit/STABILIZATION_AUDIT_20260916.md`
+
+The stabilization audit is the current authority for verified cleanup/debt classification performed after the canonical G0→G5 runtime became available. It does not replace `README.md` for live build/runtime identity.
 
 ### Tooling workflow
 
@@ -159,6 +162,8 @@ Important: Project Master Blueprint V1 is the **target canonical referential**, 
 
 For the current operational G2 state, executor surface and activation status, use the current file referenced by `README.md`, notably `docs/project-definition/runtime/G2_PRODUCTION_ACTIVATION_STATUS_20260916.md` when applicable.
 
+For canonical G0→G3 and G4/G5 production status, follow the dated runtime files referenced by `README.md` rather than older cutover snapshots.
+
 ---
 
 ## 5. Site-vitrine machine contracts — compatibility/migration
@@ -203,6 +208,13 @@ Active UX/integration authority:
 - `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md`
 - `docs/idea-engine/ux/WORKSPACE_PRIVILEGED_ADAPTER_CONTRACT_V0_1.md`
 
+The cutover plan was consolidated on 2026-09-16. Its current status is:
+- canonical G0→G5 runtime active ;
+- Workspace V3 is the canonical transition surface ;
+- legacy direct decision/conversion browser path is disabled ;
+- G8→G12 remain compatibility-only ;
+- final legacy retirement is blocked by the missing authenticated full-Idea G0→G5 E2E proof.
+
 Validation evidence includes:
 - `docs/idea-engine/validation/WORKSPACE_PRIVILEGED_ADAPTER_V0_1_VALIDATION_20260913.md`
 - `docs/idea-engine/validation/WORKSPACE_SLICE5_INTERACTIONS_VALIDATION_20260913.md`
@@ -218,6 +230,12 @@ Security/runtime invariants:
 - human/expert authority is not delegated to a generic server adapter.
 
 The canonical workspace read model remains `get_idea_workspace_projection_v1(idea_id)` until explicitly superseded by a validated migration.
+
+Legacy status:
+- `ideas-final-decision-v1.js` is no longer bootstrapped ;
+- `decide_idea_v1` and `convert_idea_to_project_v1` are not browser-callable ;
+- legacy decide/convert UI actions are bridged to Workspace V3 ;
+- `ideas-orchestrator-v2.js`, five-step progression and maturity markers remain compatibility UI only until authenticated cutover proof allows physical deletion.
 
 ---
 
@@ -245,7 +263,27 @@ Do not regress below:
 
 ---
 
-## 8. Release / validation discipline
+## 8. Stabilization / current correction boundary
+
+Primary evidence:
+
+`docs/audit/STABILIZATION_AUDIT_20260916.md`
+
+Use it before changing the existing Idea/Project Definition cutover. It records what was actually verified versus what remains open.
+
+Current open blockers before declaring the cutover complete:
+- one controlled authenticated Idea must traverse the real canonical lifecycle ;
+- stale-state rejection and idempotent retry must be observed on browser-callable canonical boundaries ;
+- Workspace V3 desktop/mobile states must be exercised ;
+- remaining privileged RPCs must continue to be audited by domain ;
+- public invite preview should be considered for e-mail minimization through a coordinated frontend/backend change ;
+- physical removal of remaining legacy Ideas orchestration waits for equivalence proof.
+
+During this stabilization phase, prefer correction, consolidation, security, E2E and retirement of contradiction over new product scope.
+
+---
+
+## 9. Release / validation discipline
 
 Before production, use the release chain defined by `README.md` and run:
 
@@ -268,7 +306,7 @@ Do not reintroduce GitHub Actions as the production release mechanism unless exp
 
 ---
 
-## 9. Knowledge maintenance rule
+## 10. Knowledge maintenance rule
 
 When a structural invariant changes:
 
