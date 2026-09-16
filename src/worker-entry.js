@@ -3,7 +3,7 @@ import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 import { handleCanonicalIdeaCommand } from './idea-canonical-adapter.js';
 import { handleProjectDefinitionCommand } from './project-definition-adapter.js';
 
-const RUNTIME_VERSION='v4.5.16-project-definition-preproject-p3';
+const RUNTIME_VERSION='v4.5.17-project-definition-g3-derived-p4';
 const ADAPTER=Object.freeze({
   code:'0.3.5',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
@@ -26,9 +26,9 @@ const ADAPTER=Object.freeze({
   service_role_browser_exposed:false
 });
 const CANONICAL_IDEA_ADAPTER=Object.freeze({
-  code:'0.1.0',
+  code:'0.2.0',
   route:'/api/ideas/canonical',
-  commands:['canonical.read','decision.record'],
+  commands:['canonical.read','decision.record','project.promote'],
   master_blueprint:'1.0',
   active_idea_blueprint:'SITE_VITRINE@0.5',
   legacy_idea_blueprint_supported:'SITE_VITRINE@0.4',
@@ -38,8 +38,14 @@ const CANONICAL_IDEA_ADAPTER=Object.freeze({
   predicate_persistence:'derived_not_stored',
   user_rls_precheck:true,
   decision_actor_from_jwt:true,
-  g3_promotion_rpc:'promote_canonical_approved_idea_to_project_definition_v2',
-  g3_promotion_browser_exposed:false,
+  g3_promotion_rpc:'promote_canonical_approved_idea_to_project_definition_v3',
+  g3_promotion_browser_exposed:true,
+  g3_promotion_actor_from_jwt:true,
+  g3_baseline_derivation:'SERVER_DERIVED_FROM_FROZEN_IDEA_DECISION',
+  g3_manifest_client_controlled:false,
+  g3_promotion_diff_client_controlled:false,
+  g3_artifact_promotions_client_controlled:false,
+  g3_server_derived_migration:'20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1',
   service_role_browser_exposed:false
 });
 const PROJECT_DEFINITION_ADAPTER=Object.freeze({
