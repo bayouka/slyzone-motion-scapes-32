@@ -41,6 +41,7 @@
     .then(() => import(`./work-workflow-v1.js?${VERSION}`))
     .then(() => import(`./workflow-backend-safe-v1.js?${VERSION}`))
     .then(() => import(`./communication-workspace-v1.js?${VERSION}`))
+    .then(() => import(`./communication-v4-c0-safety.js?${VERSION}`))
     .then(() => import(`./resources-workspace-v2.js?${VERSION}`))
     .then(() => import(`./approval-route-v1.js?${VERSION}`))
     .then(() => import(`./library-workspace-v1.js?${VERSION}`).catch((error) => {
