@@ -72,7 +72,7 @@ const expectedRuntimeObjects = {
   delivery_lot_nodes: 'app_private.project_delivery_lot_nodes_v1',
   ownership_assignments: 'app_private.project_ownership_assignments_v1',
   conflict_records: 'app_private.project_conflict_records_v1',
-  testability_policy: 'app_private.project_node_testability_policy_v1',
+  testability_policy: 'app_private.project_readiness_node_policy_v1',
   baseline_freezes: 'app_private.project_baseline_freezes_v1',
   handoff_manifests: 'app_private.project_handoff_manifests_v1',
   canonical_gate_states: 'app_private.project_canonical_gate_states_v1',
