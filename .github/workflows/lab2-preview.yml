@@ -70,6 +70,17 @@ jobs:
           fs.writeFileSync('site/lab2/runtime-config.js',`window.__4B4C2_PREVIEW_CONFIG__ = Object.freeze(${JSON.stringify(cfg,null,2)});\n`);
           NODE
 
+      - name: Prepare Lab-only asset payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf lab2-preview-assets
+          mkdir -p lab2-preview-assets/lab2
+          cp -R site/lab2/. lab2-preview-assets/lab2/
+          test -s lab2-preview-assets/lab2/login.html
+          test -s lab2-preview-assets/lab2/idea-studio.html
+          test "$(find lab2-preview-assets -type f | wc -l)" -lt 30
+
       - name: Build isolated Wrangler config
         shell: bash
         run: |
@@ -80,8 +91,8 @@ jobs:
             $schema:'node_modules/wrangler/config-schema.json',
             name:'4b4c2-idea-lab-preview',
             main:'src/lab2-preview-worker.js',
-            compatibility_date:'2026-09-17',
-            assets:{directory:'./site',binding:'ASSETS',run_worker_first:true,html_handling:'none'},
+            compatibility_date:'2026-09-16',
+            assets:{directory:'./lab2-preview-assets',binding:'ASSETS',run_worker_first:true,html_handling:'none'},
             ai:{binding:'AI'},
             services:[{binding:'SOURCE_FETCH',service:'4b4c-source-fetch'}],
             vars:{
@@ -133,3 +144,5 @@ jobs:
           grep -Fq '"production_business_api_exposed":false' /tmp/lab2-health.json
           grep -Fq '"database_write_surface":false' /tmp/lab2-health.json
           curl -L -fsS "$LAB2_PREVIEW_URL/lab2/login.html?sha=$GITHUB_SHA" | grep -Fq 'Tester l’Atelier Idée'
+          code=$(curl -sS -o /tmp/blocked.out -w '%{http_code}' "$LAB2_PREVIEW_URL/index.html" || true)
+          test "$code" = "404"
