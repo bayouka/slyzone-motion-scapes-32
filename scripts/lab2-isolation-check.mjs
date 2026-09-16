@@ -2,12 +2,14 @@ import fs from 'node:fs/promises';
 
 const read=(path)=>fs.readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
-const [understanding,research,workerEntry,frontendJs,frontendHtml]=await Promise.all([
+const [understanding,research,workerEntry,studioJs,studioHtml,researchJs,researchHtml]=await Promise.all([
   read('src/lab2-idea-understanding.js'),
   read('src/lab2-idea-research.js'),
   read('src/worker-entry.js'),
   read('site/lab2/idea-studio.js'),
-  read('site/lab2/idea-studio.html')
+  read('site/lab2/idea-studio.html'),
+  read('site/lab2/idea-research.js'),
+  read('site/lab2/idea-research.html')
 ]);
 
 function requireMatch(source,pattern,code){if(!pattern.test(source))throw new Error(code)}
@@ -34,11 +36,15 @@ requireMatch(workerEntry,/handleLab2IdeaUnderstanding/,'LAB2_UNDERSTANDING_HANDL
 requireMatch(workerEntry,/\/api\/lab2\/research/,'LAB2_RESEARCH_ROUTE_MISSING');
 requireMatch(workerEntry,/handleLab2IdeaResearch/,'LAB2_RESEARCH_HANDLER_WIRING_MISSING');
 
-const browserSource=`${frontendJs}\n${frontendHtml}`;
+const browserSource=`${studioJs}\n${studioHtml}\n${researchJs}\n${researchHtml}`;
 forbid(browserSource,/SUPABASE_SERVICE_ROLE_KEY/,'LAB2_BROWSER_SERVICE_ROLE_FORBIDDEN');
+forbid(browserSource,/LAB2_BRAVE_SEARCH_API_KEY|api\.search\.brave\.com/,'LAB2_BROWSER_DIRECT_SEARCH_FORBIDDEN');
+forbid(browserSource,/SOURCE_FETCH/,'LAB2_BROWSER_SOURCE_FETCH_BINDING_FORBIDDEN');
 forbid(browserSource,/\/api\/ideas\/|\/api\/project-definition\//,'LAB2_BROWSER_CANONICAL_API_COUPLING_FORBIDDEN');
 forbid(browserSource,/\/rest\/v1\//,'LAB2_BROWSER_DIRECT_DATABASE_ACCESS_FORBIDDEN');
-requireMatch(frontendJs,/\/api\/lab2\/understand/,'LAB2_BROWSER_UNDERSTANDING_ROUTE_MISSING');
-requireMatch(frontendJs,/localStorage/,'LAB2_LOCAL_ONLY_DRAFT_EXPECTED');
+requireMatch(studioJs,/\/api\/lab2\/understand/,'LAB2_BROWSER_UNDERSTANDING_ROUTE_MISSING');
+requireMatch(researchJs,/\/api\/lab2\/research/,'LAB2_BROWSER_RESEARCH_ROUTE_MISSING');
+requireMatch(studioJs,/localStorage/,'LAB2_LOCAL_ONLY_DRAFT_EXPECTED');
+requireMatch(researchJs,/localStorage/,'LAB2_LOCAL_ONLY_RESEARCH_CACHE_EXPECTED');
 
 console.log('lab2-isolation-check: ok');
