@@ -37,6 +37,73 @@ This prevents the legacy UI from offering actions that are no longer browser-cal
 
 This bridge is intentionally a stabilization layer, not a new decision implementation.
 
+### 3. Canonical Master Blueprint FK indexes hardened
+
+Production migration:
+
+`20260916200421_project_master_blueprint_v1_fk_index_hardening`
+
+Covering indexes were added only for missing foreign-key access paths in the canonical G3/G4/G5 runtime (`project_baseline_freezes_v1`, canonical gate states, conflicts, Delivery Lots/nodes, dependency target edges, handoff manifests, ownership assignments and RFD manifests).
+
+Supabase Advisor result:
+
+- unindexed FK findings before this stabilization pass: **27**
+- after canonical Master Blueprint indexing: **12**
+- no remaining unindexed-FK finding on the new `app_private` Master Blueprint tables.
+
+### 4. Legacy Ideas RLS ambiguity removed
+
+Production migration:
+
+`20260916200618_ideas_legacy_rls_policy_split_v1`
+
+The legacy `*_write` policies on:
+
+- `idea_decisions`
+- `idea_item_votes`
+- `idea_items`
+- `idea_members`
+- `idea_reviews`
+
+were `FOR ALL`, so they unintentionally participated in SELECT evaluation alongside dedicated SELECT policies. They were replaced with explicit INSERT / UPDATE / DELETE policies preserving the same authorization predicates.
+
+Result: the Advisor `multiple_permissive_policies` findings for these tables disappeared without widening access.
+
+### 5. Unnecessary legacy Ideas table privileges removed
+
+Production migration:
+
+`20260916200626_ideas_legacy_table_grants_hardening_v1`
+
+Removed `TRUNCATE`, `TRIGGER` and `REFERENCES` from `anon` and `authenticated` on the five legacy Ideas tables above. Required SELECT/INSERT/UPDATE/DELETE grants were left unchanged.
+
+### 6. Ideas FK indexes hardened
+
+Production migration:
+
+`20260916201046_ideas_fk_index_hardening_v1`
+
+Added covering indexes for the remaining relevant Idea-engine foreign keys on AI runs, information requirement refs, question answers, source snapshots, team feedback and Idea→conversation.
+
+Supabase Advisor result:
+
+- unindexed FK findings: **12 → 4**
+- remaining four findings are outside the Idea/Master Blueprint stabilization domain: two Call Media tables and two `conversation_focus_members` references.
+
+### 7. Ideas RLS auth initplans optimized
+
+Production migration:
+
+`20260916201151_ideas_rls_initplan_optimization_v1`
+
+For the remaining Idea-domain policies on `ideas`, `idea_question_answers` and `idea_team_feedback`, `auth.uid()` was changed to `(select auth.uid())` without changing the authorization conditions.
+
+Advisor result across the database:
+
+- `auth_rls_initplan`: **21 initially → 19 after the first Ideas policy split → 11 after Idea-domain optimization**
+- no remaining `auth_rls_initplan` warning on the Idea tables treated in this pass.
+- the remaining 11 warnings belong to collaboration/messages/requests/comments/approvals/meetings and should be audited separately rather than mixed into the Idea stabilization change set.
+
 ## Security findings — verified, not inferred
 
 ### Legacy decision/promotion RPCs
@@ -48,7 +115,7 @@ This bridge is intentionally a stabilization layer, not a new decision implement
 
 They are **not** executable by `authenticated` or `anon`.
 
-This corrects an earlier high-level Advisor interpretation that appeared to include them in the authenticated surface.
+This is consistent with production migration `20260916193059_disable_legacy_idea_decision_conversion_v1` and corrects an earlier high-level Advisor interpretation that appeared to include them in the authenticated surface.
 
 ### SECURITY DEFINER surface
 
@@ -70,6 +137,34 @@ The following apparently risky functions were inspected and contain effective in
 - `workspace_projection_core_v1` requires `auth.uid()` and `app_private.can_access_idea(p_idea_id)` before returning the projection
 
 No access-control defect was established in those functions during this pass.
+
+### RLS-enabled tables without policies
+
+The four Advisor findings:
+
+- `call_media_telemetry_v3`
+- `call_media_tracks_v3`
+- `idea_source_snapshots`
+- `project_definition_mutation_receipts`
+
+were checked directly. They expose table privileges only to `postgres` / `service_role`, not `anon` or `authenticated`.
+
+Therefore RLS-with-no-policy is currently an intentional fail-closed/service-only boundary. Do **not** add user policies merely to silence the Advisor.
+
+### Anonymous public invitation preview
+
+`workspace_invite_public_preview(uuid)` is the only public-schema `SECURITY DEFINER` function found executable by `anon`.
+
+Verified properties:
+- invitation token defaults to `gen_random_uuid()`;
+- preview lookup is token-scoped;
+- expiration status is normalized;
+- actual acceptance requires authentication;
+- `rpc_accept_workspace_invite` re-checks that the signed-in user's email exactly matches the invitation email before membership is created.
+
+No invitation-acceptance authorization bypass was established.
+
+Privacy improvement still open: the anonymous preview currently returns the full invited email and the frontend uses it for a pre-check / mismatch message. The server already performs the authoritative exact-email check, so a future coordinated frontend/backend hardening should consider exposing only a masked email hint publicly and relying on the server for exact comparison. Do not change only one side of that contract.
 
 ## Product / UX inconsistencies still open
 
@@ -124,6 +219,15 @@ Production currently contains:
 
 Therefore runtime/build certification currently does not constitute an authenticated real-Idea end-to-end proof.
 
+## Current Advisor state after this pass
+
+Relevant performance findings:
+
+- unindexed foreign keys: **4**, all outside the Idea/Master Blueprint focus of this pass;
+- RLS auth initplan warnings: **11**, all outside the Idea-domain policies treated here;
+- legacy Ideas multiple-permissive-policy findings addressed in this pass;
+- newly created indexes naturally appear as unused immediately because production has no Idea traffic yet. Do not remove them based on zero-use statistics at this stage.
+
 ## Remaining blockers before feature expansion
 
 1. Run one controlled authenticated Idea through the canonical lifecycle, at minimum:
@@ -139,7 +243,8 @@ Therefore runtime/build certification currently does not constitute an authentic
 2. Prove stale-state rejection and idempotent retry on the canonical browser-callable boundaries.
 3. Verify desktop and mobile Workspace V3 states for the controlled Idea.
 4. Continue privileged-RPC audit by domain; classify each authenticated `SECURITY DEFINER` as intended user API, internal/service-only candidate, or legacy retirement candidate.
-5. Only after E2E equivalence, retire legacy Ideas orchestration authority (`ideas-orchestrator-v2`, five-step band, maturity 5/5, legacy decision guards) according to Slice 7.
+5. Complete the coordinated privacy review of the anonymous invite preview (full email versus masked hint).
+6. Only after E2E equivalence, retire legacy Ideas orchestration authority (`ideas-orchestrator-v2`, five-step band, maturity 5/5, legacy decision guards) according to Slice 7.
 
 ## Rule for the next implementation pass
 
