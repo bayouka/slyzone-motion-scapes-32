@@ -8,6 +8,11 @@ const root = path.resolve(here, '..');
 const machineDir = path.join(root, 'docs', 'project-definition', 'machine');
 const contractPath = path.join(machineDir, 'MASTER_BLUEPRINT_V1.json');
 const migrationPath = path.join(machineDir, 'LEGACY_D22_TO_D16_MAPPING_V1.json');
+const siteVitrineRequirementMappingPath = path.join(
+  machineDir,
+  'site-vitrine',
+  'SITE_VITRINE_LEGACY_REQUIREMENT_TO_CANONICAL_V1.json'
+);
 
 const fail = (message) => {
   console.error(`[master-blueprint-v1] FAIL: ${message}`);
@@ -31,7 +36,8 @@ const readJson = (filePath) => {
 
 const contract = readJson(contractPath);
 const migration = readJson(migrationPath);
-if (!contract || !migration) process.exit(1);
+const siteVitrineRequirementMapping = readJson(siteVitrineRequirementMappingPath);
+if (!contract || !migration || !siteVitrineRequirementMapping) process.exit(1);
 
 assert(contract.schema_version === '1.0', 'schema_version must be 1.0');
 assert(contract.contract_id === '4B4C_PROJECT_MASTER_BLUEPRINT', 'unexpected contract_id');
@@ -202,6 +208,67 @@ for (const mapping of mappings) {
   }
 }
 
+// Current R7 Site-vitrine persisted Requirement IDs -> canonical D01..D16 classification.
+assert(siteVitrineRequirementMapping.schema_version === '1.0', 'Site-vitrine requirement mapping schema_version must be 1.0');
+assert(siteVitrineRequirementMapping.mapping_id === 'SITE_VITRINE_R7_REQUIREMENT_TO_CANONICAL_DOMAIN', 'unexpected Site-vitrine requirement mapping_id');
+assert(siteVitrineRequirementMapping.status === 'CANONICAL_MIGRATION_CONTRACT', 'Site-vitrine requirement mapping must be canonical');
+assert(siteVitrineRequirementMapping.migration_policy?.rewrite_requirement_id === false, 'persisted R7 requirement ids must not be rewritten');
+assert(siteVitrineRequirementMapping.migration_policy?.rewrite_legacy_gate_id === false, 'legacy R7 gate ids must not be rewritten');
+assert(siteVitrineRequirementMapping.migration_policy?.preserve_legacy_runtime_semantics === true, 'legacy R7 runtime semantics must be preserved');
+assert(siteVitrineRequirementMapping.migration_policy?.canonical_classification_is_parallel === true, 'canonical classification must be parallel during migration');
+assert(siteVitrineRequirementMapping.migration_policy?.runtime_activation_implicit === false, 'requirement mapping must not activate runtime implicitly');
+
+const expectedR7RequirementIds = [
+  'SV.PRJ.APPROVED_BASELINE',
+  'SV.D08.JOURNEY_SPEC',
+  'SV.D09.PAGE_MANIFEST',
+  'SV.D10.CONTENT_REQUIREMENTS',
+  'SV.D11.SEO_PAGE_MAP',
+  'SV.D11.REDIRECT_MAP',
+  'SV.D12.FUNCTIONAL_REQUIREMENTS',
+  'SV.D12.UI_STATES',
+  'SV.D12.BUSINESS_RULES',
+  'SV.D13.CONTENT_DATA_MODEL',
+  'SV.D13.ROLE_PERMISSION_MATRIX',
+  'SV.D14.INTEGRATION_CONTRACTS',
+  'SV.D15.WIREFRAME_BASELINE',
+  'SV.D15.DESIGN_DEFINITION',
+  'SV.D15.RESPONSIVE_BEHAVIOR',
+  'SV.D16.DELIVERY_APPROACH',
+  'SV.D16.ARCHITECTURE',
+  'SV.D16.ENV_HOSTING_OPS',
+  'SV.D17.PRIVACY_SECURITY',
+  'SV.D17.EXPERT_SIGNOFF',
+  'SV.D18.ACCESSIBILITY_TARGET',
+  'SV.D18.PERFORMANCE_RELIABILITY',
+  'SV.D19.MEASUREMENT_PLAN',
+  'SV.D20.ACCEPTANCE_CRITERIA',
+  'SV.D20.SOURCE_OF_TRUTH_MANIFEST',
+  'SV.D20.IMPLEMENTATION_DISCRETION',
+  'SV.D20.DEVELOPER_AMBIGUITY_AUDIT',
+  'SV.D20.READY_APPROVAL'
+];
+const requirementMappings = Array.isArray(siteVitrineRequirementMapping.requirements)
+  ? siteVitrineRequirementMapping.requirements
+  : [];
+const mappedRequirementIds = requirementMappings.map((item) => item.requirement_id);
+assert(requirementMappings.length === expectedR7RequirementIds.length, `expected ${expectedR7RequirementIds.length} Site-vitrine R7 requirement mappings, got ${requirementMappings.length}`);
+assert(unique(mappedRequirementIds), 'Site-vitrine R7 requirement mapping ids must be unique');
+assert(JSON.stringify(mappedRequirementIds) === JSON.stringify(expectedR7RequirementIds), 'Site-vitrine R7 requirement mapping must cover the exact persisted R7 requirement set in stable order');
+
+for (const mapping of requirementMappings) {
+  const canonicalDomainIds = Array.isArray(mapping.canonical_domain_ids) ? mapping.canonical_domain_ids : [];
+  assert(typeof mapping.legacy_domain_id === 'string' && mapping.legacy_domain_id.trim(), `${mapping.requirement_id}: legacy_domain_id required`);
+  assert(canonicalDomainIds.length > 0, `${mapping.requirement_id}: at least one canonical domain required`);
+  assert(unique(canonicalDomainIds), `${mapping.requirement_id}: canonical domain ids must be unique`);
+  assert(canonicalDomainIds.every((domainId) => domainIds.includes(domainId)), `${mapping.requirement_id}: canonical domains must exist in D01..D16`);
+  assert(canonicalDomainIds.includes(mapping.canonical_primary_domain_id), `${mapping.requirement_id}: canonical_primary_domain_id must be included in canonical_domain_ids`);
+  assert(typeof mapping.rationale === 'string' && mapping.rationale.trim(), `${mapping.requirement_id}: rationale required`);
+  if (mapping.legacy_domain_id !== 'PRJ') {
+    assert(expectedLegacyDomainIds.includes(mapping.legacy_domain_id), `${mapping.requirement_id}: invalid legacy domain id ${mapping.legacy_domain_id}`);
+  }
+}
+
 if (!process.exitCode) {
   console.log('[master-blueprint-v1] PASS');
   console.log(JSON.stringify({
@@ -210,6 +277,7 @@ if (!process.exitCode) {
     readiness_predicates: predicates.length,
     core_objects: coreObjects.length,
     legacy_domain_mappings: mappings.length,
+    site_vitrine_r7_requirement_mappings: requirementMappings.length,
     legacy_machine_blueprints: contract.compatibility?.legacy_machine_blueprints ?? []
   }));
 }
