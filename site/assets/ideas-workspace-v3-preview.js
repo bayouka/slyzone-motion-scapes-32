@@ -9,7 +9,7 @@ import { SupabaseBrowserClient } from './supabase-client.js';
   const previewEnabled=()=>new URLSearchParams(location.search).get('workspacev3')==='1'||localStorage.getItem('2b2c.idea.workspace.v3')==='1';
   const route=()=>String(location.hash||'#/').replace(/^#/,'');
   const content=()=>document.querySelector('.live-content');
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const attr=esc;
   let renderToken=0;
 
