@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>4b4c2 — Atelier Idée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-studio.css" />
+</head>
+<body>
+  <main class="studio-shell" data-step="capture">
+    <header class="studio-topbar">
+      <div>
+        <div class="eyebrow">4b4c2 · LAB isolé</div>
+        <h1>Atelier Idée</h1>
+      </div>
+      <div class="topbar-actions">
+        <span class="local-badge" title="Aucune donnée n'est envoyée au backend dans cette première slice">Prototype local</span>
+        <button class="ghost-button" type="button" id="resetDraft">Réinitialiser</button>
+      </div>
+    </header>
+
+    <nav class="progress" aria-label="Progression de l'idée">
+      <button class="progress-step is-active" type="button" data-go="capture">
+        <span>1</span>
+        <strong>Raconter</strong>
+      </button>
+      <div class="progress-line"></div>
+      <button class="progress-step" type="button" data-go="understanding" disabled>
+        <span>2</span>
+        <strong>Comprendre</strong>
+      </button>
+      <div class="progress-line"></div>
+      <div class="progress-step is-future">
+        <span>3</span>
+        <strong>Améliorer</strong>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step is-future">
+        <span>4</span>
+        <strong>Présenter</strong>
+      </div>
+    </nav>
+
+    <section class="panel step-panel" id="capturePanel" aria-labelledby="captureTitle">
+      <div class="panel-heading">
+        <div>
+          <span class="section-kicker">Étape 1</span>
+          <h2 id="captureTitle">Raconte ton idée avec tes mots</h2>
+          <p>Pas besoin de savoir rédiger un cahier des charges. Explique simplement ce que tu imagines.</p>
+        </div>
+        <div class="autosave" id="saveState">Brouillon local</div>
+      </div>
+
+      <form id="ideaForm" novalidate>
+        <div class="field-group">
+          <label for="ideaName">Nom provisoire de l'idée</label>
+          <input id="ideaName" name="ideaName" type="text" maxlength="100" autocomplete="off" placeholder="Ex. TierceVue" />
+          <p class="field-help">Ce nom sert seulement à retrouver l'idée. Tu pourras le changer plus tard.</p>
+        </div>
+
+        <div class="field-group">
+          <div class="label-row">
+            <label for="ideaDescription">Explique ton idée</label>
+            <span id="descriptionCount">0 caractère</span>
+          </div>
+          <textarea id="ideaDescription" name="ideaDescription" rows="9" maxlength="6000" placeholder="Ex. J'aimerais créer un site qui permet à quelqu'un de faire vérifier une voiture située loin de chez lui avant de se déplacer..."></textarea>
+          <p class="field-help">Décris le problème, ce que ferait le site, ou simplement ce que tu as en tête. Même si c'est encore flou.</p>
+        </div>
+
+        <div class="references-block">
+          <div class="references-heading">
+            <div>
+              <h3>Sites qui t'aident à expliquer l'idée</h3>
+              <p>Un concurrent, un site au fonctionnement proche, ou simplement une référence de design. Facultatif.</p>
+            </div>
+            <button class="secondary-button" type="button" id="addReference">+ Ajouter une référence</button>
+          </div>
+
+          <div id="referencesList" class="references-list"></div>
+          <button class="text-button" type="button" id="noReference">Je n'ai pas de référence pour l'instant</button>
+        </div>
+
+        <div class="callout">
+          <div class="callout-icon" aria-hidden="true">i</div>
+          <div>
+            <strong>Ce que fera l'IA ensuite</strong>
+            <p>Elle commencera par reformuler ton idée pour vérifier qu'elle l'a bien comprise. Elle ne cherchera pas encore à la transformer ou à ajouter des fonctionnalités sans ton accord.</p>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <p class="validation-message" id="validationMessage" role="status"></p>
+          <button class="primary-button" type="submit">Voir ce que l'IA doit comprendre <span aria-hidden="true">→</span></button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel step-panel" id="understandingPanel" hidden aria-labelledby="understandingTitle">
+      <div class="panel-heading">
+        <div>
+          <span class="section-kicker">Étape 2 · Prototype sans appel IA</span>
+          <h2 id="understandingTitle">Vérifier la compréhension avant d'améliorer</h2>
+          <p>Cette première Slice valide la structure de restitution. Le branchement au modèle IA viendra après validation de l'expérience.</p>
+        </div>
+      </div>
+
+      <div class="understanding-layout">
+        <article class="understanding-card highlight-card">
+          <span class="card-label">L'idée d'origine</span>
+          <h3 id="summaryName">Sans nom</h3>
+          <p id="summaryDescription"></p>
+        </article>
+
+        <article class="understanding-card">
+          <span class="card-label">Ce que l'IA devra produire</span>
+          <div class="structured-list">
+            <div>
+              <strong>L'idée en une phrase</strong>
+              <p>Une reformulation courte et fidèle, sans ajouter de concept non demandé.</p>
+            </div>
+            <div>
+              <strong>Le problème à résoudre</strong>
+              <p>Pourquoi ce site aurait une utilité pour ses futurs utilisateurs.</p>
+            </div>
+            <div>
+              <strong>Pour qui</strong>
+              <p>Les utilisateurs probables, uniquement lorsque cela peut être déduit avec suffisamment de confiance.</p>
+            </div>
+            <div>
+              <strong>Comment cela fonctionnerait</strong>
+              <p>Le parcours principal compris à partir de l'explication, avec les zones d'incertitude explicitement signalées.</p>
+            </div>
+            <div>
+              <strong>Questions nécessaires</strong>
+              <p>Une question à la fois, seulement lorsqu'une ambiguïté bloque réellement la compréhension.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="understanding-card" id="referenceSummaryCard">
+          <span class="card-label">Références données</span>
+          <div id="referenceSummary" class="reference-summary"></div>
+        </article>
+      </div>
+
+      <div class="decision-box">
+        <div>
+          <span class="section-kicker">Principe de la future IA</span>
+          <h3>L'utilisateur garde toujours la main</h3>
+          <p>Après la vraie reformulation IA, il pourra confirmer, corriger ou demander une explication. Aucune amélioration ne sera incorporée silencieusement.</p>
+        </div>
+        <div class="decision-actions">
+          <button class="secondary-button" type="button" id="backToCapture">← Modifier mon explication</button>
+          <button class="primary-button" type="button" id="confirmUnderstanding">Cette structure me convient</button>
+        </div>
+      </div>
+
+      <div class="future-preview" id="futurePreview" hidden>
+        <span class="section-kicker">Slice suivante</span>
+        <h3>Prêt pour le branchement IA réel</h3>
+        <p>Le prochain incrément remplacera cette restitution de démonstration par une compréhension IA structurée et mesurée, avec budget de tokens, journal de coût et clarification à une question à la fois.</p>
+      </div>
+    </section>
+  </main>
+
+  <template id="referenceTemplate">
+    <article class="reference-card">
+      <div class="reference-card-header">
+        <strong>Référence <span class="reference-number"></span></strong>
+        <button type="button" class="remove-reference" aria-label="Supprimer cette référence">Supprimer</button>
+      </div>
+      <div class="reference-grid">
+        <div class="field-group compact">
+          <label>Site ou URL</label>
+          <input class="reference-url" type="text" maxlength="300" placeholder="Ex. airbnb.com" />
+        </div>
+        <div class="field-group compact">
+          <label>Ce qui t'intéresse</label>
+          <select class="reference-reason">
+            <option value="fonctionnement">Le fonctionnement</option>
+            <option value="fonctionnalites">Les fonctionnalités</option>
+            <option value="simplicite">La simplicité</option>
+            <option value="design">Le design</option>
+            <option value="organisation">L'organisation du site</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group compact">
+        <label>Précision facultative</label>
+        <input class="reference-note" type="text" maxlength="500" placeholder="Ex. J'aime surtout la manière dont la recherche est présentée dès l'accueil." />
+      </div>
+    </article>
+  </template>
+
+  <script src="./idea-studio.js" defer></script>
+</body>
+</html>
