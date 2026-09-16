@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Présentation de l’idée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-presentation.css" />
+</head>
+<body>
+  <div class="toolbar no-print">
+    <a class="toolbar-link" href="./idea-mockups.html">← Maquettes</a>
+    <div class="toolbar-center"><span id="slideCounter">1 / 1</span></div>
+    <div class="toolbar-actions"><button id="prevButton" type="button">Précédente</button><button id="nextButton" type="button">Suivante</button><button id="fullscreenButton" type="button">Plein écran</button><button class="primary" id="printButton" type="button">PDF / Imprimer</button></div>
+  </div>
+
+  <main class="presentation-shell">
+    <section class="blocked" id="blockedPanel" hidden>
+      <h1>Les maquettes sont nécessaires</h1><p>Termine d’abord la direction visuelle et génère les maquettes principales.</p><a href="./idea-mockups.html">Ouvrir les maquettes</a>
+    </section>
+    <div id="slides" class="slides"></div>
+  </main>
+  <script src="./idea-presentation.js" defer></script>
+</body>
+</html>
