@@ -79,7 +79,10 @@ jobs:
           cp -R site/lab2/. lab2-preview-assets/lab2/
           test -s lab2-preview-assets/lab2/login.html
           test -s lab2-preview-assets/lab2/idea-studio.html
-          test "$(find lab2-preview-assets -type f | wc -l)" -lt 30
+          test ! -e lab2-preview-assets/index.html
+          test ! -d lab2-preview-assets/assets
+          outside=$(find lab2-preview-assets -mindepth 1 -maxdepth 1 ! -name lab2 -print -quit)
+          test -z "$outside"
 
       - name: Build isolated Wrangler config
         shell: bash
