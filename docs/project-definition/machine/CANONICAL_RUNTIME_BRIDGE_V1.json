@@ -8,9 +8,31 @@
   "coverage": {
     "requirement_domain_classification": "FULL_FOR_R7_REQUIREMENT_SET",
     "legacy_readiness_projection": "PARTIAL",
-    "canonical_formal_gates": "NOT_RUNTIME_COMPLETE",
-    "delivery_lots": "NOT_IMPLEMENTED",
-    "dependency_closure": "NOT_IMPLEMENTED"
+    "core_graph": "IMPLEMENTED_SERVICE_ONLY",
+    "canonical_node_state_projection": "IMPLEMENTED_R7_BRIDGE",
+    "delivery_lots": "SCHEMA_IMPLEMENTED_SERVICE_ONLY",
+    "dependency_closure": "STRUCTURAL_IMPLEMENTED_STATE_DIAGNOSTICS_PARTIAL",
+    "canonical_formal_gates": "NOT_RUNTIME_COMPLETE"
+  },
+  "runtime_objects": {
+    "blueprint_pack": "app_private.project_blueprint_packs_v1",
+    "node_definitions": "app_private.project_node_definitions_v1",
+    "dependency_edges": "app_private.project_dependency_edges_v1",
+    "delivery_lots": "app_private.project_delivery_lots_v1",
+    "delivery_lot_nodes": "app_private.project_delivery_lot_nodes_v1",
+    "canonical_graph_read": "public.get_project_definition_canonical_graph_v1(uuid)",
+    "blueprint_dependency_closure": "app_private.get_blueprint_dependency_closure_v1(text,text,text[])",
+    "delivery_lot_dependency_closure": "public.get_project_delivery_lot_dependency_closure_v1(uuid)"
+  },
+  "graph_contract": {
+    "blueprint_id": "SITE_VITRINE",
+    "blueprint_version": "1.0-bridge-r7",
+    "canonical_node_count": 28,
+    "dependency_edge_count": 33,
+    "hard_edge_count": 31,
+    "soft_edge_count": 2,
+    "hard_dependency_cycles_allowed": false,
+    "legacy_requirement_state_source_retained": true
   },
   "legacy_gate_to_readiness_predicate": [
     {
@@ -33,7 +55,7 @@
   "legacy_gate_passthrough_only": [
     {
       "legacy_gate_id": "G12_READY_FOR_DEVELOPMENT",
-      "reason": "Legacy R7 project-level build-ready semantics predate canonical DeliveryLot, DependencyClosure and G4/G5. It must remain visible as legacy evidence only and must never be relabeled as G4_RFD_LOT or G5_RFD_PROJECT."
+      "reason": "Legacy R7 project-level build-ready semantics predate canonical DeliveryLot, full DependencyClosure and G4/G5. It must remain visible as legacy evidence only and must never be relabeled as G4_RFD_LOT or G5_RFD_PROJECT."
     }
   ],
   "canonical_predicates_not_yet_derivable_from_r7": [
@@ -44,6 +66,12 @@
     "OWNERSHIP_CLOSURE",
     "BASELINE_READY",
     "HANDOFF_INTEGRITY"
+  ],
+  "dependency_closure_partial_boundaries": [
+    "CRITICAL_TBD",
+    "OWNERSHIP_CLOSURE",
+    "CONFLICTS",
+    "CANONICAL_FULFILMENT"
   ],
   "canonical_formal_gates_not_emitted_by_bridge": [
     "G0_BLUEPRINT_FIT",
@@ -57,6 +85,7 @@
     "legacy_gate_ids_are_immutable_during_bridge": true,
     "legacy_g12_is_not_canonical_rfd": true,
     "unknown_canonical_readiness_must_not_be_coerced_to_ready": true,
+    "manual_ready_flag_forbidden": true,
     "bridge_is_read_only": true,
     "runtime_activation_requires_explicit_followup_migration": true
   }
