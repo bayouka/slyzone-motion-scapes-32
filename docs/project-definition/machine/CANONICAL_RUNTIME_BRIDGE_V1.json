@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "contract_id": "PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE",
-  "contract_version": "1.1",
+  "contract_version": "1.2",
   "status": "CANONICAL_MIGRATION_CONTRACT",
   "source_runtime": "R7_BUILD_READY_RUNTIME",
   "target_contract": "4B4C_PROJECT_MASTER_BLUEPRINT_V1",
@@ -15,6 +15,7 @@
     "rfd_predicates": "SEVEN_IMPLEMENTED_SERVICE_ONLY",
     "baseline_handoff": "IMPLEMENTED_SERVICE_ONLY",
     "canonical_formal_gates": "G4_G5_IMPLEMENTED_SERVICE_ONLY",
+    "canonical_gate_retry_idempotency": "G4_G5_IMPLEMENTED",
     "canonical_pre_g4_gates": "G0_G3_NOT_IMPLEMENTED_IN_THIS_RUNTIME_SLICE"
   },
   "runtime_objects": {
@@ -109,7 +110,9 @@
     "expected_evaluation_fingerprint_required": true,
     "human_authority_required": true,
     "authorized_actor_must_be_idea_creator_or_workspace_owner_admin": true,
-    "freezes_lot_baseline_and_handoff_atomically": true
+    "freezes_lot_baseline_and_handoff_atomically": true,
+    "same_revision_same_fingerprint_retry_is_idempotent": true,
+    "different_revision_or_fingerprint_retry_is_rejected": true
   },
   "g5_policy": {
     "at_least_one_required_delivery_lot": true,
@@ -119,7 +122,9 @@
     "expected_evaluation_fingerprint_required": true,
     "human_authority_required": true,
     "authorized_actor_must_be_idea_creator_or_workspace_owner_admin": true,
-    "legacy_project_status_is_not_mutated": true
+    "legacy_project_status_is_not_mutated": true,
+    "same_revision_same_fingerprint_retry_is_idempotent": true,
+    "different_revision_or_fingerprint_retry_is_rejected": true
   },
   "rules": {
     "legacy_gate_ids_are_immutable_during_bridge": true,
@@ -129,6 +134,7 @@
     "direct_browser_access_to_canonical_runtime_forbidden": true,
     "service_side_mutations_enabled": true,
     "human_actor_identity_must_come_from_authenticated_server_adapter": true,
+    "formal_gate_approval_retries_must_be_idempotent_and_stale_safe": true,
     "runtime_activation_requires_explicit_adapter_cutover": true
   }
 }
