@@ -18,7 +18,7 @@
         <h1>Atelier Idée</h1>
       </div>
       <div class="topbar-actions">
-        <span class="local-badge" title="Aucune donnée n'est envoyée au backend dans cette première slice">Prototype local</span>
+        <span class="local-badge" title="Le brouillon et les résultats restent dans ce navigateur. L'IA n'est appelée qu'à la demande.">Données locales · IA mesurée</span>
         <button class="ghost-button" type="button" id="resetDraft">Réinitialiser</button>
       </div>
     </header>
@@ -87,14 +87,14 @@
         <div class="callout">
           <div class="callout-icon" aria-hidden="true">i</div>
           <div>
-            <strong>Ce que fera l'IA ensuite</strong>
-            <p>Elle commencera par reformuler ton idée pour vérifier qu'elle l'a bien comprise. Elle ne cherchera pas encore à la transformer ou à ajouter des fonctionnalités sans ton accord.</p>
+            <strong>Ce que fera l'IA maintenant</strong>
+            <p>Elle reformule uniquement ton idée pour vérifier qu'elle l'a bien comprise. Elle n'ajoute encore aucune fonctionnalité et n'analyse pas encore les concurrents.</p>
           </div>
         </div>
 
         <div class="form-footer">
           <p class="validation-message" id="validationMessage" role="status"></p>
-          <button class="primary-button" type="submit">Voir ce que l'IA doit comprendre <span aria-hidden="true">→</span></button>
+          <button class="primary-button" type="submit">Faire comprendre mon idée à l'IA <span aria-hidden="true">→</span></button>
         </div>
       </form>
     </section>
@@ -102,67 +102,107 @@
     <section class="panel step-panel" id="understandingPanel" hidden aria-labelledby="understandingTitle">
       <div class="panel-heading">
         <div>
-          <span class="section-kicker">Étape 2 · Prototype sans appel IA</span>
-          <h2 id="understandingTitle">Vérifier la compréhension avant d'améliorer</h2>
-          <p>Cette première Slice valide la structure de restitution. Le branchement au modèle IA viendra après validation de l'expérience.</p>
+          <span class="section-kicker">Étape 2 · IA réelle et bornée</span>
+          <h2 id="understandingTitle">Vérifier que l'IA a réellement compris</h2>
+          <p>Cette étape ne cherche pas encore à améliorer l'idée. Elle sépare ce que tu as explicitement dit de ce que l'IA a dû déduire.</p>
         </div>
+        <span class="ai-state" id="aiState">Prêt</span>
       </div>
 
-      <div class="understanding-layout">
-        <article class="understanding-card highlight-card">
-          <span class="card-label">L'idée d'origine</span>
-          <h3 id="summaryName">Sans nom</h3>
-          <p id="summaryDescription"></p>
-        </article>
+      <article class="understanding-card highlight-card original-card">
+        <span class="card-label">Ton idée d'origine</span>
+        <h3 id="summaryName">Sans nom</h3>
+        <p id="summaryDescription"></p>
+      </article>
 
-        <article class="understanding-card">
-          <span class="card-label">Ce que l'IA devra produire</span>
-          <div class="structured-list">
-            <div>
-              <strong>L'idée en une phrase</strong>
-              <p>Une reformulation courte et fidèle, sans ajouter de concept non demandé.</p>
-            </div>
-            <div>
-              <strong>Le problème à résoudre</strong>
-              <p>Pourquoi ce site aurait une utilité pour ses futurs utilisateurs.</p>
-            </div>
-            <div>
-              <strong>Pour qui</strong>
-              <p>Les utilisateurs probables, uniquement lorsque cela peut être déduit avec suffisamment de confiance.</p>
-            </div>
-            <div>
-              <strong>Comment cela fonctionnerait</strong>
-              <p>Le parcours principal compris à partir de l'explication, avec les zones d'incertitude explicitement signalées.</p>
-            </div>
-            <div>
-              <strong>Questions nécessaires</strong>
-              <p>Une question à la fois, seulement lorsqu'une ambiguïté bloque réellement la compréhension.</p>
-            </div>
-          </div>
-        </article>
-
-        <article class="understanding-card" id="referenceSummaryCard">
-          <span class="card-label">Références données</span>
-          <div id="referenceSummary" class="reference-summary"></div>
-        </article>
-      </div>
-
-      <div class="decision-box">
+      <div class="ai-loading" id="understandingLoading" hidden role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
         <div>
-          <span class="section-kicker">Principe de la future IA</span>
-          <h3>L'utilisateur garde toujours la main</h3>
-          <p>Après la vraie reformulation IA, il pourra confirmer, corriger ou demander une explication. Aucune amélioration ne sera incorporée silencieusement.</p>
-        </div>
-        <div class="decision-actions">
-          <button class="secondary-button" type="button" id="backToCapture">← Modifier mon explication</button>
-          <button class="primary-button" type="button" id="confirmUnderstanding">Cette structure me convient</button>
+          <strong>L'IA reformule ton idée…</strong>
+          <p>Un seul appel est effectué. Si le même brouillon a déjà été analysé, le résultat local est réutilisé.</p>
         </div>
       </div>
 
-      <div class="future-preview" id="futurePreview" hidden>
-        <span class="section-kicker">Slice suivante</span>
-        <h3>Prêt pour le branchement IA réel</h3>
-        <p>Le prochain incrément remplacera cette restitution de démonstration par une compréhension IA structurée et mesurée, avec budget de tokens, journal de coût et clarification à une question à la fois.</p>
+      <div class="ai-error" id="understandingError" hidden role="alert"></div>
+
+      <div id="aiUnderstandingResult" hidden>
+        <div class="understanding-layout ai-result-grid">
+          <article class="understanding-card span-two">
+            <div class="card-title-row">
+              <span class="card-label">L'idée en une phrase</span>
+              <span class="confidence-badge" id="confidenceBadge">Compréhension</span>
+            </div>
+            <p class="lead-copy" id="aiOneLiner"></p>
+          </article>
+
+          <article class="understanding-card">
+            <span class="card-label">Le problème compris</span>
+            <p class="result-copy" id="aiProblem"></p>
+          </article>
+
+          <article class="understanding-card">
+            <span class="card-label">Pour qui</span>
+            <div class="evidence-list" id="aiTargetUsers"></div>
+          </article>
+
+          <article class="understanding-card span-two">
+            <span class="card-label">Comment le site fonctionnerait</span>
+            <ol class="flow-list" id="aiMainFlow"></ol>
+          </article>
+
+          <article class="understanding-card">
+            <span class="card-label">Ce que tu as clairement exprimé</span>
+            <ul class="plain-list" id="aiExplicitPoints"></ul>
+          </article>
+
+          <article class="understanding-card">
+            <span class="card-label">Ce qui reste incertain</span>
+            <ul class="plain-list muted-list" id="aiUncertainties"></ul>
+          </article>
+
+          <article class="understanding-card" id="referenceSummaryCard">
+            <span class="card-label">Références données</span>
+            <div id="referenceSummary" class="reference-summary"></div>
+          </article>
+
+          <article class="understanding-card usage-card" id="usageCard">
+            <span class="card-label">Coût IA de cette idée</span>
+            <div class="usage-metrics" id="usageMetrics"></div>
+            <p class="field-help" id="usageHelp">Mesure cumulée des appels de compréhension réalisés pour ce brouillon.</p>
+          </article>
+        </div>
+
+        <section class="clarification-box" id="clarificationBox" hidden aria-labelledby="clarificationTitle">
+          <span class="section-kicker">Une précision suffit</span>
+          <h3 id="clarificationTitle">L'IA a besoin d'une information pour éviter de mal comprendre</h3>
+          <p class="clarification-question" id="clarificationQuestion"></p>
+          <div class="field-group compact">
+            <label for="clarificationAnswer">Ta réponse</label>
+            <textarea id="clarificationAnswer" rows="3" maxlength="1200" placeholder="Réponds simplement avec tes mots."></textarea>
+          </div>
+          <div class="clarification-actions">
+            <button class="text-button" type="button" id="skipClarification">Je ne sais pas encore</button>
+            <button class="primary-button" type="button" id="submitClarification">Répondre et continuer</button>
+          </div>
+        </section>
+
+        <div class="decision-box">
+          <div>
+            <span class="section-kicker">Validation humaine</span>
+            <h3>Est-ce bien ton idée ?</h3>
+            <p>Valider signifie seulement « l'IA m'a compris ». Les améliorations, concurrents, fonctionnalités et sitemap viendront après et resteront soumis à ton accord.</p>
+          </div>
+          <div class="decision-actions">
+            <button class="secondary-button" type="button" id="backToCapture">← Corriger mon explication</button>
+            <button class="primary-button" type="button" id="confirmUnderstanding" disabled>Oui, c'est bien ça</button>
+          </div>
+        </div>
+
+        <div class="future-preview" id="futurePreview" hidden>
+          <span class="section-kicker">Compréhension validée localement</span>
+          <h3>La base est prête pour l'étape suivante</h3>
+          <p>Le prochain incrément pourra rechercher les références et concurrents de manière bornée, en séparant ce qui est observé, déduit ou non vérifié. Rien n'est encore enregistré dans Supabase.</p>
+        </div>
       </div>
     </section>
   </main>
