@@ -1,8 +1,9 @@
 import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
+import { handleCanonicalIdeaCommand } from './idea-canonical-adapter.js';
 import { handleProjectDefinitionCommand } from './project-definition-adapter.js';
 
-const RUNTIME_VERSION='v4.5.15-project-definition-rfd-p2';
+const RUNTIME_VERSION='v4.5.16-project-definition-preproject-p3';
 const ADAPTER=Object.freeze({
   code:'0.3.5',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
@@ -22,6 +23,23 @@ const ADAPTER=Object.freeze({
   g2_src_candidate_resolution:'SOURCE_BACKED',
   g2_source_fetch_service_candidate:'v0.1',
   g2_source_fetch_service_active:false,
+  service_role_browser_exposed:false
+});
+const CANONICAL_IDEA_ADAPTER=Object.freeze({
+  code:'0.1.0',
+  route:'/api/ideas/canonical',
+  commands:['canonical.read','decision.record'],
+  master_blueprint:'1.0',
+  active_idea_blueprint:'SITE_VITRINE@0.4',
+  candidate_idea_blueprint:'SITE_VITRINE@0.5',
+  candidate_activation_changed:false,
+  formal_gates:['G0_BLUEPRINT_FIT','G1_IDEA_DECISION_READY','G2_GO_PROJECT','G3_PROJECT_BASELINE'],
+  readiness_predicates:['FOUNDATION_READY','EVIDENCE_READY','STRATEGY_READY','PREFIGURATION_READY','DECISION_PACKAGE_READY'],
+  predicate_persistence:'derived_not_stored',
+  user_rls_precheck:true,
+  decision_actor_from_jwt:true,
+  g3_promotion_rpc:'promote_canonical_approved_idea_to_project_definition_v2',
+  g3_promotion_browser_exposed:false,
   service_role_browser_exposed:false
 });
 const PROJECT_DEFINITION_ADAPTER=Object.freeze({
@@ -88,6 +106,7 @@ async function health(request,env,ctx){
   payload.ui_shell=payload.ui_shell&&typeof payload.ui_shell==='object'?payload.ui_shell:{};
   if(payload.ui_shell.idea_engine_adapter_v0_1){payload.ui_shell.idea_engine_adapter_v0_1={...payload.ui_shell.idea_engine_adapter_v0_1,compatibility_marker:true};}
   payload.ui_shell.idea_engine_adapter_v0_3={...ADAPTER,g2_executor_paths:executorPaths(env),g2_source_fetch_service:await sourceFetchServiceHealth(env),configured:Boolean(env?.SUPABASE_SERVICE_ROLE_KEY)};
+  payload.ui_shell.idea_canonical_adapter_v1={...CANONICAL_IDEA_ADAPTER,configured:Boolean(env?.SUPABASE_SERVICE_ROLE_KEY)};
   payload.ui_shell.project_definition_adapter_v1={...PROJECT_DEFINITION_ADAPTER,configured:Boolean(env?.SUPABASE_SERVICE_ROLE_KEY)};
   const headers=new Headers(base.headers);headers.set('content-type','application/json; charset=utf-8');headers.set('cache-control','no-store');
   return withSecurityHeaders(new Response(JSON.stringify(payload),{status:base.status,statusText:base.statusText,headers}));
@@ -97,6 +116,7 @@ export default {
   async fetch(request,env,ctx){
     const url=new URL(request.url);
     if(url.pathname==='/health'&&(request.method==='GET'||request.method==='HEAD'))return health(request,env,ctx);
+    if(url.pathname==='/api/ideas/canonical')return withSecurityHeaders(await handleCanonicalIdeaCommand(request,env));
     if(url.pathname==='/api/project-definition/engine')return withSecurityHeaders(await handleProjectDefinitionCommand(request,env));
     if(url.pathname==='/api/ideas/engine'&&request.method==='POST'){
       const clone=request.clone();
