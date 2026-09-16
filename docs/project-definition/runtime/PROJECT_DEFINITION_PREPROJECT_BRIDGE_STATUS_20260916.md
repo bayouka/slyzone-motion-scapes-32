@@ -6,7 +6,7 @@
 
 This document records the canonical pre-project bridge added after the Project Definition RFD p2 production slice.
 
-It does **not** claim that Worker runtime `v4.5.16-project-definition-preproject-p3` is already live. The last independently certified production Worker remains the previously recorded p2 release until a manual CI/deploy run and live `/health` observation prove otherwise.
+It does **not** claim that Worker runtime `v4.5.16-project-definition-preproject-p3` is already live. The last independently certified production Worker remains the previously recorded p2 release until the canonical transport/Cloudflare release chain and live `/health` prove otherwise.
 
 ## Canonical scope
 
@@ -95,15 +95,24 @@ It requires:
 
 G3 promotion is **intentionally not exposed** through the first canonical browser adapter.
 
-Reason: a browser-supplied arbitrary `baseline_manifest` would create a needless trust surface even for an authorized actor. The next implementation step should derive/assemble the promotion payload server-side from the approved snapshot and current canonical material before exposing a product-level promotion command.
+Reason: a browser-supplied arbitrary `baseline_manifest` would create a needless trust surface even for an authorized actor. A future product-level promotion command must assemble/derive its promotion payload server-side from the approved snapshot and current canonical material before the G3 mutation is exposed.
 
-## Active vs candidate Idea Blueprint
+## Idea Blueprint runtime authority
 
-The bridge does not silently activate a new Idea Blueprint version.
+A cross-audit after P4 found and corrected a real compatibility mismatch.
 
-- active fit/runtime assignment remains `SITE_VITRINE@0.4`;
-- `SITE_VITRINE@0.5` remains a candidate/evolving backend surface;
-- the canonical bridge explicitly records that activation was not changed.
+The live `app_private.resolve_idea_blueprint_fit_v1` currently assigns a newly accepted `SITE_VITRINE` Idea to:
+
+`SITE_VITRINE@0.5`.
+
+Therefore:
+
+- `SITE_VITRINE@0.5` is the **current live Blueprint Fit assignment for new compatible Ideas**;
+- `SITE_VITRINE@0.4` remains supported for legacy/existing Ideas that legitimately carry that version;
+- canonical G0 accepts 0.4 or 0.5 only when the persisted `BlueprintFitDecision.blueprint_version` exactly matches the current `Idea.blueprint_version`;
+- the canonical bridge did not itself activate 0.5; that activation predates P3/P5.
+
+The original P3 assumption that 0.4 was still the only active fit version was incorrect and was corrected forward-only before Worker production cutover.
 
 ## Supabase migrations
 
@@ -111,9 +120,15 @@ Applied to authoritative project `4b4c`:
 
 - `20260916174121_project_master_blueprint_v1_g0_g3_preproject_bridge_p3`;
 - `20260916174307_project_master_blueprint_v1_g0_g3_preproject_bridge_p3_g0_column_fix`;
-- `20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4`.
+- `20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4`;
+- `20260916182111_project_master_blueprint_v1_g0_blueprint_05_compat_fix_p5`.
 
-The `174307` migration is a deliberate forward-only correction to the first P3 function body. The already-applied `174121` migration was not rewritten.
+The two corrective migrations are deliberately forward-only:
+
+- `174307` corrects legacy G0 column names used by the first P3 function body;
+- `182111` corrects G0 Blueprint-version compatibility after verifying the live Blueprint Fit authority.
+
+Already-applied migrations were not rewritten.
 
 ## ACL verified live
 
@@ -128,6 +143,8 @@ For all three:
 - `anon`: no EXECUTE;
 - `authenticated`: no EXECUTE;
 - `service_role`: EXECUTE allowed.
+
+After P5 the canonical evaluator ACL was rechecked and remains unchanged.
 
 The browser never receives the service-role credential.
 
@@ -147,7 +164,8 @@ At this cut, production contains **zero real Idea rows**.
 
 Therefore the following remain unproven against a real authenticated production dossier:
 
-- canonical G0 read after a real Blueprint-fit decision;
+- canonical G0 read after a real 0.5 Blueprint-fit decision;
+- canonical G0 compatibility against a legitimate existing 0.4 Idea;
 - G1 launch-path closure from real requirement states and R4 artifacts;
 - G1 early non-GO path from real data;
 - canonical Decision Package readiness on a real R5 package;
@@ -181,6 +199,8 @@ Not exposed:
 
 Health metadata declares:
 
+- active Idea Blueprint Fit runtime `SITE_VITRINE@0.5`;
+- legacy Idea Blueprint support `SITE_VITRINE@0.4`;
 - four pre-project formal gates;
 - five pre-project readiness predicates;
 - JWT decision actor binding;
@@ -190,27 +210,31 @@ Health metadata declares:
 
 ## Repository enforcement
 
-The repository now contains dedicated contract enforcement:
+The repository contains dedicated contract enforcement:
 
 - `scripts/idea-canonical-adapter-v1-check.mjs`;
-- updated `scripts/canonical-runtime-bridge-v1-check.mjs`;
-- updated `scripts/project-definition-adapter-v1-check.mjs`;
-- `npm run check` includes syntax + canonical adapter contract checks;
-- CI checks the canonical route/runtime metadata;
-- production deployment smoke is prepared for the p3 runtime and unauthenticated `401` boundary.
+- `scripts/canonical-runtime-bridge-v1-check.mjs`;
+- `scripts/project-definition-adapter-v1-check.mjs`;
+- `npm run check` includes syntax + canonical adapter/bridge checks;
+- CI may be used as an additional manual source check, but it is **not** the canonical production deployment path.
 
-## Production cutover rule
+## Canonical production cutover rule
 
 Do not mark p3 production-certified until all of the following are observed:
 
-1. manual repository CI passes on the intended main commit;
-2. manual production deployment completes;
-3. live `/health` reports `v4.5.16-project-definition-preproject-p3`;
-4. live health exposes `idea_canonical_adapter_v1` with `configured=true`;
-5. unauthenticated `canonical.read` returns `401 / UNAUTHORIZED`;
-6. unauthenticated `decision.record` returns `401 / UNAUTHORIZED`;
-7. `g3_promotion_browser_exposed=false` remains visible;
-8. previous Project Definition p2 invariants remain present and unchanged.
+1. canonical source passes `npm ci` + `npm run check` in the validated release chain;
+2. only validated runtime files are mirrored to `bayouka/2b2c/4b4c/`;
+3. canonical/transport runtime files are byte-aligned for the release;
+4. `4b4c/TRANSPORT_RELEASE.txt` identifies the intended p3 transport release;
+5. Cloudflare Workers Builds runs the canonical `scripts/deploy-4b4c-direct.sh` release path successfully;
+6. live `/health` reports `v4.5.16-project-definition-preproject-p3`;
+7. live health exposes `idea_canonical_adapter_v1` with `configured=true`;
+8. unauthenticated `canonical.read` returns `401 / UNAUTHORIZED`;
+9. unauthenticated `decision.record` returns `401 / UNAUTHORIZED`;
+10. `g3_promotion_browser_exposed=false` remains visible;
+11. previous Project Definition p2 invariants remain present and unchanged.
+
+GitHub Actions must not be substituted for this production release chain.
 
 A real authenticated Idea E2E is a separate certification and remains blocked until a suitable real Idea exists or an explicitly authorized non-production test fixture/environment is used.
 
@@ -220,7 +244,7 @@ Use together:
 
 - `docs/project-definition/machine/MASTER_BLUEPRINT_V1.json`;
 - `docs/project-definition/machine/CANONICAL_RUNTIME_BRIDGE_V1.json`;
-- the three migrations listed above;
+- the four migrations listed above;
 - `src/idea-canonical-adapter.js`;
 - `src/worker-entry.js`;
 - `scripts/idea-canonical-adapter-v1-check.mjs`;
