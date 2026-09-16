@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
-const contractPath = path.join(root, 'docs', 'project-definition', 'machine', 'MASTER_BLUEPRINT_V1.json');
+const machineDir = path.join(root, 'docs', 'project-definition', 'machine');
+const contractPath = path.join(machineDir, 'MASTER_BLUEPRINT_V1.json');
+const migrationPath = path.join(machineDir, 'LEGACY_D22_TO_D16_MAPPING_V1.json');
 
 const fail = (message) => {
   console.error(`[master-blueprint-v1] FAIL: ${message}`);
@@ -18,13 +20,18 @@ const assert = (condition, message) => {
 
 const unique = (values) => new Set(values).size === values.length;
 
-let contract;
-try {
-  contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
-} catch (error) {
-  fail(`cannot parse ${path.relative(root, contractPath)}: ${error.message}`);
-  process.exit(1);
-}
+const readJson = (filePath) => {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    fail(`cannot parse ${path.relative(root, filePath)}: ${error.message}`);
+    return null;
+  }
+};
+
+const contract = readJson(contractPath);
+const migration = readJson(migrationPath);
+if (!contract || !migration) process.exit(1);
 
 assert(contract.schema_version === '1.0', 'schema_version must be 1.0');
 assert(contract.contract_id === '4B4C_PROJECT_MASTER_BLUEPRINT', 'unexpected contract_id');
@@ -160,6 +167,41 @@ for (const invariant of [
 assert(contract.compatibility?.legacy_runtime_must_remain_operational_until_explicit_migration === true, 'legacy runtime compatibility guard missing');
 assert(contract.compatibility?.silent_persisted_id_rewrite_forbidden === true, 'silent persisted id rewrite must be forbidden');
 
+// Explicit D01..D22 -> D01..D16 migration contract.
+assert(migration.schema_version === '1.0', 'legacy mapping schema_version must be 1.0');
+assert(migration.mapping_id === 'PROJECT_DEFINITION_D22_TO_D16', 'unexpected legacy mapping_id');
+assert(migration.status === 'CANONICAL_MIGRATION_CONTRACT', 'legacy mapping must be canonical');
+assert(migration.migration_policy?.rewrite_persisted_ids_in_place === false, 'legacy persisted ids must not be rewritten in place');
+assert(migration.migration_policy?.preserve_source_identity === true, 'legacy source identity must be preserved');
+assert(migration.migration_policy?.store_target_classification_separately === true, 'target classification must be stored separately');
+assert(migration.migration_policy?.require_explicit_mapping_for_every_legacy_domain === true, 'every legacy domain must have explicit mapping');
+assert(migration.migration_policy?.runtime_activation_implicit === false, 'mapping must not activate runtime implicitly');
+
+const mappings = Array.isArray(migration.mappings) ? migration.mappings : [];
+const expectedLegacyDomainIds = Array.from({ length: 22 }, (_, index) => `D${String(index + 1).padStart(2, '0')}`);
+const mappedLegacyIds = mappings.map((item) => item.legacy_id);
+assert(mappings.length === 22, `expected 22 legacy mappings, got ${mappings.length}`);
+assert(unique(mappedLegacyIds), 'legacy mapping ids must be unique');
+assert(JSON.stringify(mappedLegacyIds) === JSON.stringify(expectedLegacyDomainIds), `legacy mappings must cover D01..D22 in order, got ${mappedLegacyIds.join(', ')}`);
+
+const allowedMappingStrategies = new Set(['DIRECT', 'SPLIT', 'TRANSVERSAL']);
+for (const mapping of mappings) {
+  const targets = Array.isArray(mapping.targets) ? mapping.targets : [];
+  assert(typeof mapping.legacy_name === 'string' && mapping.legacy_name.trim(), `${mapping.legacy_id}: legacy_name required`);
+  assert(allowedMappingStrategies.has(mapping.strategy), `${mapping.legacy_id}: invalid strategy ${mapping.strategy}`);
+  assert(targets.length > 0, `${mapping.legacy_id}: at least one target required`);
+  assert(unique(targets), `${mapping.legacy_id}: target list must be unique`);
+  assert(targets.every((target) => domainIds.includes(target)), `${mapping.legacy_id}: all targets must exist in canonical D01..D16`);
+  assert(targets.includes(mapping.primary_target), `${mapping.legacy_id}: primary_target must be included in targets`);
+  assert(typeof mapping.note === 'string' && mapping.note.trim(), `${mapping.legacy_id}: explanatory note required`);
+  if (mapping.strategy === 'DIRECT') {
+    assert(targets.length === 1, `${mapping.legacy_id}: DIRECT mapping must have exactly one target`);
+  }
+  if (mapping.strategy === 'SPLIT' || mapping.strategy === 'TRANSVERSAL') {
+    assert(targets.length >= 2, `${mapping.legacy_id}: ${mapping.strategy} mapping must have at least two targets`);
+  }
+}
+
 if (!process.exitCode) {
   console.log('[master-blueprint-v1] PASS');
   console.log(JSON.stringify({
@@ -167,6 +209,7 @@ if (!process.exitCode) {
     formal_gates: gates.length,
     readiness_predicates: predicates.length,
     core_objects: coreObjects.length,
+    legacy_domain_mappings: mappings.length,
     legacy_machine_blueprints: contract.compatibility?.legacy_machine_blueprints ?? []
   }));
 }
