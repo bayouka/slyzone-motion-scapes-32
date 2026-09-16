@@ -3,7 +3,7 @@ import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 import { handleCanonicalIdeaCommand } from './idea-canonical-adapter.js';
 import { handleProjectDefinitionCommand } from './project-definition-adapter.js';
 
-const RUNTIME_VERSION='v4.5.17-project-definition-g3-derived-p4';
+const RUNTIME_VERSION='v4.5.18-stabilization-legacy-cutover-p1';
 const ADAPTER=Object.freeze({
   code:'0.3.5',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
@@ -46,6 +46,9 @@ const CANONICAL_IDEA_ADAPTER=Object.freeze({
   g3_promotion_diff_client_controlled:false,
   g3_artifact_promotions_client_controlled:false,
   g3_server_derived_migration:'20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1',
+  legacy_direct_decision_browser_exposed:false,
+  legacy_final_decision_bootstrapped:false,
+  canonical_workspace_bridge:'1.0.0',
   service_role_browser_exposed:false
 });
 const PROJECT_DEFINITION_ADAPTER=Object.freeze({
