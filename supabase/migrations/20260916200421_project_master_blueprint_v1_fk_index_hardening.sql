@@ -1,0 +1,22 @@
+create index if not exists project_baseline_freezes_v1_frozen_by_idx on app_private.project_baseline_freezes_v1(frozen_by);
+create index if not exists project_baseline_freezes_v1_lot_blueprint_idx on app_private.project_baseline_freezes_v1(lot_id, blueprint_id, blueprint_version);
+create index if not exists project_baseline_freezes_v1_project_definition_idx on app_private.project_baseline_freezes_v1(project_definition_id);
+
+create index if not exists project_canonical_gate_states_v1_authorized_by_idx on app_private.project_canonical_gate_states_v1(authorized_by);
+
+create index if not exists project_conflict_records_v1_project_definition_idx on app_private.project_conflict_records_v1(project_definition_id);
+create index if not exists project_conflict_records_v1_blueprint_node_idx on app_private.project_conflict_records_v1(blueprint_id, blueprint_version, node_id);
+
+create index if not exists project_delivery_lot_nodes_v1_blueprint_node_idx on app_private.project_delivery_lot_nodes_v1(blueprint_id, blueprint_version, node_id);
+create index if not exists project_delivery_lot_nodes_v1_lot_blueprint_idx on app_private.project_delivery_lot_nodes_v1(lot_id, blueprint_id, blueprint_version);
+
+create index if not exists project_delivery_lots_v1_blueprint_idx on app_private.project_delivery_lots_v1(blueprint_id, blueprint_version);
+
+create index if not exists project_dependency_edges_v1_target_idx on app_private.project_dependency_edges_v1(blueprint_id, blueprint_version, target_node_id);
+
+create index if not exists project_handoff_manifests_v1_lot_idx on app_private.project_handoff_manifests_v1(lot_id);
+create index if not exists project_handoff_manifests_v1_project_definition_idx on app_private.project_handoff_manifests_v1(project_definition_id);
+
+create index if not exists project_ownership_assignments_v1_blueprint_node_idx on app_private.project_ownership_assignments_v1(blueprint_id, blueprint_version, node_id);
+
+create index if not exists project_rfd_manifests_v1_frozen_by_idx on app_private.project_rfd_manifests_v1(frozen_by);
