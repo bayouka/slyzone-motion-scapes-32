@@ -80,22 +80,9 @@ Frontend: `site/lab2/idea-design.html`
 
 The novice does not configure design-system parameters. They may simply choose up to three perceptions (modern, warm, premium, minimal, playful, professional, tech, reassuring), an optional color family, colors to avoid, and a free-form visual preference note.
 
-The endpoint uses one AI call maximum to select three distinct directions from a server-controlled design catalog. The model may select only approved IDs for:
-- palette;
-- typography;
-- shape/radius;
-- density/spacing;
-- imagery strategy;
-- motion level.
+The endpoint uses one AI call maximum to select three distinct directions from a server-controlled design catalog. The model may select only approved IDs for palette, typography, shape/radius, density/spacing, imagery strategy and motion level. The server resolves those IDs into deterministic HSL tokens, font stacks, radii, shadows and spacing values. The model never invents raw CSS tokens.
 
-The server then resolves those IDs into deterministic HSL tokens, font stacks, radii, shadows and spacing values. The model never invents raw CSS tokens. The frontend renders real mini-previews from those resolved tokens and the user explicitly chooses one direction. Selection is local and costs no additional AI call.
-
-Hard rules:
-- design references are treated only as user preference notes; no competitor identity is copied;
-- Slice 7 performs no web/source fetch;
-- colors/tokens come only from the controlled catalog;
-- `human_direction_selection_required` remains true;
-- the selected resolved tokens become the direct input for the deterministic mockup engine in Slice 8.
+The frontend renders real mini-previews from those resolved tokens. The user explicitly chooses one direction locally with no additional AI call. Design reference notes are preference context only; Slice 7 performs no web/source fetch and never copies a competitor identity.
 
 ## Security and cost boundary
 - no service-role key in browser or Lab endpoint;
@@ -119,7 +106,7 @@ Validated artifacts:
 - `scripts/test_lab2_design_v1.mjs`
 - `scripts/lab2-isolation-check.mjs`
 
-Previous observed GitHub Actions run `35160858123` completed successfully for Slices 1–6. The Slice 7 workflow is re-run on every relevant branch push and remains the certification source before the Lab is exposed to users.
+Observed GitHub Actions run `35162122051` completed successfully for Slices 1–7: syntax checks, zero-credit contract tests and isolation boundary all passed.
 
 ## Planned progression
 - Slice 8: deterministic component-based mockups using the chosen resolved design direction.
