@@ -29,8 +29,15 @@
         <button class="secondary" id="logoutButton" type="button">Se déconnecter</button>
       </div>
 
+      <section class="setup" id="setupPanel" hidden>
+        <strong>Autorisation IA du compte</strong>
+        <p>L’accès IA reste verrouillé tant que ce compte n’est pas ajouté à la liste privée du Lab. Copie ton identifiant technique puis colle-le toi-même dans le secret GitHub <code>LAB2_ALLOWED_USER_IDS</code>. Ne le publie pas dans une discussion.</p>
+        <button class="secondary" id="copyUserIdButton" type="button">Copier mon identifiant technique</button>
+        <span id="copyStatus" aria-live="polite"></span>
+      </section>
+
       <p class="error" id="errorBox" hidden></p>
-      <p class="note">Si ton compte n’est pas encore autorisé côté Lab, tu pourras te connecter mais les appels IA resteront bloqués. Le site 4b4c actuel n’est pas affecté.</p>
+      <p class="note">Sans autorisation IA, tu peux déjà tester la capture et l’interface. Les appels IA restent bloqués. Le site 4b4c actuel n’est pas affecté.</p>
     </section>
   </main>
   <script src="./runtime-config.js"></script>
