@@ -1,0 +1,60 @@
+import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding.js';
+import { handleLab2IdeaResearch } from './lab2-idea-research.js';
+import { handleLab2IdeaImprovements } from './lab2-idea-improvements.js';
+import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
+import { handleLab2IdeaStructure } from './lab2-idea-structure.js';
+import { handleLab2IdeaDesign } from './lab2-idea-design.js';
+import { handleLab2IdeaMockups } from './lab2-idea-mockups.js';
+
+const SECURITY_HEADERS=Object.freeze({
+  'x-content-type-options':'nosniff',
+  'referrer-policy':'no-referrer',
+  'x-frame-options':'DENY',
+  'permissions-policy':'camera=(), microphone=(), display-capture=(), geolocation=()'
+});
+
+function withSecurityHeaders(response){
+  const headers=new Headers(response.headers);
+  for(const [key,value] of Object.entries(SECURITY_HEADERS))headers.set(key,value);
+  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+}
+function json(data,status=200){return withSecurityHeaders(Response.json(data,{status,headers:{'cache-control':'no-store'}}))}
+function accessConfigured(env){return Boolean(String(env?.LAB2_ALLOWED_USER_IDS||'').trim())}
+
+const LAB_ROUTES=new Map([
+  ['/api/lab2/understand',handleLab2IdeaUnderstanding],
+  ['/api/lab2/research',handleLab2IdeaResearch],
+  ['/api/lab2/improvements',handleLab2IdeaImprovements],
+  ['/api/lab2/brief',handleLab2IdeaBrief],
+  ['/api/lab2/structure',handleLab2IdeaStructure],
+  ['/api/lab2/design',handleLab2IdeaDesign],
+  ['/api/lab2/mockups',handleLab2IdeaMockups]
+]);
+
+export default {
+  async fetch(request,env){
+    const url=new URL(request.url);
+    if(url.pathname==='/health'&&(request.method==='GET'||request.method==='HEAD')){
+      return json({
+        ok:true,
+        app:'4b4c2-idea-lab-preview',
+        isolated:true,
+        production_business_api_exposed:false,
+        database_write_surface:false,
+        auth_provider:'supabase-auth-only',
+        ai_configured:Boolean(env?.AI),
+        source_fetch_configured:Boolean(env?.SOURCE_FETCH),
+        competitor_search_configured:Boolean(env?.LAB2_BRAVE_SEARCH_API_KEY),
+        access_allowlist_configured:accessConfigured(env)
+      });
+    }
+    const handler=LAB_ROUTES.get(url.pathname);
+    if(handler)return withSecurityHeaders(await handler(request,env));
+    if(request.method!=='GET'&&request.method!=='HEAD')return json({ok:false,error:'NOT_FOUND'},404);
+    if(url.pathname==='/'||url.pathname==='/lab2')return Response.redirect(new URL('/lab2/login.html',url.origin),302);
+    if(!url.pathname.startsWith('/lab2/'))return json({ok:false,error:'NOT_FOUND'},404);
+    if(!env?.ASSETS)return json({ok:false,error:'ASSETS_UNAVAILABLE'},503);
+    const response=await env.ASSETS.fetch(request);
+    return withSecurityHeaders(response);
+  }
+};
