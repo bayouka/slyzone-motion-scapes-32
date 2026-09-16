@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "contract_id": "PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE",
-  "contract_version": "1.0",
+  "contract_version": "1.1",
   "status": "CANONICAL_MIGRATION_CONTRACT",
   "source_runtime": "R7_BUILD_READY_RUNTIME",
   "target_contract": "4B4C_PROJECT_MASTER_BLUEPRINT_V1",
@@ -10,9 +10,12 @@
     "legacy_readiness_projection": "PARTIAL",
     "core_graph": "IMPLEMENTED_SERVICE_ONLY",
     "canonical_node_state_projection": "IMPLEMENTED_R7_BRIDGE",
-    "delivery_lots": "SCHEMA_IMPLEMENTED_SERVICE_ONLY",
-    "dependency_closure": "IMPLEMENTED_PREDICATES_SERVICE_ONLY",
-    "canonical_formal_gates": "NOT_RUNTIME_COMPLETE"
+    "delivery_lots": "IMPLEMENTED_SERVICE_ONLY",
+    "dependency_closure": "IMPLEMENTED_SERVICE_ONLY",
+    "rfd_predicates": "SEVEN_IMPLEMENTED_SERVICE_ONLY",
+    "baseline_handoff": "IMPLEMENTED_SERVICE_ONLY",
+    "canonical_formal_gates": "G4_G5_IMPLEMENTED_SERVICE_ONLY",
+    "canonical_pre_g4_gates": "G0_G3_NOT_IMPLEMENTED_IN_THIS_RUNTIME_SLICE"
   },
   "runtime_objects": {
     "blueprint_pack": "app_private.project_blueprint_packs_v1",
@@ -22,9 +25,21 @@
     "delivery_lot_nodes": "app_private.project_delivery_lot_nodes_v1",
     "ownership_assignments": "app_private.project_ownership_assignments_v1",
     "conflict_records": "app_private.project_conflict_records_v1",
+    "testability_policy": "app_private.project_node_testability_policy_v1",
+    "baseline_freezes": "app_private.project_baseline_freezes_v1",
+    "handoff_manifests": "app_private.project_handoff_manifests_v1",
+    "canonical_gate_states": "app_private.project_canonical_gate_states_v1",
+    "project_rfd_manifests": "app_private.project_rfd_manifests_v1",
     "canonical_graph_read": "public.get_project_definition_canonical_graph_v1(uuid)",
     "blueprint_dependency_closure": "app_private.get_blueprint_dependency_closure_v1(text,text,text[])",
-    "delivery_lot_dependency_closure": "public.get_project_delivery_lot_dependency_closure_v1(uuid)"
+    "delivery_lot_dependency_closure": "public.get_project_delivery_lot_dependency_closure_v1(uuid)",
+    "quality_testability": "public.get_project_delivery_lot_quality_testability_v1(uuid)",
+    "baseline_handoff_readiness": "public.get_project_delivery_lot_baseline_handoff_readiness_v1(uuid)",
+    "g4_readiness": "public.get_project_delivery_lot_rfd_readiness_v1(uuid)",
+    "g4_approval": "public.approve_project_delivery_lot_rfd_v1(uuid,bigint,text,uuid)",
+    "g5_manifest_candidate": "public.create_project_rfd_manifest_candidate_v1(uuid,bigint)",
+    "g5_readiness": "public.get_project_rfd_readiness_v1(uuid)",
+    "g5_approval": "public.approve_project_rfd_v1(uuid,bigint,text,uuid)"
   },
   "graph_contract": {
     "blueprint_id": "SITE_VITRINE",
@@ -57,42 +72,63 @@
   "legacy_gate_passthrough_only": [
     {
       "legacy_gate_id": "G12_READY_FOR_DEVELOPMENT",
-      "reason": "Legacy R7 project-level build-ready semantics predate canonical DeliveryLot and G4/G5. It remains legacy evidence only and must never be relabeled as G4_RFD_LOT or G5_RFD_PROJECT."
+      "reason": "Legacy R7 project-level build-ready semantics remain compatibility evidence only. Canonical RFD is now represented separately by G4_RFD_LOT and G5_RFD_PROJECT and legacy G12 must never be relabeled as either gate."
     }
   ],
-  "canonical_predicates_implemented_by_bridge": [
+  "canonical_rfd_predicates_implemented": [
     "DEPENDENCY_CLOSURE",
     "CRITICAL_TBD_CLOSURE",
-    "OWNERSHIP_CLOSURE"
-  ],
-  "dependency_closure_bridge_basis": {
-    "structural_graph": "CANONICAL_D01_D16_HARD_REQUIRES",
-    "fulfilment": "R7_PROJECT_REQUIREMENT_SATISFACTION_V1",
-    "accepted_unknown_satisfies_structural_requirement": false,
-    "ownership": "R7_OWNER_OR_ACCEPTED_AUTHORITY_PLUS_NATIVE_ASSIGNMENTS",
-    "conflicts": "CANONICAL_PROJECT_CONFLICT_RECORDS_V1",
-    "manual_ready_flag": false
-  },
-  "canonical_predicates_not_yet_derivable_from_r7": [
+    "OWNERSHIP_CLOSURE",
     "QUALITY_REQUIREMENTS_DEFINED",
     "TESTABILITY_READY",
     "BASELINE_READY",
     "HANDOFF_INTEGRITY"
   ],
-  "canonical_formal_gates_not_emitted_by_bridge": [
-    "G0_BLUEPRINT_FIT",
-    "G1_IDEA_DECISION_READY",
-    "G2_GO_PROJECT",
-    "G3_PROJECT_BASELINE",
+  "dependency_closure_bridge_basis": {
+    "structural_graph": "CANONICAL_D01_D16_HARD_REQUIRES",
+    "fulfilment": "R7_PROJECT_REQUIREMENT_SATISFACTION_V1_BRIDGED_TO_CANONICAL_NODES",
+    "accepted_unknown_satisfies_structural_requirement": false,
+    "ownership": "R7_OWNER_OR_ACCEPTED_AUTHORITY_PLUS_NATIVE_ASSIGNMENTS",
+    "conflicts": "CANONICAL_PROJECT_CONFLICT_RECORDS_V1",
+    "manual_ready_flag": false
+  },
+  "canonical_formal_gates_implemented": [
     "G4_RFD_LOT",
     "G5_RFD_PROJECT"
   ],
+  "canonical_formal_gates_not_implemented_in_this_slice": [
+    "G0_BLUEPRINT_FIT",
+    "G1_IDEA_DECISION_READY",
+    "G2_GO_PROJECT",
+    "G3_PROJECT_BASELINE"
+  ],
+  "g4_policy": {
+    "derived_readiness_required": true,
+    "all_seven_rfd_predicates_must_pass": true,
+    "expected_definition_revision_required": true,
+    "expected_evaluation_fingerprint_required": true,
+    "human_authority_required": true,
+    "authorized_actor_must_be_idea_creator_or_workspace_owner_admin": true,
+    "freezes_lot_baseline_and_handoff_atomically": true
+  },
+  "g5_policy": {
+    "at_least_one_required_delivery_lot": true,
+    "all_required_lots_require_current_g4_approval": true,
+    "all_required_lots_must_match_current_definition_revision": true,
+    "project_rfd_manifest_integrity_required": true,
+    "expected_evaluation_fingerprint_required": true,
+    "human_authority_required": true,
+    "authorized_actor_must_be_idea_creator_or_workspace_owner_admin": true,
+    "legacy_project_status_is_not_mutated": true
+  },
   "rules": {
     "legacy_gate_ids_are_immutable_during_bridge": true,
     "legacy_g12_is_not_canonical_rfd": true,
     "unknown_canonical_readiness_must_not_be_coerced_to_ready": true,
     "manual_ready_flag_forbidden": true,
-    "bridge_is_read_only": true,
-    "runtime_activation_requires_explicit_followup_migration": true
+    "direct_browser_access_to_canonical_runtime_forbidden": true,
+    "service_side_mutations_enabled": true,
+    "human_actor_identity_must_come_from_authenticated_server_adapter": true,
+    "runtime_activation_requires_explicit_adapter_cutover": true
   }
 }
