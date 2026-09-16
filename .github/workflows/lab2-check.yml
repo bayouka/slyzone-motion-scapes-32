@@ -38,6 +38,7 @@ jobs:
           node --check site/lab2/idea-structure.js
           node --check site/lab2/idea-design.js
           node --check site/lab2/idea-mockups.js
+          node --check site/lab2/idea-presentation.js
           node --check src/lab2-idea-understanding.js
           node --check src/lab2-idea-research.js
           node --check src/lab2-idea-improvements.js
@@ -55,5 +56,6 @@ jobs:
           node scripts/test_lab2_structure_v1.mjs
           node scripts/test_lab2_design_v1.mjs
           node scripts/test_lab2_mockups_v1.mjs
+          node scripts/test_lab2_presentation_v1.mjs
       - name: Isolation boundary
         run: node scripts/lab2-isolation-check.mjs
