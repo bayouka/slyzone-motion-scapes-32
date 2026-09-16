@@ -55,7 +55,19 @@ jobs:
             cat /tmp/probe.out || true
             return 1
           }
-          probe /health '"version":"v4.5.8-nav-dead-css"'
+          post_unauth() {
+            path="$1"; payload="$2"
+            code=$(curl -L -sS -H 'Cache-Control: no-cache' -H 'content-type: application/json' -X POST -d "$payload" -o /tmp/post-probe.out -w '%{http_code}' "$PRODUCTION_URL$path" || true)
+            echo "unauth POST $path http=$code"
+            test "$code" = "401"
+            grep -Fq '"error":"UNAUTHORIZED"' /tmp/post-probe.out
+          }
+          probe /health '"version":"v4.5.16-project-definition-preproject-p3"'
+          probe /health '"idea_canonical_adapter_v1"'
+          probe /health '"g3_promotion_browser_exposed":false'
+          probe /health '"service_role_browser_exposed":false'
+          post_unauth /api/ideas/canonical '{"command":"canonical.read","idea_id":"00000000-0000-4000-8000-000000000001"}'
+          post_unauth /api/ideas/canonical '{"command":"decision.record","idea_id":"00000000-0000-4000-8000-000000000001","package_id":"00000000-0000-4000-8000-000000000002","outcome":"STOP","rationale":"smoke","conditions":[],"conditions_resolved":true,"expected_g1_fingerprint":"deadbeef","idempotency_key":"deploy-smoke"}'
           probe /assets/boot.js "v4.5.8-nav-dead-css"
           probe /assets/boot.js "communication-workspace-v1.js"
           probe /assets/live.js "open-call-picker-v1"
