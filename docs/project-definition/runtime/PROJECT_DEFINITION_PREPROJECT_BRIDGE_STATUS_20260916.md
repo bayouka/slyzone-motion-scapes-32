@@ -1,28 +1,57 @@
-# 4b4c — Canonical Pre-Project Bridge G0→G3 — implementation status — 2026-09-16
+# 4b4c — Canonical Pre-Project Bridge G0→G3 — production status — 2026-09-16
 
 ## Status
 
-**SERVICE-SIDE IMPLEMENTED / REPOSITORY ADAPTER READY / PRODUCTION CUTOVER NOT YET CERTIFIED**
+**PRODUCTION CERTIFIED — WORKER BUILD 556 / `v4.5.16-project-definition-preproject-p3`**
 
-This document records the canonical pre-project bridge added after the Project Definition RFD p2 production slice.
+The canonical pre-project bridge is now deployed and independently observed in production through the canonical Cloudflare transport path.
 
-It does **not** claim that Worker runtime `v4.5.16-project-definition-preproject-p3` is already live. The last independently certified production Worker remains the previously recorded p2 release until the canonical transport/Cloudflare release chain and live `/health` prove otherwise.
-
-## Canonical scope
-
-The bridge closes the Master Blueprint formal-gate chain before RFD:
+The live Worker exposes the complete Master Blueprint formal-gate chain across the pre-project and Project Definition surfaces:
 
 - `G0_BLUEPRINT_FIT`;
 - `G1_IDEA_DECISION_READY`;
 - `G2_GO_PROJECT`;
-- `G3_PROJECT_BASELINE`.
-
-The existing RFD gates remain unchanged:
-
+- `G3_PROJECT_BASELINE`;
 - `G4_RFD_LOT`;
 - `G5_RFD_PROJECT`.
 
 No parallel gate-state database was introduced for G0→G3. Readiness is derived from existing Idea Engine / R4 / R5 / R6 runtime objects.
+
+## Production evidence
+
+Certified transport release:
+
+- Worker runtime: `v4.5.16-project-definition-preproject-p3`;
+- transport build: `556`;
+- Cloudflare active version: `302a9905-def9-4e0c-86ed-bd3bc3db619c`;
+- canonical Idea adapter: `idea_canonical_adapter_v1.code = 0.1.0`;
+- canonical Project Definition adapter: `project_definition_adapter_v1.code = 0.1.1`;
+- shell remains intentionally on build `553` because this release is backend/runtime additive only.
+
+Live `/health` independently confirms:
+
+- `idea_engine_adapter_v0_3.blueprint = SITE_VITRINE@0.5`;
+- `idea_canonical_adapter_v1.configured = true`;
+- active Idea Blueprint `SITE_VITRINE@0.5`;
+- legacy Idea Blueprint support `SITE_VITRINE@0.4`;
+- canonical pre-project formal gates `G0→G3`;
+- five derived pre-project readiness predicates;
+- `decision_actor_from_jwt = true`;
+- `g3_promotion_browser_exposed = false`;
+- `service_role_browser_exposed = false`;
+- Project Definition RFD predicate count = 11;
+- Project Definition pre-baseline predicate count = 9;
+- Project Definition readiness bridge `G8-G11`;
+- canonical `G4_RFD_LOT` and `G5_RFD_PROJECT` remain present;
+- source-fetch internal service remains reachable/configured while SRC remains inactive.
+
+The successful Cloudflare build 556 release gate also executed live unauthenticated smoke checks requiring:
+
+- `canonical.read` → `401 / UNAUTHORIZED` without JWT;
+- `decision.record` → `401 / UNAUTHORIZED` without JWT;
+- Project Definition `canonical.read` → `401 / UNAUTHORIZED` without JWT.
+
+A failed smoke would have failed the Cloudflare build rather than producing the observed green release.
 
 ## Derived pre-project predicates
 
@@ -74,7 +103,16 @@ It binds the immutable R5 Decision Record to the **exact current G1 evaluation f
 
 This removes the legacy weakness where a caller-provided `gate_g7_ready` boolean could be treated as if it were canonical readiness evidence.
 
-The repository Worker adapter injects `p_decided_by` from the authenticated JWT user. Client payloads do not control the decision actor.
+The production Worker adapter injects `p_decided_by` from the authenticated JWT user. Client payloads do not control the decision actor.
+
+Browser route:
+
+`POST /api/ideas/canonical`
+
+Production browser commands:
+
+- `canonical.read`;
+- `decision.record`.
 
 ## G3 — Project Baseline promotion
 
@@ -93,13 +131,13 @@ It requires:
 
 ### Browser boundary
 
-G3 promotion is **intentionally not exposed** through the first canonical browser adapter.
+G3 promotion remains **intentionally not exposed** through the canonical browser adapter.
 
 Reason: a browser-supplied arbitrary `baseline_manifest` would create a needless trust surface even for an authorized actor. A future product-level promotion command must assemble/derive its promotion payload server-side from the approved snapshot and current canonical material before the G3 mutation is exposed.
 
 ## Idea Blueprint runtime authority
 
-A cross-audit after P4 found and corrected a real compatibility mismatch.
+A cross-audit before p3 cutover found and corrected a real compatibility mismatch.
 
 The live `app_private.resolve_idea_blueprint_fit_v1` currently assigns a newly accepted `SITE_VITRINE` Idea to:
 
@@ -123,7 +161,7 @@ Applied to authoritative project `4b4c`:
 - `20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4`;
 - `20260916182111_project_master_blueprint_v1_g0_blueprint_05_compat_fix_p5`.
 
-The two corrective migrations are deliberately forward-only:
+The corrective migrations are deliberately forward-only:
 
 - `174307` corrects legacy G0 column names used by the first P3 function body;
 - `182111` corrects G0 Blueprint-version compatibility after verifying the live Blueprint Fit authority.
@@ -158,33 +196,33 @@ Conditional prefiguration requirements whose applicability is not yet materializ
 
 After rollback, production `public.ideas` remained empty.
 
-## Real E2E limitation
+## Remaining authenticated E2E limitation
 
-At this cut, production contains **zero real Idea rows**.
+Production certification of the Worker/API boundary is complete, but **real authenticated lifecycle E2E remains a distinct proof**.
 
-Therefore the following remain unproven against a real authenticated production dossier:
+At this cut, production contains no real Idea dossier suitable for exercising the full canonical lifecycle. Therefore the following remain unproven against a real authenticated production dossier:
 
 - canonical G0 read after a real 0.5 Blueprint-fit decision;
 - canonical G0 compatibility against a legitimate existing 0.4 Idea;
 - G1 launch-path closure from real requirement states and R4 artifacts;
 - G1 early non-GO path from real data;
 - canonical Decision Package readiness on a real R5 package;
-- `decision.record` through the Worker with a real authenticated decision owner;
+- `decision.record` with a real authenticated decision owner;
 - canonical G2 GO with same-fingerprint binding;
 - stale G1 fingerprint rejection through the Worker;
 - server-side canonical G3 promotion on a real approved Idea;
 - resulting Project Definition baseline inspection;
 - end-to-end continuity from G3 into existing G4/G5 RFD runtime.
 
-These items must stay **unproven**, not inferred from fixture tests.
+These items remain **unproven**, not inferred from deployment smoke tests.
 
-## Repository adapter candidate
+## Production runtime contract
 
-Repository runtime candidate:
+Runtime:
 
 `v4.5.16-project-definition-preproject-p3`
 
-New route:
+Canonical Idea route:
 
 `POST /api/ideas/canonical`
 
@@ -216,32 +254,31 @@ The repository contains dedicated contract enforcement:
 - `scripts/canonical-runtime-bridge-v1-check.mjs`;
 - `scripts/project-definition-adapter-v1-check.mjs`;
 - `npm run check` includes syntax + canonical adapter/bridge checks;
-- CI may be used as an additional manual source check, but it is **not** the canonical production deployment path.
+- canonical transport mirror pins the runtime blobs used by build 556;
+- Cloudflare production release gate checks p3 health metadata and unauthenticated authorization boundaries.
 
-## Canonical production cutover rule
+## Production release chain
 
-Do not mark p3 production-certified until all of the following are observed:
+p3 is certified through the canonical production path:
 
-1. canonical source passes `npm ci` + `npm run check` in the validated release chain;
-2. only validated runtime files are mirrored to `bayouka/2b2c/4b4c/`;
-3. canonical/transport runtime files are byte-aligned for the release;
-4. `4b4c/TRANSPORT_RELEASE.txt` identifies the intended p3 transport release;
-5. Cloudflare Workers Builds runs the canonical `scripts/deploy-4b4c-direct.sh` release path successfully;
+1. canonical source validated;
+2. only validated runtime files mirrored to `bayouka/2b2c/4b4c/`;
+3. canonical/transport runtime files byte-aligned for the release;
+4. `4b4c/TRANSPORT_RELEASE.txt` identifies build 556 / p3;
+5. Cloudflare Workers Builds successfully ran `scripts/deploy-4b4c-direct.sh`;
 6. live `/health` reports `v4.5.16-project-definition-preproject-p3`;
 7. live health exposes `idea_canonical_adapter_v1` with `configured=true`;
-8. unauthenticated `canonical.read` returns `401 / UNAUTHORIZED`;
-9. unauthenticated `decision.record` returns `401 / UNAUTHORIZED`;
-10. `g3_promotion_browser_exposed=false` remains visible;
-11. previous Project Definition p2 invariants remain present and unchanged.
+8. build smoke proves unauthenticated canonical Idea commands fail closed;
+9. `g3_promotion_browser_exposed=false` remains visible;
+10. previous Project Definition p2/G4/G5 invariants remain present and unchanged.
 
-GitHub Actions must not be substituted for this production release chain.
-
-A real authenticated Idea E2E is a separate certification and remains blocked until a suitable real Idea exists or an explicitly authorized non-production test fixture/environment is used.
+GitHub Actions are not the production deployment authority.
 
 ## Authority
 
 Use together:
 
+- `README.md`;
 - `docs/project-definition/machine/MASTER_BLUEPRINT_V1.json`;
 - `docs/project-definition/machine/CANONICAL_RUNTIME_BRIDGE_V1.json`;
 - the four migrations listed above;
