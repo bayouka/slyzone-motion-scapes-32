@@ -3,6 +3,7 @@ import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 import { handleCanonicalIdeaCommand } from './idea-canonical-adapter.js';
 import { handleProjectDefinitionCommand } from './project-definition-adapter.js';
 import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding.js';
+import { handleLab2IdeaResearch } from './lab2-idea-research.js';
 
 const RUNTIME_VERSION='v4.5.18-stabilization-legacy-cutover-p1';
 const ADAPTER=Object.freeze({
@@ -127,6 +128,7 @@ export default {
     const url=new URL(request.url);
     if(url.pathname==='/health'&&(request.method==='GET'||request.method==='HEAD'))return health(request,env,ctx);
     if(url.pathname==='/api/lab2/understand')return withSecurityHeaders(await handleLab2IdeaUnderstanding(request,env));
+    if(url.pathname==='/api/lab2/research')return withSecurityHeaders(await handleLab2IdeaResearch(request,env));
     if(url.pathname==='/api/ideas/canonical')return withSecurityHeaders(await handleCanonicalIdeaCommand(request,env));
     if(url.pathname==='/api/project-definition/engine')return withSecurityHeaders(await handleProjectDefinitionCommand(request,env));
     if(url.pathname==='/api/ideas/engine'&&request.method==='POST'){
