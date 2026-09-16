@@ -27,6 +27,10 @@ const REQUEST_KEYS=Object.freeze({
 });
 
 const PREBASELINE_PREDICATES=Object.freeze([
+  'PROJECT_PRODUCT_READY',
+  'PROJECT_EXPERIENCE_READY',
+  'PROJECT_TECH_READY',
+  'TRACEABILITY_READY',
   'DEPENDENCY_CLOSURE',
   'CRITICAL_TBD_CLOSURE',
   'OWNERSHIP_CLOSURE',
@@ -172,7 +176,7 @@ function validateCommandBody(body){
   return {...body,command};
 }
 
-function firstFivePredicatesPass(readiness){
+function prebaselinePredicatesPass(readiness){
   const predicates=readiness?.predicates||{};
   return PREBASELINE_PREDICATES.every(key=>predicates[key]==='PASS');
 }
@@ -211,7 +215,7 @@ async function prepareDeliveryLotRfd(env,auth,body){
 
   let readiness=await serviceRpc(env,'get_project_delivery_lot_rfd_readiness_v1',{p_lot_id:body.lot_id});
   if(readiness?.ready_for_authorization===true)return {status:'READY_FOR_AUTHORIZATION',prepared:true,reused:true,readiness};
-  if(!firstFivePredicatesPass(readiness))throw new AdapterHttpError(409,'RFD_NOT_READY',JSON.stringify(readiness?.predicates||{}));
+  if(!prebaselinePredicatesPass(readiness))throw new AdapterHttpError(409,'RFD_NOT_READY',JSON.stringify(readiness?.predicates||{}));
 
   let baselineHandoff=readiness?.diagnostics?.baseline_handoff||{};
   if(baselineHandoff.BASELINE_READY!=='PASS'){
