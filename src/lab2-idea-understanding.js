@@ -36,6 +36,13 @@ function cleanMultiline(value,max=6000){
 
 function safeArray(value){return Array.isArray(value)?value:[];}
 
+function allowedUserIds(env){
+  const raw=String(env?.LAB2_ALLOWED_USER_IDS||'').trim();
+  if(!raw)return null;
+  const ids=new Set(raw.split(',').map((value)=>value.trim().toLowerCase()).filter(Boolean));
+  return ids.size?ids:null;
+}
+
 async function authenticate(env,request){
   const header=request.headers.get('authorization')||'';
   if(!header.startsWith('Bearer '))return null;
@@ -188,8 +195,12 @@ export async function handleLab2IdeaUnderstanding(request,env){
   if(Number(request.headers.get('content-length')||0)>MAX_BODY_BYTES)return json({ok:false,error:'INVALID_REQUEST'},400);
   if(!env?.AI)return json({ok:false,error:'AI_UNAVAILABLE'},503);
 
+  const allowlist=allowedUserIds(env);
+  if(!allowlist)return json({ok:false,error:'LAB_ACCESS_UNCONFIGURED'},503);
+
   const auth=await authenticate(env,request);
   if(!auth)return json({ok:false,error:'UNAUTHORIZED'},401);
+  if(!allowlist.has(auth.id.toLowerCase()))return json({ok:false,error:'LAB_ACCESS_DENIED'},403);
 
   let body;
   try{body=await request.json();}catch{return json({ok:false,error:'INVALID_REQUEST'},400);}
