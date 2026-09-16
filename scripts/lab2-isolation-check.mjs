@@ -2,36 +2,43 @@ import fs from 'node:fs/promises';
 
 const read=(path)=>fs.readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
-const [endpoint,workerEntry,frontendJs,frontendHtml]=await Promise.all([
+const [understanding,research,workerEntry,frontendJs,frontendHtml]=await Promise.all([
   read('src/lab2-idea-understanding.js'),
+  read('src/lab2-idea-research.js'),
   read('src/worker-entry.js'),
   read('site/lab2/idea-studio.js'),
   read('site/lab2/idea-studio.html')
 ]);
 
-function requireMatch(source,pattern,code){
-  if(!pattern.test(source))throw new Error(code);
-}
-function forbid(source,pattern,code){
-  if(pattern.test(source))throw new Error(code);
+function requireMatch(source,pattern,code){if(!pattern.test(source))throw new Error(code)}
+function forbid(source,pattern,code){if(pattern.test(source))throw new Error(code)}
+
+for(const [name,endpoint] of [['UNDERSTANDING',understanding],['RESEARCH',research]]){
+  requireMatch(endpoint,/LAB2_IDEA_STUDIO_ENABLED/,`LAB2_${name}_FEATURE_FLAG_REQUIRED`);
+  requireMatch(endpoint,/LAB2_ALLOWED_USER_IDS/,`LAB2_${name}_ALLOWLIST_REQUIRED`);
+  requireMatch(endpoint,/\/auth\/v1\/user/,`LAB2_${name}_AUTH_PRECHECK_REQUIRED`);
+  forbid(endpoint,/SUPABASE_SERVICE_ROLE_KEY/,`LAB2_${name}_SERVICE_ROLE_FORBIDDEN`);
+  forbid(endpoint,/\/rest\/v1\//,`LAB2_${name}_DATABASE_REST_SURFACE_FORBIDDEN`);
+  forbid(endpoint,/\/rpc\//,`LAB2_${name}_RPC_SURFACE_FORBIDDEN`);
+  forbid(endpoint,/idea_decisions|project_definitions|promote_canonical|record_canonical/i,`LAB2_${name}_CANONICAL_BUSINESS_COUPLING_FORBIDDEN`);
 }
 
-requireMatch(endpoint,/LAB2_IDEA_STUDIO_ENABLED/,'LAB2_FEATURE_FLAG_REQUIRED');
-requireMatch(endpoint,/LAB2_ALLOWED_USER_IDS/,'LAB2_ALLOWLIST_REQUIRED');
-requireMatch(endpoint,/\/auth\/v1\/user/,'LAB2_AUTH_PRECHECK_REQUIRED');
-requireMatch(workerEntry,/\/api\/lab2\/understand/,'LAB2_ROUTE_MISSING');
-requireMatch(workerEntry,/handleLab2IdeaUnderstanding/,'LAB2_HANDLER_WIRING_MISSING');
+requireMatch(research,/LAB2_RESEARCH_ENABLED/,'LAB2_RESEARCH_FLAG_REQUIRED');
+requireMatch(research,/LAB2_BRAVE_SEARCH_API_KEY/,'LAB2_RESEARCH_SERVER_SEARCH_KEY_REQUIRED');
+requireMatch(research,/SOURCE_FETCH/,'LAB2_RESEARCH_PUBLIC_FETCH_SERVICE_REQUIRED');
+requireMatch(research,/api\.search\.brave\.com\/res\/v1\/web\/search/,'LAB2_RESEARCH_FIXED_SEARCH_ORIGIN_REQUIRED');
+forbid(research,/TAVILY_API_KEY|G2_WEB|G2_SRC|G2_AI_/,'LAB2_RESEARCH_CANONICAL_EXECUTOR_COUPLING_FORBIDDEN');
 
-forbid(endpoint,/SUPABASE_SERVICE_ROLE_KEY/,'LAB2_SERVICE_ROLE_FORBIDDEN');
-forbid(endpoint,/\/rest\/v1\//,'LAB2_DATABASE_REST_WRITE_SURFACE_FORBIDDEN');
-forbid(endpoint,/\/rpc\//,'LAB2_RPC_SURFACE_FORBIDDEN');
-forbid(endpoint,/idea_decisions|project_definitions|promote_canonical|record_canonical/i,'LAB2_CANONICAL_BUSINESS_COUPLING_FORBIDDEN');
+requireMatch(workerEntry,/\/api\/lab2\/understand/,'LAB2_UNDERSTANDING_ROUTE_MISSING');
+requireMatch(workerEntry,/handleLab2IdeaUnderstanding/,'LAB2_UNDERSTANDING_HANDLER_WIRING_MISSING');
+requireMatch(workerEntry,/\/api\/lab2\/research/,'LAB2_RESEARCH_ROUTE_MISSING');
+requireMatch(workerEntry,/handleLab2IdeaResearch/,'LAB2_RESEARCH_HANDLER_WIRING_MISSING');
 
 const browserSource=`${frontendJs}\n${frontendHtml}`;
 forbid(browserSource,/SUPABASE_SERVICE_ROLE_KEY/,'LAB2_BROWSER_SERVICE_ROLE_FORBIDDEN');
 forbid(browserSource,/\/api\/ideas\/|\/api\/project-definition\//,'LAB2_BROWSER_CANONICAL_API_COUPLING_FORBIDDEN');
 forbid(browserSource,/\/rest\/v1\//,'LAB2_BROWSER_DIRECT_DATABASE_ACCESS_FORBIDDEN');
-requireMatch(frontendJs,/\/api\/lab2\/understand/,'LAB2_BROWSER_ROUTE_MISSING');
+requireMatch(frontendJs,/\/api\/lab2\/understand/,'LAB2_BROWSER_UNDERSTANDING_ROUTE_MISSING');
 requireMatch(frontendJs,/localStorage/,'LAB2_LOCAL_ONLY_DRAFT_EXPECTED');
 
 console.log('lab2-isolation-check: ok');
