@@ -9,6 +9,7 @@ globalThis.fetch=async(url,options={})=>{
   if(String(url).includes('/auth/v1/user')){
     const auth=options.headers?.Authorization||options.headers?.authorization||'';
     if(auth==='Bearer good-token')return Response.json({id:'11111111-1111-4111-8111-111111111111',email:'lab@example.com'});
+    if(auth==='Bearer other-token')return Response.json({id:'22222222-2222-4222-8222-222222222222',email:'other@example.com'});
     return new Response('{}',{status:401});
   }
   throw new Error('unexpected fetch');
@@ -34,6 +35,7 @@ const aiPayload={
 
 const env={
   LAB2_IDEA_STUDIO_ENABLED:'true',
+  LAB2_ALLOWED_USER_IDS:'11111111-1111-4111-8111-111111111111',
   SUPABASE_URL:'https://example.supabase.co',
   SUPABASE_PUBLISHABLE_KEY:'pub',
   AI:{run:async()=>aiPayload}
@@ -63,6 +65,12 @@ if(ok.understanding?.needs_clarification!==true)throw new Error('LAB2_CLARIFICAT
 
 const unauthorized=await handleLab2IdeaUnderstanding(request(body,'bad-token'),env);
 if(unauthorized.status!==401)throw new Error('LAB2_AUTH_GUARD_FAILED');
+
+const forbidden=await handleLab2IdeaUnderstanding(request(body,'other-token'),env);
+if(forbidden.status!==403)throw new Error('LAB2_ALLOWLIST_GUARD_FAILED');
+
+const accessUnconfigured=await handleLab2IdeaUnderstanding(request(body),{...env,LAB2_ALLOWED_USER_IDS:''});
+if(accessUnconfigured.status!==503)throw new Error('LAB2_ALLOWLIST_CONFIGURATION_GUARD_FAILED');
 
 const disabled=await handleLab2IdeaUnderstanding(request(body),{...env,LAB2_IDEA_STUDIO_ENABLED:'false'});
 if(disabled.status!==404)throw new Error('LAB2_FEATURE_FLAG_GUARD_FAILED');
