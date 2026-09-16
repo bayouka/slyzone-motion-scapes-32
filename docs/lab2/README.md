@@ -16,6 +16,7 @@ Build and test a novice-first workflow that turns a rough website idea into a cl
 - The existing Supabase session is reused only to authenticate calls to the Lab API.
 - No production navigation entry yet.
 - The Lab AI endpoint is disabled unless the server-side flag `LAB2_IDEA_STUDIO_ENABLED` is explicitly enabled.
+- Enabling the flag is not enough: `LAB2_ALLOWED_USER_IDS` must also explicitly contain the authenticated user id. This is intended to be restricted to the small 4b4c2 test group.
 
 ## Slice 1 — capture
 1. Give an idea a provisional name.
@@ -68,12 +69,16 @@ These values are instrumentation, not billing authority. The Cloudflare dashboar
 
 ## Slice 2 security boundary
 - endpoint returns `404 LAB_DISABLED` unless `LAB2_IDEA_STUDIO_ENABLED` is explicitly enabled;
+- endpoint returns `503 LAB_ACCESS_UNCONFIGURED` if no `LAB2_ALLOWED_USER_IDS` allowlist is configured;
 - endpoint requires an authenticated existing 4b4c Supabase JWT;
+- authenticated users not present in the allowlist receive `403 LAB_ACCESS_DENIED`;
 - no service-role key is exposed to the browser;
 - no database write is performed;
 - request size, idea length, reference count and clarification count are hard-capped;
 - AI output is requested through a strict JSON schema and normalized again server-side;
 - quota/capacity failures do not trigger automatic retries.
+
+`LAB2_ALLOWED_USER_IDS` is a comma-separated list of Supabase Auth user UUIDs. It is a server-side deployment setting and must never be exposed as a browser-controlled authorization mechanism.
 
 ## Tests
 `scripts/test_lab2_understanding_v1.mjs` exercises the endpoint with a fake Workers AI response, so CI validation consumes zero AI credits. It verifies:
@@ -81,6 +86,8 @@ These values are instrumentation, not billing authority. The Cloudflare dashboar
 - usage/neuron calculation;
 - authentication guard;
 - feature-flag guard;
+- allowlist-required guard;
+- non-allowlisted user rejection;
 - clarification hard cap.
 
 ## Explicitly out of scope through Slice 2
