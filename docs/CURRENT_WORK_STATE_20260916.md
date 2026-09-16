@@ -6,6 +6,28 @@ Purpose: provide one unambiguous restart point for humans and AI agents who must
 
 This file does not replace `README.md` for the current certified runtime/build. It defines the current work boundary and sequencing.
 
+## Current release boundary
+
+Verified production at the end of this pass is still:
+
+- runtime `v4.5.17-project-definition-g3-derived-p4` ;
+- build 557 authority remains current until a newer runtime is independently observed ;
+- G2 executor surface remains `CALC + RAW` ;
+- `SRC=false` and `AI_H=false` ;
+- Project Definition canonical gates remain `G4_RFD_LOT / G5_RFD_PROJECT` ;
+- legacy G12 remains non-authoritative/non-mutated.
+
+A stabilization release is **prepared but not yet production-certified**:
+
+- target runtime `v4.5.18-stabilization-legacy-cutover-p1` ;
+- target transport build 558 ;
+- target source SHA `4b4d88e8fcdc88a67a752bcdadcc3d7e5c492945` ;
+- shell removes the bootstrap of `ideas-final-decision-v1.js` ;
+- shell loads `ideas-canonical-bridge-v1.js@1.0.0` ;
+- release gate explicitly prevents G2/G3/G4/G5 capability widening and smoke-checks the deployed shell/runtime.
+
+Do not update `README.md` to build 558 or claim build 558 active until `/health` and the deployed root shell independently prove the target runtime and markers.
+
 ## 1. What is closed and must not be reopened without explicit evidence
 
 ### Product / lifecycle architecture
@@ -53,8 +75,9 @@ The following work is considered closed unless a regression is demonstrated:
 - Workspace V3 displays G4/G5 as readiness authority.
 - legacy G12 is not relabelled or reused as canonical G4/G5.
 - legacy browser RPC decision/conversion path is disabled.
-- `ideas-final-decision-v1.js` is no longer bootstrapped.
-- legacy decide/convert actions redirect to Workspace V3.
+- canonical source no longer bootstraps `ideas-final-decision-v1.js`.
+- canonical source legacy decide/convert actions redirect to Workspace V3.
+- build 558 transport candidate mirrors these two frontend corrections and pins them in its release gate; production activation remains to be independently certified.
 - Master Blueprint canonical FK indexes added.
 - Ideas-domain missing FK indexes added.
 - legacy Ideas `FOR ALL` write policies split into explicit INSERT/UPDATE/DELETE policies.
@@ -67,6 +90,19 @@ Detailed evidence: `docs/audit/STABILIZATION_AUDIT_20260916.md`.
 ## 3. What is still open
 
 These are the current problems to work on. They are not a request to invent new functionality.
+
+### P0 — Certify build 558 or diagnose its release result
+
+Before treating the frontend cutover correction as production-complete:
+
+1. observe `/health` returning `v4.5.18-stabilization-legacy-cutover-p1` ;
+2. verify the deployed root shell contains `ideas-canonical-bridge-v1.js?v=1.0.0` ;
+3. verify the deployed root shell no longer contains `ideas-final-decision-v1.js` ;
+4. verify G2 remains `CALC + RAW`, `SRC=false`, `AI_H=false` ;
+5. verify canonical G4/G5 and non-mutated legacy G12 remain unchanged ;
+6. only then promote build 558 into `README.md` runtime authority.
+
+If build 558 fails, diagnose the release gate/deployment error; do not revert to an unguarded deploy path.
 
 ### P0 — Prove the real canonical journey
 
@@ -159,19 +195,21 @@ Treat them domain-by-domain. Do not remove newly-added canonical/Ideas indexes s
 
 Unless a production regression demands otherwise, use this sequence:
 
-1. **Authenticated controlled canonical E2E** — G0→G5.
-2. **Fix defects found by that E2E** — backend, adapter, projection, UX, mobile/desktop.
-3. **Certify replacement ownership** — prove Workspace V3 covers the user need previously owned by legacy Ideas UI.
-4. **Retire legacy owner incrementally** — one module/path at a time with rollback and checks.
-5. **Finish security/privacy cleanup** — privileged RPC classification + invite privacy minimization.
-6. **Finish remaining database performance cleanup by domain**.
-7. **Run full existing-product regression** across Home, Projects, My Work, Messages, Meetings, Files/Resources, Approvals, Calls and Ideas/Project Definition.
-8. Only then consider new product functionality.
+1. **Certify/repair build 558 release** — close the source→transport→production loop for the current stabilization patch.
+2. **Authenticated controlled canonical E2E** — G0→G5.
+3. **Fix defects found by that E2E** — backend, adapter, projection, UX, mobile/desktop.
+4. **Certify replacement ownership** — prove Workspace V3 covers the user need previously owned by legacy Ideas UI.
+5. **Retire legacy owner incrementally** — one module/path at a time with rollback and checks.
+6. **Finish security/privacy cleanup** — privileged RPC classification + invite privacy minimization.
+7. **Finish remaining database performance cleanup by domain**.
+8. **Run full existing-product regression** across Home, Projects, My Work, Messages, Meetings, Files/Resources, Approvals, Calls and Ideas/Project Definition.
+9. Only then consider new product functionality.
 
 ## 5. Definition of “existing product stabilized enough to advance”
 
 Do not call this phase complete until all of the following are true:
 
+- current stabilization release is production-certified ;
 - one authenticated Idea has traversed the real canonical G0→G5 path ;
 - stale/idempotency guards were observed, not merely read in code ;
 - Workspace V3 is usable on desktop and mobile for that path ;
@@ -189,7 +227,7 @@ Do not call this phase complete until all of the following are true:
 - Do not add a seventh gate or another global readiness score.
 - Do not reactivate direct legacy decision/conversion RPCs in the browser.
 - Do not expose service-role secrets or service-only RPCs to client code.
-- Do not develop in the transport mirror.
+- Do not develop in the transport mirror except for deliberate release/transport synchronization from canonical source.
 - Do not make Remote Desktop Commander a prerequisite.
 - Do not add new scope while P0 stabilization work remains.
 - Prefer deleting/retiring contradictory ownership after proof rather than adding another bridge.
@@ -208,4 +246,4 @@ When taking over the project, read in this order:
 6. domain-specific canonical contract(s)
 7. current implementation
 
-Then continue from **P0 authenticated canonical E2E and correction of defects found**, not from conceptual redesign.
+Then continue from **P0 build 558 certification, then authenticated canonical E2E and correction of defects found**, not from conceptual redesign.
