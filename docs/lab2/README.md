@@ -3,98 +3,99 @@
 Status: experimental / isolated laboratory
 
 ## Purpose
-Build and test a novice-first workflow that turns a rough website/web-app idea into a clear, improved and presentable concept without modifying the canonical 4b4c Ideas / Project Definition lifecycle.
+Build and test a novice-first workflow that turns a rough website/web-app idea into a clear, improved, structured, visualized and presentable concept without modifying the canonical 4b4c Ideas / Project Definition lifecycle.
 
 ## Isolation rules
 - Branch: `feature/4b4c2-idea-lab`
 - Frontend namespace: `site/lab2/`
 - API namespace: `/api/lab2/*`
-- No Supabase migration through Slice 7.
+- No Supabase migration through Slice 9.
 - No write to existing 4b4c business tables.
-- Existing Supabase session is reused only for authentication.
-- Drafts and all current Lab decisions/results remain in browser `localStorage`.
+- Existing Supabase is reused only for authentication.
+- Current Lab state remains in browser `localStorage`.
 - No production navigation entry.
 - No coupling to canonical `Ideas`, Workspace V3, G0→G5, Project Definition or legacy Ideas business contracts.
-- Lab endpoints require `LAB2_IDEA_STUDIO_ENABLED`, an explicit `LAB2_ALLOWED_USER_IDS` server-side allowlist, and their step-specific flag when applicable.
+- Lab AI endpoints require an explicit server-side `LAB2_ALLOWED_USER_IDS` allowlist and per-slice feature flags.
 
-## Implemented flow
-1. Capture the rough idea.
-2. Verify AI understanding.
-3. Analyze references and bounded competitor evidence.
-4. Review AI improvement proposals one by one.
-5. Produce a clear Version 1 brief from human-approved decisions only.
-6. Derive simple workflows and a provisional sitemap.
-7. Choose a controlled visual direction from real mini-previews.
+## Implemented workflow — Slices 1–9
+1. Capture: provisional name, free explanation and optional references.
+2. Understanding: structured faithful AI reformulation with bounded clarification.
+3. Research: bounded public reference/competitor analysis with evidence validation.
+4. Improvements: max six independent proposals with human Accept / Reject / Modify decisions.
+5. Version 1 brief: only accepted/modified decisions are retained; rejected proposals are removed before the model prompt.
+6. Workflows + sitemap: minimal provisional architecture generated only from Version 1; pages are kept/removed locally.
+7. Design direction: novice preferences produce three options from a controlled deterministic catalog; human chooses one.
+8. Mockups: AI outputs only page/block specifications from a closed component catalog; browser renders actual HTML/CSS with the chosen design tokens.
+9. Presentation: Web deck, printable PDF and editable deterministic `.pptx` built from the local project state with zero additional AI call.
 
-## Slice 1 — Capture
-Frontend: `site/lab2/idea-studio.html`
+## Cost boundaries
+- Understanding: bounded clarification and local caching.
+- Research: max 2 Web searches, 3 selected competitors, 6 public pages, 2 AI calls.
+- Improvements: max 1 AI call / 6 proposals.
+- Brief: max 1 AI call.
+- Structure: max 1 AI call / 4 workflows / 20 pages.
+- Design: max 1 AI call / 3 directions.
+- Mockups: max 1 AI call / 6 pages / 7 blocks per page.
+- Presentation Web/PDF/PPTX: 0 AI calls.
+- No automatic retries on quota/capacity failure.
 
-The novice gives a provisional name, explains the site/web-app idea freely, and may add zero to three reference sites with the reason each reference matters.
+## Human control and provenance
+- User references remain distinct from discovered competitors.
+- `OBSERVED_PUBLIC` findings require actual support text in fetched public content.
+- Rejected proposals never reach the Version 1 model prompt.
+- Modified proposals use the user's wording.
+- Sitemap keep/remove actions do not call AI.
+- Visual direction selection is explicitly human.
+- No automatic idea/project mutation exists.
 
-## Slice 2 — AI understanding
-Endpoint: `POST /api/lab2/understand`
-Contract: `lab2-understanding-v1`
+## Deterministic visuals
+The design model chooses only catalog IDs. The server resolves palette, typography, shape, density, imagery and motion to deterministic values. The mockup model may only select from the approved component catalog and may not generate HTML, CSS, JavaScript or UI images. The browser renderer applies the chosen resolved tokens.
 
-The AI only verifies understanding: faithful reformulation, problem, target users, main flow, explicit vs inferred provenance, uncertainties and at most one clarification question per call (maximum two clarification answers). No competitor analysis or feature improvement is allowed here.
+The `.pptx` export uses PptxGenJS `4.0.1` in the browser and rebuilds the concept/story and principal mockups as editable PowerPoint text and shapes instead of flattened AI images.
 
-## Slice 3 — Bounded references & competitor research
-Endpoint: `POST /api/lab2/research`
-Contract: `lab2-research-v1`
-Frontend: `site/lab2/idea-research.html`
+## Live isolated preview
+Worker: `4b4c2-idea-lab-preview`
 
-Budget per standard run: maximum 2 Web searches, 3 selected competitors, 6 fetched public pages and 2 AI calls. References supplied by the user remain distinct from discovered competitors. Public pages are fetched only through isolated `SOURCE_FETCH`. Source text is untrusted data. An `OBSERVED_PUBLIC` finding survives only when its support text actually exists in the fetched source. Visual design is not inferred from text-only pages.
+URL: `https://4b4c2-idea-lab-preview.bayoukadesbois.workers.dev`
 
-## Slice 4 — Human-controlled improvements
-Endpoint: `POST /api/lab2/improvements`
-Contract: `lab2-improvements-v1`
-Frontend: `site/lab2/idea-improvements.html`
+Dedicated entrypoint: `src/lab2-preview-worker.js`.
 
-The AI proposes at most 6 independent improvements in one call. Every proposal must be explicitly `ACCEPTED`, `REJECTED` or `MODIFIED`. Decisions remain local. Backend guarantee: `automatic_idea_mutation: false`.
+Preview hard boundary:
+- exposes only `/health`, `/api/lab2/*` and static `/lab2/*`;
+- does not import canonical `worker.js`;
+- uploads only `site/lab2/` assets;
+- smoke test requires `/index.html` to return `404`;
+- exposes no canonical 4b4c business API;
+- has no database write surface;
+- reuses the production Supabase project only through Auth;
+- has Workers AI and isolated `4b4c-source-fetch` bindings.
 
-## Slice 5 — Versioned living idea brief
-Endpoint: `POST /api/lab2/brief`
-Contract: `lab2-brief-v1`
-Frontend: `site/lab2/idea-brief.html`
+Latest successful smoke state:
+- `isolated: true`
+- `production_business_api_exposed: false`
+- `database_write_surface: false`
+- `ai_configured: true`
+- `source_fetch_configured: true`
+- `competitor_search_configured: false`
+- `access_allowlist_configured: false`
 
-All Slice 4 proposals require a human decision before brief generation. Rejected proposals are filtered server-side before the model prompt. Only accepted proposals and user-modified wording are retained. No new features, targets, promises or differentiation may be invented. Unresolved uncertainties stay open questions.
-
-## Slice 6 — Workflows + provisional sitemap
-Endpoint: `POST /api/lab2/structure`
-Contract: `lab2-structure-v1`
-Frontend: `site/lab2/idea-structure.html`
-
-The model receives only the Version 1 brief. It proposes at most 4 workflows and 20 pages while favoring the minimum useful architecture. The user can keep or remove each page locally with no additional AI call.
-
-## Slice 7 — Novice-friendly design direction
-Endpoint: `POST /api/lab2/design`
-Contract: `lab2-design-v1`
-Frontend: `site/lab2/idea-design.html`
-
-The novice only expresses simple preferences: up to three perceptions, an optional color family, colors to avoid and a free-form visual note. One AI call maximum selects three distinct directions from a server-controlled catalog. The model can only choose approved IDs for palette, typography, shape, density, imagery and motion. The server resolves those IDs into deterministic HSL tokens, font stacks, radii, shadows and spacing values.
-
-The frontend renders real mini-previews using those resolved tokens. The user explicitly chooses one direction locally with no additional AI call. Slice 7 performs no Web/source fetch, does not copy competitor identity and exposes `human_direction_selection_required` plus `deterministic_tokens_for_mockups` guarantees.
-
-## Security and cost boundary
-- no service-role key in browser or Lab endpoint;
-- no `/rest/v1/` or business RPC access from Lab endpoints;
-- no canonical Ideas / Project Definition API calls from Lab frontend;
-- no automatic AI retries on quota/capacity failure;
-- search/source/model calls are capped structurally;
-- local caches avoid duplicate calls where implemented.
+The last two `false` values are intentional fail-closed states. Without `LAB2_ALLOWED_USER_IDS`, an authenticated user can inspect/test the capture UI but AI endpoints refuse execution. The login page lets the authenticated user copy their own technical ID locally so it can be placed privately in the GitHub Actions secret without publishing it in chat. Automatic Brave competitor discovery remains optional until `LAB2_BRAVE_SEARCH_API_KEY` is configured.
 
 ## Validation
-Dedicated workflow: `.github/workflows/lab2-check.yml`
+Dedicated zero-credit CI: `.github/workflows/lab2-check.yml`.
 
-It runs only Lab syntax/contract/isolation checks and performs no deployment. Tests use mocked Workers AI, Brave Search and source-fetch responses, so validation consumes zero real AI/search credits.
+Contract tests cover understanding, research, improvements, brief, structure, design, mockups, presentation and the cross-slice isolation boundary. The latest Lab CI run and isolated preview deployment both complete successfully.
 
-Validated artifacts include dedicated contract tests for Slices 2–7 plus `scripts/lab2-isolation-check.mjs`.
+The preview deployment workflow also validates Lab contracts before deployment, uploads Lab-only assets, deploys a distinct Cloudflare Worker and smoke-tests the isolation contract.
 
-Observed GitHub Actions run `35162122051` completed successfully for Slices 1–7: syntax checks, zero-credit contract tests and isolation boundary all passed.
-
-## Planned progression
-- Slice 8: deterministic component-based mockups using the chosen resolved design direction.
-- Slice 9: Web presentation + PPTX + PDF.
-- Later: collaboration/project workspace integration only after the Idea Lab proves useful.
+## Intentionally still not done
+- no Lab database persistence;
+- no merge into `main`;
+- no production navigation entry;
+- no connection to canonical 4b4c Ideas/Project Definition;
+- no collaboration/project workspace integration;
+- no real end-to-end AI consumption measurement until a private test account is allowlisted;
+- no automatic competitor discovery until a private Brave API key is configured.
 
 ## Source of truth
 This folder documents only the 4b4c2 laboratory. It does not redefine or supersede canonical 4b4c documentation.
