@@ -9,7 +9,7 @@ Build and test a novice-first workflow that turns a rough website/web-app idea i
 - Branch: `feature/4b4c2-idea-lab`
 - Frontend namespace: `site/lab2/`
 - API namespace: `/api/lab2/*`
-- No Supabase migration through Slice 6.
+- No Supabase migration through Slice 7.
 - No write to existing 4b4c business tables.
 - Existing Supabase session is reused only for authentication.
 - Drafts and all current Lab decisions/results remain in browser `localStorage`.
@@ -73,6 +73,30 @@ Frontend: `site/lab2/idea-structure.html`
 
 The model receives only the Version 1 brief. It proposes at most 4 human workflows and 20 pages, favoring the minimum architecture needed. Corporate pages are excluded unless required by the brief. The user can keep or remove every proposed page locally with no additional AI call. The sitemap is explicitly provisional and `human_page_review_required` remains true.
 
+## Slice 7 — Novice-friendly design direction
+Endpoint: `POST /api/lab2/design`
+Contract: `lab2-design-v1`
+Frontend: `site/lab2/idea-design.html`
+
+The novice does not configure design-system parameters. They may simply choose up to three perceptions (modern, warm, premium, minimal, playful, professional, tech, reassuring), an optional color family, colors to avoid, and a free-form visual preference note.
+
+The endpoint uses one AI call maximum to select three distinct directions from a server-controlled design catalog. The model may select only approved IDs for:
+- palette;
+- typography;
+- shape/radius;
+- density/spacing;
+- imagery strategy;
+- motion level.
+
+The server then resolves those IDs into deterministic HSL tokens, font stacks, radii, shadows and spacing values. The model never invents raw CSS tokens. The frontend renders real mini-previews from those resolved tokens and the user explicitly chooses one direction. Selection is local and costs no additional AI call.
+
+Hard rules:
+- design references are treated only as user preference notes; no competitor identity is copied;
+- Slice 7 performs no web/source fetch;
+- colors/tokens come only from the controlled catalog;
+- `human_direction_selection_required` remains true;
+- the selected resolved tokens become the direct input for the deterministic mockup engine in Slice 8.
+
 ## Security and cost boundary
 - no service-role key in browser or Lab endpoint;
 - no `/rest/v1/` or business RPC access from Lab endpoints;
@@ -92,13 +116,13 @@ Validated artifacts:
 - `scripts/test_lab2_improvements_v1.mjs`
 - `scripts/test_lab2_brief_v1.mjs`
 - `scripts/test_lab2_structure_v1.mjs`
+- `scripts/test_lab2_design_v1.mjs`
 - `scripts/lab2-isolation-check.mjs`
 
-Latest observed GitHub Actions run `35160858123` completed successfully: syntax checks, zero-credit contract tests and isolation boundary all passed.
+Previous observed GitHub Actions run `35160858123` completed successfully for Slices 1–6. The Slice 7 workflow is re-run on every relevant branch push and remains the certification source before the Lab is exposed to users.
 
 ## Planned progression
-- Slice 7: novice-friendly design direction.
-- Slice 8: deterministic component-based mockups.
+- Slice 8: deterministic component-based mockups using the chosen resolved design direction.
 - Slice 9: Web presentation + PPTX + PDF.
 - Later: collaboration/project workspace integration only after the Idea Lab proves useful.
 
