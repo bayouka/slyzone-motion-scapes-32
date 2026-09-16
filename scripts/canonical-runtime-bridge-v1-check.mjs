@@ -30,6 +30,7 @@ let qualityTestabilityMigration;
 let baselineHandoffMigration;
 let g4Migration;
 let g5Migration;
+let gateIdempotencyMigration;
 try {
   master = readJson('MASTER_BLUEPRINT_V1.json');
   bridge = readJson('CANONICAL_RUNTIME_BRIDGE_V1.json');
@@ -41,6 +42,7 @@ try {
   baselineHandoffMigration = readText('supabase/migrations/20260916155544_project_master_blueprint_v1_baseline_handoff_predicates.sql');
   g4Migration = readText('supabase/migrations/20260916155824_project_master_blueprint_v1_g4_rfd_lot.sql');
   g5Migration = readText('supabase/migrations/20260916155938_project_master_blueprint_v1_g5_rfd_project.sql');
+  gateIdempotencyMigration = readText('supabase/migrations/20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval.sql');
 } catch (error) {
   fail(`cannot parse runtime bridge source: ${error.message}`);
   process.exit(1);
@@ -48,7 +50,7 @@ try {
 
 assert(bridge.schema_version === '1.0', 'bridge schema_version must be 1.0');
 assert(bridge.contract_id === 'PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE', 'unexpected bridge contract_id');
-assert(bridge.contract_version === '1.1', 'bridge contract_version must be 1.1');
+assert(bridge.contract_version === '1.2', 'bridge contract_version must be 1.2');
 assert(bridge.status === 'CANONICAL_MIGRATION_CONTRACT', 'bridge must be a canonical migration contract');
 assert(bridge.source_runtime === 'R7_BUILD_READY_RUNTIME', 'bridge source runtime must stay R7');
 assert(bridge.target_contract === '4B4C_PROJECT_MASTER_BLUEPRINT_V1', 'bridge target contract mismatch');
@@ -62,6 +64,7 @@ assert(bridge.coverage?.dependency_closure === 'IMPLEMENTED_SERVICE_ONLY', 'Depe
 assert(bridge.coverage?.rfd_predicates === 'SEVEN_IMPLEMENTED_SERVICE_ONLY', 'all seven RFD predicates must be implemented service-only');
 assert(bridge.coverage?.baseline_handoff === 'IMPLEMENTED_SERVICE_ONLY', 'baseline/handoff runtime must be service-only implemented');
 assert(bridge.coverage?.canonical_formal_gates === 'G4_G5_IMPLEMENTED_SERVICE_ONLY', 'only canonical G4/G5 must be implemented in this slice');
+assert(bridge.coverage?.canonical_gate_retry_idempotency === 'G4_G5_IMPLEMENTED', 'G4/G5 retry idempotency must be implemented');
 assert(bridge.coverage?.canonical_pre_g4_gates === 'G0_G3_NOT_IMPLEMENTED_IN_THIS_RUNTIME_SLICE', 'G0-G3 status must remain explicit');
 
 const expectedRuntimeObjects = {
@@ -157,7 +160,9 @@ for (const key of [
   'expected_evaluation_fingerprint_required',
   'human_authority_required',
   'authorized_actor_must_be_idea_creator_or_workspace_owner_admin',
-  'freezes_lot_baseline_and_handoff_atomically'
+  'freezes_lot_baseline_and_handoff_atomically',
+  'same_revision_same_fingerprint_retry_is_idempotent',
+  'different_revision_or_fingerprint_retry_is_rejected'
 ]) assert(bridge.g4_policy?.[key] === true, `G4 policy ${key} must be true`);
 
 for (const key of [
@@ -168,7 +173,9 @@ for (const key of [
   'expected_evaluation_fingerprint_required',
   'human_authority_required',
   'authorized_actor_must_be_idea_creator_or_workspace_owner_admin',
-  'legacy_project_status_is_not_mutated'
+  'legacy_project_status_is_not_mutated',
+  'same_revision_same_fingerprint_retry_is_idempotent',
+  'different_revision_or_fingerprint_retry_is_rejected'
 ]) assert(bridge.g5_policy?.[key] === true, `G5 policy ${key} must be true`);
 
 assert(bridge.rules?.legacy_gate_ids_are_immutable_during_bridge === true, 'legacy Gate IDs must remain immutable');
@@ -178,6 +185,7 @@ assert(bridge.rules?.manual_ready_flag_forbidden === true, 'manual Ready flag mu
 assert(bridge.rules?.direct_browser_access_to_canonical_runtime_forbidden === true, 'direct browser access must remain forbidden');
 assert(bridge.rules?.service_side_mutations_enabled === true, 'canonical mutations must be service-side');
 assert(bridge.rules?.human_actor_identity_must_come_from_authenticated_server_adapter === true, 'human actor identity must come from authenticated adapter');
+assert(bridge.rules?.formal_gate_approval_retries_must_be_idempotent_and_stale_safe === true, 'formal gate approval retries must be idempotent and stale-safe');
 assert(bridge.rules?.runtime_activation_requires_explicit_adapter_cutover === true, 'adapter cutover must remain explicit');
 
 const r7Requirements = requirementMap.requirements ?? [];
@@ -243,6 +251,15 @@ requireMarkers(g5Migration, 'G5 migration', [
   "'legacy_project_status_unchanged',true",
   'grant execute on function public.approve_project_rfd_v1(uuid,bigint,text,uuid) to service_role'
 ]);
+requireMarkers(gateIdempotencyMigration, 'G4/G5 idempotency migration', [
+  "v_existing.status='APPROVED'",
+  "raise exception 'STALE_G4_APPROVAL'",
+  "raise exception 'STALE_G5_APPROVAL'",
+  "'idempotent',true",
+  "'idempotent',false",
+  'grant execute on function public.approve_project_delivery_lot_rfd_v1(uuid,bigint,text,uuid) to service_role',
+  'grant execute on function public.approve_project_rfd_v1(uuid,bigint,text,uuid) to service_role'
+]);
 
 if (!process.exitCode) {
   console.log('[canonical-runtime-bridge-v1] PASS');
@@ -253,6 +270,7 @@ if (!process.exitCode) {
     canonical_rfd_predicates: implementedPredicates,
     canonical_formal_gates_implemented: implementedGates,
     canonical_formal_gates_pending: notImplementedGates,
+    canonical_gate_retry_idempotency: bridge.coverage.canonical_gate_retry_idempotency,
     browser_direct_access: false
   }));
 }
