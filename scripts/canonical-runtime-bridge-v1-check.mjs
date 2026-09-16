@@ -22,12 +22,14 @@ let bridge;
 let requirementMap;
 let coreGraphMigration;
 let deliveryClosureMigration;
+let closurePredicatesMigration;
 try {
   master = readJson('MASTER_BLUEPRINT_V1.json');
   bridge = readJson('CANONICAL_RUNTIME_BRIDGE_V1.json');
   requirementMap = readJson(path.join('site-vitrine', 'SITE_VITRINE_LEGACY_REQUIREMENT_TO_CANONICAL_V1.json'));
   coreGraphMigration = readText('supabase/migrations/20260916153749_project_master_blueprint_v1_core_graph_runtime.sql');
   deliveryClosureMigration = readText('supabase/migrations/20260916154153_project_master_blueprint_v1_delivery_lot_dependency_closure.sql');
+  closurePredicatesMigration = readText('supabase/migrations/20260916154611_project_master_blueprint_v1_dependency_closure_predicates.sql');
 } catch (error) {
   fail(`cannot parse runtime bridge source: ${error.message}`);
   process.exit(1);
@@ -44,7 +46,7 @@ assert(bridge.coverage?.legacy_readiness_projection === 'PARTIAL', 'legacy readi
 assert(bridge.coverage?.core_graph === 'IMPLEMENTED_SERVICE_ONLY', 'core graph runtime must be marked service-only implemented');
 assert(bridge.coverage?.canonical_node_state_projection === 'IMPLEMENTED_R7_BRIDGE', 'canonical node state projection must remain an R7 bridge');
 assert(bridge.coverage?.delivery_lots === 'SCHEMA_IMPLEMENTED_SERVICE_ONLY', 'DeliveryLot runtime must remain service-only until an explicit activation');
-assert(bridge.coverage?.dependency_closure === 'STRUCTURAL_IMPLEMENTED_STATE_DIAGNOSTICS_PARTIAL', 'DependencyClosure must remain explicitly partial');
+assert(bridge.coverage?.dependency_closure === 'IMPLEMENTED_PREDICATES_SERVICE_ONLY', 'DependencyClosure canonical predicates must be implemented service-only');
 assert(bridge.coverage?.canonical_formal_gates === 'NOT_RUNTIME_COMPLETE', 'canonical Formal Gates must not be declared runtime-complete');
 
 const expectedRuntimeObjects = {
@@ -53,6 +55,8 @@ const expectedRuntimeObjects = {
   dependency_edges: 'app_private.project_dependency_edges_v1',
   delivery_lots: 'app_private.project_delivery_lots_v1',
   delivery_lot_nodes: 'app_private.project_delivery_lot_nodes_v1',
+  ownership_assignments: 'app_private.project_ownership_assignments_v1',
+  conflict_records: 'app_private.project_conflict_records_v1',
   canonical_graph_read: 'public.get_project_definition_canonical_graph_v1(uuid)',
   blueprint_dependency_closure: 'app_private.get_blueprint_dependency_closure_v1(text,text,text[])',
   delivery_lot_dependency_closure: 'public.get_project_delivery_lot_dependency_closure_v1(uuid)'
@@ -97,22 +101,27 @@ assert(g12Passthrough.length === 1, 'exactly one legacy passthrough gate is expe
 assert(g12Passthrough[0]?.legacy_gate_id === 'G12_READY_FOR_DEVELOPMENT', 'G12 must remain the only legacy passthrough gate');
 assert(typeof g12Passthrough[0]?.reason === 'string' && g12Passthrough[0].reason.trim(), 'G12 passthrough requires an explicit rationale');
 
-const notYetDerivable = bridge.canonical_predicates_not_yet_derivable_from_r7 ?? [];
-for (const predicate of [
-  'QUALITY_REQUIREMENTS_DEFINED',
-  'TESTABILITY_READY',
-  'DEPENDENCY_CLOSURE',
-  'CRITICAL_TBD_CLOSURE',
-  'OWNERSHIP_CLOSURE',
-  'BASELINE_READY',
-  'HANDOFF_INTEGRITY'
-]) {
+const implementedPredicates = bridge.canonical_predicates_implemented_by_bridge ?? [];
+const expectedImplementedPredicates = ['DEPENDENCY_CLOSURE','CRITICAL_TBD_CLOSURE','OWNERSHIP_CLOSURE'];
+assert(JSON.stringify(implementedPredicates) === JSON.stringify(expectedImplementedPredicates), 'implemented canonical predicate list mismatch');
+for (const predicate of implementedPredicates) {
   assert(master.readiness_predicates?.includes(predicate), `${predicate} must exist in Master Blueprint V1`);
-  assert(notYetDerivable.includes(predicate), `${predicate} must remain explicitly not derivable from legacy R7`);
 }
 
-const expectedPartialBoundaries = ['CRITICAL_TBD','OWNERSHIP_CLOSURE','CONFLICTS','CANONICAL_FULFILMENT'];
-assert(JSON.stringify(bridge.dependency_closure_partial_boundaries) === JSON.stringify(expectedPartialBoundaries), 'partial DependencyClosure boundaries mismatch');
+assert(bridge.dependency_closure_bridge_basis?.structural_graph === 'CANONICAL_D01_D16_HARD_REQUIRES', 'DependencyClosure structural basis mismatch');
+assert(bridge.dependency_closure_bridge_basis?.fulfilment === 'R7_PROJECT_REQUIREMENT_SATISFACTION_V1', 'DependencyClosure fulfilment bridge mismatch');
+assert(bridge.dependency_closure_bridge_basis?.accepted_unknown_satisfies_structural_requirement === false, 'ACCEPTED_UNKNOWN must not satisfy structural requirements');
+assert(bridge.dependency_closure_bridge_basis?.manual_ready_flag === false, 'DependencyClosure must not use a manual Ready flag');
+
+const notYetDerivable = bridge.canonical_predicates_not_yet_derivable_from_r7 ?? [];
+const expectedNotYetDerivable = ['QUALITY_REQUIREMENTS_DEFINED','TESTABILITY_READY','BASELINE_READY','HANDOFF_INTEGRITY'];
+assert(JSON.stringify(notYetDerivable) === JSON.stringify(expectedNotYetDerivable), 'remaining non-derivable predicate list mismatch');
+for (const predicate of notYetDerivable) {
+  assert(master.readiness_predicates?.includes(predicate), `${predicate} must exist in Master Blueprint V1`);
+}
+for (const implemented of implementedPredicates) {
+  assert(!notYetDerivable.includes(implemented), `${implemented} cannot be both implemented and not derivable`);
+}
 
 const canonicalFormalGateIds = (master.formal_gates ?? []).map((gate) => gate.id);
 const notEmitted = bridge.canonical_formal_gates_not_emitted_by_bridge ?? [];
@@ -145,10 +154,22 @@ for (const marker of [
   'create table if not exists app_private.project_delivery_lot_nodes_v1',
   'get_blueprint_dependency_closure_v1',
   'get_project_delivery_lot_dependency_closure_v1',
-  "'canonical_dependency_closure_predicate','PARTIAL_NOT_EVALUABLE'",
-  "jsonb_build_array('CRITICAL_TBD','OWNERSHIP_CLOSURE','CONFLICTS','CANONICAL_FULFILMENT')"
+  "'canonical_dependency_closure_predicate','PARTIAL_NOT_EVALUABLE'"
 ]) {
   assert(deliveryClosureMigration.includes(marker), `DeliveryLot/DependencyClosure migration marker missing: ${marker}`);
+}
+
+for (const marker of [
+  "add column if not exists rfd_criticality text not null default 'REQUIRED'",
+  'create table if not exists app_private.project_ownership_assignments_v1',
+  'create table if not exists app_private.project_conflict_records_v1',
+  "resolution_level in ('UNRESOLVED','WORKING_ASSUMPTION','AI_PROPOSED','ACCEPTED_UNKNOWN')",
+  "'dependency_closure_predicate'",
+  "'critical_tbd_closure_predicate'",
+  "'ownership_closure_predicate'",
+  "'fulfilment_mapping','BRIDGED_FROM_R7_PROJECT_REQUIREMENT_SATISFACTION_V1'"
+]) {
+  assert(closurePredicatesMigration.includes(marker), `closure predicates migration marker missing: ${marker}`);
 }
 
 if (!process.exitCode) {
@@ -157,7 +178,8 @@ if (!process.exitCode) {
     r7_requirement_mappings: r7Requirements.length,
     canonical_nodes: bridge.graph_contract.canonical_node_count,
     dependency_edges: bridge.graph_contract.dependency_edge_count,
-    legacy_gate_predicate_mappings: gateMappings.length,
+    implemented_canonical_predicates: implementedPredicates,
+    remaining_predicates: notYetDerivable,
     canonical_formal_gates_emitted: 0,
     delivery_lots_runtime: bridge.coverage.delivery_lots,
     dependency_closure_runtime: bridge.coverage.dependency_closure
