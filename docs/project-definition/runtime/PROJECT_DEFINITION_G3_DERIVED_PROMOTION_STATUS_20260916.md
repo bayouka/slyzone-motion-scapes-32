@@ -2,22 +2,18 @@
 
 ## Status
 
-**BACKEND APPLIED / REPOSITORY ADAPTER READY / P4 PRODUCTION CUTOVER NOT YET CERTIFIED**
+**PRODUCTION CERTIFIED — P4 / BUILD 557**
 
-Current certified production remains:
-
-- Worker runtime `v4.5.16-project-definition-preproject-p3`;
-- transport build `556`;
-- canonical Idea adapter `0.1.0`;
-- browser commands `canonical.read`, `decision.record`;
-- G3 promotion not browser-exposed in the certified p3 Worker.
-
-The next additive candidate is:
+Current independently certified production:
 
 - Worker runtime `v4.5.17-project-definition-g3-derived-p4`;
+- transport build `557`;
 - canonical Idea adapter `0.2.0`;
-- additional browser command `project.promote`;
+- browser commands `canonical.read`, `decision.record`, `project.promote`;
+- Cloudflare active deployment version `429b297d` observed after the successful final build;
 - no shell/UI asset change required.
+
+The build-557 release gate completed successfully on the final transport commit `c7ce65b02696c9d33a873d376bfc24f2c155095c`. Because that gate is fail-closed and executes the live runtime smoke before success, the green final Cloudflare build certifies the runtime and unauthenticated-boundary assertions encoded in the gate.
 
 ## Problem closed by p4
 
@@ -37,7 +33,7 @@ Applied Supabase migration:
 
 `20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1`
 
-New public privileged RPC:
+Production privileged RPC:
 
 `public.promote_canonical_approved_idea_to_project_definition_v3(uuid,uuid,uuid,bigint,text)`
 
@@ -109,11 +105,11 @@ Live ACL verification for G3 v3:
 
 The v3 RPC delegates the final mutation to the existing hardened v2/R6 promotion path, which revalidates that the actor is the Idea creator or an active workspace owner/admin.
 
-The repository adapter candidate additionally performs the existing user-scoped RLS projection precheck before service-role execution.
+The production adapter additionally performs the existing user-scoped RLS projection precheck before service-role execution.
 
-## Repository candidate
+## Production Worker contract
 
-`src/idea-canonical-adapter.js` now exposes exactly:
+`src/idea-canonical-adapter.js` exposes exactly:
 
 - `canonical.read`;
 - `decision.record`;
@@ -127,7 +123,7 @@ The repository adapter candidate additionally performs the existing user-scoped 
 - `expected_engine_revision`;
 - `idempotency_key`.
 
-Repository candidate health metadata declares:
+Production health contract declares:
 
 - adapter `0.2.0`;
 - runtime `v4.5.17-project-definition-g3-derived-p4`;
@@ -139,6 +135,23 @@ Repository candidate health metadata declares:
 - `g3_artifact_promotions_client_controlled=false`;
 - `service_role_browser_exposed=false`.
 
+## Production certification
+
+Certified by the final Cloudflare build-557 release gate:
+
+1. canonical/transport runtime files byte-aligned before release;
+2. final Cloudflare build succeeded and became the active deployment;
+3. live runtime contract expected `v4.5.17-project-definition-g3-derived-p4`;
+4. adapter contract expected `0.2.0` and exactly three canonical commands;
+5. unauthenticated `canonical.read`, `decision.record` and `project.promote` are required to fail `401 / UNAUTHORIZED`;
+6. all three G3 client-control flags are required false;
+7. G2 remains `CALC + RAW` only;
+8. source-fetch remains internal/reachable while SRC stays inactive;
+9. Project Definition adapter remains `0.1.1` with 11 RFD predicates, 9 pre-baseline predicates and G4/G5 intact;
+10. shell build remains `553`.
+
+The final successful Cloudflare deployment observed after this gate is version `429b297d` at 100% traffic.
+
 ## Validation already completed
 
 - migration applied successfully to authoritative Supabase project `4b4c`;
@@ -146,23 +159,22 @@ Repository candidate health metadata declares:
 - G3 v3 ACL confirmed service-role only;
 - all 12 R4 artifact mappings checked live;
 - controlled invalid-ID invocation fails closed with `DECISION_RECORD_NOT_FOUND`;
-- production remains at 0 Idea / 0 Project Definition rows, so no user dossier was reclassified or modified;
+- production remained at 0 Idea / 0 Project Definition rows during migration validation, so no user dossier was reclassified or modified;
 - migration synchronized into canonical GitHub history;
 - migration-history guard extended;
-- canonical adapter and bridge contract checks updated.
+- canonical adapter and bridge contract checks updated;
+- p4 transport release deployed successfully as build 557.
 
-## Remaining proof
+## Remaining E2E limitation
 
-Do not mark p4 production-certified until the canonical transport/Cloudflare release proves:
+A real authenticated G0→G5 lifecycle remains a separate proof. Production certification of build 557 proves the runtime contract and fail-closed unauthenticated boundaries; it does **not** fabricate a real authenticated dossier.
 
-1. exact runtime file byte alignment;
-2. successful build/deploy;
-3. live `/health = v4.5.17-project-definition-g3-derived-p4`;
-4. adapter `0.2.0` and exactly three commands;
-5. unauthenticated `project.promote` fails `401 / UNAUTHORIZED`;
-6. health keeps all three client-control flags false;
-7. G2 remains `CALC + RAW` only;
-8. source-fetch remains internal/reachable but SRC inactive;
-9. Project Definition adapter remains `0.1.1` with 11/9 predicates and G4/G5 intact.
+Still unproven until a legitimate Idea exists or an explicitly authorized non-production fixture is used:
 
-A real authenticated G0→G5 lifecycle E2E remains a separate proof and cannot be inferred while production contains no real Idea dossier.
+- authenticated `canonical.read` on a real `SITE_VITRINE@0.5` Idea;
+- G1 fingerprint binding on real R4/R5 material;
+- authenticated `decision.record` by the actual decision authority;
+- authenticated `project.promote` with server-derived G3 baseline;
+- inspection of the resulting Project Definition baseline and promotion lineage;
+- continuity into Delivery Lot creation and G4/G5 RFD approval;
+- stale/idempotent retry behavior through the full browser/server path.
