@@ -11,9 +11,19 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current **independently certified live Worker runtime**: **`v4.5.15-project-definition-rfd-p2` / build 555**.
+Current **independently certified live Worker runtime**: **`v4.5.16-project-definition-preproject-p3` / build 556**.
 
-Build 555 was observed with the Project Definition adapter at `0.1.1` and the complete current RFD contract:
+Build 556 was observed live with Cloudflare version `302a9905-def9-4e0c-86ed-bd3bc3db619c` and preserves the complete Project Definition RFD p2 surface while adding the canonical pre-project bridge:
+- canonical Idea adapter `0.1.0` on `/api/ideas/canonical` ;
+- `G0_BLUEPRINT_FIT` ;
+- `G1_IDEA_DECISION_READY` ;
+- `G2_GO_PROJECT` ;
+- `G3_PROJECT_BASELINE` service-side authority ;
+- derived pre-project predicates `FOUNDATION_READY / EVIDENCE_READY / STRATEGY_READY / PREFIGURATION_READY / DECISION_PACKAGE_READY` ;
+- decision actor injected from JWT ;
+- G3 promotion deliberately not browser-exposed ;
+- active Idea Blueprint `SITE_VITRINE@0.5` with legacy `SITE_VITRINE@0.4` compatibility ;
+- Project Definition adapter `0.1.1` remains configured ;
 - 11 Master Blueprint RFD predicates ;
 - 9 pre-baseline predicates ;
 - legacy project-readiness bridge `G8→G11` ;
@@ -23,17 +33,10 @@ Build 555 was observed with the Project Definition adapter at `0.1.1` and the co
 - `service_role_browser_exposed=false` ;
 - legacy `G12_READY_FOR_DEVELOPMENT` not mutated/relabelled.
 
-The Supabase backend is already **ahead of the live Worker** for the next additive canonical slice. The following service-side pre-project bridge is applied in production state but is **not yet Worker-production-certified**:
-- `G0_BLUEPRINT_FIT` ;
-- `G1_IDEA_DECISION_READY` ;
-- `G2_GO_PROJECT` ;
-- `G3_PROJECT_BASELINE` ;
-- derived predicates `FOUNDATION_READY / EVIDENCE_READY / STRATEGY_READY / PREFIGURATION_READY / DECISION_PACKAGE_READY` ;
-- canonical decision fingerprint binding ;
-- G3 actor hardening ;
-- G0 compatibility with current `SITE_VITRINE@0.5` assignment plus legacy `0.4` support.
-
-Repository Worker candidate for that next cutover: **`v4.5.16-project-definition-preproject-p3`**. Do not call it live until the canonical transport/Cloudflare release path and live smoke checks certify it.
+The Cloudflare build 556 release gate also proved the unauthenticated boundaries fail closed:
+- canonical Idea `canonical.read` → `401 / UNAUTHORIZED` without JWT ;
+- canonical Idea `decision.record` → `401 / UNAUTHORIZED` without JWT ;
+- Project Definition `canonical.read` → `401 / UNAUTHORIZED` without JWT.
 
 Build history relevant to the current baseline:
 - Build 549 introduced the first strict non-CALC executor (`RAW`).
@@ -43,6 +46,7 @@ Build history relevant to the current baseline:
 - Build 553 added the isolated strictly-public source-fetch service boundary while keeping SRC inactive.
 - Build 554 introduced the authenticated Project Definition canonical RFD adapter and initial live G4/G5 runtime surface.
 - Build 555 completed the RFD predicate surface exposed by adapter `0.1.1`: 11 RFD predicates, 9 pre-baseline predicates and G8→G11 readiness bridge.
+- Build 556 activated the canonical pre-project Worker bridge G0→G3 while preserving the certified G4/G5 surface.
 
 The active G2 execution boundary remains intentionally narrow:
 - `CALC` produces deterministic `SYSTEM_CALCULATED / CALCULATED` results only where policy permits ;
@@ -66,7 +70,7 @@ A release is production-verified only when the transport manifest matches the in
 For detailed status use:
 - `docs/project-definition/runtime/G2_PRODUCTION_ACTIVATION_STATUS_20260916.md` for G2 ;
 - `docs/project-definition/runtime/PROJECT_DEFINITION_RFD_PRODUCTION_STATUS_20260916.md` for canonical Delivery Lots, RFD predicates and G4/G5 ;
-- `docs/project-definition/runtime/PROJECT_DEFINITION_PREPROJECT_BRIDGE_STATUS_20260916.md` for service-side G0→G3 and the p3 Worker candidate.
+- `docs/project-definition/runtime/PROJECT_DEFINITION_PREPROJECT_BRIDGE_STATUS_20260916.md` for the production-certified canonical G0→G3 bridge and its remaining authenticated-E2E limitations.
 
 ## Production architecture
 
@@ -94,7 +98,7 @@ For detailed status use:
 - `src/idea-evidence-adapter-candidate.js` — G2 planner/action orchestration implementation; despite its historical filename, endpoint-advertised capabilities — not the filename — define operational scope.
 - `src/idea-source-fetch-candidate.js` — dormant SRC V0.2 HTTPS fetch/canonical-text candidate with redirect, DNS/public-address, time and body-size guards.
 - `src/idea-source-ingestion-candidate.js` — dormant SRC ingestion orchestrator separating URL acquisition/snapshot persistence from evidence extraction.
-- `src/idea-canonical-adapter.js` — repository candidate authenticated boundary for canonical pre-project `canonical.read` and `decision.record`; G3 promotion is deliberately not browser-exposed.
+- `src/idea-canonical-adapter.js` — production authenticated boundary for canonical pre-project `canonical.read` and `decision.record`; G3 promotion remains deliberately not browser-exposed.
 - `src/project-definition-adapter.js` — authenticated, command-allowlisted boundary for canonical Project Definition reads, Delivery Lot preparation and G4/G5 authorization; user-RLS precheck, management authority and JWT actor injection are enforced before service-role RPC execution.
 - `src/worker-entry.js` — observable runtime wrapper and `/health` contract for Idea/G2/canonical pre-project/Project Definition surfaces.
 - `wrangler.jsonc` — canonical main Worker configuration named `4b4c`.
@@ -138,7 +142,7 @@ Service-side canonical pre-project bridge migrations now also include:
 - `20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4` ;
 - `20260916182111_project_master_blueprint_v1_g0_blueprint_05_compat_fix_p5`.
 
-The canonical runtime model now covers all six Formal Gates `G0→G5`. The production Worker currently exposes the p2 G4/G5 surface; the G0→G3 Worker adapter remains a repository/transport candidate until p3 cutover. Canonical G3 promotion is server-only and deliberately absent from the browser adapter.
+The canonical runtime model now covers all six Formal Gates `G0→G5`. The production Worker exposes the canonical G0→G3 read/decision surface through `/api/ideas/canonical` and the G4/G5 Project Definition surface through `/api/project-definition/engine`. Canonical G3 promotion remains server-only and deliberately absent from the browser adapter until its baseline manifest is assembled/derived server-side.
 
 Do not reconstruct, reorder or replay production migrations from memory. GitHub migration filenames/versions must match `supabase_migrations.schema_migrations`. New schema changes must start from the verified live/canonical baseline and preserve RLS/least-privilege invariants.
 
@@ -199,7 +203,7 @@ npm run check
 
 Idea Engine/workspace integration changes additionally require domain-specific deterministic/red-team harnesses. Current G2 checks include `scripts/test_g2_evidence_adapter_v0_1.mjs`, `scripts/test_g2_src_candidate_v0_2.mjs` and the isolated source-fetch service harness. Canonical Project Definition checks include `scripts/master-blueprint-v1-check.mjs`, `scripts/canonical-runtime-bridge-v1-check.mjs`, `scripts/project-definition-adapter-v1-check.mjs`, `scripts/idea-canonical-adapter-v1-check.mjs` and the production migration-history guard.
 
-The certified p2 transport gate retains the prior G2/SRC/source-fetch checks, byte-aligns the effective Worker runtime files, exposes the Project Definition adapter health contract and checks the authenticated API boundary. Live runtime health is **not** a substitute for a real authenticated Project Definition or Idea E2E.
+The certified p3 transport gate retains the prior G2/SRC/source-fetch and Project Definition checks, byte-aligns the effective Worker runtime files, exposes the canonical pre-project health contract and checks unauthenticated fail-closed boundaries. Live runtime health is **not** a substitute for a real authenticated Project Definition or Idea E2E.
 
 GitHub Actions are not used for production. The verified release chain is:
 
@@ -221,11 +225,11 @@ Historical/manual GitHub workflows are not the production authority and must not
 - `ideas-orchestrator-v2.js` still renders the historical `Clarifier → Renforcer → Étayer → Partager → Décider` progression and remains compatibility-only during Workspace V3 cutover;
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
-- authenticated multi-user browser E2E coverage remains incomplete; live p2 health does not by itself prove a full authenticated G0→G5 journey;
+- authenticated multi-user browser E2E coverage remains incomplete; live p3 health proves runtime boundaries but not a full authenticated G0→G5 journey;
 - production currently contains no real Idea row suitable for canonical G0→G3 E2E certification ;
 - real authenticated production execution of the RAW G2 path still needs lineage inspection on a fresh `SITE_VITRINE@0.5` Idea;
 - Project Definition authenticated E2E remains unproven until a real Project Definition is exercised through `/api/project-definition/engine`, including Delivery Lot creation, prepare/approve G4, idempotent/stale retry checks, project prepare/approve G5, audit inspection and confirmation that legacy Project status remains unchanged;
-- canonical pre-project p3 E2E remains unproven until a real Idea exercises `canonical.read`, G1 fingerprint binding, `decision.record`, and controlled G3 promotion lineage ;
+- canonical pre-project authenticated E2E remains unproven until a real Idea exercises `canonical.read`, G1 fingerprint binding, `decision.record`, controlled server-side G3 promotion and continuity into G4/G5 ;
 - AI_H V0.1 is deliberately inactive until its authenticated fresh-Idea activation gate is proven; do not infer production capability from dormant adapter code or unit fixtures;
 - SRC V0.2 has immutable source-body snapshots, exact pinning, URL acquisition/extraction candidates and an isolated source-fetch boundary, but **remains inactive** at the advertised executor boundary;
 - `WEB`, `AI_R`, `AUDIT` and `CONN` executors are deliberately not operational yet and must not be advertised until their own provenance/persistence contracts pass;
