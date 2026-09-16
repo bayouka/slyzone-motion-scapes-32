@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "contract_id": "PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE",
-  "contract_version": "1.5",
+  "contract_version": "1.6",
   "status": "CANONICAL_MIGRATION_CONTRACT",
   "source_runtime": "R5_R6_R7_COMPATIBILITY_RUNTIME",
   "target_contract": "4B4C_PROJECT_MASTER_BLUEPRINT_V1",
@@ -18,8 +18,8 @@
     "canonical_formal_gates": "G0_G5_IMPLEMENTED_SERVICE_SIDE",
     "canonical_gate_retry_idempotency": "G2_G4_G5_IMPLEMENTED_AND_G3_DELEGATES_TO_IDEMPOTENT_R6_PROMOTION",
     "canonical_pre_g4_gates": "G0_G3_IMPLEMENTED_AS_DERIVED_COMPATIBILITY_BRIDGE",
-    "canonical_preproject_worker_adapter": "IMPLEMENTED_IN_REPOSITORY_PENDING_PRODUCTION_CUTOVER_CERTIFICATION",
-    "canonical_g3_browser_promotion": "INTENTIONALLY_NOT_EXPOSED",
+    "canonical_preproject_worker_adapter": "P3_PRODUCTION_CERTIFIED_P4_G3_DERIVED_CANDIDATE_IN_REPOSITORY",
+    "canonical_g3_browser_promotion": "SAFE_SERVER_DERIVED_V3_IMPLEMENTED_REPOSITORY_PENDING_P4_CUTOVER",
     "real_idea_end_to_end": "UNPROVEN_NO_PRODUCTION_IDEA"
   },
   "runtime_objects": {
@@ -31,7 +31,8 @@
     "project_definition_source": "public.project_definitions",
     "canonical_preproject_readiness": "public.get_canonical_idea_preproject_readiness_v1(uuid)",
     "canonical_decision_record": "public.record_canonical_idea_decision_v1(uuid,uuid,text,text,jsonb,boolean,text,text)",
-    "canonical_project_baseline_promotion": "public.promote_canonical_approved_idea_to_project_definition_v2(uuid,uuid,bigint,jsonb,jsonb,jsonb,text)",
+    "canonical_project_baseline_builder": "app_private.build_canonical_project_baseline_payload_v1(uuid,uuid,bigint)",
+    "canonical_project_baseline_promotion": "public.promote_canonical_approved_idea_to_project_definition_v3(uuid,uuid,uuid,bigint,text)",
     "blueprint_pack": "app_private.project_blueprint_packs_v1",
     "node_definitions": "app_private.project_node_definitions_v1",
     "dependency_edges": "app_private.project_dependency_edges_v1",
@@ -125,8 +126,19 @@
       "baseline_manifest_completeness_required": true,
       "authorized_actor_must_be_idea_creator_or_workspace_owner_admin": true,
       "actor_revalidated_in_database": true,
-      "browser_promotion_exposed": false,
-      "promotion_server_rpc": "promote_canonical_approved_idea_to_project_definition_v2"
+      "browser_promotion_exposed_in_p4_candidate": true,
+      "promotion_server_rpc": "promote_canonical_approved_idea_to_project_definition_v3",
+      "promotion_actor_injected_from_authenticated_server_adapter": true,
+      "baseline_manifest_server_derived": true,
+      "promotion_diff_server_derived": true,
+      "artifact_promotions_server_derived": true,
+      "client_manifest_control_forbidden": true,
+      "client_promotion_diff_control_forbidden": true,
+      "client_artifact_promotion_control_forbidden": true,
+      "baseline_derivation": "SERVER_DERIVED_FROM_FROZEN_IDEA_DECISION",
+      "concept_artifact_policy": "PROMOTE_AND_DEEPEN_CONCEPT_NOT_FINAL_SPEC",
+      "unmapped_project_promotable_artifact_blocks": true,
+      "server_derived_migration": "20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1"
     }
   },
   "legacy_gate_to_readiness_predicate": [
@@ -214,19 +226,34 @@
     "same_revision_same_fingerprint_retry_is_idempotent": true,
     "different_revision_or_fingerprint_retry_is_rejected": true
   },
+  "production_contract": {
+    "certified_runtime_version": "v4.5.16-project-definition-preproject-p3",
+    "certified_transport_build": 556,
+    "certified_idea_adapter_code": "0.1.0",
+    "certified_idea_commands": ["canonical.read","decision.record"],
+    "certified_g3_browser_promotion_exposed": false
+  },
   "adapter_contract": {
     "repository_route": "/api/ideas/canonical",
-    "repository_runtime_version": "v4.5.16-project-definition-preproject-p3",
+    "repository_runtime_version": "v4.5.17-project-definition-g3-derived-p4",
+    "repository_adapter_code": "0.2.0",
     "commands": [
       "canonical.read",
-      "decision.record"
+      "decision.record",
+      "project.promote"
     ],
     "active_idea_blueprint": "SITE_VITRINE@0.5",
     "legacy_idea_blueprint_supported": "SITE_VITRINE@0.4",
     "blueprint_activation_changed_by_bridge": false,
     "user_rls_precheck": true,
     "decision_actor_from_jwt": true,
-    "g3_promotion_browser_exposed": false,
+    "g3_promotion_browser_exposed": true,
+    "g3_promotion_actor_from_jwt": true,
+    "g3_baseline_derivation": "SERVER_DERIVED_FROM_FROZEN_IDEA_DECISION",
+    "g3_manifest_client_controlled": false,
+    "g3_promotion_diff_client_controlled": false,
+    "g3_artifact_promotions_client_controlled": false,
+    "g3_server_derived_migration": "20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1",
     "service_role_browser_exposed": false,
     "production_cutover_certified": false
   },
@@ -237,6 +264,7 @@
     "unknown_canonical_readiness_must_not_be_coerced_to_ready": true,
     "manual_ready_flag_forbidden": true,
     "direct_browser_access_to_canonical_runtime_forbidden": true,
+    "direct_browser_access_to_privileged_canonical_rpcs_forbidden": true,
     "service_side_mutations_enabled": true,
     "human_actor_identity_must_come_from_authenticated_server_adapter": true,
     "formal_gate_approval_retries_must_be_idempotent_and_stale_safe": true,
