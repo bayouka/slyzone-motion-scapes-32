@@ -12,12 +12,13 @@ Before any substantial change:
 
 1. read root `README.md` for runtime/deployment/backend authority ;
 2. read `KNOWLEDGE.md` ;
-3. read `docs/REMOTE_DESKTOP_POLICY.md` for tooling/workflow authority ;
-4. for any work touching the professional lifecycle `Idea → Project Definition → READY_FOR_DEVELOPMENT`, read `docs/project-definition/canonical/PROJECT_MASTER_BLUEPRINT_V1.md` **first** ;
-5. for Idea Engine work, read `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md` **first for pre-GO orchestration details** ;
-6. read the specific canonical contract(s) for the domain ;
-7. read validated UX snapshot(s) for the surface ;
-8. inspect current implementation before changing it.
+3. read `docs/CURRENT_WORK_STATE_20260916.md` for the current stabilization boundary, closed work, open P0/P1 items and exact restart sequence ;
+4. read `docs/REMOTE_DESKTOP_POLICY.md` for tooling/workflow authority ;
+5. for any work touching the professional lifecycle `Idea → Project Definition → READY_FOR_DEVELOPMENT`, read `docs/project-definition/canonical/PROJECT_MASTER_BLUEPRINT_V1.md` **first** ;
+6. for Idea Engine work, read `docs/idea-engine/canonical/IDEA_ENGINE_MASTER_BLUEPRINT_V1.md` **first for pre-GO orchestration details** ;
+7. read the specific canonical contract(s) for the domain ;
+8. read validated UX snapshot(s) for the surface ;
+9. inspect current implementation before changing it.
 
 For **Idea → understanding/enrichment → candidate proposition → decision → optional Project Definition**, read at minimum:
 
@@ -35,12 +36,14 @@ For **post-capture workspace, integration or cutover work**, also read:
 
 - `docs/idea-engine/ux/WORKSPACE_PROJECTION_CONTRACT_V1.md`
 - `docs/idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md`
+- `docs/audit/STABILIZATION_AUDIT_20260916.md`
 
 Do not reconstruct product logic from memory or old production UI.
 
 ## Authority and precedence
 
 - root `README.md` = current production repository/runtime/backend/release authority ;
+- `docs/CURRENT_WORK_STATE_20260916.md` = current implementation restart point and stabilization work-order authority; it does not override canonical product contracts or README runtime identity ;
 - `docs/REMOTE_DESKTOP_POLICY.md` = tooling-path authority ;
 - `docs/project-definition/canonical/PROJECT_MASTER_BLUEPRINT_V1.md` = primary cross-lifecycle authority for the professional referential `Idea → Project Definition → READY_FOR_DEVELOPMENT`, the canonical D01→D16 domain model, Core Ontology, Formal Gates, Readiness Predicates, D15 quality/risk/compliance and D16 delivery/handoff ;
 - `docs/project-definition/machine/MASTER_BLUEPRINT_V1.json` = normative machine projection of that cross-lifecycle authority ;
@@ -143,6 +146,17 @@ AI failure never destroys raw data or blocks continuity; analysis can retry.
 - browser code must never receive the Supabase `service_role` secret or call service-role-only engine RPCs directly ;
 - privileged engine actions require an authenticated server-side adapter with explicit allowlist, authorization, revision/fingerprint checks and idempotency ;
 - follow root release/recovery chain before production changes.
+
+## Stabilization rule
+
+Until the P0 items in `docs/CURRENT_WORK_STATE_20260916.md` are closed:
+
+- prioritize correction of the existing product over new product scope ;
+- start from the authenticated canonical G0→G5 E2E path ;
+- fix defects found by the E2E before adding another bridge ;
+- retire legacy ownership incrementally only after replacement equivalence is proven ;
+- distinguish deterministic/source tests, runtime smoke and authenticated browser proof ;
+- do not declare cutover complete while a known P0 remains open.
 
 ## Documentation governance
 
