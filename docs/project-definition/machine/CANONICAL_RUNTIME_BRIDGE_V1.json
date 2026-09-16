@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "contract_id": "PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE",
-  "contract_version": "1.4",
+  "contract_version": "1.5",
   "status": "CANONICAL_MIGRATION_CONTRACT",
   "source_runtime": "R5_R6_R7_COMPATIBILITY_RUNTIME",
   "target_contract": "4B4C_PROJECT_MASTER_BLUEPRINT_V1",
@@ -58,9 +58,9 @@
   },
   "graph_contract": {
     "idea_active_blueprint_id": "SITE_VITRINE",
-    "idea_active_blueprint_version": "0.4",
-    "idea_candidate_blueprint_version": "0.5",
-    "idea_candidate_activation_changed_by_bridge": false,
+    "idea_active_blueprint_version": "0.5",
+    "idea_legacy_blueprint_supported": "0.4",
+    "idea_blueprint_activation_changed_by_bridge": false,
     "blueprint_id": "SITE_VITRINE",
     "blueprint_version": "1.0-bridge-r7",
     "canonical_node_count": 28,
@@ -94,7 +94,9 @@
   "canonical_preproject_gate_policy": {
     "G0_BLUEPRINT_FIT": {
       "authority_source": "LATEST_IDEA_BLUEPRINT_FIT_DECISION_PLUS_CURRENT_IDEA_BLUEPRINT_STATE",
-      "site_vitrine_runtime_version": "0.4",
+      "site_vitrine_active_runtime_version": "0.5",
+      "legacy_version_supported": "0.4",
+      "fit_decision_version_must_match_idea_version": true,
       "blueprint_mismatch_is_explicit_outcome": true
     },
     "G1_IDEA_DECISION_READY": {
@@ -219,6 +221,9 @@
       "canonical.read",
       "decision.record"
     ],
+    "active_idea_blueprint": "SITE_VITRINE@0.5",
+    "legacy_idea_blueprint_supported": "SITE_VITRINE@0.4",
+    "blueprint_activation_changed_by_bridge": false,
     "user_rls_precheck": true,
     "decision_actor_from_jwt": true,
     "g3_promotion_browser_exposed": false,
