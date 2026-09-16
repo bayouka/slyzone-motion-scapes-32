@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Workflows & sitemap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-structure.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><div class="eyebrow">4b4c2 · LAB isolé · Slice 6</div><h1>Comment le futur site pourrait fonctionner</h1><p>Des parcours simples puis un sitemap provisoire. Tu gardes ou retires les pages ; aucune décision ne déclenche un nouvel appel IA.</p></div>
+      <a class="ghost" href="./idea-brief.html">← Revenir à la Version 1</a>
+    </header>
+
+    <section class="panel" id="blockedPanel" hidden>
+      <h2>La Version 1 de l’idée est nécessaire</h2>
+      <p>Crée d’abord la version claire de l’idée ; elle sert de source unique à cette étape.</p>
+      <a class="primary-link" href="./idea-brief.html">Créer la Version 1</a>
+    </section>
+
+    <section class="panel action" id="actionPanel">
+      <div><span class="kicker">1 appel IA maximum</span><h2 id="ideaName">Structure proposée</h2><p id="ideaSummary"></p></div>
+      <button class="primary" id="generateButton" type="button">Proposer workflows et sitemap</button>
+    </section>
+
+    <div class="loading" id="loadingBox" hidden><strong>Structuration en cours…</strong><span>Le modèle reçoit uniquement la Version 1 validée.</span></div>
+    <div class="error" id="errorBox" hidden></div>
+
+    <section id="results" hidden>
+      <div class="section-head"><div><span class="kicker">Parcours principaux</span><h2>Workflows utilisateur</h2></div></div>
+      <div class="workflow-grid" id="workflowGrid"></div>
+
+      <div class="section-head gap"><div><span class="kicker">Architecture provisoire</span><h2>Sitemap proposé</h2><p>Garde uniquement les pages qui te semblent nécessaires.</p></div><span class="count-badge" id="pageCount"></span></div>
+      <div class="page-grid" id="pageGrid"></div>
+
+      <section class="panel gap">
+        <span class="kicker">Navigation suggérée</span>
+        <div class="nav-grid"><div><strong>Public</strong><div id="publicNav"></div></div><div><strong>Après connexion</strong><div id="appNav"></div></div></div>
+      </section>
+
+      <section class="panel gap">
+        <span class="kicker">À décider plus tard</span>
+        <h2>Questions structurelles</h2>
+        <ul id="questionList"></ul>
+      </section>
+
+      <section class="next-card gap">
+        <div><span class="kicker">Étape suivante</span><h2>Choisir une direction visuelle</h2><p>La future DA utilisera seulement la Version 1 et les pages que tu as gardées.</p></div>
+        <span class="next-badge">Slice 7 à venir</span>
+      </section>
+    </section>
+  </main>
+  <script src="./idea-structure.js" defer></script>
+</body>
+</html>
