@@ -2,9 +2,9 @@ import fs from 'node:fs/promises';
 
 const read=(path)=>fs.readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
-const [understanding,research,improvements,brief,structure,design,mockups,workerEntry,studioJs,studioHtml,researchJs,researchHtml,improvementsJs,improvementsHtml,briefJs,briefHtml,structureJs,structureHtml,designJs,designHtml,mockupsJs,mockupsHtml,presentationJs,presentationHtml]=await Promise.all([
+const [understanding,research,improvements,brief,structure,design,mockups,workerEntry,studioJs,studioHtml,researchJs,researchHtml,improvementsJs,improvementsHtml,briefJs,briefHtml,structureJs,structureHtml,designJs,designHtml,mockupsJs,mockupsHtml,presentationJs,presentationHtml,pptxJs]=await Promise.all([
   read('src/lab2-idea-understanding.js'),read('src/lab2-idea-research.js'),read('src/lab2-idea-improvements.js'),read('src/lab2-idea-brief.js'),read('src/lab2-idea-structure.js'),read('src/lab2-idea-design.js'),read('src/lab2-idea-mockups.js'),read('src/worker-entry.js'),
-  read('site/lab2/idea-studio.js'),read('site/lab2/idea-studio.html'),read('site/lab2/idea-research.js'),read('site/lab2/idea-research.html'),read('site/lab2/idea-improvements.js'),read('site/lab2/idea-improvements.html'),read('site/lab2/idea-brief.js'),read('site/lab2/idea-brief.html'),read('site/lab2/idea-structure.js'),read('site/lab2/idea-structure.html'),read('site/lab2/idea-design.js'),read('site/lab2/idea-design.html'),read('site/lab2/idea-mockups.js'),read('site/lab2/idea-mockups.html'),read('site/lab2/idea-presentation.js'),read('site/lab2/idea-presentation.html')
+  read('site/lab2/idea-studio.js'),read('site/lab2/idea-studio.html'),read('site/lab2/idea-research.js'),read('site/lab2/idea-research.html'),read('site/lab2/idea-improvements.js'),read('site/lab2/idea-improvements.html'),read('site/lab2/idea-brief.js'),read('site/lab2/idea-brief.html'),read('site/lab2/idea-structure.js'),read('site/lab2/idea-structure.html'),read('site/lab2/idea-design.js'),read('site/lab2/idea-design.html'),read('site/lab2/idea-mockups.js'),read('site/lab2/idea-mockups.html'),read('site/lab2/idea-presentation.js'),read('site/lab2/idea-presentation.html'),read('site/lab2/idea-pptx.js')
 ]);
 
 function requireMatch(source,pattern,code){if(!pattern.test(source))throw new Error(code)}
@@ -46,16 +46,19 @@ forbid(mockups,/<script|<style|dangerouslySetInnerHTML|SOURCE_FETCH|LAB2_BRAVE_S
 
 for(const [path,handler,code] of [['/api/lab2/understand','handleLab2IdeaUnderstanding','UNDERSTANDING'],['/api/lab2/research','handleLab2IdeaResearch','RESEARCH'],['/api/lab2/improvements','handleLab2IdeaImprovements','IMPROVEMENTS'],['/api/lab2/brief','handleLab2IdeaBrief','BRIEF'],['/api/lab2/structure','handleLab2IdeaStructure','STRUCTURE'],['/api/lab2/design','handleLab2IdeaDesign','DESIGN'],['/api/lab2/mockups','handleLab2IdeaMockups','MOCKUPS']]){requireMatch(workerEntry,new RegExp(path.replaceAll('/','\\/')),`LAB2_${code}_ROUTE_MISSING`);requireMatch(workerEntry,new RegExp(handler),`LAB2_${code}_HANDLER_WIRING_MISSING`)}
 
-const browserSource=`${studioJs}\n${studioHtml}\n${researchJs}\n${researchHtml}\n${improvementsJs}\n${improvementsHtml}\n${briefJs}\n${briefHtml}\n${structureJs}\n${structureHtml}\n${designJs}\n${designHtml}\n${mockupsJs}\n${mockupsHtml}\n${presentationJs}\n${presentationHtml}`;
+const browserSource=`${studioJs}\n${studioHtml}\n${researchJs}\n${researchHtml}\n${improvementsJs}\n${improvementsHtml}\n${briefJs}\n${briefHtml}\n${structureJs}\n${structureHtml}\n${designJs}\n${designHtml}\n${mockupsJs}\n${mockupsHtml}\n${presentationJs}\n${presentationHtml}\n${pptxJs}`;
 forbid(browserSource,/SUPABASE_SERVICE_ROLE_KEY/,'LAB2_BROWSER_SERVICE_ROLE_FORBIDDEN');
 forbid(browserSource,/LAB2_BRAVE_SEARCH_API_KEY|api\.search\.brave\.com/,'LAB2_BROWSER_DIRECT_SEARCH_FORBIDDEN');
 forbid(browserSource,/SOURCE_FETCH/,'LAB2_BROWSER_SOURCE_FETCH_BINDING_FORBIDDEN');
 forbid(browserSource,/\/api\/ideas\/|\/api\/project-definition\//,'LAB2_BROWSER_CANONICAL_API_COUPLING_FORBIDDEN');
 forbid(browserSource,/\/rest\/v1\//,'LAB2_BROWSER_DIRECT_DATABASE_ACCESS_FORBIDDEN');
 for(const [source,path,code] of [[studioJs,'/api/lab2/understand','UNDERSTANDING'],[researchJs,'/api/lab2/research','RESEARCH'],[improvementsJs,'/api/lab2/improvements','IMPROVEMENTS'],[briefJs,'/api/lab2/brief','BRIEF'],[structureJs,'/api/lab2/structure','STRUCTURE'],[designJs,'/api/lab2/design','DESIGN'],[mockupsJs,'/api/lab2/mockups','MOCKUPS']])requireMatch(source,new RegExp(path.replaceAll('/','\\/')),`LAB2_BROWSER_${code}_ROUTE_MISSING`);
-for(const [source,code] of [[studioJs,'DRAFT'],[researchJs,'RESEARCH_CACHE'],[improvementsJs,'IMPROVEMENT_DECISIONS'],[briefJs,'BRIEF_CACHE'],[structureJs,'STRUCTURE_CACHE'],[designJs,'DESIGN_SELECTION'],[mockupsJs,'MOCKUP_CACHE'],[presentationJs,'PRESENTATION_INPUTS']])requireMatch(source,/localStorage/,`LAB2_LOCAL_ONLY_${code}_EXPECTED`);
+for(const [source,code] of [[studioJs,'DRAFT'],[researchJs,'RESEARCH_CACHE'],[improvementsJs,'IMPROVEMENT_DECISIONS'],[briefJs,'BRIEF_CACHE'],[structureJs,'STRUCTURE_CACHE'],[designJs,'DESIGN_SELECTION'],[mockupsJs,'MOCKUP_CACHE'],[presentationJs,'PRESENTATION_INPUTS'],[pptxJs,'PPTX_INPUTS']])requireMatch(source,/localStorage/,`LAB2_LOCAL_ONLY_${code}_EXPECTED`);
 forbid(mockupsJs,/innerHTML\s*=\s*[^'"`]*block\.|insertAdjacentHTML|eval\(/,'LAB2_MOCKUP_RENDERER_UNTRUSTED_HTML_FORBIDDEN');
 forbid(presentationJs,/fetch\s*\(|\/api\/lab2\//,'LAB2_PRESENTATION_API_OR_AI_CALL_FORBIDDEN');
+forbid(pptxJs,/fetch\s*\(|\/api\/lab2\//,'LAB2_PPTX_API_OR_AI_CALL_FORBIDDEN');
 requireMatch(presentationJs,/window\.print\(\)/,'LAB2_PRESENTATION_PRINT_PDF_REQUIRED');
+requireMatch(pptxJs,/new window\.PptxGenJS\(\)/,'LAB2_PPTX_ENGINE_REQUIRED');
+requireMatch(presentationHtml,/pptxgenjs@4\.0\.1\/dist\/pptxgen\.bundle\.js/,'LAB2_PPTX_VERSION_PIN_REQUIRED');
 
 console.log('lab2-isolation-check: ok');
