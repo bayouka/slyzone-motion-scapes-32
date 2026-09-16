@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0",
   "contract_id": "PROJECT_DEFINITION_CANONICAL_RUNTIME_BRIDGE",
-  "contract_version": "1.3",
+  "contract_version": "1.4",
   "status": "CANONICAL_MIGRATION_CONTRACT",
-  "source_runtime": "R7_BUILD_READY_RUNTIME",
+  "source_runtime": "R5_R6_R7_COMPATIBILITY_RUNTIME",
   "target_contract": "4B4C_PROJECT_MASTER_BLUEPRINT_V1",
   "coverage": {
     "requirement_domain_classification": "FULL_FOR_R7_REQUIREMENT_SET",
-    "legacy_readiness_projection": "PARTIAL",
+    "legacy_readiness_projection": "PARTIAL_WITH_CANONICAL_PREPROJECT_BRIDGE",
     "core_graph": "IMPLEMENTED_SERVICE_ONLY",
     "canonical_node_state_projection": "IMPLEMENTED_R7_BRIDGE",
     "delivery_lots": "IMPLEMENTED_SERVICE_ONLY",
@@ -15,11 +15,23 @@
     "rfd_predicates": "ALL_ELEVEN_MASTER_RFD_LOT_PREDICATES_IMPLEMENTED_SERVICE_ONLY",
     "legacy_project_readiness_bridge": "G8_G11_TO_FOUR_CANONICAL_PROJECT_PREDICATES",
     "baseline_handoff": "IMPLEMENTED_SERVICE_ONLY",
-    "canonical_formal_gates": "G4_G5_IMPLEMENTED_SERVICE_ONLY",
-    "canonical_gate_retry_idempotency": "G4_G5_IMPLEMENTED",
-    "canonical_pre_g4_gates": "G0_G3_NOT_IMPLEMENTED_IN_THIS_RUNTIME_SLICE"
+    "canonical_formal_gates": "G0_G5_IMPLEMENTED_SERVICE_SIDE",
+    "canonical_gate_retry_idempotency": "G2_G4_G5_IMPLEMENTED_AND_G3_DELEGATES_TO_IDEMPOTENT_R6_PROMOTION",
+    "canonical_pre_g4_gates": "G0_G3_IMPLEMENTED_AS_DERIVED_COMPATIBILITY_BRIDGE",
+    "canonical_preproject_worker_adapter": "IMPLEMENTED_IN_REPOSITORY_PENDING_PRODUCTION_CUTOVER_CERTIFICATION",
+    "canonical_g3_browser_promotion": "INTENTIONALLY_NOT_EXPOSED",
+    "real_idea_end_to_end": "UNPROVEN_NO_PRODUCTION_IDEA"
   },
   "runtime_objects": {
+    "idea_blueprint_fit_source": "public.idea_blueprint_fit_decisions",
+    "idea_requirement_state_source": "public.idea_requirement_states",
+    "idea_artifact_source": "public.idea_artifacts",
+    "idea_decision_package_source": "public.idea_decision_packages",
+    "idea_decision_record_source": "public.idea_decision_records_v2",
+    "project_definition_source": "public.project_definitions",
+    "canonical_preproject_readiness": "public.get_canonical_idea_preproject_readiness_v1(uuid)",
+    "canonical_decision_record": "public.record_canonical_idea_decision_v1(uuid,uuid,text,text,jsonb,boolean,text,text)",
+    "canonical_project_baseline_promotion": "public.promote_canonical_approved_idea_to_project_definition_v2(uuid,uuid,bigint,jsonb,jsonb,jsonb,text)",
     "blueprint_pack": "app_private.project_blueprint_packs_v1",
     "node_definitions": "app_private.project_node_definitions_v1",
     "dependency_edges": "app_private.project_dependency_edges_v1",
@@ -45,6 +57,10 @@
     "g5_approval": "public.approve_project_rfd_v1(uuid,bigint,text,uuid)"
   },
   "graph_contract": {
+    "idea_active_blueprint_id": "SITE_VITRINE",
+    "idea_active_blueprint_version": "0.4",
+    "idea_candidate_blueprint_version": "0.5",
+    "idea_candidate_activation_changed_by_bridge": false,
     "blueprint_id": "SITE_VITRINE",
     "blueprint_version": "1.0-bridge-r7",
     "canonical_node_count": 28,
@@ -53,6 +69,63 @@
     "soft_edge_count": 2,
     "hard_dependency_cycles_allowed": false,
     "legacy_requirement_state_source_retained": true
+  },
+  "canonical_preproject_readiness_predicates": [
+    "FOUNDATION_READY",
+    "EVIDENCE_READY",
+    "STRATEGY_READY",
+    "PREFIGURATION_READY",
+    "DECISION_PACKAGE_READY"
+  ],
+  "canonical_preproject_policy": {
+    "predicate_persistence": "DERIVED_NOT_STORED",
+    "unknown_readiness_coerced_to_ready": false,
+    "requirement_state_freshness_checked_against_engine_revision": true,
+    "authority_ok_required": true,
+    "stale_conflicted_unresolved_states_block": true,
+    "prefiguration_uses_current_or_frozen_fresh_for_decision_artifacts": true,
+    "conditional_prefiguration_unmaterialized_state_is_reported_as_coverage_warning": true,
+    "decision_package_requires_current_engine_revision": true,
+    "decision_package_requires_matching_immutable_snapshot": true,
+    "decision_package_requires_fresh_snapshot_bound_outputs": true,
+    "material_open_review_feedback_blocks_decision_package_readiness": true,
+    "launch_and_early_non_go_paths_are_distinct": true
+  },
+  "canonical_preproject_gate_policy": {
+    "G0_BLUEPRINT_FIT": {
+      "authority_source": "LATEST_IDEA_BLUEPRINT_FIT_DECISION_PLUS_CURRENT_IDEA_BLUEPRINT_STATE",
+      "site_vitrine_runtime_version": "0.4",
+      "blueprint_mismatch_is_explicit_outcome": true
+    },
+    "G1_IDEA_DECISION_READY": {
+      "derived_from_predicates": [
+        "FOUNDATION_READY",
+        "EVIDENCE_READY",
+        "STRATEGY_READY",
+        "PREFIGURATION_READY",
+        "DECISION_PACKAGE_READY"
+      ],
+      "launch_path_requires_all_five_predicates": true,
+      "early_non_go_path": true,
+      "evaluation_fingerprint_required_for_canonical_decision": true
+    },
+    "G2_GO_PROJECT": {
+      "immutable_human_decision_required": true,
+      "decision_must_reference_current_decision_package": true,
+      "decision_must_match_current_g1_evaluation_fingerprint": true,
+      "approve_outcome_requires_launch_path": true,
+      "decision_actor_injected_from_authenticated_server_adapter": true,
+      "legacy_caller_supplied_gate_boolean_is_not_canonical_evidence": true
+    },
+    "G3_PROJECT_BASELINE": {
+      "canonical_g2_required": true,
+      "versioned_project_definition_baseline_required": true,
+      "baseline_manifest_completeness_required": true,
+      "authorized_actor_must_be_idea_creator_or_workspace_owner_admin": true,
+      "actor_revalidated_in_database": true,
+      "browser_promotion_exposed": false,
+      "promotion_server_rpc": "promote_canonical_approved_idea_to_project_definition_v2"
+    }
   },
   "legacy_gate_to_readiness_predicate": [
     {
@@ -108,14 +181,12 @@
     "manual_ready_flag": false
   },
   "canonical_formal_gates_implemented": [
-    "G4_RFD_LOT",
-    "G5_RFD_PROJECT"
-  ],
-  "canonical_formal_gates_not_implemented_in_this_slice": [
     "G0_BLUEPRINT_FIT",
     "G1_IDEA_DECISION_READY",
     "G2_GO_PROJECT",
-    "G3_PROJECT_BASELINE"
+    "G3_PROJECT_BASELINE",
+    "G4_RFD_LOT",
+    "G5_RFD_PROJECT"
   ],
   "g4_policy": {
     "derived_readiness_required": true,
@@ -140,6 +211,19 @@
     "legacy_project_status_is_not_mutated": true,
     "same_revision_same_fingerprint_retry_is_idempotent": true,
     "different_revision_or_fingerprint_retry_is_rejected": true
+  },
+  "adapter_contract": {
+    "repository_route": "/api/ideas/canonical",
+    "repository_runtime_version": "v4.5.16-project-definition-preproject-p3",
+    "commands": [
+      "canonical.read",
+      "decision.record"
+    ],
+    "user_rls_precheck": true,
+    "decision_actor_from_jwt": true,
+    "g3_promotion_browser_exposed": false,
+    "service_role_browser_exposed": false,
+    "production_cutover_certified": false
   },
   "rules": {
     "legacy_gate_ids_are_immutable_during_bridge": true,
