@@ -39,6 +39,11 @@ const requiredProductionTail = [
   '20260916155938_project_master_blueprint_v1_g5_rfd_project.sql',
   '20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval.sql',
   '20260916165026_project_master_blueprint_v1_complete_rfd_predicate_set.sql',
+  '20260916174121_project_master_blueprint_v1_g0_g3_preproject_bridge_p3.sql',
+  '20260916174307_project_master_blueprint_v1_g0_g3_preproject_bridge_p3_g0_column_fix.sql',
+  '20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4.sql',
+  '20260916182111_project_master_blueprint_v1_g0_blueprint_05_compat_fix_p5.sql',
+  '20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1.sql',
 ];
 
 const missing = requiredProductionTail.filter((name) => !fs.existsSync(`${migrationDir}/${name}`));
@@ -178,6 +183,75 @@ for (const required of [
 ]) {
   if (!completeRfd.includes(required)) {
     console.error(`MIGRATION HISTORY CHECK FAILED: complete RFD predicate guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const preprojectBridge = fs.readFileSync(`${migrationDir}/20260916174121_project_master_blueprint_v1_g0_g3_preproject_bridge_p3.sql`, 'utf8');
+for (const required of [
+  'create or replace function public.get_canonical_idea_preproject_readiness_v1',
+  "'G0_BLUEPRINT_FIT'",
+  "'G1_IDEA_DECISION_READY'",
+  "'G2_GO_PROJECT'",
+  "'G3_PROJECT_BASELINE'",
+  "'FOUNDATION_READY'",
+  "'EVIDENCE_READY'",
+  "'STRATEGY_READY'",
+  "'PREFIGURATION_READY'",
+  "'DECISION_PACKAGE_READY'",
+  'create or replace function public.record_canonical_idea_decision_v1',
+]) {
+  if (!preprojectBridge.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: canonical pre-project bridge guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const g3ActorHardening = fs.readFileSync(`${migrationDir}/20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4.sql`, 'utf8');
+for (const required of [
+  'create or replace function public.promote_canonical_approved_idea_to_project_definition_v2',
+  "wm.role in ('owner','admin')",
+  "wm.status='active'",
+  "raise exception 'PROJECT_PROMOTION_ACTOR_NOT_AUTHORIZED'",
+  'revoke all on function public.promote_canonical_approved_idea_to_project_definition_v2',
+  'grant execute on function public.promote_canonical_approved_idea_to_project_definition_v2',
+]) {
+  if (!g3ActorHardening.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: G3 actor-hardening guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const g0Compat = fs.readFileSync(`${migrationDir}/20260916182111_project_master_blueprint_v1_g0_blueprint_05_compat_fix_p5.sql`, 'utf8');
+for (const required of [
+  "i.blueprint_version in ('0.4','0.5')",
+  'fit.blueprint_version=i.blueprint_version',
+  "'SITE_VITRINE@0.5'",
+]) {
+  if (!g0Compat.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: G0 0.5 compatibility guard missing: ${required}`);
+    process.exit(1);
+  }
+}
+
+const g3Derived = fs.readFileSync(`${migrationDir}/20260916185631_project_master_blueprint_v1_g3_server_derived_promotion_v1.sql`, 'utf8');
+for (const required of [
+  'create or replace function app_private.build_canonical_project_baseline_payload_v1',
+  'create or replace function app_private.canonical_project_baseline_requirement_bundle_v1',
+  'create or replace function app_private.canonical_project_baseline_artifact_target_domain_v1',
+  'create or replace function public.promote_canonical_approved_idea_to_project_definition_v3',
+  "'SERVER_DERIVED_FROM_FROZEN_IDEA_DECISION'",
+  "'PROMOTE_AND_DEEPEN'",
+  "'client_manifest_accepted',false",
+  "'client_promotion_diff_accepted',false",
+  "'client_artifact_promotions_accepted',false",
+  "raise exception 'UNMAPPED_PROJECT_PROMOTABLE_ARTIFACT'",
+  "raise exception 'PROJECT_BASELINE_REQUIRED_REQUIREMENT_NOT_CURRENT'",
+  'revoke all on function public.promote_canonical_approved_idea_to_project_definition_v3(uuid,uuid,uuid,bigint,text) from authenticated',
+  'grant execute on function public.promote_canonical_approved_idea_to_project_definition_v3(uuid,uuid,uuid,bigint,text) to service_role',
+]) {
+  if (!g3Derived.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: server-derived G3 guard missing: ${required}`);
     process.exit(1);
   }
 }
