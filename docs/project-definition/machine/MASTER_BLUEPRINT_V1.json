@@ -1,0 +1,208 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "4B4C_PROJECT_MASTER_BLUEPRINT",
+  "contract_version": "1.0",
+  "status": "CANONICAL",
+  "authority": "docs/project-definition/canonical/PROJECT_MASTER_BLUEPRINT_V1.md",
+  "layers": [
+    "CORE_ONTOLOGY",
+    "BLUEPRINT_PACK",
+    "PROJECT_INSTANCE"
+  ],
+  "domains": [
+    {"id":"D01","name":"Intent & Context"},
+    {"id":"D02","name":"Business & Success"},
+    {"id":"D03","name":"Users & Needs"},
+    {"id":"D04","name":"Market & Evidence"},
+    {"id":"D05","name":"Offer & Positioning"},
+    {"id":"D06","name":"Governance & Decisions"},
+    {"id":"D07","name":"Scope & Priorities"},
+    {"id":"D08","name":"Content & Assets"},
+    {"id":"D09","name":"SEO & Discoverability"},
+    {"id":"D10","name":"Information Architecture & UX"},
+    {"id":"D11","name":"Brand, UI & Interaction"},
+    {"id":"D12","name":"Functional Behaviour"},
+    {"id":"D13","name":"Data & Integrations"},
+    {"id":"D14","name":"Architecture & Operations"},
+    {"id":"D15","name":"Quality, Risk & Compliance"},
+    {"id":"D16","name":"Delivery & Handoff"}
+  ],
+  "core_objects": [
+    "BlueprintDefinition",
+    "ProjectInstance",
+    "NodeDefinition",
+    "ProjectNodeState",
+    "ClaimRecord",
+    "EvidenceRecord",
+    "AssumptionRecord",
+    "RecommendationRecord",
+    "DecisionRecord",
+    "DependencyEdge",
+    "ApplicabilityAssessment",
+    "ScopeCommitment",
+    "ExceptionRecord",
+    "ActorRole",
+    "ResponsibilityAssignment",
+    "QualityRequirement",
+    "RiskRecord",
+    "ComplianceRequirement",
+    "PrivacyProcessingRecord",
+    "ThreatScenario",
+    "PerformanceBudget",
+    "TestCaseDefinition",
+    "DeliveryLot",
+    "DependencyClosure",
+    "OwnershipAssignment",
+    "DoRProfile",
+    "DoDProfile",
+    "BacklogItem",
+    "HandoffManifest",
+    "BaselineFreeze",
+    "ChangeRequest"
+  ],
+  "relation_types": [
+    "REQUIRES",
+    "INFORMS",
+    "DERIVED_FROM",
+    "SUPPORTS",
+    "CHALLENGES",
+    "CONTRADICTS",
+    "SATISFIES",
+    "INVALIDATES",
+    "REFERENCES",
+    "PRODUCES"
+  ],
+  "dependency_strengths": ["HARD", "SOFT"],
+  "dependency_policy": {
+    "hard_subgraph_must_be_acyclic": true,
+    "soft_cycles_allowed": true,
+    "targeted_stale_propagation": true,
+    "targeted_recompute_only": true
+  },
+  "applicability_states": [
+    "APPLICABLE",
+    "NOT_APPLICABLE",
+    "CONDITIONAL",
+    "UNRESOLVED"
+  ],
+  "fulfilment_stages": [
+    "DEFINITION",
+    "RFD",
+    "IMPLEMENTATION",
+    "PRE_RELEASE",
+    "POST_RELEASE"
+  ],
+  "scope_commitment_states": [
+    "IN_SCOPE",
+    "LATER",
+    "OUT_OF_SCOPE",
+    "NOT_RECOMMENDED",
+    "CONDITIONAL"
+  ],
+  "formal_gates": [
+    {
+      "id":"G0_BLUEPRINT_FIT",
+      "phase_transition":true,
+      "human_authority_required":false,
+      "purpose":"Select an applicable Blueprint Pack or declare mismatch."
+    },
+    {
+      "id":"G1_IDEA_DECISION_READY",
+      "phase_transition":true,
+      "human_authority_required":false,
+      "purpose":"Establish that the Idea Decision Dossier is sufficiently mature for an honest decision."
+    },
+    {
+      "id":"G2_GO_PROJECT",
+      "phase_transition":true,
+      "human_authority_required":true,
+      "purpose":"Record explicit authorized GO before Project Definition operationalization."
+    },
+    {
+      "id":"G3_PROJECT_BASELINE",
+      "phase_transition":true,
+      "human_authority_required":false,
+      "purpose":"Create the immutable/versioned Project Baseline from approved current material."
+    },
+    {
+      "id":"G4_RFD_LOT",
+      "phase_transition":true,
+      "human_authority_required":true,
+      "purpose":"Authorize a Delivery Lot for build only after its derived readiness closes."
+    },
+    {
+      "id":"G5_RFD_PROJECT",
+      "phase_transition":true,
+      "human_authority_required":true,
+      "purpose":"Authorize project-level RFD after required Delivery Lots and handoff integrity close."
+    }
+  ],
+  "readiness_predicates": [
+    "FOUNDATION_READY",
+    "EVIDENCE_READY",
+    "STRATEGY_READY",
+    "PREFIGURATION_READY",
+    "DECISION_PACKAGE_READY",
+    "PROJECT_PRODUCT_READY",
+    "PROJECT_EXPERIENCE_READY",
+    "PROJECT_TECH_READY",
+    "TRACEABILITY_READY",
+    "QUALITY_REQUIREMENTS_DEFINED",
+    "TESTABILITY_READY",
+    "DEPENDENCY_CLOSURE",
+    "CRITICAL_TBD_CLOSURE",
+    "OWNERSHIP_CLOSURE",
+    "BASELINE_READY",
+    "HANDOFF_INTEGRITY"
+  ],
+  "rfd_lot_required_predicates": [
+    "PROJECT_PRODUCT_READY",
+    "PROJECT_EXPERIENCE_READY",
+    "PROJECT_TECH_READY",
+    "TRACEABILITY_READY",
+    "QUALITY_REQUIREMENTS_DEFINED",
+    "TESTABILITY_READY",
+    "DEPENDENCY_CLOSURE",
+    "CRITICAL_TBD_CLOSURE",
+    "OWNERSHIP_CLOSURE",
+    "BASELINE_READY",
+    "HANDOFF_INTEGRITY"
+  ],
+  "authority_policy": {
+    "ai_may_extract": true,
+    "ai_may_analyze": true,
+    "ai_may_recommend": true,
+    "ai_may_approve_human_gate": false,
+    "go_requires_explicit_human_authority": true,
+    "rfd_requires_authorized_human_approval_after_derived_readiness": true
+  },
+  "rfd_policy": {
+    "manual_ready_flag_forbidden": true,
+    "critical_tbd_must_equal_zero": true,
+    "blocking_conflict_forbidden": true,
+    "critical_stale_node_forbidden": true,
+    "acceptance_criteria_required": true,
+    "verification_strategy_required": true,
+    "critical_ownership_required": true,
+    "versioned_baseline_required": true,
+    "handoff_manifest_required": true
+  },
+  "truth_separation_invariants": [
+    "CLAIM_NE_EVIDENCE",
+    "EVIDENCE_NE_ASSUMPTION",
+    "ASSUMPTION_NE_RECOMMENDATION",
+    "RECOMMENDATION_NE_DECISION",
+    "REQUIREMENT_NE_TEST",
+    "TEST_NE_EXECUTION_EVIDENCE",
+    "AI_INFERENCE_NE_HUMAN_TRUTH",
+    "FORMAL_GATE_NE_READINESS_PREDICATE",
+    "APPLICABILITY_NE_FULFILMENT"
+  ],
+  "compatibility": {
+    "legacy_reference_architecture":"PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4",
+    "legacy_domain_count":22,
+    "legacy_machine_blueprints":["SITE_VITRINE@0.4","SITE_VITRINE@0.5"],
+    "legacy_runtime_must_remain_operational_until_explicit_migration":true,
+    "silent_persisted_id_rewrite_forbidden":true
+  }
+}
