@@ -1,0 +1,194 @@
+{
+  "schema_version": "1.0",
+  "mapping_id": "PROJECT_DEFINITION_D22_TO_D16",
+  "mapping_version": "1.0",
+  "status": "CANONICAL_MIGRATION_CONTRACT",
+  "source_model": "PROJECT_DEFINITION_REFERENCE_ARCHITECTURE_V0_4_D01_D22",
+  "target_model": "4B4C_PROJECT_MASTER_BLUEPRINT_V1_D01_D16",
+  "migration_policy": {
+    "rewrite_persisted_ids_in_place": false,
+    "preserve_source_identity": true,
+    "store_target_classification_separately": true,
+    "allow_one_to_many_mapping": true,
+    "require_explicit_mapping_for_every_legacy_domain": true,
+    "runtime_activation_implicit": false
+  },
+  "mappings": [
+    {
+      "legacy_id": "D01",
+      "legacy_name": "Governance, Stakeholders & Decision Context",
+      "strategy": "SPLIT",
+      "primary_target": "D06",
+      "targets": ["D06", "D01"],
+      "note": "Decision authority and stakeholder governance move to D06; contextual framing remains D01."
+    },
+    {
+      "legacy_id": "D02",
+      "legacy_name": "Business Context, Problem & Outcomes",
+      "strategy": "SPLIT",
+      "primary_target": "D02",
+      "targets": ["D02", "D01"],
+      "note": "Business outcomes/success move to D02; situational context may remain D01."
+    },
+    {
+      "legacy_id": "D03",
+      "legacy_name": "Users, Audiences, Segments & Jobs",
+      "strategy": "DIRECT",
+      "primary_target": "D03",
+      "targets": ["D03"],
+      "note": "User/audience responsibility remains a dedicated domain."
+    },
+    {
+      "legacy_id": "D04",
+      "legacy_name": "Existing State, Assets & Evidence",
+      "strategy": "SPLIT",
+      "primary_target": "D04",
+      "targets": ["D04", "D08"],
+      "note": "Existing-state observations/evidence move to D04; reusable content/media/assets move to D08."
+    },
+    {
+      "legacy_id": "D05",
+      "legacy_name": "Market, Competition, Alternatives & References",
+      "strategy": "DIRECT",
+      "primary_target": "D04",
+      "targets": ["D04"],
+      "note": "Market, competitors, alternatives, references and evidence consolidate in D04."
+    },
+    {
+      "legacy_id": "D06",
+      "legacy_name": "Opportunity, Strategy, Value Proposition & Positioning",
+      "strategy": "DIRECT",
+      "primary_target": "D05",
+      "targets": ["D05"],
+      "note": "Strategy/value proposition/positioning consolidate in D05."
+    },
+    {
+      "legacy_id": "D07",
+      "legacy_name": "Offer, Product/Service Model & Scope",
+      "strategy": "SPLIT",
+      "primary_target": "D07",
+      "targets": ["D07", "D05"],
+      "note": "Scope/prioritization move to D07; offer/value framing belongs to D05."
+    },
+    {
+      "legacy_id": "D08",
+      "legacy_name": "User Journeys, Conversion & Service Flow",
+      "strategy": "DIRECT",
+      "primary_target": "D10",
+      "targets": ["D10"],
+      "note": "Journeys, conversion and service flow consolidate with information architecture and UX in D10."
+    },
+    {
+      "legacy_id": "D09",
+      "legacy_name": "Information Architecture, Navigation & Page/Screen Model",
+      "strategy": "DIRECT",
+      "primary_target": "D10",
+      "targets": ["D10"],
+      "note": "Information architecture/navigation/page-screen model remain in D10."
+    },
+    {
+      "legacy_id": "D10",
+      "legacy_name": "Content, Proof, Media & Content Operations",
+      "strategy": "DIRECT",
+      "primary_target": "D08",
+      "targets": ["D08"],
+      "note": "Content, proof, media and content operations consolidate in D08."
+    },
+    {
+      "legacy_id": "D11",
+      "legacy_name": "SEO, Discoverability & Migration",
+      "strategy": "DIRECT",
+      "primary_target": "D09",
+      "targets": ["D09"],
+      "note": "SEO/discoverability/migration remain a dedicated D09 responsibility."
+    },
+    {
+      "legacy_id": "D12",
+      "legacy_name": "Functional Requirements, Business Rules & UI States",
+      "strategy": "DIRECT",
+      "primary_target": "D12",
+      "targets": ["D12"],
+      "note": "Functional behaviour remains D12."
+    },
+    {
+      "legacy_id": "D13",
+      "legacy_name": "Data, Content Model, CMS, Roles & Permissions",
+      "strategy": "SPLIT",
+      "primary_target": "D13",
+      "targets": ["D13", "D08", "D06"],
+      "note": "Data/content model/CMS and data permissions move to D13; content operations may map D08 and authority/governance D06."
+    },
+    {
+      "legacy_id": "D14",
+      "legacy_name": "Integrations, APIs, Notifications & External Services",
+      "strategy": "DIRECT",
+      "primary_target": "D13",
+      "targets": ["D13"],
+      "note": "Integrations/APIs/notifications/external exchanges consolidate in D13."
+    },
+    {
+      "legacy_id": "D15",
+      "legacy_name": "UX, UI, Brand & Design System Definition",
+      "strategy": "SPLIT",
+      "primary_target": "D11",
+      "targets": ["D11", "D10"],
+      "note": "Brand/UI/design-system/interaction move to D11; structural UX belongs to D10."
+    },
+    {
+      "legacy_id": "D16",
+      "legacy_name": "Technical Architecture, Platform, Environments & Operations",
+      "strategy": "DIRECT",
+      "primary_target": "D14",
+      "targets": ["D14"],
+      "note": "Architecture/platform/environments/operations consolidate in D14."
+    },
+    {
+      "legacy_id": "D17",
+      "legacy_name": "Security, Privacy, Legal & Compliance",
+      "strategy": "DIRECT",
+      "primary_target": "D15",
+      "targets": ["D15"],
+      "note": "Security/privacy/legal/compliance consolidate in D15."
+    },
+    {
+      "legacy_id": "D18",
+      "legacy_name": "Accessibility, Performance, Reliability & Compatibility",
+      "strategy": "DIRECT",
+      "primary_target": "D15",
+      "targets": ["D15"],
+      "note": "Accessibility/performance/reliability/compatibility consolidate in D15."
+    },
+    {
+      "legacy_id": "D19",
+      "legacy_name": "Measurement, Analytics, Experimentation & Observability",
+      "strategy": "TRANSVERSAL",
+      "primary_target": "D14",
+      "targets": ["D14", "D02", "D15"],
+      "note": "Operational observability maps D14; success measurement D02; verification/quality telemetry D15."
+    },
+    {
+      "legacy_id": "D20",
+      "legacy_name": "QA, Acceptance, Delivery Constraints & Handoff",
+      "strategy": "SPLIT",
+      "primary_target": "D15",
+      "targets": ["D15", "D16"],
+      "note": "QA/acceptance quality belongs D15; delivery/handoff/change-control belongs D16."
+    },
+    {
+      "legacy_id": "D21",
+      "legacy_name": "Business Case, Economics, Forecasts & Scenario Models",
+      "strategy": "TRANSVERSAL",
+      "primary_target": "D02",
+      "targets": ["D02", "D05", "D06"],
+      "note": "Economics/success measures map D02; option economics D05; decision use/authority D06."
+    },
+    {
+      "legacy_id": "D22",
+      "legacy_name": "Decision Package, Presentation, Review & Approval",
+      "strategy": "TRANSVERSAL",
+      "primary_target": "D06",
+      "targets": ["D06", "D16"],
+      "note": "Decision/review/approval authority belongs D06; final build handoff packaging belongs D16."
+    }
+  ]
+}
