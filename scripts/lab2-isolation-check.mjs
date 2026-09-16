@@ -2,23 +2,26 @@ import fs from 'node:fs/promises';
 
 const read=(path)=>fs.readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
-const [understanding,research,improvements,workerEntry,studioJs,studioHtml,researchJs,researchHtml,improvementsJs,improvementsHtml]=await Promise.all([
+const [understanding,research,improvements,brief,workerEntry,studioJs,studioHtml,researchJs,researchHtml,improvementsJs,improvementsHtml,briefJs,briefHtml]=await Promise.all([
   read('src/lab2-idea-understanding.js'),
   read('src/lab2-idea-research.js'),
   read('src/lab2-idea-improvements.js'),
+  read('src/lab2-idea-brief.js'),
   read('src/worker-entry.js'),
   read('site/lab2/idea-studio.js'),
   read('site/lab2/idea-studio.html'),
   read('site/lab2/idea-research.js'),
   read('site/lab2/idea-research.html'),
   read('site/lab2/idea-improvements.js'),
-  read('site/lab2/idea-improvements.html')
+  read('site/lab2/idea-improvements.html'),
+  read('site/lab2/idea-brief.js'),
+  read('site/lab2/idea-brief.html')
 ]);
 
 function requireMatch(source,pattern,code){if(!pattern.test(source))throw new Error(code)}
 function forbid(source,pattern,code){if(pattern.test(source))throw new Error(code)}
 
-for(const [name,endpoint] of [['UNDERSTANDING',understanding],['RESEARCH',research],['IMPROVEMENTS',improvements]]){
+for(const [name,endpoint] of [['UNDERSTANDING',understanding],['RESEARCH',research],['IMPROVEMENTS',improvements],['BRIEF',brief]]){
   requireMatch(endpoint,/LAB2_IDEA_STUDIO_ENABLED/,`LAB2_${name}_FEATURE_FLAG_REQUIRED`);
   requireMatch(endpoint,/LAB2_ALLOWED_USER_IDS/,`LAB2_${name}_ALLOWLIST_REQUIRED`);
   requireMatch(endpoint,/\/auth\/v1\/user/,`LAB2_${name}_AUTH_PRECHECK_REQUIRED`);
@@ -35,6 +38,9 @@ requireMatch(research,/api\.search\.brave\.com\/res\/v1\/web\/search/,'LAB2_RESE
 forbid(research,/TAVILY_API_KEY|G2_WEB|G2_SRC|G2_AI_/,'LAB2_RESEARCH_CANONICAL_EXECUTOR_COUPLING_FORBIDDEN');
 requireMatch(improvements,/LAB2_IMPROVEMENTS_ENABLED/,'LAB2_IMPROVEMENTS_FLAG_REQUIRED');
 requireMatch(improvements,/automatic_idea_mutation:false/,'LAB2_IMPROVEMENTS_NO_AUTOMATIC_MUTATION_GUARANTEE_REQUIRED');
+requireMatch(brief,/LAB2_BRIEF_ENABLED/,'LAB2_BRIEF_FLAG_REQUIRED');
+requireMatch(brief,/rejected_proposals_excluded_from_model_prompt:true/,'LAB2_BRIEF_REJECTED_EXCLUSION_GUARANTEE_REQUIRED');
+requireMatch(brief,/assertDecisionCompleteness/,'LAB2_BRIEF_DECISION_COMPLETENESS_REQUIRED');
 
 requireMatch(workerEntry,/\/api\/lab2\/understand/,'LAB2_UNDERSTANDING_ROUTE_MISSING');
 requireMatch(workerEntry,/handleLab2IdeaUnderstanding/,'LAB2_UNDERSTANDING_HANDLER_WIRING_MISSING');
@@ -42,8 +48,10 @@ requireMatch(workerEntry,/\/api\/lab2\/research/,'LAB2_RESEARCH_ROUTE_MISSING');
 requireMatch(workerEntry,/handleLab2IdeaResearch/,'LAB2_RESEARCH_HANDLER_WIRING_MISSING');
 requireMatch(workerEntry,/\/api\/lab2\/improvements/,'LAB2_IMPROVEMENTS_ROUTE_MISSING');
 requireMatch(workerEntry,/handleLab2IdeaImprovements/,'LAB2_IMPROVEMENTS_HANDLER_WIRING_MISSING');
+requireMatch(workerEntry,/\/api\/lab2\/brief/,'LAB2_BRIEF_ROUTE_MISSING');
+requireMatch(workerEntry,/handleLab2IdeaBrief/,'LAB2_BRIEF_HANDLER_WIRING_MISSING');
 
-const browserSource=`${studioJs}\n${studioHtml}\n${researchJs}\n${researchHtml}\n${improvementsJs}\n${improvementsHtml}`;
+const browserSource=`${studioJs}\n${studioHtml}\n${researchJs}\n${researchHtml}\n${improvementsJs}\n${improvementsHtml}\n${briefJs}\n${briefHtml}`;
 forbid(browserSource,/SUPABASE_SERVICE_ROLE_KEY/,'LAB2_BROWSER_SERVICE_ROLE_FORBIDDEN');
 forbid(browserSource,/LAB2_BRAVE_SEARCH_API_KEY|api\.search\.brave\.com/,'LAB2_BROWSER_DIRECT_SEARCH_FORBIDDEN');
 forbid(browserSource,/SOURCE_FETCH/,'LAB2_BROWSER_SOURCE_FETCH_BINDING_FORBIDDEN');
@@ -52,8 +60,10 @@ forbid(browserSource,/\/rest\/v1\//,'LAB2_BROWSER_DIRECT_DATABASE_ACCESS_FORBIDD
 requireMatch(studioJs,/\/api\/lab2\/understand/,'LAB2_BROWSER_UNDERSTANDING_ROUTE_MISSING');
 requireMatch(researchJs,/\/api\/lab2\/research/,'LAB2_BROWSER_RESEARCH_ROUTE_MISSING');
 requireMatch(improvementsJs,/\/api\/lab2\/improvements/,'LAB2_BROWSER_IMPROVEMENTS_ROUTE_MISSING');
+requireMatch(briefJs,/\/api\/lab2\/brief/,'LAB2_BROWSER_BRIEF_ROUTE_MISSING');
 requireMatch(studioJs,/localStorage/,'LAB2_LOCAL_ONLY_DRAFT_EXPECTED');
 requireMatch(researchJs,/localStorage/,'LAB2_LOCAL_ONLY_RESEARCH_CACHE_EXPECTED');
 requireMatch(improvementsJs,/localStorage/,'LAB2_LOCAL_ONLY_IMPROVEMENT_DECISIONS_EXPECTED');
+requireMatch(briefJs,/localStorage/,'LAB2_LOCAL_ONLY_BRIEF_CACHE_EXPECTED');
 
 console.log('lab2-isolation-check: ok');
