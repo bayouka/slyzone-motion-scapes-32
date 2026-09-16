@@ -17,6 +17,15 @@ Build and test a novice-first workflow that turns a rough website/web-app idea i
 - No coupling to canonical `Ideas`, Workspace V3, G0→G5, Project Definition or legacy Ideas business contracts.
 - Lab endpoints require `LAB2_IDEA_STUDIO_ENABLED`, an explicit `LAB2_ALLOWED_USER_IDS` server-side allowlist, and their step-specific flag when applicable.
 
+## Implemented flow
+1. Capture the rough idea.
+2. Verify AI understanding.
+3. Analyze references and bounded competitor evidence.
+4. Review AI improvement proposals one by one.
+5. Produce a clear Version 1 brief from human-approved decisions only.
+6. Derive simple workflows and a provisional sitemap.
+7. Choose a controlled visual direction from real mini-previews.
+
 ## Slice 1 — Capture
 Frontend: `site/lab2/idea-studio.html`
 
@@ -33,13 +42,7 @@ Endpoint: `POST /api/lab2/research`
 Contract: `lab2-research-v1`
 Frontend: `site/lab2/idea-research.html`
 
-Budget per standard run:
-- maximum 2 Web searches;
-- maximum 3 selected competitors;
-- maximum 6 fetched public pages;
-- maximum 2 AI calls.
-
-References supplied by the user remain distinct from discovered competitors. Public pages are fetched only through isolated `SOURCE_FETCH`. Source text is untrusted data. An `OBSERVED_PUBLIC` finding survives only when its support text actually exists in the fetched source. Visual design is not inferred from text-only pages.
+Budget per standard run: maximum 2 Web searches, 3 selected competitors, 6 fetched public pages and 2 AI calls. References supplied by the user remain distinct from discovered competitors. Public pages are fetched only through isolated `SOURCE_FETCH`. Source text is untrusted data. An `OBSERVED_PUBLIC` finding survives only when its support text actually exists in the fetched source. Visual design is not inferred from text-only pages.
 
 ## Slice 4 — Human-controlled improvements
 Endpoint: `POST /api/lab2/improvements`
@@ -53,36 +56,23 @@ Endpoint: `POST /api/lab2/brief`
 Contract: `lab2-brief-v1`
 Frontend: `site/lab2/idea-brief.html`
 
-Purpose: produce the clear Version 1 that all later slices consume without replaying the whole conversation.
-
-Hard rules:
-- all Slice 4 proposals need a human decision before brief generation;
-- rejected proposals are filtered server-side before the model prompt;
-- only accepted proposals and user-modified wording are retained;
-- no new features, targets, promises or differentiation may be invented;
-- unresolved uncertainties remain open questions;
-- retained improvements are returned separately from AI prose;
-- unchanged Version 1 is cached locally.
-
-The brief contains: concept, problem, target users, solution, core features, main flow, established differentiators, open questions and a short presentation pitch.
+All Slice 4 proposals require a human decision before brief generation. Rejected proposals are filtered server-side before the model prompt. Only accepted proposals and user-modified wording are retained. No new features, targets, promises or differentiation may be invented. Unresolved uncertainties stay open questions.
 
 ## Slice 6 — Workflows + provisional sitemap
 Endpoint: `POST /api/lab2/structure`
 Contract: `lab2-structure-v1`
 Frontend: `site/lab2/idea-structure.html`
 
-The model receives only the Version 1 brief. It proposes at most 4 human workflows and 20 pages, favoring the minimum architecture needed. Corporate pages are excluded unless required by the brief. The user can keep or remove every proposed page locally with no additional AI call. The sitemap is explicitly provisional and `human_page_review_required` remains true.
+The model receives only the Version 1 brief. It proposes at most 4 workflows and 20 pages while favoring the minimum useful architecture. The user can keep or remove each page locally with no additional AI call.
 
 ## Slice 7 — Novice-friendly design direction
 Endpoint: `POST /api/lab2/design`
 Contract: `lab2-design-v1`
 Frontend: `site/lab2/idea-design.html`
 
-The novice does not configure design-system parameters. They may simply choose up to three perceptions (modern, warm, premium, minimal, playful, professional, tech, reassuring), an optional color family, colors to avoid, and a free-form visual preference note.
+The novice only expresses simple preferences: up to three perceptions, an optional color family, colors to avoid and a free-form visual note. One AI call maximum selects three distinct directions from a server-controlled catalog. The model can only choose approved IDs for palette, typography, shape, density, imagery and motion. The server resolves those IDs into deterministic HSL tokens, font stacks, radii, shadows and spacing values.
 
-The endpoint uses one AI call maximum to select three distinct directions from a server-controlled design catalog. The model may select only approved IDs for palette, typography, shape/radius, density/spacing, imagery strategy and motion level. The server resolves those IDs into deterministic HSL tokens, font stacks, radii, shadows and spacing values. The model never invents raw CSS tokens.
-
-The frontend renders real mini-previews from those resolved tokens. The user explicitly chooses one direction locally with no additional AI call. Design reference notes are preference context only; Slice 7 performs no web/source fetch and never copies a competitor identity. The selected resolved direction is the only design input accepted by the planned deterministic mockup engine.
+The frontend renders real mini-previews using those resolved tokens. The user explicitly chooses one direction locally with no additional AI call. Slice 7 performs no Web/source fetch, does not copy competitor identity and exposes `human_direction_selection_required` plus `deterministic_tokens_for_mockups` guarantees.
 
 ## Security and cost boundary
 - no service-role key in browser or Lab endpoint;
@@ -95,16 +85,9 @@ The frontend renders real mini-previews from those resolved tokens. The user exp
 ## Validation
 Dedicated workflow: `.github/workflows/lab2-check.yml`
 
-It runs only Lab syntax/contract/isolation checks and performs no deployment. Tests use mocked Workers AI, Brave Search and source-fetch responses, so the validation consumes zero real AI/search credits.
+It runs only Lab syntax/contract/isolation checks and performs no deployment. Tests use mocked Workers AI, Brave Search and source-fetch responses, so validation consumes zero real AI/search credits.
 
-Validated artifacts:
-- `scripts/test_lab2_understanding_v1.mjs`
-- `scripts/test_lab2_research_v1.mjs`
-- `scripts/test_lab2_improvements_v1.mjs`
-- `scripts/test_lab2_brief_v1.mjs`
-- `scripts/test_lab2_structure_v1.mjs`
-- `scripts/test_lab2_design_v1.mjs`
-- `scripts/lab2-isolation-check.mjs`
+Validated artifacts include dedicated contract tests for Slices 2–7 plus `scripts/lab2-isolation-check.mjs`.
 
 Observed GitHub Actions run `35162122051` completed successfully for Slices 1–7: syntax checks, zero-credit contract tests and isolation boundary all passed.
 
