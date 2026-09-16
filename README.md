@@ -11,21 +11,29 @@ Use this hierarchy when recovering, auditing or releasing 4b4c:
 3. `bayouka/2b2c/4b4c/` — transport mirror only; never develop from it.
 4. `4b4c-pilot` and the root React/Vite/V6 track in `bayouka/2b2c` — historical/non-authoritative tracks.
 
-Current **live production runtime release**: **v4.5.14-project-definition-rfd-p1 / build 554**.
+Current **independently certified live Worker runtime**: **`v4.5.15-project-definition-rfd-p2` / build 555**.
 
-Build 554 was independently observed live on 2026-09-16 with:
-- `/health` serving runtime `v4.5.14-project-definition-rfd-p1` ;
-- Cloudflare version id `b7df1aea-6565-433b-9099-e39cab19f2b4` ;
-- `project_definition_adapter_v1.code=0.1.0` ;
-- route `/api/project-definition/engine` ;
-- adapter `configured=true` ;
-- canonical gates `G4_RFD_LOT` and `G5_RFD_PROJECT` ;
-- `user_rls_precheck=true` ;
-- `approval_actor_from_jwt=true` ;
+Build 555 was observed with the Project Definition adapter at `0.1.1` and the complete current RFD contract:
+- 11 Master Blueprint RFD predicates ;
+- 9 pre-baseline predicates ;
+- legacy project-readiness bridge `G8→G11` ;
+- canonical `G4_RFD_LOT` and `G5_RFD_PROJECT` ;
+- authenticated user-RLS precheck ;
+- approval actor injected from JWT ;
 - `service_role_browser_exposed=false` ;
-- `legacy_g12_mutated=false`.
+- legacy `G12_READY_FOR_DEVELOPMENT` not mutated/relabelled.
 
-Build 554 is an additive Project Definition backend/Worker release. It does **not** widen the active G2 executor boundary. G2 remains intentionally limited to `CALC + RAW`; dormant AI_H/SRC capability must not be inferred from code that is not advertised by the active endpoint.
+The Supabase backend is already **ahead of the live Worker** for the next additive canonical slice. The following service-side pre-project bridge is applied in production state but is **not yet Worker-production-certified**:
+- `G0_BLUEPRINT_FIT` ;
+- `G1_IDEA_DECISION_READY` ;
+- `G2_GO_PROJECT` ;
+- `G3_PROJECT_BASELINE` ;
+- derived predicates `FOUNDATION_READY / EVIDENCE_READY / STRATEGY_READY / PREFIGURATION_READY / DECISION_PACKAGE_READY` ;
+- canonical decision fingerprint binding ;
+- G3 actor hardening ;
+- G0 compatibility with current `SITE_VITRINE@0.5` assignment plus legacy `0.4` support.
+
+Repository Worker candidate for that next cutover: **`v4.5.16-project-definition-preproject-p3`**. Do not call it live until the canonical transport/Cloudflare release path and live smoke checks certify it.
 
 Build history relevant to the current baseline:
 - Build 549 introduced the first strict non-CALC executor (`RAW`).
@@ -33,7 +41,8 @@ Build history relevant to the current baseline:
 - Build 551 restored the production capability boundary to `CALC + RAW`.
 - Build 552 added dormant, tested SRC V0.2 infrastructure without activating SRC.
 - Build 553 added the isolated strictly-public source-fetch service boundary while keeping SRC inactive.
-- Build 554 adds the authenticated Project Definition canonical RFD adapter and live G4/G5 runtime surface.
+- Build 554 introduced the authenticated Project Definition canonical RFD adapter and initial live G4/G5 runtime surface.
+- Build 555 completed the RFD predicate surface exposed by adapter `0.1.1`: 11 RFD predicates, 9 pre-baseline predicates and G8→G11 readiness bridge.
 
 The active G2 execution boundary remains intentionally narrow:
 - `CALC` produces deterministic `SYSTEM_CALCULATED / CALCULATED` results only where policy permits ;
@@ -42,17 +51,22 @@ The active G2 execution boundary remains intentionally narrow:
 - `SRC` has dormant snapshot/pinning infrastructure plus an isolated source-fetch service/candidate path, but remains **not active** at the endpoint/planner capability boundary ;
 - `AI_R`, `WEB`, `AUDIT`, `CONN` and `MEM` remain unavailable through the production endpoint until their executor contracts and tests exist.
 
+Blueprint runtime authority must be read precisely:
+- live Blueprint Fit resolution for a new accepted `SITE_VITRINE` Idea currently assigns **`SITE_VITRINE@0.5`** ;
+- legitimate existing/legacy `SITE_VITRINE@0.4` Ideas remain compatibility-supported ;
+- the canonical G0 bridge requires the persisted Blueprint Fit decision version to exactly match the current Idea version ;
+- do not infer that a filename containing `CANDIDATE` means the live fit resolver still assigns 0.4.
+
 The runtime must prefer an honest capability limit over fabricated evidence. An AI hypothesis is not evidence, a source locator is not source-backed proof, and a model-generated competitor is not an active competitor set without persisted evidence.
 
-The `/health` compatibility object still exposes the historical `idea_engine_adapter_v0_1.code=0.1.1` marker. It is preserved for compatibility and must never be used as sole proof of the current adapter surface.
-
-Build 541 was withdrawn after detecting that adapter 0.1.0 would have sent a modern `sb_secret_...` key as a Bearer token. Builds 542–553 are superseded historical release/cutover baselines, although their still-valid invariants remain part of the current runtime where explicitly preserved.
+The `/health` compatibility object still exposes historical Idea Engine markers. Compatibility markers must never be used as sole proof of the current adapter/capability surface.
 
 A release is production-verified only when the transport manifest matches the intended runtime, the Cloudflare build deploys Worker `4b4c`, and production smoke checks prove the required runtime/API boundaries. Authenticated user-flow claims require a real authenticated session; runtime health observation alone is not authenticated E2E proof.
 
 For detailed status use:
 - `docs/project-definition/runtime/G2_PRODUCTION_ACTIVATION_STATUS_20260916.md` for G2 ;
-- `docs/project-definition/runtime/PROJECT_DEFINITION_RFD_PRODUCTION_STATUS_20260916.md` for canonical Delivery Lots, RFD predicates and G4/G5.
+- `docs/project-definition/runtime/PROJECT_DEFINITION_RFD_PRODUCTION_STATUS_20260916.md` for canonical Delivery Lots, RFD predicates and G4/G5 ;
+- `docs/project-definition/runtime/PROJECT_DEFINITION_PREPROJECT_BRIDGE_STATUS_20260916.md` for service-side G0→G3 and the p3 Worker candidate.
 
 ## Production architecture
 
@@ -71,20 +85,21 @@ For detailed status use:
 - `site/assets/library-workspace-v1.js` — global file library enhancement.
 - `site/assets/design-v5.css` — current global V5 Soft Spatial Workspace design layer, loaded last.
 - `site/assets/ideas-workspace-v3-preview.js` + `.css` — parallel post-capture workspace projection using the canonical R0→R7 read model.
-- `site/assets/ideas-workspace-v3-actions.js` + `.css` — interaction layer `0.3.0` for G0, URL-source registration and deterministic G1 Foundation without browser service-role exposure.
-- `site/assets/ideas-workspace-g2-live.js` — additive Evidence/Market interaction surface; active version `1.1.0` hides internal G2/test jargon and exposes only user-relevant evidence work.
+- `site/assets/ideas-workspace-v3-actions.js` + `.css` — interaction layer for G0, URL-source registration and deterministic G1 Foundation without browser service-role exposure.
+- `site/assets/ideas-workspace-g2-live.js` — additive Evidence/Market interaction surface; exposes only user-relevant evidence work.
 - native WebRTC call logic remains in `live.js`; `site/assets/call-native-v1.css` owns its presentation.
-- `src/worker.js` — Cloudflare Worker, API routes, health endpoint, SPA fallback and response hardening.
+- `src/worker.js` — base Cloudflare Worker, API routes, SPA fallback and response hardening.
 - `src/idea-engine-adapter.js` — command-allowlisted server boundary for G0/G1 privileged capabilities.
 - `src/idea-evidence-endpoint.js` — authenticated server boundary for `evidence.advance`; verifies user-scoped projection/write authority before service-role execution and is the authority for operational G2 executor capabilities.
-- `src/idea-evidence-adapter-candidate.js` — G2 planner/action orchestration implementation; despite its historical filename, it is imported by the current Worker entry. Only endpoint-advertised capabilities are operational; dormant SRC/AI_H code is not capability authority.
+- `src/idea-evidence-adapter-candidate.js` — G2 planner/action orchestration implementation; despite its historical filename, endpoint-advertised capabilities — not the filename — define operational scope.
 - `src/idea-source-fetch-candidate.js` — dormant SRC V0.2 HTTPS fetch/canonical-text candidate with redirect, DNS/public-address, time and body-size guards.
-- `src/idea-source-ingestion-candidate.js` — dormant SRC ingestion orchestrator that separates URL acquisition/snapshot persistence from evidence extraction.
-- `src/project-definition-adapter.js` — authenticated, command-allowlisted server boundary for canonical Project Definition reads, Delivery Lot preparation and G4/G5 authorization. It performs a user-RLS precheck, enforces management authority for mutations and injects approval actor identity from the JWT before service-role RPC execution.
-- `src/worker-entry.js` — observable runtime wrapper and `/health` contract for active Idea/G2/Project Definition adapter surfaces.
+- `src/idea-source-ingestion-candidate.js` — dormant SRC ingestion orchestrator separating URL acquisition/snapshot persistence from evidence extraction.
+- `src/idea-canonical-adapter.js` — repository candidate authenticated boundary for canonical pre-project `canonical.read` and `decision.record`; G3 promotion is deliberately not browser-exposed.
+- `src/project-definition-adapter.js` — authenticated, command-allowlisted boundary for canonical Project Definition reads, Delivery Lot preparation and G4/G5 authorization; user-RLS precheck, management authority and JWT actor injection are enforced before service-role RPC execution.
+- `src/worker-entry.js` — observable runtime wrapper and `/health` contract for Idea/G2/canonical pre-project/Project Definition surfaces.
 - `wrangler.jsonc` — canonical main Worker configuration named `4b4c`.
 
-Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their capture-phase handlers stop the historical handlers from executing, while old code remains physically present until authenticated browser coverage permits safe deletion.
+Mandatory domain owners register before `workflow-backend-safe-v1.js`. Their capture-phase handlers stop historical handlers from executing, while old code remains physically present until authenticated browser coverage permits safe deletion.
 
 ## Backend baseline
 
@@ -114,11 +129,16 @@ Current canonical Project Definition / Master Blueprint V1 runtime includes:
 - `20260916155544_project_master_blueprint_v1_baseline_handoff_predicates` ;
 - `20260916155824_project_master_blueprint_v1_g4_rfd_lot` ;
 - `20260916155938_project_master_blueprint_v1_g5_rfd_project` ;
-- `20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval`.
+- `20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval` ;
+- `20260916165026_project_master_blueprint_v1_complete_rfd_predicate_set`.
 
-The canonical runtime currently implements 28 nodes, 33 dependency edges, all seven RFD predicates, Delivery Lots, baseline/handoff, `G4_RFD_LOT` and `G5_RFD_PROJECT`. G4/G5 approval RPCs are service-role-only; same-revision/same-fingerprint approval retries are idempotent while stale revision/fingerprint retries are rejected.
+Service-side canonical pre-project bridge migrations now also include:
+- `20260916174121_project_master_blueprint_v1_g0_g3_preproject_bridge_p3` ;
+- `20260916174307_project_master_blueprint_v1_g0_g3_preproject_bridge_p3_g0_column_fix` ;
+- `20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4` ;
+- `20260916182111_project_master_blueprint_v1_g0_blueprint_05_compat_fix_p5`.
 
-Build 554 is the live runtime baseline. The G2 boundary remains `CALC + RAW`. Project Definition G4/G5 is exposed only through the authenticated Worker adapter; it does not mutate legacy `G12_READY_FOR_DEVELOPMENT` or legacy Project status.
+The canonical runtime model now covers all six Formal Gates `G0→G5`. The production Worker currently exposes the p2 G4/G5 surface; the G0→G3 Worker adapter remains a repository/transport candidate until p3 cutover. Canonical G3 promotion is server-only and deliberately absent from the browser adapter.
 
 Do not reconstruct, reorder or replay production migrations from memory. GitHub migration filenames/versions must match `supabase_migrations.schema_migrations`. New schema changes must start from the verified live/canonical baseline and preserve RLS/least-privilege invariants.
 
@@ -177,9 +197,9 @@ npm run check
 
 `npm run check` must describe the effective runtime, not require legacy implementations merely because they still physically exist.
 
-Idea Engine/workspace integration changes additionally require domain-specific deterministic/red-team harnesses. Current G2 checks include `scripts/test_g2_evidence_adapter_v0_1.mjs`, `scripts/test_g2_src_candidate_v0_2.mjs` and the isolated source-fetch service harness. Canonical Project Definition checks include `scripts/master-blueprint-v1-check.mjs`, `scripts/canonical-runtime-bridge-v1-check.mjs`, `scripts/test_project_definition_adapter_v0_1.mjs` and the production migration-history guard.
+Idea Engine/workspace integration changes additionally require domain-specific deterministic/red-team harnesses. Current G2 checks include `scripts/test_g2_evidence_adapter_v0_1.mjs`, `scripts/test_g2_src_candidate_v0_2.mjs` and the isolated source-fetch service harness. Canonical Project Definition checks include `scripts/master-blueprint-v1-check.mjs`, `scripts/canonical-runtime-bridge-v1-check.mjs`, `scripts/project-definition-adapter-v1-check.mjs`, `scripts/idea-canonical-adapter-v1-check.mjs` and the production migration-history guard.
 
-The build 554 transport gate retains the prior G2/SRC/source-fetch syntax and contract checks, byte-aligns the effective Worker runtime files, exposes the Project Definition adapter health contract and contains unauthenticated `401 / UNAUTHORIZED` smoke assertions for the eight Project Definition commands. Independently observed live `/health` confirms the new runtime and adapter markers. That observation is **not** a substitute for a real authenticated Project Definition E2E.
+The certified p2 transport gate retains the prior G2/SRC/source-fetch checks, byte-aligns the effective Worker runtime files, exposes the Project Definition adapter health contract and checks the authenticated API boundary. Live runtime health is **not** a substitute for a real authenticated Project Definition or Idea E2E.
 
 GitHub Actions are not used for production. The verified release chain is:
 
@@ -191,7 +211,7 @@ GitHub Actions are not used for production. The verified release chain is:
 6. that script removes Cloudflare CI Worker-name overrides, explicitly deploys `--name 4b4c`, then verifies `/health`, the shell build and mandatory production assets/API markers;
 7. any failed syntax/manifest/deployment/runtime-smoke assertion must fail the Cloudflare build.
 
-Historical one-off GitHub workflows remain archived/non-executable and must not be used for production.
+Historical/manual GitHub workflows are not the production authority and must not be substituted for this release chain.
 
 ## Known technical debt
 
@@ -201,13 +221,15 @@ Historical one-off GitHub workflows remain archived/non-executable and must not 
 - `ideas-orchestrator-v2.js` still renders the historical `Clarifier → Renforcer → Étayer → Partager → Décider` progression and remains compatibility-only during Workspace V3 cutover;
 - action source linkage (`source_type` / `source_id`) is still applied after `create_action_v1` by an RLS-protected update rather than atomically in the create RPC;
 - CSS is consolidated for loading but still originates from historical layers and contains extensive specificity/`!important` debt;
-- authenticated multi-user browser E2E coverage remains incomplete; live build 554 has independently observed runtime health but does not by itself prove a full authenticated G0→G5 journey;
+- authenticated multi-user browser E2E coverage remains incomplete; live p2 health does not by itself prove a full authenticated G0→G5 journey;
+- production currently contains no real Idea row suitable for canonical G0→G3 E2E certification ;
 - real authenticated production execution of the RAW G2 path still needs lineage inspection on a fresh `SITE_VITRINE@0.5` Idea;
 - Project Definition authenticated E2E remains unproven until a real Project Definition is exercised through `/api/project-definition/engine`, including Delivery Lot creation, prepare/approve G4, idempotent/stale retry checks, project prepare/approve G5, audit inspection and confirmation that legacy Project status remains unchanged;
+- canonical pre-project p3 E2E remains unproven until a real Idea exercises `canonical.read`, G1 fingerprint binding, `decision.record`, and controlled G3 promotion lineage ;
 - AI_H V0.1 is deliberately inactive until its authenticated fresh-Idea activation gate is proven; do not infer production capability from dormant adapter code or unit fixtures;
-- SRC V0.2 now has immutable source-body snapshots, exact pinning, URL acquisition/extraction candidates and an isolated source-fetch boundary, but **remains inactive**: the active planner does not advertise `G2_SRC`, and authenticated fresh-Idea E2E is not yet proven;
+- SRC V0.2 has immutable source-body snapshots, exact pinning, URL acquisition/extraction candidates and an isolated source-fetch boundary, but **remains inactive** at the advertised executor boundary;
 - `WEB`, `AI_R`, `AUDIT` and `CONN` executors are deliberately not operational yet and must not be advertised until their own provenance/persistence contracts pass;
-- Supabase security/performance advisors still report broader historical debt (intentional SECURITY DEFINER API surfaces, leaked-password protection disabled, several RLS/index optimization notices); classify and remediate deliberately rather than mass-changing access semantics ;
+- Supabase security/performance advisors still report broader historical debt; classify and remediate deliberately rather than mass-changing access semantics ;
 - remaining `SECURITY DEFINER` exposure should continue to be classified by intended API contract and least privilege.
 
 Reduce these items incrementally behind executable checks. Do not perform a destructive rewrite of the runtime.
