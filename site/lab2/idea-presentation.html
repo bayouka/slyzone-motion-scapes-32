@@ -13,7 +13,7 @@
   <div class="toolbar no-print">
     <a class="toolbar-link" href="./idea-mockups.html">← Maquettes</a>
     <div class="toolbar-center"><span id="slideCounter">1 / 1</span></div>
-    <div class="toolbar-actions"><button id="prevButton" type="button">Précédente</button><button id="nextButton" type="button">Suivante</button><button id="fullscreenButton" type="button">Plein écran</button><button class="primary" id="printButton" type="button">PDF / Imprimer</button></div>
+    <div class="toolbar-actions"><button id="prevButton" type="button">Précédente</button><button id="nextButton" type="button">Suivante</button><button id="fullscreenButton" type="button">Plein écran</button><button id="pptxButton" type="button">PowerPoint</button><button class="primary" id="printButton" type="button">PDF / Imprimer</button></div>
   </div>
 
   <main class="presentation-shell">
@@ -22,6 +22,8 @@
     </section>
     <div id="slides" class="slides"></div>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js" integrity="sha384-notspecified" crossorigin="anonymous"></script>
   <script src="./idea-presentation.js" defer></script>
+  <script src="./idea-pptx.js" defer></script>
 </body>
 </html>
