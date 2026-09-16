@@ -30,6 +30,14 @@ const requiredProductionTail = [
   '20260911232657_call_media_sfu_v3.sql',
   '20260911233259_call_media_catalog_active_session_v3.sql',
   '20260912000407_harden_call_media_v3_rpc_execute.sql',
+  '20260916153749_project_master_blueprint_v1_core_graph_runtime.sql',
+  '20260916154153_project_master_blueprint_v1_delivery_lot_dependency_closure.sql',
+  '20260916154611_project_master_blueprint_v1_dependency_closure_predicates.sql',
+  '20260916155201_project_master_blueprint_v1_quality_testability_predicates.sql',
+  '20260916155544_project_master_blueprint_v1_baseline_handoff_predicates.sql',
+  '20260916155824_project_master_blueprint_v1_g4_rfd_lot.sql',
+  '20260916155938_project_master_blueprint_v1_g5_rfd_project.sql',
+  '20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval.sql',
 ];
 
 const missing = requiredProductionTail.filter((name) => !fs.existsSync(`${migrationDir}/${name}`));
@@ -128,6 +136,25 @@ for (const fn of [
   const grant = `grant execute on function public.${fn} to authenticated`;
   if (!v3Acl.includes(grant)) {
     console.error(`MIGRATION HISTORY CHECK FAILED: V3 authenticated grant missing: ${grant}`);
+    process.exit(1);
+  }
+}
+
+const projectGateRetry = fs.readFileSync(`${migrationDir}/20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval.sql`, 'utf8');
+for (const required of [
+  "where lot_id=v_lot.id and gate_id='G4_RFD_LOT'",
+  "where project_definition_id=v_pd.id and gate_id='G5_RFD_PROJECT' and lot_id is null",
+  "v_existing.status='APPROVED'",
+  "raise exception 'STALE_G4_APPROVAL'",
+  "raise exception 'STALE_G5_APPROVAL'",
+  "'idempotent',true",
+  'revoke all on function public.approve_project_delivery_lot_rfd_v1(uuid,bigint,text,uuid) from authenticated',
+  'revoke all on function public.approve_project_rfd_v1(uuid,bigint,text,uuid) from authenticated',
+  'grant execute on function public.approve_project_delivery_lot_rfd_v1(uuid,bigint,text,uuid) to service_role',
+  'grant execute on function public.approve_project_rfd_v1(uuid,bigint,text,uuid) to service_role',
+]) {
+  if (!projectGateRetry.includes(required)) {
+    console.error(`MIGRATION HISTORY CHECK FAILED: Project Definition G4/G5 guard missing: ${required}`);
     process.exit(1);
   }
 }
