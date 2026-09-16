@@ -2,7 +2,7 @@ import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 import { handleProjectDefinitionCommand } from './project-definition-adapter.js';
 
-const RUNTIME_VERSION='v4.5.14-project-definition-rfd-p1';
+const RUNTIME_VERSION='v4.5.15-project-definition-rfd-p2';
 const ADAPTER=Object.freeze({
   code:'0.3.5',
   commands:['blueprint_fit.assess','foundation.advance','evidence.advance'],
@@ -25,7 +25,7 @@ const ADAPTER=Object.freeze({
   service_role_browser_exposed:false
 });
 const PROJECT_DEFINITION_ADAPTER=Object.freeze({
-  code:'0.1.0',
+  code:'0.1.1',
   route:'/api/project-definition/engine',
   commands:[
     'canonical.read',
@@ -39,7 +39,9 @@ const PROJECT_DEFINITION_ADAPTER=Object.freeze({
   ],
   master_blueprint:'1.0',
   blueprint:'SITE_VITRINE@1.0-bridge-r7',
-  canonical_rfd_predicates:7,
+  rfd_predicate_count:11,
+  prebaseline_predicate_count:9,
+  project_readiness_bridge:'G8-G11',
   canonical_gates:['G4_RFD_LOT','G5_RFD_PROJECT'],
   authenticated:true,
   user_rls_precheck:true,
