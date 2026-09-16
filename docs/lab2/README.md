@@ -3,111 +3,139 @@
 Status: experimental / isolated laboratory
 
 ## Purpose
-Build and test a novice-first workflow that turns a rough website idea into a clear, improved and presentable concept without modifying the canonical 4b4c Ideas / Project Definition lifecycle.
+Build and test a novice-first workflow that turns a rough website/web-app idea into a clear, improved and presentable concept without modifying the canonical 4b4c Ideas / Project Definition lifecycle.
 
 ## Isolation rules
 - Branch: `feature/4b4c2-idea-lab`
 - Frontend namespace: `site/lab2/`
 - API namespace: `/api/lab2/*`
-- No edits to canonical `Ideas`, Workspace V3, G0→G5, Project Definition or legacy Ideas business contracts.
-- No Supabase migrations in Slice 1 or Slice 2.
-- No writes to existing 4b4c business tables.
-- Draft, clarification history and AI result cache remain in browser `localStorage`.
-- The existing Supabase session is reused only to authenticate calls to the Lab API.
-- No production navigation entry yet.
-- The Lab AI endpoint is disabled unless the server-side flag `LAB2_IDEA_STUDIO_ENABLED` is explicitly enabled.
-- Enabling the flag is not enough: `LAB2_ALLOWED_USER_IDS` must also explicitly contain the authenticated user id. This is intended to be restricted to the small 4b4c2 test group.
+- No Supabase migration through Slice 5.
+- No write to existing 4b4c business tables.
+- Existing Supabase session is reused only for authentication.
+- Drafts, research cache, improvement decisions and the current brief remain in browser `localStorage`.
+- No production navigation entry.
+- No coupling to canonical `Ideas`, Workspace V3, G0→G5, Project Definition or legacy Ideas business contracts.
+- Lab endpoints require `LAB2_IDEA_STUDIO_ENABLED`, an explicit `LAB2_ALLOWED_USER_IDS` server-side allowlist, and their step-specific flag when applicable.
 
-## Slice 1 — capture
-1. Give an idea a provisional name.
-2. Explain the website idea in free text.
-3. Add zero to three website references and explain what is interesting about each.
-4. Save a local draft.
-5. Enter a distinct understanding step.
-6. Let the user go back, refine or reset the draft.
+## Slice 1 — Capture
+- provisional name;
+- free-form website/web-app explanation;
+- zero to three reference sites;
+- reason for each reference;
+- local draft persistence.
 
-## Slice 2 — real AI understanding
+Frontend: `site/lab2/idea-studio.html`.
+
+## Slice 2 — AI understanding
 Endpoint: `POST /api/lab2/understand`
 
-Purpose: verify that the model understood the user's idea before competitor analysis or improvement.
+Contract: `lab2-understanding-v1`.
 
-The model must return a structured `lab2-understanding-v1` contract containing:
-- one-line faithful reformulation;
-- problem/need understood;
-- target users, each tagged `EXPLICIT` or `INFERRED`;
-- main workflow, each step tagged `EXPLICIT` or `INFERRED`;
-- explicit points from the user's explanation;
-- remaining uncertainties;
-- comprehension confidence (`HIGH`, `MEDIUM`, `LOW`);
-- at most one clarification question per call.
+The AI only verifies understanding:
+- faithful one-line reformulation;
+- problem/need;
+- target users;
+- main flow;
+- explicit vs inferred provenance;
+- uncertainties;
+- at most one clarification question per call, maximum two clarification answers.
+
+No competitor analysis or feature improvement is allowed in this step. Unchanged drafts reuse the local cached result.
+
+## Slice 3 — Bounded references & competitor research
+Endpoint: `POST /api/lab2/research`
+
+Contract: `lab2-research-v1`.
+
+Budgets per standard run:
+- maximum 2 Web searches;
+- maximum 3 selected competitors;
+- maximum 6 fetched public pages;
+- maximum 2 AI calls.
+
+Rules:
+- references provided by the user remain distinct from discovered competitors;
+- optional competitor discovery uses a Lab-only server-side Brave Search key;
+- public pages are fetched only through isolated `SOURCE_FETCH`;
+- source text is untrusted data, never model instruction;
+- an `OBSERVED_PUBLIC` finding survives only when its short support text exists in the fetched source;
+- visual design is not inferred from text-only pages;
+- research does not mutate the idea.
+
+Frontend: `site/lab2/idea-research.html`.
+
+## Slice 4 — Human-controlled improvements
+Endpoint: `POST /api/lab2/improvements`
+
+Contract: `lab2-improvements-v1`.
+
+The AI proposes at most 6 independent improvements in one call. Types currently supported:
+- functionality;
+- workflow;
+- navigation;
+- trust;
+- simplification;
+- differentiation.
+
+Every proposal can be `ACCEPTED`, `REJECTED` or `MODIFIED`. Decisions are local. Backend guarantee: `automatic_idea_mutation: false`.
+
+Frontend: `site/lab2/idea-improvements.html`.
+
+## Slice 5 — Versioned living idea brief
+Endpoint: `POST /api/lab2/brief`
+
+Contract: `lab2-brief-v1`.
+
+Purpose: produce the clear Version 1 that later slices can consume without replaying the entire conversation.
 
 Hard rules:
-- no feature improvement in Slice 2;
-- no competitor analysis in Slice 2;
-- no claim that a reference site was visited;
-- inferred information must remain visibly inferred;
-- maximum two clarification answers per idea before unresolved points remain explicit uncertainties;
-- same unchanged draft reuses the browser-local AI result instead of paying for a duplicate call;
-- choosing “Je ne sais pas encore” keeps the point open without making another model call.
+- if Slice 4 contains proposals, every proposal must have a human decision before brief generation;
+- rejected proposals are filtered server-side before the model prompt is built;
+- only accepted proposals and user-modified wording are sent as retained improvements;
+- the brief may not invent new features, users, promises or differentiation;
+- unresolved uncertainties remain open questions;
+- the response includes the deterministic list of retained improvements separately from the AI prose;
+- unchanged Version 1 is cached locally to avoid duplicate calls.
 
-## AI provider and cost instrumentation
-Current Lab model: `@cf/google/gemma-4-26b-a4b-it` through the already-available Cloudflare Workers AI binding.
+Brief sections:
+- one-line concept;
+- problem;
+- target users;
+- solution;
+- core features;
+- main flow;
+- established differentiators;
+- open questions;
+- short presentation pitch.
 
-Pricing snapshot used only to estimate consumption in the Lab UI (2026-08-28):
-- 9,091 neurons / million input tokens;
-- 27,273 neurons / million output tokens;
-- 10,000 free Workers AI neurons per day at the current Free allocation.
+Frontend: `site/lab2/idea-brief.html`.
 
-The endpoint returns provider token usage when available and computes:
-- prompt tokens;
-- completion tokens;
-- estimated neurons;
-- estimated percentage of the daily free allocation;
-- indicative paid-equivalent USD value.
+## Security and cost boundary
+- no service-role key in browser or Lab endpoint;
+- no `/rest/v1/` or RPC business access from Lab endpoints;
+- no canonical Ideas / Project Definition API calls from Lab frontend;
+- no automatic AI retries on quota/capacity failure;
+- search and source counts are capped;
+- AI calls are structurally bounded by each Slice;
+- identical local results are reused where implemented.
 
-These values are instrumentation, not billing authority. The Cloudflare dashboard remains authoritative for actual aggregate neuron consumption.
+## Validation artifacts
+The repo contains zero-credit mocked tests:
+- `scripts/test_lab2_understanding_v1.mjs`;
+- `scripts/test_lab2_research_v1.mjs`;
+- `scripts/test_lab2_improvements_v1.mjs`;
+- `scripts/test_lab2_brief_v1.mjs`.
 
-## Slice 2 security boundary
-- endpoint returns `404 LAB_DISABLED` unless `LAB2_IDEA_STUDIO_ENABLED` is explicitly enabled;
-- endpoint returns `503 LAB_ACCESS_UNCONFIGURED` if no `LAB2_ALLOWED_USER_IDS` allowlist is configured;
-- endpoint requires an authenticated existing 4b4c Supabase JWT;
-- authenticated users not present in the allowlist receive `403 LAB_ACCESS_DENIED`;
-- no service-role key is exposed to the browser;
-- no database write is performed;
-- request size, idea length, reference count and clarification count are hard-capped;
-- AI output is requested through a strict JSON schema and normalized again server-side;
-- quota/capacity failures do not trigger automatic retries.
+`scripts/lab2-isolation-check.mjs` fails if Lab code gains prohibited service-role/direct DB/canonical business coupling. All Lab syntax/contract/isolation checks are placed at the beginning of `npm run check`.
 
-`LAB2_ALLOWED_USER_IDS` is a comma-separated list of Supabase Auth user UUIDs. It is a server-side deployment setting and must never be exposed as a browser-controlled authorization mechanism.
-
-## Tests
-`scripts/test_lab2_understanding_v1.mjs` exercises the endpoint with a fake Workers AI response, so CI validation consumes zero AI credits. It verifies:
-- successful contract normalization;
-- usage/neuron calculation;
-- authentication guard;
-- feature-flag guard;
-- allowlist-required guard;
-- non-allowlisted user rejection;
-- clarification hard cap.
-
-## Explicitly out of scope through Slice 2
-- Supabase persistence of Lab ideas
-- competitor web research
-- sitemap generation
-- design direction
-- mockup engine
-- PowerPoint/PDF generation
-- collaboration/comments
-- connection to canonical Ideas or Project Definition
+Current limitation: these executable checks have not yet been run in this assistant environment because the local runner cannot resolve GitHub to clone the branch and no GitHub workflow is currently exposed for this PR. The branch is therefore not test-certified yet.
 
 ## Planned progression
-- Slice 3: bounded competitor/reference research with observed/inferred/unknown provenance.
-- Slice 4: improvement proposals accepted/refused/modified individually.
-- Slice 5: versioned living idea brief.
-- Slice 6: workflow + sitemap.
-- Slice 7: design direction.
+- Slice 6: derive simple user workflows + provisional sitemap from the Version 1 brief.
+- Slice 7: novice-friendly design direction.
 - Slice 8: deterministic component-based mockups.
-- Slice 9: web presentation + PPTX + PDF.
+- Slice 9: Web presentation + PPTX + PDF.
+- Later: collaboration/project workspace integration only after the Idea Lab proves useful.
 
 ## Source of truth
 This folder documents only the 4b4c2 laboratory. It does not redefine or supersede canonical 4b4c documentation.
