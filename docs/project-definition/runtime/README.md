@@ -1,272 +1,232 @@
 # 4b4c — Project Definition Runtime Architecture
 
-Date de mise à jour : 2026-09-13
+Date de mise à jour : **2026-09-16**
 
-Statut global : **R0 PASS_REFERENCE / R1→R7 VALIDATED BASELINES / WORKSPACE CUTOVER ACTIVE / G1 FOUNDATION RELEASE CANDIDATE / G2 EVIDENCE-MARKET CANDIDATE VALIDATED BY ROLLBACK + R0 DELTA-EQUIVALENCE — NON ACTIVE**.
+Ce dossier indexe les contrats runtime de 4b4c. Il ne remplace ni le `README.md` racine — autorité dynamique de production — ni les spécifications propriétaires.
 
-Ce dossier indexe l'architecture runtime professionnelle de 4b4c. Les spécifications détaillées restent dans leurs documents propriétaires ; ce README ne les remplace pas.
+## 1. État réel actuel
 
-## État réel actuel
+### Worker production certifié
 
-- Blueprint runtime actif : `SITE_VITRINE@0.4`.
-- Moteur R0 actif : `scripts/r0_engine_v0_3.py` — référence validée 12/12.
-- Baselines backend R1→R7 : validées.
-- Workspace V3 / cutover : actif en parallèle du legacy.
-- G0 Blueprint Fit : validé ; un gap de matérialisation `CREATION_OR_REDESIGN` a été identifié pour G2 et possède un resolver candidat rollback-validé.
-- G1 Foundation déterministe : implémenté ; build 544 reste **release candidate** tant qu'une preuve Cloudflare/runtime indépendante + E2E authentifié ne sont pas disponibles.
-- Dernière baseline transport explicitement certifiée : build 540.
-- G2 Evidence / Market : architecture, Blueprint 0.5 candidat, planner/recompute à basis fingerprint et SQL de promotion research préparés/red-teamés, mais **aucune migration, commande Worker ou UI G2 n'est active**.
+Dernier runtime Worker indépendamment certifié :
 
-Invariant permanent : `Requirement exists ≠ question user`.
+`v4.5.15-project-definition-rfd-p2` — **build 555**.
 
----
+Surface Project Definition certifiée :
+- adapter `project_definition_adapter_v1.code = 0.1.1` ;
+- 11 predicates RFD Master Blueprint ;
+- 9 predicates pré-baseline ;
+- bridge readiness legacy `G8→G11` ;
+- `G4_RFD_LOT` ;
+- `G5_RFD_PROJECT` ;
+- user-RLS precheck ;
+- actor d’approbation injecté depuis le JWT ;
+- service role non exposé au navigateur ;
+- legacy `G12_READY_FOR_DEVELOPMENT` non muté/relabelled.
 
-## Ordre de lecture — runtime canonique
+Surface G2 active : **`CALC + RAW` uniquement**. AI_H/SRC restent dormant/non annoncés comme capacités actives.
 
-1. `RUNTIME_EXECUTION_MAPPING_V0_1.md`
-2. `PERSISTENCE_MODEL_V0_1.md`
-3. `DETERMINISTIC_ENGINE_CONTRACT_V0_1.md`
-4. `MUTATION_RPC_BOUNDARIES_V0_1.md`
-5. `RUNTIME_EXECUTION_MAPPING_RED_TEAM_20260913.md`
-6. `R0_ENGINE_V0_3_TEST_REPORT_20260913.md`
-7. R1→R7 implementation plans + validation reports
-8. `../../idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md`
+### Supabase canonical pre-project — déjà appliqué
 
-Pour G2 candidat seulement :
-- `G2_EVIDENCE_MARKET_RUNTIME_DESIGN_V0_1.md`
-- `G2_EVIDENCE_MARKET_BACKEND_GAP_AUDIT_20260913.md`
-- `G2_EVIDENCE_MARKET_ACQUISITION_MATRIX_V0_1.md`
-- `G2_BLUEPRINT_V0_5_CANDIDATE_VALIDATION_20260913.md`
-- `G2_RESEARCH_ACTION_ATOMIC_PROMOTION_CONTRACT_V0_1.md`
-- `G2_ATOMIC_RESEARCH_PROMOTION_REDTEAM_PLAN_V0_1.md`
-- `G2_ATOMIC_RESEARCH_PROMOTION_VALIDATION_REPORT_20260913.md`
-- `G2_REQUIREMENT_BASIS_FINGERPRINT_CONTRACT_V0_1.md`
-- `G2_BASIS_FINGERPRINT_VALIDATION_20260913.md`
-- `G0_CREATION_REDESIGN_RUNTIME_GAP_AUDIT_20260913.md`
-- `G0_CREATION_REDESIGN_RESOLVER_VALIDATION_20260913.md`
-- `G2_EVIDENCE_RECOMPUTE_VALIDATION_20260913.md`
-- `G2_EVIDENCE_PLANNER_INTEGRATED_VALIDATION_20260913.md`
-- `R0_BLUEPRINT_0_5_DELTA_EQUIVALENCE_VALIDATION_20260913.md`
-- `sql-candidates/G2_ATOMIC_RESEARCH_PROMOTION_V0_2_HARDENING.sql`
-- `sql-candidates/G2_RESEARCH_ACTION_V0_3_TARGET_GUARD.sql`
-- `sql-candidates/G2_EVIDENCE_RECOMPUTE_V0_2_BASIS_FINGERPRINT.sql`
-- `sql-candidates/G2_EVIDENCE_PLANNER_V0_5_BASIS_INFLIGHT.sql`
-- `sql-candidates/G2_REQUIREMENT_CRITICALITY_PARITY_V0_1.sql`
+Le backend est en avance sur le Worker live pour la tranche canonique suivante :
 
----
+- `G0_BLUEPRINT_FIT` ;
+- `G1_IDEA_DECISION_READY` ;
+- `G2_GO_PROJECT` ;
+- `G3_PROJECT_BASELINE` ;
+- `FOUNDATION_READY` ;
+- `EVIDENCE_READY` ;
+- `STRATEGY_READY` ;
+- `PREFIGURATION_READY` ;
+- `DECISION_PACKAGE_READY`.
 
-# R0 — PASS_REFERENCE
+Ces predicates sont dérivés et ne constituent pas une seconde base d’état.
 
-Blueprint actif : `../machine/site-vitrine/BLUEPRINT_SITE_VITRINE_V0_4.yaml`.
+Le RPC de promotion G3 renforcé reste **service-side only** et n’est volontairement pas exposé au navigateur.
 
-Moteur : `scripts/r0_engine_v0_3.py`.
+### Worker candidat pré-projet
 
-Référence validée : **77 Requirements / 21 Contexts / 14 Gates / 19 Deliverables / 5 Overrides / 0 erreur / 0 warning / 12 tests sur 12 PASS**.
+Runtime repo candidat :
 
-Le candidat `SITE_VITRINE@0.5` est isolé et **non actif**. Il prépare G2 avec :
-- `COMPETITOR_SET` matériel plutôt que mécaniquement obligatoire ;
-- recherche concurrentielle requise par défaut en greenfield ;
-- audit frais pouvant remplacer un benchmark redondant en refonte lorsque la décision n'en dépend plus ;
-- existing competitor output qui ne peut plus forcer sa propre applicabilité ;
-- dépendances `requires_all/requires_any` comme préconditions transitives ;
-- basis fingerprints séparés des signatures de résolution ;
-- stale machine result qui ne peut satisfaire le basis courant ;
-- calcul de matérialité déterministe, non contrôlable librement par un LLM/caller.
+`v4.5.16-project-definition-preproject-p3`.
 
-Statut 0.5 : **R0 DELTA-EQUIVALENCE PASS — NON ACTIVE**.
+Route candidate :
 
-Preuves :
-- baseline 0.4 inchangée ;
-- corpus partagé Requirements/Deliverables/Gates/Bindings identique entre manifests 0.4 et 0.5 ;
-- delta Context/Override explicitement red-teamé ;
-- replay algorithmique : **22/22 PASS** (12 invariants actifs + 10 invariants candidat) ;
-- byte-for-byte checkout replay non exécuté dans le runtime cloud courant et explicitement distingué de la preuve d'équivalence.
+`POST /api/ideas/canonical`
+
+Commandes browser prévues :
+- `canonical.read` ;
+- `decision.record`.
+
+La promotion G3 n’est pas dans l’allowlist browser.
+
+**p3 n’est pas production-certifié tant que le miroir transport + Cloudflare Workers Builds + live smoke ne l’ont pas prouvé.**
 
 ---
 
-# R1 — PASS_PERSISTENCE_BASELINE
+## 2. Autorité Blueprint Idea
 
-Migrations :
-- `20260913031001_idea_engine_r1_persistence_core`
-- `20260913031053_idea_engine_r1_fk_indexes`.
+Le live Blueprint Fit resolver est l’autorité, pas le nom historique des fichiers machine.
 
-Persistance moteur, RLS, protection des colonnes système et snapshots immuables validés.
+État vérifié :
+- une nouvelle Idea acceptée `SITE_VITRINE` reçoit actuellement **`SITE_VITRINE@0.5`** ;
+- les anciennes Ideas légitimes `SITE_VITRINE@0.4` restent compatibility-supported ;
+- le bridge canonique G0 exige que `BlueprintFitDecision.blueprint_version` corresponde exactement à `Idea.blueprint_version` ;
+- le bridge P3/P5 n’a pas lui-même activé 0.5.
 
-# R2 — PASS_INGESTION_BASELINE
-
-Migration : `20260913031644_idea_engine_r2_ingestion_rpcs`.
-
-RAW-first, Sources, mutations humaines, idempotence, stale guards et supersession explicite validés.
-
-# R3 — PASS_ACTION_LIFECYCLE_BASELINE
-
-Migration : `20260913032224_idea_engine_r3_action_lifecycle`.
-
-Lifecycle server-only des System Actions, fingerprints, stale-safety, permission scopes, provenance machine et promotion contrôlée validés.
-
-# R4 — PASS_PREFIGURATION_ARTIFACT_BASELINE
-
-Migration : `20260913034602_idea_engine_r4_prefiguration_artifacts`.
-
-Artefacts versionnés/immutables, freshness exacte, `FOR_DECISION / CONCEPT_NOT_FINAL_SPEC` et HIFI ≠ preuve utilisateur validés.
-
-# R5 — PASS_DECISION_PACKAGE_BASELINE
-
-Migrations :
-- `20260913035101_idea_engine_r5_decision_package`
-- `20260913035423_idea_engine_r5_decision_audit_fix`
-- `20260913035644_idea_engine_r5_feedback_resolution`.
-
-Decision lineage, package freshness, review/feedback, outcomes neutres et faux GO bloqué validés.
-
-# R6 — PASS_PROJECT_DEFINITION_BASELINE
-
-Migration : `20260913035836_idea_engine_r6_project_definition_baseline`.
-
-Promotion contrôlée Idea approuvée → Project Definition baseline, lineage exact et aucun Project d'exécution créé automatiquement.
-
-# R7 — PASS_BUILD_READY_RUNTIME_BASELINE
-
-Migrations :
-- `20260913040538_idea_engine_r7_build_ready_runtime`
-- `20260913040724_idea_engine_r7_gate_semantics_hardening`
-- `20260913040751_idea_engine_r7_human_decision_authority`
-- `20260913040802_idea_engine_r7_r6_artifact_linkage`
-- `20260913040853_idea_engine_r7_artifact_rpc_fix`.
-
-G8→G12, autorités humaines/expertes, fingerprints exacts, ambiguity audit, approbation Ready et `BUILD_READY_SNAPSHOT` immuable validés.
-
-Séquence runtime de référence :
-
-`R0 ✅ → R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ → R5 ✅ → R6 ✅ → R7 ✅`.
+Invariant : ne jamais confondre « fichier encore nommé candidate » et « version effectivement assignée par le runtime live ».
 
 ---
 
-# Workspace integration / cutover — ACTIVE
+## 3. Master Blueprint canonique
 
-Autorité opérationnelle : `../../idea-engine/ux/WORKSPACE_INTEGRATION_CUTOVER_PLAN_V1.md`.
+Autorité humaine :
 
-État :
-- projection canonique Workspace : validée ;
-- G0 Blueprint Fit : validé ;
-- Workspace V3 parallèle : validé preview ;
-- privileged adapter : security baseline active ;
-- URL source : backend validé ;
-- G1 Foundation : implémenté / release candidate.
+`../canonical/PROJECT_MASTER_BLUEPRINT_V1.md`
 
-G1 actuel :
-- planner déterministe `plan_idea_foundation_v1` ;
-- `RAW` avant question humaine quand admissible ;
-- target Requirement fingerprints ;
-- stale-safe/idempotent Action Runs ;
-- `foundation.advance` ;
-- `Je ne sais pas / plus tard` explicite ;
-- frontend actions `0.3.0`.
+Projection machine :
 
-Build 544 : **release candidate seulement**. GitHub n'expose toujours aucun statut Cloudflare utilisable ; aucune certification n'est inventée.
+`../machine/MASTER_BLUEPRINT_V1.json`
 
----
+Bridge runtime :
 
-# G2 Evidence / Market — VALIDATED CANDIDATE DESIGN, NON ACTIVE
+`../machine/CANONICAL_RUNTIME_BRIDGE_V1.json`
 
-## Architecture retenue
+Executable checks :
+- `scripts/master-blueprint-v1-check.mjs` ;
+- `scripts/canonical-runtime-bridge-v1-check.mjs` ;
+- `scripts/project-definition-adapter-v1-check.mjs` ;
+- `scripts/idea-canonical-adapter-v1-check.mjs`.
 
-G2 réutilise R1→R3. Aucun second moteur de jobs n'est créé.
+Formal Gates canoniques :
 
-Acquisition paths :
+`G0 → G1 → G2 → G3 → G4 → G5`.
 
-`RAW / SRC / AUDIT / CONN / WEB / CALC / AI_H / AI_R`.
-
-L'utilisateur n'est pas transformé en chercheur ou benchmarkeur lorsqu'une voie système fiable existe.
-
-Chaîne backend candidate désormais validée en rollback ciblé :
-
-`creation/redesign resolver → recompute basis-aware → deterministic planner → Action Run → executor → atomic research promotion`.
-
-Le resolver demande à l'humain uniquement après une vraie ambiguïté RAW ; il ne transforme pas un échec automatique temporaire en question utilisateur.
-
-## Basis Fingerprint / stale-safety
-
-Pour G2, `idea_requirement_states.input_fingerprint` représente les **inputs** : contexte, applicabilité, parent resolution signatures et source/evidence inputs explicitement pertinents.
-
-Il exclut le résultat propre de la Requirement.
-
-La résolution reste distincte via `resolution_state`, `resolution_levels`, `resolution_refs`, `lock_state`, `authority_ok`.
-
-Validations rollbackées :
-- own output change → own basis stable ;
-- parent resolution change → child basis change ;
-- Source inventory change → `EVIDENCE_QUALITY` basis change ;
-- ancien résultat machine → historique conservé mais non current sur nouveau basis ;
-- `ACCEPTED_UNKNOWN` G2 → scoped à l'exact basis accepté ;
-- unrelated Foundation fingerprint reste inchangé ;
-- inflight deduplication = Requirement + current basis, non path-only.
-
-## Promotion research atomique
-
-Le flow rejeté :
-
-`Action Run → écrire/ingérer Source canonique → promouvoir plus tard`.
-
-Raison : l'ingestion Source incrémente `engine_revision` et peut auto-rendre stale le run qui vient de découvrir la Source.
-
-Flow candidat validé :
-
-`plan → Action Run → travail externe non canonique → complete(proposals) → atomic promotion → une engine_revision`.
-
-La transaction promeut ensemble les Sources, observations, Requirement refs et Ledger entries autorisées après revalidation des fingerprints.
-
-## SQL rollback red-team
-
-`G2_ATOMIC_RESEARCH_PROMOTION_VALIDATION_REPORT_20260913.md` documente :
-- compilation contre le vrai schéma Supabase ;
-- RT-01→RT-24 couverts ;
-- G1 RAW non-régression PASS ;
-- sensibilité monotone ;
-- stale count multi-source correct ;
-- Source aliases server-resolved ;
-- direct/cross-Idea Source UUID refusés ;
-- target fingerprints vérifiés à la création et à la promotion ;
-- Source identity dupliquée intra-run refusée ;
-- zéro fixture/DDL candidat persistant après rollback.
-
-Hardening courant :
-- promotion V0.2 : promotion atomique sécurisée ;
-- research Action V0.3 : target Requirement guard avant recherche ;
-- recompute V0.2 : basis fingerprint causal ;
-- planner V0.5 : basis-aware inflight guard ;
-- criticality parity : candidat permettant `ENHANCER / NOT_RELEVANT` sans modifier encore la contrainte production.
-
-**Aucun de ces fichiers n'est une migration active.**
-
-### Limite encore non prouvée
-
-L'advisory transaction lock protège la même identité `(Idea + source_kind + normalized_locator)`, mais une vraie course **multi-session** n'a pas encore été exécutée. Elle reste requise avant migration.
+Readiness diagnostics ≠ Formal Gates.
 
 ---
 
-# Verrous avant activation G2
+## 4. Baselines historiques R0→R7
 
-1. build 544 : preuve runtime indépendante ;
-2. G1 : E2E authentifié desktop/mobile + human-last-mile vérifié ;
-3. promotion research : test concurrence multi-session réel ;
-4. consolider lineage + criticality parity + resolver/recompute/planner + research promotion dans un package migration propre, en conservant les frontières G1 ;
-5. rejouer rollback SQL du candidat consolidé ;
-6. seulement ensuite envisager migration Supabase G2 ;
-7. puis executors → adapter `evidence.advance` → A03/A04/A05 → UI → E2E → release certification.
+Les validations R1→R7 restent des compatibility baselines pour les objets runtime existants :
 
-Réserve R0 non bloquante pour la préparation : un checkout privé byte-for-byte pourra rejouer les suites 0.5 dès qu'un runtime distant GitHub authentifié sera disponible ; la preuve delta-equivalence est celle utilisée aujourd'hui et reste explicitement tracée.
+- R1 — persistence ;
+- R2 — ingestion ;
+- R3 — action lifecycle ;
+- R4 — prefiguration artifacts ;
+- R5 — Decision Package / review / immutable Decision Record ;
+- R6 — Approved Idea → Project Definition baseline ;
+- R7 — legacy Project Build Ready semantics.
+
+Elles ne remplacent pas la nouvelle ontologie canonique et leurs anciens Gate IDs ne doivent pas être renommés en place.
+
+Legacy `G12_READY_FOR_DEVELOPMENT` reste compatibility evidence uniquement ; il n’est ni G4 ni G5 canonique.
 
 ---
 
-## Décisions structurantes permanentes
+## 5. Migrations Master Blueprint / RFD
 
-- GitHub est la source canonique code/docs ; Supabase est la source canonique state/security/transactions ; Cloudflare reste le chemin normal de build/runtime.
-- Remote Desktop Commander est local-only/dernier recours et son indisponibilité ne bloque jamais le projet.
-- l'IA propose/recherche/calcule mais ne possède jamais directement l'état canonique ;
-- stale data ne satisfait jamais une Gate current ;
-- une question humaine n'est créée que lorsqu'elle est matériellement nécessaire et qu'aucune voie système admissible ne suffit ;
-- décision humaine/expert signoff ne peuvent pas être escamotés ;
+Runtime Project Definition canonique :
+- `20260916153749_project_master_blueprint_v1_core_graph_runtime` ;
+- `20260916154153_project_master_blueprint_v1_delivery_lot_dependency_closure` ;
+- `20260916154611_project_master_blueprint_v1_dependency_closure_predicates` ;
+- `20260916155201_project_master_blueprint_v1_quality_testability_predicates` ;
+- `20260916155544_project_master_blueprint_v1_baseline_handoff_predicates` ;
+- `20260916155824_project_master_blueprint_v1_g4_rfd_lot` ;
+- `20260916155938_project_master_blueprint_v1_g5_rfd_project` ;
+- `20260916162910_project_master_blueprint_v1_g4_g5_idempotent_approval` ;
+- `20260916165026_project_master_blueprint_v1_complete_rfd_predicate_set`.
+
+Bridge pré-projet canonique :
+- `20260916174121_project_master_blueprint_v1_g0_g3_preproject_bridge_p3` ;
+- `20260916174307_project_master_blueprint_v1_g0_g3_preproject_bridge_p3_g0_column_fix` ;
+- `20260916174852_project_master_blueprint_v1_g3_promotion_actor_hardening_p4` ;
+- `20260916182111_project_master_blueprint_v1_g0_blueprint_05_compat_fix_p5`.
+
+Les corrections P3/P5 sont **forward-only**. Ne jamais réécrire une migration déjà appliquée pour rendre l’historique artificiellement propre.
+
+---
+
+## 6. Documents de statut actuels
+
+- `G2_PRODUCTION_ACTIVATION_STATUS_20260916.md` — état G2 ;
+- `PROJECT_DEFINITION_RFD_PRODUCTION_STATUS_20260916.md` — G4/G5 et RFD production ;
+- `PROJECT_DEFINITION_PREPROJECT_BRIDGE_STATUS_20260916.md` — G0→G3 service-side + p3 repo candidate.
+
+Les anciens plans/validation reports R1→R7 restent utiles pour provenance et compatibility reasoning, mais ne doivent pas être lus comme l’état live actuel.
+
+---
+
+## 7. Sécurité / autorités
+
+Invariants permanents :
+- browser jamais détenteur du service role ;
+- JWT user vérifié avant toute élévation serveur ;
+- user-scoped RLS access proof avant service RPC ;
+- décision humaine canonique liée à un fingerprint G1 exact ;
+- decision actor injecté par le serveur depuis le JWT ;
+- G3 promotion revalide en PostgreSQL : Idea creator ou workspace owner/admin actif ;
+- G4/G5 approval actor injecté depuis JWT ;
+- stale revision/fingerprint rejeté ;
+- retries identiques G4/G5 idempotents ;
+- aucun flag manuel `READY_FOR_DEVELOPMENT` canonique.
+
+---
+
+## 8. Validation / release
+
+Avant toute release :
+
+```bash
+npm ci
+npm run check
+```
+
+Production ne passe pas par GitHub Actions.
+
+Chaîne canonique :
+
+1. source validée dans `bayouka/slyzone-motion-scapes-32` ;
+2. miroir des seuls fichiers runtime validés vers `bayouka/2b2c/4b4c/` ;
+3. vérification byte-alignment ;
+4. mise à jour de `4b4c/TRANSPORT_RELEASE.txt` ;
+5. Cloudflare Workers Builds ;
+6. `scripts/deploy-4b4c-direct.sh` déploie explicitement Worker `4b4c` ;
+7. live smoke obligatoire.
+
+Ne jamais appeler un runtime « production » sur la seule base d’un commit GitHub ou d’une migration Supabase.
+
+---
+
+## 9. E2E encore non prouvés
+
+Production ne contient actuellement aucune Idea réelle exploitable pour certifier le nouveau bridge G0→G3.
+
+Restent donc explicitement non prouvés :
+- real Idea G0 0.5 read ;
+- legacy Idea 0.4 compatibility read ;
+- G1 launch closure ;
+- G1 early non-GO path ;
+- real R5 Decision Package → canonical decision.record ;
+- stale G1 fingerprint rejection via Worker ;
+- real G2 GO ;
+- real G3 Project Baseline promotion ;
+- continuité G3→G4→G5 sur un dossier réel ;
+- Project Definition authenticated G4/G5 E2E complet.
+
+Une fixture transactionnelle rollbackée prouve l’exécution de l’évaluateur, pas un E2E utilisateur authentifié.
+
+---
+
+## 10. Invariants métier permanents
+
 - Idea ≠ Project ;
 - `FOR_DECISION` ≠ `FOR_PROJECT` ≠ `FOR_BUILD` ;
+- Requirement exists ≠ question user ;
+- Claim ≠ Evidence ≠ Assumption ≠ Recommendation ≠ Decision ;
+- Requirement ≠ Test ≠ execution Evidence ;
+- accepted unknown ne devient jamais silently known ;
+- stale data ne satisfait jamais une Gate current ;
+- décision humaine/expert signoff ne sont pas délégués à une IA générique ;
+- GO n’est pas privilégié sur REVISE / DEEPEN / PAUSE / STOP ;
 - aucune baseline professionnelle ne crée automatiquement backlog/tasks/milestones/delivery Project.
