@@ -57,9 +57,9 @@ assert(entry.includes("import { handleCanonicalIdeaCommand } from './idea-canoni
 assert(entry.includes("url.pathname==='/api/ideas/canonical'"),'canonical Idea route missing');
 assert(entry.includes('idea_canonical_adapter_v1'),'health metadata for canonical Idea adapter missing');
 assert(entry.includes("code:'0.1.0'"),'canonical Idea adapter health code must be 0.1.0');
-assert(entry.includes("active_idea_blueprint:'SITE_VITRINE@0.4'"),'active Idea Blueprint metadata must stay 0.4');
-assert(entry.includes("candidate_idea_blueprint:'SITE_VITRINE@0.5'"),'candidate Idea Blueprint metadata missing');
-assert(entry.includes('candidate_activation_changed:false'),'0.5 activation must remain unchanged');
+assert(entry.includes("active_idea_blueprint:'SITE_VITRINE@0.5'"),'active Idea Blueprint metadata must reflect live fit assignment 0.5');
+assert(entry.includes("legacy_idea_blueprint_supported:'SITE_VITRINE@0.4'"),'legacy Idea Blueprint 0.4 compatibility metadata missing');
+assert(entry.includes('blueprint_activation_changed_by_bridge:false'),'canonical bridge must not claim it activated Blueprint 0.5');
 assert(entry.includes("predicate_persistence:'derived_not_stored'"),'derived predicate invariant missing');
 assert(entry.includes('decision_actor_from_jwt:true'),'JWT decision actor health invariant missing');
 assert(entry.includes('g3_promotion_browser_exposed:false'),'G3 browser exposure must remain false');
@@ -71,5 +71,5 @@ assert(checkScript.includes('node scripts/idea-canonical-adapter-v1-check.mjs'),
 
 if(!process.exitCode){
   console.log('[idea-canonical-adapter-v1] PASS');
-  console.log(JSON.stringify({commands:expectedCommands.length,service_rpcs:allowedRpcs.length,formal_gates:expectedGates.length,readiness_predicates:expectedPredicates.length,g3_browser_exposed:false,decision_actor_from_jwt:true}));
+  console.log(JSON.stringify({commands:expectedCommands.length,service_rpcs:allowedRpcs.length,formal_gates:expectedGates.length,readiness_predicates:expectedPredicates.length,active_idea_blueprint:'SITE_VITRINE@0.5',legacy_idea_blueprint_supported:'SITE_VITRINE@0.4',g3_browser_exposed:false,decision_actor_from_jwt:true}));
 }
