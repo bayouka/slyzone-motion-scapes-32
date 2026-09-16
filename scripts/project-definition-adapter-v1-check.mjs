@@ -100,7 +100,7 @@ assert(adapter.includes("baselineHandoff.BASELINE_READY!=='PASS'"),'baseline pre
 assert(adapter.includes("baselineHandoff.HANDOFF_INTEGRITY!=='PASS'"),'handoff preparation guard missing');
 assert(adapter.includes("readiness?.required_lot_readiness?.status!=='PASS'"),'project RFD manifest must require all required lots ready');
 
-assert(entry.includes("RUNTIME_VERSION='v4.5.15-project-definition-rfd-p2'"),'Worker runtime version must expose Project Definition RFD p2');
+assert(entry.includes("RUNTIME_VERSION='v4.5.16-project-definition-preproject-p3'"),'Worker runtime version must expose canonical preproject p3');
 assert(entry.includes("import { handleProjectDefinitionCommand } from './project-definition-adapter.js';"),'Worker entry must import Project Definition adapter');
 assert(entry.includes("url.pathname==='/api/project-definition/engine'"),'Project Definition route missing');
 assert(entry.includes('project_definition_adapter_v1'),'health metadata for Project Definition adapter missing');
