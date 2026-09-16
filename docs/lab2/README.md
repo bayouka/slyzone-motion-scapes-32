@@ -9,129 +9,94 @@ Build and test a novice-first workflow that turns a rough website/web-app idea i
 - Branch: `feature/4b4c2-idea-lab`
 - Frontend namespace: `site/lab2/`
 - API namespace: `/api/lab2/*`
-- No Supabase migration through Slice 5.
+- No Supabase migration through Slice 6.
 - No write to existing 4b4c business tables.
 - Existing Supabase session is reused only for authentication.
-- Drafts, research cache, improvement decisions and the current brief remain in browser `localStorage`.
+- Drafts and all current Lab decisions/results remain in browser `localStorage`.
 - No production navigation entry.
 - No coupling to canonical `Ideas`, Workspace V3, G0→G5, Project Definition or legacy Ideas business contracts.
 - Lab endpoints require `LAB2_IDEA_STUDIO_ENABLED`, an explicit `LAB2_ALLOWED_USER_IDS` server-side allowlist, and their step-specific flag when applicable.
 
 ## Slice 1 — Capture
-- provisional name;
-- free-form website/web-app explanation;
-- zero to three reference sites;
-- reason for each reference;
-- local draft persistence.
+Frontend: `site/lab2/idea-studio.html`
 
-Frontend: `site/lab2/idea-studio.html`.
+The novice gives a provisional name, explains the site/web-app idea freely, and may add zero to three reference sites with the reason each reference matters.
 
 ## Slice 2 — AI understanding
 Endpoint: `POST /api/lab2/understand`
+Contract: `lab2-understanding-v1`
 
-Contract: `lab2-understanding-v1`.
-
-The AI only verifies understanding:
-- faithful one-line reformulation;
-- problem/need;
-- target users;
-- main flow;
-- explicit vs inferred provenance;
-- uncertainties;
-- at most one clarification question per call, maximum two clarification answers.
-
-No competitor analysis or feature improvement is allowed in this step. Unchanged drafts reuse the local cached result.
+The AI only verifies understanding: faithful reformulation, problem, target users, main flow, explicit vs inferred provenance, uncertainties and at most one clarification question per call (maximum two clarification answers). No competitor analysis or feature improvement is allowed here.
 
 ## Slice 3 — Bounded references & competitor research
 Endpoint: `POST /api/lab2/research`
+Contract: `lab2-research-v1`
+Frontend: `site/lab2/idea-research.html`
 
-Contract: `lab2-research-v1`.
-
-Budgets per standard run:
+Budget per standard run:
 - maximum 2 Web searches;
 - maximum 3 selected competitors;
 - maximum 6 fetched public pages;
 - maximum 2 AI calls.
 
-Rules:
-- references provided by the user remain distinct from discovered competitors;
-- optional competitor discovery uses a Lab-only server-side Brave Search key;
-- public pages are fetched only through isolated `SOURCE_FETCH`;
-- source text is untrusted data, never model instruction;
-- an `OBSERVED_PUBLIC` finding survives only when its short support text exists in the fetched source;
-- visual design is not inferred from text-only pages;
-- research does not mutate the idea.
-
-Frontend: `site/lab2/idea-research.html`.
+References supplied by the user remain distinct from discovered competitors. Public pages are fetched only through isolated `SOURCE_FETCH`. Source text is untrusted data. An `OBSERVED_PUBLIC` finding survives only when its support text actually exists in the fetched source. Visual design is not inferred from text-only pages.
 
 ## Slice 4 — Human-controlled improvements
 Endpoint: `POST /api/lab2/improvements`
+Contract: `lab2-improvements-v1`
+Frontend: `site/lab2/idea-improvements.html`
 
-Contract: `lab2-improvements-v1`.
-
-The AI proposes at most 6 independent improvements in one call. Types currently supported:
-- functionality;
-- workflow;
-- navigation;
-- trust;
-- simplification;
-- differentiation.
-
-Every proposal can be `ACCEPTED`, `REJECTED` or `MODIFIED`. Decisions are local. Backend guarantee: `automatic_idea_mutation: false`.
-
-Frontend: `site/lab2/idea-improvements.html`.
+The AI proposes at most 6 independent improvements in one call. Every proposal must be explicitly `ACCEPTED`, `REJECTED` or `MODIFIED`. Decisions remain local. Backend guarantee: `automatic_idea_mutation: false`.
 
 ## Slice 5 — Versioned living idea brief
 Endpoint: `POST /api/lab2/brief`
+Contract: `lab2-brief-v1`
+Frontend: `site/lab2/idea-brief.html`
 
-Contract: `lab2-brief-v1`.
-
-Purpose: produce the clear Version 1 that later slices can consume without replaying the entire conversation.
+Purpose: produce the clear Version 1 that all later slices consume without replaying the whole conversation.
 
 Hard rules:
-- if Slice 4 contains proposals, every proposal must have a human decision before brief generation;
-- rejected proposals are filtered server-side before the model prompt is built;
-- only accepted proposals and user-modified wording are sent as retained improvements;
-- the brief may not invent new features, users, promises or differentiation;
+- all Slice 4 proposals need a human decision before brief generation;
+- rejected proposals are filtered server-side before the model prompt;
+- only accepted proposals and user-modified wording are retained;
+- no new features, targets, promises or differentiation may be invented;
 - unresolved uncertainties remain open questions;
-- the response includes the deterministic list of retained improvements separately from the AI prose;
-- unchanged Version 1 is cached locally to avoid duplicate calls.
+- retained improvements are returned separately from AI prose;
+- unchanged Version 1 is cached locally.
 
-Brief sections:
-- one-line concept;
-- problem;
-- target users;
-- solution;
-- core features;
-- main flow;
-- established differentiators;
-- open questions;
-- short presentation pitch.
+The brief contains: concept, problem, target users, solution, core features, main flow, established differentiators, open questions and a short presentation pitch.
 
-Frontend: `site/lab2/idea-brief.html`.
+## Slice 6 — Workflows + provisional sitemap
+Endpoint: `POST /api/lab2/structure`
+Contract: `lab2-structure-v1`
+Frontend: `site/lab2/idea-structure.html`
+
+The model receives only the Version 1 brief. It proposes at most 4 human workflows and 20 pages, favoring the minimum architecture needed. Corporate pages are excluded unless required by the brief. The user can keep or remove every proposed page locally with no additional AI call. The sitemap is explicitly provisional and `human_page_review_required` remains true.
 
 ## Security and cost boundary
 - no service-role key in browser or Lab endpoint;
-- no `/rest/v1/` or RPC business access from Lab endpoints;
+- no `/rest/v1/` or business RPC access from Lab endpoints;
 - no canonical Ideas / Project Definition API calls from Lab frontend;
 - no automatic AI retries on quota/capacity failure;
-- search and source counts are capped;
-- AI calls are structurally bounded by each Slice;
-- identical local results are reused where implemented.
+- search/source/model calls are capped structurally;
+- local caches avoid duplicate calls where implemented.
 
-## Validation artifacts
-The repo contains zero-credit mocked tests:
-- `scripts/test_lab2_understanding_v1.mjs`;
-- `scripts/test_lab2_research_v1.mjs`;
-- `scripts/test_lab2_improvements_v1.mjs`;
-- `scripts/test_lab2_brief_v1.mjs`.
+## Validation
+Dedicated workflow: `.github/workflows/lab2-check.yml`
 
-`scripts/lab2-isolation-check.mjs` fails if Lab code gains prohibited service-role/direct DB/canonical business coupling. All Lab syntax/contract/isolation checks are placed at the beginning of `npm run check`.
+It runs only Lab syntax/contract/isolation checks and performs no deployment. Tests use mocked Workers AI, Brave Search and source-fetch responses, so the validation consumes zero real AI/search credits.
 
-Current limitation: these executable checks have not yet been run in this assistant environment because the local runner cannot resolve GitHub to clone the branch and no GitHub workflow is currently exposed for this PR. The branch is therefore not test-certified yet.
+Validated artifacts:
+- `scripts/test_lab2_understanding_v1.mjs`
+- `scripts/test_lab2_research_v1.mjs`
+- `scripts/test_lab2_improvements_v1.mjs`
+- `scripts/test_lab2_brief_v1.mjs`
+- `scripts/test_lab2_structure_v1.mjs`
+- `scripts/lab2-isolation-check.mjs`
+
+Latest observed GitHub Actions run `35160858123` completed successfully: syntax checks, zero-credit contract tests and isolation boundary all passed.
 
 ## Planned progression
-- Slice 6: derive simple user workflows + provisional sitemap from the Version 1 brief.
 - Slice 7: novice-friendly design direction.
 - Slice 8: deterministic component-based mockups.
 - Slice 9: Web presentation + PPTX + PDF.
