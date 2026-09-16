@@ -82,7 +82,7 @@ The novice does not configure design-system parameters. They may simply choose u
 
 The endpoint uses one AI call maximum to select three distinct directions from a server-controlled design catalog. The model may select only approved IDs for palette, typography, shape/radius, density/spacing, imagery strategy and motion level. The server resolves those IDs into deterministic HSL tokens, font stacks, radii, shadows and spacing values. The model never invents raw CSS tokens.
 
-The frontend renders real mini-previews from those resolved tokens. The user explicitly chooses one direction locally with no additional AI call. Design reference notes are preference context only; Slice 7 performs no web/source fetch and never copies a competitor identity.
+The frontend renders real mini-previews from those resolved tokens. The user explicitly chooses one direction locally with no additional AI call. Design reference notes are preference context only; Slice 7 performs no web/source fetch and never copies a competitor identity. The selected resolved direction is the only design input accepted by the planned deterministic mockup engine.
 
 ## Security and cost boundary
 - no service-role key in browser or Lab endpoint;
