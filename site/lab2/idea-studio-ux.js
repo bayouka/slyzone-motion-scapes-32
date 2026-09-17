@@ -22,6 +22,7 @@
   });
 
   const referencesList = document.getElementById('referencesList');
+  const referenceSummary = document.getElementById('referenceSummary');
   const referenceEmptyState = document.getElementById('referenceEmptyState');
   const understandingError = document.getElementById('understandingError');
   const understandingLoading = document.getElementById('understandingLoading');
@@ -40,21 +41,39 @@
     referenceEmptyState.hidden = referencesList.querySelector('.reference-card') !== null;
   };
 
+  const repaintReferenceSummary = () => {
+    if (!referenceSummary || !referencesList) return;
+    const rows = [...referencesList.querySelectorAll('.reference-card')];
+    const items = [...referenceSummary.querySelectorAll('.reference-summary-item')];
+    items.forEach((item, index) => {
+      const row = rows[index];
+      if (!row) return;
+      const detail = item.querySelector('span');
+      if (!detail) return;
+      const interests = parseInterests(row.querySelector('.reference-reason')?.value).map((code) => INTEREST_LABELS[code]);
+      const note = String(row.querySelector('.reference-note')?.value || '').trim();
+      const parts = [];
+      if (interests.length) parts.push(interests.join(' · '));
+      if (note) parts.push(note);
+      detail.textContent = parts.join(' — ') || 'Référence ajoutée sans précision particulière';
+    });
+  };
+
   const syncInterestButtons = (row) => {
     if (!row || row.dataset.multiInterestReady === 'true') return;
     const hidden = row.querySelector('.reference-reason');
     const buttons = [...row.querySelectorAll('.reference-interest')];
     if (!hidden || !buttons.length) return;
 
-    // The legacy script used "fonctionnement" as a default for every empty row.
-    // An untouched empty reference must start with no implicit choice.
+    // The legacy Slice 1 engine used "fonctionnement" as a default on a new row.
+    // An untouched reference must not silently imply an interest.
     const url = row.querySelector('.reference-url');
     const note = row.querySelector('.reference-note');
     if (!String(url?.value || '').trim() && !String(note?.value || '').trim() && hidden.value === 'fonctionnement') {
       hidden.value = '';
     }
 
-    let selected = new Set(parseInterests(hidden.value));
+    const selected = new Set(parseInterests(hidden.value));
     const paint = () => {
       buttons.forEach((button) => {
         const active = selected.has(button.dataset.interest);
@@ -62,6 +81,7 @@
         button.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
       hidden.value = [...selected].join(',');
+      repaintReferenceSummary();
     };
 
     buttons.forEach((button) => {
@@ -111,10 +131,14 @@
     }).observe(referencesList, { childList: true, subtree: true });
   }
 
+  if (referenceSummary) {
+    new MutationObserver(repaintReferenceSummary).observe(referenceSummary, { childList: true, subtree: true });
+  }
+
   noReferenceButton?.addEventListener('click', () => window.setTimeout(updateEmptyState, 0));
   resetDraftButton?.addEventListener('click', () => window.setTimeout(cleanImplicitEmptyReference, 0));
 
-  // Capture the Lab error code without changing the validated Slice 2 engine.
+  // Capture the Lab error code without rewriting the already-tested Slice 2 engine.
   const nativeFetch = window.fetch.bind(window);
   let lastUnderstandingError = '';
   window.fetch = async (...args) => {
@@ -130,8 +154,8 @@
   };
 
   const friendlyError = (code) => ({
-    LAB_ACCESS_UNCONFIGURED: "L’IA est prête, mais aucun compte de test n’est encore autorisé. Depuis l’écran d’accès, copie ton identifiant technique puis ajoute-le au secret GitHub LAB2_ALLOWED_USER_IDS.",
-    LAB_ACCESS_DENIED: "Ton compte est bien connecté, mais il n’est pas encore autorisé pour les appels IA du Lab. Copie ton identifiant technique depuis l’écran d’accès et ajoute-le à LAB2_ALLOWED_USER_IDS.",
+    LAB_ACCESS_UNCONFIGURED: "L’IA est prête, mais aucun compte de test n’est encore autorisé. Reviens à l’écran d’accès, copie ton identifiant technique puis ajoute-le à l’autorisation privée du Lab.",
+    LAB_ACCESS_DENIED: "Ton compte est bien connecté, mais il n’est pas encore autorisé pour les appels IA du Lab. Reviens à l’écran d’accès pour copier ton identifiant technique.",
     UNAUTHORIZED: "Ta session de test a expiré. Reconnecte-toi depuis l’écran d’accès au Lab, puis réessaie.",
     AI_UNAVAILABLE: "Le moteur IA n’est pas disponible sur cette preview pour le moment.",
     AI_CAPACITY: "Le quota ou la capacité IA du moment est atteint. Aucun nouvel appel automatique ne sera tenté.",
@@ -145,7 +169,7 @@
     if (message) understandingError.textContent = message;
     if (aiState) {
       aiState.textContent = ['LAB_ACCESS_UNCONFIGURED', 'LAB_ACCESS_DENIED'].includes(lastUnderstandingError)
-        ? 'Accès à configurer'
+        ? 'Compte à autoriser'
         : 'À réessayer';
       aiState.dataset.state = 'error';
     }
