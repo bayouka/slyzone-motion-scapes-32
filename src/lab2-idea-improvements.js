@@ -35,9 +35,15 @@ function normalizeInput(body){
 function schema(){return {type:'object',additionalProperties:false,properties:{proposals:{type:'array',maxItems:MAX_PROPOSALS,items:{type:'object',additionalProperties:false,properties:{title:{type:'string',maxLength:140},type:{type:'string',enum:['FUNCTIONALITY','WORKFLOW','NAVIGATION','TRUST','SIMPLIFICATION','DIFFERENTIATION']},proposal:{type:'string',maxLength:420},why:{type:'string',maxLength:420},priority:{type:'string',enum:['CORE','USEFUL','OPTIONAL']},source_basis:{type:'string',enum:['USER_IDEA','OBSERVED_PATTERN','PRODUCT_REASONING']},evidence_note:{anyOf:[{type:'null'},{type:'string',maxLength:320}]},changes_original_idea:{type:'boolean'}},required:['title','type','proposal','why','priority','source_basis','evidence_note','changes_original_idea']}}},required:['proposals']}}
 function parseAi(raw){let payload=raw?.response??raw;if(typeof payload==='string'){try{payload=JSON.parse(payload)}catch{throw new Lab2ImproveError(502,'AI_OUTPUT_INVALID')}}if(!payload||typeof payload!=='object'||Array.isArray(payload))throw new Lab2ImproveError(502,'AI_OUTPUT_INVALID');return payload}
 function readUsage(raw){const u=raw?.usage||raw?.meta?.usage||null;const input=Number(u?.prompt_tokens??u?.input_tokens??0),output=Number(u?.completion_tokens??u?.output_tokens??0);if(!Number.isFinite(input)||!Number.isFinite(output)||(!input&&!output))return null;return {prompt_tokens:Math.round(input),completion_tokens:Math.round(output),total_tokens:Math.round(input+output)}}
+function hasObservedEvidence(research){
+  return [...research.references,...research.competitors].some(source=>
+    source?.fetch_status==='OBSERVED_PUBLIC'&&safeArray(source?.findings).some(finding=>cleanText(finding?.statement,20))
+  );
+}
 function researchText(research){
   const items=[];
   for(const source of [...research.references,...research.competitors]){
+    if(source?.fetch_status!=='OBSERVED_PUBLIC')continue;
     for(const finding of safeArray(source?.findings))items.push(`- ${cleanText(finding?.statement,320)} [${cleanText(finding?.category,40)}]`);
   }
   const patterns=research.cross_patterns.map(p=>`- ${cleanText(p?.statement||p,340)}`);
@@ -53,19 +59,24 @@ export async function handleLab2IdeaImprovements(request,env){
   if(!allowlist.has(auth.id.toLowerCase()))return json({ok:false,error:'LAB_ACCESS_DENIED'},403);
   let body;try{body=await request.json()}catch{return json({ok:false,error:'INVALID_REQUEST'},400)}
   let input;try{input=normalizeInput(body)}catch(error){return json({ok:false,error:error.code||'INVALID_REQUEST'},error.status||400)}
+  const observedEvidence=hasObservedEvidence(input.research);
   let raw;
   try{
     raw=await env.AI.run(LAB2_MODEL,{messages:[
-      {role:'system',content:'Tu aides un utilisateur novice à améliorer une idée de site/web-app déjà comprise. Tu ne décides jamais à sa place. Propose au maximum 6 améliorations distinctes, concrètes et simples à comprendre. Ne copie pas de texte, marque, design ou implémentation d’un concurrent. Utilise les constats concurrents seulement pour identifier des standards, bonnes pratiques ou manques. Chaque proposition doit pouvoir être acceptée ou refusée indépendamment. Évite les fonctionnalités inutiles au MVP. Si une proposition modifie sensiblement l’idée originale, changes_original_idea=true. OBSERVED_PATTERN uniquement si la justification vient réellement des constats publics fournis; sinon PRODUCT_REASONING ou USER_IDEA. Réponds strictement selon le schéma JSON.'},
+      {role:'system',content:'Tu aides un utilisateur novice à améliorer une idée de site/web-app déjà comprise. Tu ne décides jamais à sa place. Propose au maximum 6 améliorations distinctes, concrètes et simples à comprendre. Ne copie pas de texte, marque, design ou implémentation d’un concurrent. Utilise les constats concurrents seulement pour identifier des standards, bonnes pratiques ou manques. Chaque proposition doit pouvoir être acceptée ou refusée indépendamment. Évite les fonctionnalités inutiles au MVP. Si une proposition modifie sensiblement l’idée originale, changes_original_idea=true. OBSERVED_PATTERN uniquement si la justification vient réellement des constats publics fournis; sinon PRODUCT_REASONING ou USER_IDEA. Si aucun constat public validé n’est fourni, ne prétends jamais qu’une pratique concurrente a été observée. Réponds strictement selon le schéma JSON.'},
       {role:'user',content:`Projet: ${input.name}\nIdée: ${input.understanding.one_liner}\nProblème: ${input.understanding.problem}\nUtilisateurs: ${input.understanding.target_users.join(', ')||'non précisés'}\nWorkflow compris: ${input.understanding.main_flow.join(' > ')||'non précisé'}\nPoints explicites: ${input.understanding.explicit_points.join(' | ')||'aucun'}\nIncertitudes: ${input.understanding.uncertainties.join(' | ')||'aucune'}\n\n${researchText(input.research)}`}
     ],response_format:{type:'json_schema',json_schema:schema()},temperature:0.2,max_completion_tokens:1800,chat_template_kwargs:{enable_thinking:false}});
   }catch(error){const msg=String(error?.message||error||'');return json({ok:false,error:/quota|limit|capacity|neuron|rate/i.test(msg)?'AI_CAPACITY':'AI_ERROR'},/quota|limit|capacity|neuron|rate/i.test(msg)?429:502)}
   let payload;try{payload=parseAi(raw)}catch(error){return json({ok:false,error:error.code||'AI_OUTPUT_INVALID'},error.status||502)}
-  const proposals=safeArray(payload.proposals).slice(0,MAX_PROPOSALS).map((p,index)=>({
-    id:`p${index+1}`,title:cleanText(p?.title,140),type:['FUNCTIONALITY','WORKFLOW','NAVIGATION','TRUST','SIMPLIFICATION','DIFFERENTIATION'].includes(p?.type)?p.type:'FUNCTIONALITY',
-    proposal:cleanText(p?.proposal,420),why:cleanText(p?.why,420),priority:['CORE','USEFUL','OPTIONAL'].includes(p?.priority)?p.priority:'USEFUL',
-    source_basis:['USER_IDEA','OBSERVED_PATTERN','PRODUCT_REASONING'].includes(p?.source_basis)?p.source_basis:'PRODUCT_REASONING',
-    evidence_note:p?.evidence_note?cleanText(p.evidence_note,320):null,changes_original_idea:p?.changes_original_idea===true
-  })).filter(p=>p.title&&p.proposal&&p.why);
-  return json({ok:true,contract_version:CONTRACT_VERSION,model:LAB2_MODEL,user_id:auth.id,proposals,usage:readUsage(raw),guarantees:{max_proposals:MAX_PROPOSALS,human_decision_required:true,automatic_idea_mutation:false}});
+  const proposals=safeArray(payload.proposals).slice(0,MAX_PROPOSALS).map((p,index)=>{
+    let sourceBasis=['USER_IDEA','OBSERVED_PATTERN','PRODUCT_REASONING'].includes(p?.source_basis)?p.source_basis:'PRODUCT_REASONING';
+    let evidenceNote=p?.evidence_note?cleanText(p.evidence_note,320):null;
+    if(sourceBasis==='OBSERVED_PATTERN'&&!observedEvidence){sourceBasis='PRODUCT_REASONING';evidenceNote=null}
+    return {
+      id:`p${index+1}`,title:cleanText(p?.title,140),type:['FUNCTIONALITY','WORKFLOW','NAVIGATION','TRUST','SIMPLIFICATION','DIFFERENTIATION'].includes(p?.type)?p.type:'FUNCTIONALITY',
+      proposal:cleanText(p?.proposal,420),why:cleanText(p?.why,420),priority:['CORE','USEFUL','OPTIONAL'].includes(p?.priority)?p.priority:'USEFUL',
+      source_basis:sourceBasis,evidence_note:evidenceNote,changes_original_idea:p?.changes_original_idea===true
+    };
+  }).filter(p=>p.title&&p.proposal&&p.why);
+  return json({ok:true,contract_version:CONTRACT_VERSION,model:LAB2_MODEL,user_id:auth.id,proposals,usage:readUsage(raw),guarantees:{max_proposals:MAX_PROPOSALS,human_decision_required:true,automatic_idea_mutation:false,observed_basis_requires_public_evidence:true}});
 }
