@@ -33,6 +33,8 @@ jobs:
           node-version: '22'
       - name: Syntax checks
         run: |
+          node --check site/lab2/lab2-auth.js
+          node --check site/lab2/login.js
           node --check site/lab2/project-state.js
           node --check site/lab2/idea-studio.js
           node --check site/lab2/idea-studio-state-bridge.js
