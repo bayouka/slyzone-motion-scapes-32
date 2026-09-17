@@ -1,38 +1,83 @@
 import fs from 'node:fs';
 
-const pages = [
-  ['site/lab2/idea-research.html', 'idea-research.js'],
-  ['site/lab2/idea-improvements.html', 'idea-improvements.js'],
-  ['site/lab2/idea-brief.html', 'idea-brief.js'],
-  ['site/lab2/idea-structure.html', 'idea-structure.js'],
-  ['site/lab2/idea-design.html', 'idea-design.js'],
-  ['site/lab2/idea-mockups.html', 'idea-mockups.js']
+const read=(path)=>fs.readFileSync(path,'utf8');
+const assert=(condition,message)=>{if(!condition)throw new Error(message)};
+
+const authenticatedPages=[
+  ['site/lab2/idea-research.html','idea-research.js'],
+  ['site/lab2/idea-improvements.html','idea-improvements.js'],
+  ['site/lab2/idea-brief.html','idea-brief.js'],
+  ['site/lab2/idea-feasibility.html','idea-feasibility.js'],
+  ['site/lab2/idea-structure.html','idea-structure.js'],
+  ['site/lab2/idea-design.html','idea-design.js'],
+  ['site/lab2/idea-mockups.html','idea-mockups.js'],
+  ['site/lab2/idea-presentation.html','idea-presentation.js']
 ];
 
-for (const [path, pageScript] of pages) {
-  const html = fs.readFileSync(path, 'utf8');
-  const configAt = html.indexOf('./runtime-config.js');
-  const authAt = html.indexOf('./lab2-auth.js');
-  const pageAt = html.indexOf(`./${pageScript}`);
-  if (configAt < 0 || authAt < 0 || pageAt < 0) throw new Error(`${path}: missing shared auth scripts`);
-  if (!(configAt < authAt && authAt < pageAt)) throw new Error(`${path}: auth scripts must load before ${pageScript}`);
+for(const [path,pageScript] of authenticatedPages){
+  const html=read(path);
+  const configAt=html.indexOf('./runtime-config.js');
+  const authAt=html.indexOf('./lab2-auth.js');
+  const pageAt=html.indexOf(`./${pageScript}`);
+  assert(configAt>=0&&authAt>=0&&pageAt>=0,`${path}: missing runtime/auth/page scripts`);
+  assert(configAt<authAt&&authAt<pageAt,`${path}: runtime config and auth must load before ${pageScript}`);
 }
 
-const research = fs.readFileSync('site/lab2/idea-research.html', 'utf8');
-if (!research.includes('./idea-improvements.html')) throw new Error('Slice 3 must provide a route to Slice 4');
-if (!research.includes('./idea-research-polish.js')) throw new Error('Slice 3 transparency polish must be loaded');
+const studio=read('site/lab2/idea-studio.html');
+for(const script of ['./runtime-config.js','./lab2-auth.js','./project-state.js','./idea-studio-state-bridge.js','./idea-studio.js','./idea-studio-ux-v4.js'])assert(studio.includes(script),`Idea Studio missing ${script}`);
+assert(studio.indexOf('./runtime-config.js')<studio.indexOf('./lab2-auth.js'),'Idea Studio runtime config must load before auth');
+assert(studio.indexOf('./lab2-auth.js')<studio.indexOf('./project-state.js'),'Idea Studio auth must load before project state');
+assert(studio.indexOf('./project-state.js')<studio.indexOf('./idea-studio-state-bridge.js'),'Idea Studio project state must load before its bridge');
 
-const polish = fs.readFileSync('site/lab2/idea-research-polish.js', 'utf8');
-if (!polish.includes("level==='PARTIAL'")) throw new Error('Slice 3 must distinguish partial research from complete research');
-if (!polish.includes('Recherche Web non configurée')) throw new Error('Slice 3 must expose unconfigured Web research');
-if (!polish.includes('Continuer sans recherche concurrentielle')) throw new Error('Slice 3 must not disguise unavailable research as a completed analysis');
+const stateBridge=read('site/lab2/idea-studio-state-bridge.js');
+assert(stateBridge.includes("EXPECTED_CONTRACT='lab2-understanding-v4'"),'Understanding confirmation must require lab2-understanding-v4');
+assert(stateBridge.includes("window.location.assign(`./idea-research.html?idea="),'Confirmed understanding must transition directly to research');
+assert(stateBridge.includes("setArtifact('understanding'"),'Confirmed understanding must enter canonical ProjectState');
 
-const understandingUx = fs.readFileSync('site/lab2/idea-studio-ux.js', 'utf8');
-if (!understandingUx.includes("EXPECTED_CONTRACT = 'lab2-understanding-v2'")) throw new Error('Slice 2 must require the semantic understanding v2 contract');
-if (!understandingUx.includes("window.location.assign(`./idea-research.html?idea=")) throw new Error('Confirming understanding must transition directly to research');
+const research=read('site/lab2/idea-research.html');
+assert(research.includes('./idea-improvements.html'),'Research must provide a route to improvements');
+assert(research.includes('./idea-research-polish.js'),'Research transparency polish must be loaded');
+const polish=read('site/lab2/idea-research-polish.js');
+assert(polish.includes("level==='PARTIAL'"),'Research must distinguish partial from complete research');
+assert(polish.includes('Recherche Web non configurée'),'Research must expose unconfigured Web research');
+assert(polish.includes('Continuer sans recherche concurrentielle'),'Unavailable research must not be disguised as completed analysis');
 
-const improvements = fs.readFileSync('site/lab2/idea-improvements.js', 'utf8');
-if (!improvements.includes("EXPECTED_IMPROVEMENTS_CONTRACT='lab2-improvements-v2'")) throw new Error('Slice 4 must reject stale improvement outputs');
-if (!improvements.includes('MIN_PROPOSALS=3')) throw new Error('Slice 4 must require a minimum useful proposal set');
+const improvements=read('site/lab2/idea-improvements.js');
+assert(improvements.includes("EXPECTED_UNDERSTANDING='lab2-understanding-v4'"),'Improvements must consume understanding v4');
+assert(improvements.includes("EXPECTED_RESEARCH='lab2-research-v3'"),'Improvements must consume research v3');
+assert(improvements.includes("EXPECTED_IMPROVEMENTS='lab2-improvements-v3'"),'Improvements must reject stale improvement outputs');
+assert(improvements.includes('MIN_PROPOSALS=3'),'Improvements must require a minimum useful proposal set');
+assert(read('site/lab2/idea-improvements.html').includes('./idea-brief.html'),'Completed improvement review must lead to canonical definition');
 
-console.log('lab2 flow shell checks: OK');
+const briefHtml=read('site/lab2/idea-brief.html');
+assert(briefHtml.includes('./idea-feasibility.html'),'Canonical definition must lead to feasibility before structure');
+
+const feasibilityHtml=read('site/lab2/idea-feasibility.html');
+assert(feasibilityHtml.includes('./idea-brief.html'),'Feasibility must link back to canonical definition');
+assert(feasibilityHtml.includes('./idea-structure.html'),'Confirmed feasibility must lead to structure');
+const feasibilityJs=read('site/lab2/idea-feasibility.js');
+assert(feasibilityJs.includes("EXPECTED_FEASIBILITY='lab2-feasibility-v1'"),'Feasibility UI must require lab2-feasibility-v1');
+assert(feasibilityJs.includes("setArtifact('feasibility'"),'Feasibility must persist in canonical ProjectState');
+
+const structureHtml=read('site/lab2/idea-structure.html');
+assert(structureHtml.includes('./idea-feasibility.html'),'Structure must link back to feasibility');
+assert(structureHtml.includes('./idea-design.html'),'Structure must lead to visual direction');
+const structureJs=read('site/lab2/idea-structure.js');
+assert(structureJs.includes("EXPECTED_FEASIBILITY='lab2-feasibility-v1'"),'Structure must consume feasibility v1');
+assert(structureJs.includes("EXPECTED_STRUCTURE='lab2-structure-v3'"),'Structure UI must require lab2-structure-v3');
+assert(structureJs.includes('feasibility_contract:EXPECTED_FEASIBILITY'),'Structure request must send the feasibility contract');
+assert(structureJs.includes('feasibility:feas.outputFingerprint'),'Structure fingerprint must depend on confirmed feasibility');
+
+const designHtml=read('site/lab2/idea-design.html');
+assert(designHtml.includes('./idea-structure.html')&&designHtml.includes('./idea-mockups.html'),'Visual direction must sit between structure and mockups');
+const mockupsHtml=read('site/lab2/idea-mockups.html');
+assert(mockupsHtml.includes('./idea-design.html')&&mockupsHtml.includes('./idea-presentation.html'),'Mockups must sit between visual direction and presentation');
+const presentationHtml=read('site/lab2/idea-presentation.html');
+assert(presentationHtml.includes('./idea-mockups.html'),'Presentation must link back to mockups');
+assert(presentationHtml.includes('./idea-presentation-planner.js')&&presentationHtml.includes('./idea-pptx.js'),'Presentation must include adaptive planner and PPTX export');
+
+const projectState=read('site/lab2/project-state.js');
+assert(projectState.includes("'definition','feasibility','structure','design','mockups','presentation'"),'ProjectState must preserve definition → feasibility → structure → design → mockups → presentation ordering');
+assert(projectState.includes("feasibility:['structure','design','mockups','presentation']"),'Feasibility changes must invalidate every downstream experience artifact');
+
+console.log('lab2 flow shell checks: OK (canonical V4 → research V3 → improvements V3 → definition → feasibility V1 → structure V3 → design → mockups → presentation)');
