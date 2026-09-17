@@ -29,25 +29,36 @@
   async function verifyWithAccessToken(accessToken){
     return request('/auth/v1/user',{headers:{Authorization:`Bearer ${accessToken}`}});
   }
+  async function tryRefresh(){
+    const refreshed=await window.Lab2Auth?.refreshSession?.();
+    if(!refreshed?.access_token)return null;
+    try{
+      const user=await verifyWithAccessToken(refreshed.access_token);
+      renderConnected(user);
+      return user;
+    }catch{return null}
+  }
   async function verify(){
     if(!configured()){renderDisconnected('Preview non configurée.');loginForm.hidden=true;showError('La configuration publique Supabase manque sur cette preview.');return}
-    let session=current();
-    if(!session?.access_token){renderDisconnected();return}
-    try{
-      const user=await verifyWithAccessToken(session.access_token);
-      renderConnected(user);
-      return;
-    }catch{}
-    const refreshed=await window.Lab2Auth?.refreshSession?.();
-    if(refreshed?.access_token){
+    const session=current();
+
+    if(session?.access_token){
       try{
-        const user=await verifyWithAccessToken(refreshed.access_token);
+        const user=await verifyWithAccessToken(session.access_token);
         renderConnected(user);
         return;
       }catch{}
     }
-    save(null);
-    renderDisconnected('Ta session doit être renouvelée. Reconnecte-toi une fois pour reprendre exactement où tu étais.');
+
+    if(session?.refresh_token){
+      const user=await tryRefresh();
+      if(user)return;
+    }
+
+    if(session)save(null);
+    renderDisconnected(session
+      ? 'Ta session doit être renouvelée. Reconnecte-toi une fois pour reprendre exactement où tu étais.'
+      : 'Connecte-toi pour reprendre ton Atelier Idée.');
   }
   loginForm.addEventListener('submit',async(event)=>{
     event.preventDefault();clearError();const button=loginForm.querySelector('button');button.disabled=true;
