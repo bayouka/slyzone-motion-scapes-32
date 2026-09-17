@@ -4,7 +4,7 @@ let captured=null;
 const env={AI:{run:async(model,options)=>{
   captured={model,options};
   return {choices:[{message:{content:'```json\n{"answer":"ok","items":["a"]}\n```'}}],usage:{prompt_tokens:10,completion_tokens:5}};
-}};
+}}};
 const compat=withLab2AiCompatEnv(env);
 const result=await compat.AI.run('@cf/test',{messages:[{role:'system',content:'Réponds.'},{role:'user',content:'test'}],response_format:{type:'json_schema',json_schema:{type:'object',properties:{answer:{type:'string'},items:{type:'array',items:{type:'string'}}},required:['answer','items']}},temperature:0});
 if(captured?.model!=='@cf/test')throw new Error('LAB2_AI_COMPAT_MODEL_CHANGED');
