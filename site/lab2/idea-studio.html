@@ -14,191 +14,125 @@
 </head>
 <body>
   <main class="studio-shell" data-step="capture">
-    <header class="studio-topbar">
+    <header class="studio-header">
       <div>
-        <div class="eyebrow">4b4c2 · LAB isolé</div>
+        <div class="studio-eyebrow">4B4C2 · LAB ISOLÉ</div>
         <h1>Atelier Idée</h1>
       </div>
-      <div class="topbar-actions">
-        <span class="local-badge" title="Le brouillon et les résultats restent dans ce navigateur.">Brouillon privé</span>
-        <button class="ghost-button" type="button" id="resetDraft" title="Effacer le brouillon local et repartir de zéro">Effacer</button>
+      <div class="studio-header-actions">
+        <span class="local-badge">Brouillon privé</span>
+        <button type="button" class="reset-button" id="resetDraft">Effacer</button>
       </div>
     </header>
 
-    <nav class="progress" aria-label="Progression de l'idée">
-      <button class="progress-step is-active" type="button" data-go="capture">
-        <span>1</span>
-        <strong>Raconter</strong>
-      </button>
+    <nav class="progress" aria-label="Progression de l'atelier">
+      <button type="button" class="progress-step is-active" data-go="capture"><span>1</span>Raconter</button>
       <div class="progress-line"></div>
-      <button class="progress-step" type="button" data-go="understanding" disabled>
-        <span>2</span>
-        <strong>Comprendre</strong>
-      </button>
+      <button type="button" class="progress-step" data-go="understanding" disabled><span>2</span>Comprendre</button>
       <div class="progress-line"></div>
-      <div class="progress-step is-future">
-        <span>3</span>
-        <strong>Améliorer</strong>
-      </div>
+      <button type="button" class="progress-step" disabled><span>3</span>Améliorer</button>
       <div class="progress-line"></div>
-      <div class="progress-step is-future">
-        <span>4</span>
-        <strong>Présenter</strong>
-      </div>
+      <button type="button" class="progress-step" disabled><span>4</span>Présenter</button>
     </nav>
 
-    <section class="panel step-panel" id="capturePanel" aria-labelledby="captureTitle">
-      <div class="panel-heading">
+    <section class="studio-card" id="capturePanel">
+      <div class="card-heading-row">
         <div>
           <span class="section-kicker">Étape 1</span>
-          <h2 id="captureTitle">Raconte ton idée avec tes mots</h2>
+          <h2>Raconte ton idée avec tes mots</h2>
           <p>Pas besoin de savoir rédiger un cahier des charges. Explique simplement ce que tu imagines, même si c'est encore flou.</p>
         </div>
-        <div class="autosave" id="saveState">Brouillon local</div>
+        <span class="save-state" id="saveState">Brouillon local</span>
       </div>
 
       <form id="ideaForm" novalidate>
         <div class="field-group">
           <label for="ideaName">Nom provisoire de l'idée</label>
-          <input id="ideaName" name="ideaName" type="text" maxlength="100" autocomplete="off" placeholder="Ex. Nom provisoire de mon projet" />
-          <p class="field-help">Ce nom sert seulement à retrouver l'idée. Tu pourras le changer plus tard.</p>
+          <input id="ideaName" type="text" maxlength="100" placeholder="Ex. TierceVue" autocomplete="off" />
+          <small>Ce nom sert seulement à retrouver l'idée. Tu pourras le changer plus tard.</small>
         </div>
 
         <div class="field-group">
-          <div class="label-row">
-            <label for="ideaDescription">Explique ton idée</label>
-            <span id="descriptionCount">0 caractère</span>
-          </div>
-          <textarea id="ideaDescription" name="ideaDescription" rows="9" maxlength="6000" placeholder="Ex. Je voudrais créer un site pour... L'idée serait que... Je ne sais pas encore exactement comment, mais j'aimerais..."></textarea>
-          <p class="field-help">Décris le problème, ce que ferait le site, pour qui il serait utile, ou simplement ce que tu as en tête.</p>
+          <div class="label-row"><label for="ideaDescription">Explique ton idée</label><span id="descriptionCount">0 caractère</span></div>
+          <textarea id="ideaDescription" maxlength="6000" rows="8" placeholder="Ex. J'aimerais créer un site qui permet à quelqu'un de faire vérifier une voiture située loin de chez lui avant de se déplacer..."></textarea>
+          <small>Décris le problème, ce que ferait le site, pour qui il serait utile, ou simplement ce que tu as en tête. Si tu sais déjà ce que les visiteurs devraient surtout comprendre ou faire, tu peux le préciser ; sinon l'IA t'aidera à le déterminer.</small>
         </div>
 
-        <div class="references-block">
+        <div class="references-section">
           <div class="references-heading">
-            <div>
-              <h3>Des sites t'aident à montrer ce que tu imagines ?</h3>
-              <p>Ajoute un concurrent ou simplement un site dont tu apprécies une partie. Tu pourras préciser plusieurs choses qui t'intéressent dans chaque référence.</p>
-            </div>
-            <button class="secondary-button" type="button" id="addReference">+ Ajouter un site</button>
+            <div><h3>Des sites t'aident à montrer ce que tu imagines ?</h3><p>Ajoute un concurrent ou simplement un site dont tu apprécies une partie. Tu pourras préciser plusieurs choses qui t'intéressent dans chaque référence.</p></div>
+            <button type="button" id="addReference" class="secondary-button">+ Ajouter une référence</button>
           </div>
-
-          <p class="reference-empty-state" id="referenceEmptyState">Aucune référence pour l'instant. Ce n'est pas nécessaire pour continuer.</p>
-          <div id="referencesList" class="references-list"></div>
-          <button class="text-button" type="button" id="noReference">Je n'ai pas de site en tête</button>
+          <div id="referencesList"></div>
+          <div class="reference-empty-state" id="referenceEmptyState" hidden>Aucune référence ajoutée. Ce n'est pas bloquant.</div>
+          <button type="button" id="noReference" class="text-button">Je n'ai pas de site en tête</button>
         </div>
 
-        <div class="callout compact-callout">
-          <div class="callout-icon" aria-hidden="true">i</div>
-          <div>
-            <strong>Première étape : vérifier que l'IA t'a bien compris</strong>
-            <p>Elle ne modifiera rien et n'ajoutera aucune fonctionnalité sans ton accord.</p>
-          </div>
+        <div class="info-box">
+          <span class="info-icon">i</span>
+          <div><strong>Première étape : vérifier que l'IA t'a bien compris</strong><p>Elle ne modifiera rien et n'ajoutera aucune fonctionnalité sans ton accord.</p></div>
         </div>
 
-        <div class="form-footer">
-          <p class="validation-message" id="validationMessage" role="status"></p>
-          <button class="primary-button" type="submit">Faire comprendre mon idée à l'IA <span aria-hidden="true">→</span></button>
-        </div>
+        <p class="validation-message" id="validationMessage" role="alert"></p>
+        <div class="form-actions"><button class="primary-button" type="submit">Faire comprendre mon idée à l'IA →</button></div>
       </form>
     </section>
 
-    <section class="panel step-panel" id="understandingPanel" hidden aria-labelledby="understandingTitle">
-      <div class="panel-heading">
+    <section class="studio-card" id="understandingPanel" hidden>
+      <div class="card-heading-row">
         <div>
           <span class="section-kicker">Étape 2</span>
-          <h2 id="understandingTitle">Vérifions que nous avons bien compris</h2>
+          <h2>Vérifions que nous avons bien compris</h2>
           <p>L'IA reformule ton idée sans l'améliorer. Elle distingue ce que tu as réellement dit de ce qu'elle a dû déduire.</p>
         </div>
         <span class="ai-state" id="aiState">Prêt</span>
       </div>
 
-      <article class="understanding-card highlight-card original-card">
-        <span class="card-label">Ton idée d'origine</span>
-        <h3 id="summaryName">Sans nom</h3>
+      <div class="origin-card">
+        <span class="section-kicker">Ton idée d'origine</span>
+        <h3 id="summaryName"></h3>
         <p id="summaryDescription"></p>
-      </article>
-
-      <div class="ai-loading" id="understandingLoading" hidden role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        <div>
-          <strong>L'IA reformule ton idée…</strong>
-          <p>Si ce même brouillon a déjà été analysé, le résultat enregistré dans ce navigateur est réutilisé.</p>
-        </div>
       </div>
 
-      <div class="ai-error" id="understandingError" hidden role="alert"></div>
+      <div class="reference-summary-card" id="referenceSummaryCard" hidden>
+        <span class="section-kicker">Références données</span>
+        <div id="referenceSummary"></div>
+      </div>
 
-      <div id="aiUnderstandingResult" hidden>
-        <div class="understanding-layout ai-result-grid">
-          <article class="understanding-card span-two">
-            <div class="card-title-row">
-              <span class="card-label">L'idée en une phrase</span>
-              <span class="confidence-badge" id="confidenceBadge">Compréhension</span>
-            </div>
-            <p class="lead-copy" id="aiOneLiner"></p>
-          </article>
+      <div class="loading-box" id="understandingLoading" hidden role="status"><span class="spinner" aria-hidden="true"></span><div><strong>L'IA reformule ton idée…</strong><p>Un seul appel est effectué. Si le même brouillon a déjà été analysé, le résultat local est réutilisé.</p></div></div>
+      <div class="error-box" id="understandingError" hidden role="alert"></div>
 
-          <article class="understanding-card">
-            <span class="card-label">Le problème compris</span>
-            <p class="result-copy" id="aiProblem"></p>
-          </article>
-
-          <article class="understanding-card">
-            <span class="card-label">Pour qui</span>
-            <div class="evidence-list" id="aiTargetUsers"></div>
-          </article>
-
-          <article class="understanding-card span-two">
-            <span class="card-label">Comment le site fonctionnerait</span>
-            <ol class="flow-list" id="aiMainFlow"></ol>
-          </article>
-
-          <article class="understanding-card">
-            <span class="card-label">Ce que tu as clairement exprimé</span>
-            <ul class="plain-list" id="aiExplicitPoints"></ul>
-          </article>
-
-          <article class="understanding-card">
-            <span class="card-label">Ce qui reste incertain</span>
-            <ul class="plain-list muted-list" id="aiUncertainties"></ul>
-          </article>
-
-          <article class="understanding-card" id="referenceSummaryCard">
-            <span class="card-label">Références données</span>
-            <div id="referenceSummary" class="reference-summary"></div>
-          </article>
-
-          <article class="understanding-card usage-card" id="usageCard">
-            <span class="card-label">Consommation IA de cette idée</span>
-            <div class="usage-metrics" id="usageMetrics"></div>
-            <p class="field-help" id="usageHelp">Mesure cumulée des appels de compréhension réalisés pour ce brouillon.</p>
-          </article>
+      <section id="aiUnderstandingResult" hidden>
+        <article class="understanding-block highlight">
+          <div class="block-title-row"><span class="section-kicker">L'idée en une phrase</span><span id="confidenceBadge" class="confidence-badge"></span></div>
+          <h3 id="aiOneLiner"></h3>
+        </article>
+        <div class="understanding-grid two">
+          <article class="understanding-block"><span class="section-kicker">Le problème compris</span><p id="aiProblem"></p></article>
+          <article class="understanding-block"><span class="section-kicker">Pour qui</span><div id="aiTargetUsers" class="evidence-list"></div></article>
+        </div>
+        <article class="understanding-block"><span class="section-kicker">Comment le site fonctionnerait</span><ol id="aiMainFlow" class="flow-list"></ol></article>
+        <div class="understanding-grid two">
+          <article class="understanding-block"><span class="section-kicker">Ce que tu as clairement exprimé</span><ul id="aiExplicitPoints" class="plain-list"></ul></article>
+          <article class="understanding-block"><span class="section-kicker">Ce qui reste incertain</span><ul id="aiUncertainties" class="plain-list"></ul></article>
+        </div>
+        <div class="understanding-grid two">
+          <article class="understanding-block" id="referenceSummaryMirror"><span class="section-kicker">Références données</span><div id="referenceSummaryMirrorBody"></div></article>
+          <article class="understanding-block usage-card"><span class="section-kicker">Consommation IA de cette idée</span><div id="usageMetrics" class="usage-grid"></div><p id="usageHelp" class="usage-help"></p></article>
         </div>
 
-        <section class="clarification-box" id="clarificationBox" hidden aria-labelledby="clarificationTitle">
+        <div class="clarification-box" id="clarificationBox" hidden>
           <span class="section-kicker">Une précision suffit</span>
-          <h3 id="clarificationTitle">Une information manque pour être sûr de bien comprendre</h3>
-          <p class="clarification-question" id="clarificationQuestion"></p>
-          <div class="field-group compact">
-            <label for="clarificationAnswer">Ta réponse</label>
-            <textarea id="clarificationAnswer" rows="3" maxlength="1200" placeholder="Réponds simplement avec tes mots."></textarea>
-          </div>
-          <div class="clarification-actions">
-            <button class="text-button" type="button" id="skipClarification">Je ne sais pas encore</button>
-            <button class="primary-button" type="button" id="submitClarification">Répondre et continuer</button>
-          </div>
-        </section>
+          <h3>Une information manque pour être sûr de bien comprendre</h3>
+          <p id="clarificationQuestion"></p>
+          <label for="clarificationAnswer">Ta réponse</label>
+          <textarea id="clarificationAnswer" maxlength="1200" rows="3" placeholder="Réponds simplement avec tes mots."></textarea>
+          <div class="clarification-actions"><button type="button" class="text-button" id="skipClarification">Je ne sais pas encore</button><button type="button" class="primary-button" id="submitClarification">Répondre et continuer</button></div>
+        </div>
 
-        <div class="decision-box">
-          <div>
-            <span class="section-kicker">À toi de confirmer</span>
-            <h3>Est-ce bien ton idée ?</h3>
-            <p>Tu valides seulement la compréhension. Les améliorations, concurrents, fonctionnalités et sitemap viendront ensuite et resteront soumis à ton accord.</p>
-          </div>
-          <div class="decision-actions">
-            <button class="secondary-button" type="button" id="backToCapture">← Corriger mon explication</button>
-            <button class="primary-button" type="button" id="confirmUnderstanding" disabled>Oui, c'est bien ça</button>
-          </div>
+        <div class="confirm-box">
+          <div><span class="section-kicker">À toi de confirmer</span><h3>Est-ce bien ton idée ?</h3><p>Tu valides seulement la compréhension. Les améliorations, concurrents, fonctionnalités et sitemap viendront ensuite et resteront soumis à ton accord.</p></div>
+          <div class="confirm-actions"><button type="button" class="secondary-button" id="backToCapture">← Corriger mon explication</button><button class="primary-button" type="button" id="confirmUnderstanding" disabled>Oui, c'est bien ça</button></div>
         </div>
 
         <div class="future-preview" id="futurePreview" hidden>
@@ -207,24 +141,14 @@
           <p>Les références et concurrents seront analysés séparément en distinguant ce qui est observé, déduit ou non vérifié.</p>
           <a class="primary-button next-step-link" href="./idea-research.html">Continuer vers les références et concurrents →</a>
         </div>
-      </div>
+      </section>
     </section>
   </main>
 
   <template id="referenceTemplate">
     <article class="reference-card">
-      <div class="reference-card-header">
-        <strong>Référence <span class="reference-number"></span></strong>
-        <button type="button" class="remove-reference" aria-label="Supprimer cette référence">Supprimer</button>
-      </div>
-
-      <div class="reference-grid">
-        <div class="field-group compact">
-          <label>Site ou URL</label>
-          <input class="reference-url" type="text" maxlength="300" placeholder="Ex. airbnb.com, linear.app, leboncoin.fr…" />
-        </div>
-      </div>
-
+      <div class="reference-card-header"><strong>Référence <span class="reference-number"></span></strong><button type="button" class="remove-reference" aria-label="Supprimer cette référence">Supprimer</button></div>
+      <div class="reference-grid"><div class="field-group compact"><label>Site ou URL</label><input class="reference-url" type="text" maxlength="300" placeholder="Ex. airbnb.com, linear.app, leboncoin.fr…" /></div></div>
       <div class="reference-interest-block">
         <span class="reference-interest-label">Qu'est-ce qui t'intéresse dans ce site ?</span>
         <p class="reference-interest-help">Tu peux choisir plusieurs éléments, jusqu'à 4.</p>
@@ -240,16 +164,13 @@
           <button class="reference-interest" type="button" data-interest="autre" aria-pressed="false">Autre</button>
         </div>
       </div>
-
-      <div class="field-group compact">
-        <label>Précision facultative</label>
-        <input class="reference-note" type="text" maxlength="500" placeholder="Ex. J'aime surtout la façon dont les projets sont présentés dès l'accueil." />
-      </div>
+      <div class="field-group compact"><label>Précision facultative</label><input class="reference-note" type="text" maxlength="500" placeholder="Ex. J'aime surtout la façon dont les projets sont présentés dès l'accueil." /></div>
     </article>
   </template>
 
   <script src="./runtime-config.js"></script>
   <script src="./lab2-auth.js" defer></script>
+  <script src="./project-state.js" defer></script>
   <script src="./idea-studio.js" defer></script>
   <script src="./idea-studio-ux.js" defer></script>
 </body>
