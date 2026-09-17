@@ -1,0 +1,32 @@
+/* Slice 1/2 UX refinements layered over the validated prototype styles. */
+[hidden]{display:none!important}
+
+.local-badge{background:#f0fdf7;border-color:#c9efdb;color:#24694f}
+#resetDraft{font-size:12px;padding:8px 10px;background:transparent;border-color:transparent;color:#7a8798;box-shadow:none}
+#resetDraft:hover{background:#f4f6fa;border-color:#e5eaf1;color:#536176}
+
+.reference-empty-state{margin:10px 0 4px;padding:18px;border:1px dashed #ccd7e7;border-radius:15px;background:#fbfcff;color:#68778c;font-size:13px;line-height:1.55;text-align:center}
+.reference-card{padding:18px}
+.reference-grid{grid-template-columns:1fr;margin-bottom:15px}
+.reference-interest-block{margin:14px 0 15px}
+.reference-interest-label{display:block;margin-bottom:5px;font-size:14px;font-weight:750;color:#283549}
+.reference-interest-help{margin:0 0 10px;color:#7a8798;font-size:12px;line-height:1.45;transition:color .15s}
+.reference-interest-help.is-warning{color:#a44343;font-weight:700}
+.reference-interests{display:flex;flex-wrap:wrap;gap:8px}
+.reference-interest{appearance:none;border:1px solid #d7dfeb;background:#fff;color:#4d5c71;border-radius:999px;padding:8px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s,color .15s,box-shadow .15s,transform .15s}
+.reference-interest:hover{border-color:#9faef5;background:#f7f8ff;color:#3549bd;transform:translateY(-1px)}
+.reference-interest.is-selected{border-color:#6076f3;background:#edf1ff;color:#263ebc;box-shadow:0 0 0 2px rgba(82,102,216,.08)}
+.reference-interest:focus-visible{outline:3px solid rgba(83,107,255,.16);outline-offset:2px}
+
+.callout.compact-callout{margin:22px 0;padding:13px 15px;background:#f8f9ff}
+.callout.compact-callout .callout-icon{width:24px;height:24px;flex-basis:24px;font-size:12px}
+.callout.compact-callout strong{font-size:13px}
+.callout.compact-callout p{font-size:13px}
+
+.next-step-link{display:inline-flex;align-items:center;justify-content:center;margin-top:14px;text-decoration:none}
+.ai-loading[hidden],.ai-error[hidden],#aiUnderstandingResult[hidden],.clarification-box[hidden],.future-preview[hidden]{display:none!important}
+
+@media(max-width:820px){
+  .reference-interests{gap:7px}
+  .reference-interest{padding:8px 10px}
+}
