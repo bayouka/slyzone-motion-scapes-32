@@ -59,7 +59,7 @@ async function authenticate(env,request){
 function normalizeReferences(value){
   return safeArray(value).slice(0,MAX_REFERENCES).map((reference)=>({
     url:cleanText(reference?.url,300),
-    reason:cleanText(reference?.reason,40),
+    reason:cleanText(reference?.reason,80),
     note:cleanText(reference?.note,500)
   })).filter((reference)=>reference.url||reference.note);
 }
@@ -90,13 +90,13 @@ function understandingSchema(clarificationCount){
     type:'object',
     additionalProperties:false,
     properties:{
-      one_liner:{type:'string',maxLength:320},
-      problem:{type:'string',maxLength:900},
+      one_liner:{type:'string',minLength:1,maxLength:320},
+      problem:{type:'string',minLength:1,maxLength:900},
       target_users:{
         type:'array',maxItems:4,
         items:{
           type:'object',additionalProperties:false,
-          properties:{label:{type:'string',maxLength:180},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
+          properties:{label:{type:'string',minLength:1,maxLength:180},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
           required:['label','basis']
         }
       },
@@ -104,14 +104,14 @@ function understandingSchema(clarificationCount){
         type:'array',maxItems:7,
         items:{
           type:'object',additionalProperties:false,
-          properties:{step:{type:'string',maxLength:240},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
+          properties:{step:{type:'string',minLength:1,maxLength:240},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
           required:['step','basis']
         }
       },
-      explicit_points:{type:'array',maxItems:7,items:{type:'string',maxLength:260}},
-      uncertainties:{type:'array',maxItems:6,items:{type:'string',maxLength:280}},
+      explicit_points:{type:'array',maxItems:7,items:{type:'string',minLength:1,maxLength:260}},
+      uncertainties:{type:'array',maxItems:6,items:{type:'string',minLength:1,maxLength:280}},
       needs_clarification:{type:'boolean',enum:canAsk?[true,false]:[false]},
-      clarifying_question:{anyOf:[{type:'null'},{type:'string',maxLength:320}]},
+      clarifying_question:{anyOf:[{type:'null'},{type:'string',minLength:1,maxLength:320}]},
       confidence:{type:'string',enum:['HIGH','MEDIUM','LOW']}
     },
     required:['one_liner','problem','target_users','main_flow','explicit_points','uncertainties','needs_clarification','clarifying_question','confidence']
@@ -120,7 +120,7 @@ function understandingSchema(clarificationCount){
 
 function systemPrompt(clarificationCount){
   const remaining=Math.max(0,MAX_CLARIFICATIONS-clarificationCount);
-  return `Tu es le facilitateur de compréhension de 4b4c2, un atelier destiné à des utilisateurs novices qui décrivent des idées de sites ou web apps.\n\nTa mission dans cette étape est UNIQUEMENT de comprendre et reformuler fidèlement l'idée.\n\nRègles absolues :\n- Réponds en français simple, précis et sans jargon produit inutile.\n- N'améliore pas l'idée et ne propose aucune fonctionnalité nouvelle.\n- N'analyse pas encore les concurrents et ne prétends pas avoir visité les références.\n- Ne transforme jamais une hypothèse en fait.\n- Pour target_users et main_flow, marque EXPLICIT si l'information vient clairement de l'utilisateur, INFERRED si tu dois faire une déduction raisonnable.\n- Place les éléments non certains dans uncertainties.\n- one_liner doit permettre à un ami de comprendre l'idée immédiatement.\n- problem doit décrire le problème ou besoin compris, sans inventer une étude de marché.\n- main_flow doit contenir seulement le fonctionnement déjà exprimé ou minimalement déduit pour relier les actions décrites.\n- Pose une seule question uniquement si une ambiguïté importante empêche de comprendre correctement le concept.\n- Il reste ${remaining} tour(s) de clarification autorisé(s). Si aucun tour ne reste, needs_clarification doit être false et les incertitudes restantes doivent rester dans uncertainties.\n- Si needs_clarification=false, clarifying_question doit être null.\n- Si needs_clarification=true, clarifying_question doit contenir une seule question courte et concrète.\n- confidence évalue uniquement ta confiance dans ta compréhension fidèle de l'idée, pas la qualité commerciale du projet.\n- Respecte strictement le schéma JSON demandé.`;
+  return `Tu es le facilitateur de compréhension de 4b4c2, un atelier destiné à des utilisateurs novices qui décrivent des idées de sites ou web apps.\n\nTa mission dans cette étape est UNIQUEMENT de comprendre et reformuler fidèlement l'idée.\n\nRègles absolues :\n- Réponds en français simple, précis et sans jargon produit inutile.\n- N'améliore pas l'idée et ne propose aucune fonctionnalité nouvelle.\n- N'analyse pas encore les concurrents et ne prétends pas avoir visité les références.\n- Ne transforme jamais une hypothèse en fait.\n- Pour target_users et main_flow, marque EXPLICIT si l'information vient clairement de l'utilisateur, INFERRED si tu dois faire une déduction raisonnable.\n- Place les éléments non certains dans uncertainties.\n- one_liner et problem ne doivent JAMAIS être vides.\n- Si l'idée est très vague, one_liner doit reformuler uniquement ce qui est réellement connu et problem doit dire clairement que le besoin précis reste à définir.\n- one_liner doit permettre à un ami de comprendre l'idée immédiatement.\n- problem doit décrire le problème ou besoin compris, sans inventer une étude de marché.\n- main_flow doit contenir seulement le fonctionnement déjà exprimé ou minimalement déduit pour relier les actions décrites.\n- Si le but principal, le problème ou le résultat attendu n'est pas suffisamment clair, needs_clarification doit être true et tu dois poser UNE question concrète qui débloque la compréhension.\n- Pose une seule question uniquement si une ambiguïté importante empêche de comprendre correctement le concept.\n- Il reste ${remaining} tour(s) de clarification autorisé(s). Si aucun tour ne reste, needs_clarification doit être false et les incertitudes restantes doivent rester dans uncertainties.\n- Si needs_clarification=false, clarifying_question doit être null.\n- Si needs_clarification=true, clarifying_question doit contenir une seule question courte et concrète.\n- confidence évalue uniquement ta confiance dans ta compréhension fidèle de l'idée, pas la qualité commerciale du projet.\n- Respecte strictement le schéma JSON demandé.`;
 }
 
 function userPrompt(input){
@@ -144,21 +144,53 @@ function parseAiPayload(raw){
 
 function normalizeBasis(value){return value==='EXPLICIT'?'EXPLICIT':'INFERRED';}
 
-function normalizeUnderstanding(payload,clarificationCount){
+function isMeaningfulCore(value){
+  const normalized=cleanText(value,1000).toLowerCase();
+  if(normalized.length<8)return false;
+  return !['non déterminé','non determine','à préciser','a preciser','inconnu','non précisé','non precise'].includes(normalized);
+}
+
+function normalizeUnderstanding(payload,clarificationCount,input){
   const canAsk=clarificationCount<MAX_CLARIFICATIONS;
-  const needsClarification=canAsk&&payload.needs_clarification===true;
-  const question=needsClarification?cleanText(payload.clarifying_question,320):'';
+  let oneLiner=cleanText(payload.one_liner,320);
+  let problem=cleanText(payload.problem,900);
+  const rawCoreIncomplete=!isMeaningfulCore(oneLiner)||!isMeaningfulCore(problem);
+  const targetUsers=safeArray(payload.target_users).slice(0,4).map((item)=>({label:cleanText(item?.label,180),basis:normalizeBasis(item?.basis)})).filter((item)=>item.label);
+  const mainFlow=safeArray(payload.main_flow).slice(0,7).map((item)=>({step:cleanText(item?.step,240),basis:normalizeBasis(item?.basis)})).filter((item)=>item.step);
+  const explicitPoints=safeArray(payload.explicit_points).slice(0,7).map((item)=>cleanText(item,260)).filter(Boolean);
+  let uncertainties=safeArray(payload.uncertainties).slice(0,6).map((item)=>cleanText(item,280)).filter(Boolean);
+
+  if(!isMeaningfulCore(oneLiner))oneLiner=cleanText(input.description,320);
+  if(!isMeaningfulCore(problem))problem='Le besoin ou résultat principal attendu de ce projet n’est pas encore suffisamment précisé.';
+
+  let needsClarification=canAsk&&payload.needs_clarification===true;
+  let question=needsClarification?cleanText(payload.clarifying_question,320):'';
+  let confidence=['HIGH','MEDIUM','LOW'].includes(payload.confidence)?payload.confidence:'LOW';
+
+  if(rawCoreIncomplete){
+    const missing='Le but, le problème ou le résultat principal attendu reste à préciser.';
+    if(!uncertainties.some((item)=>item.toLowerCase()===missing.toLowerCase()))uncertainties=[...uncertainties,missing].slice(0,6);
+    confidence='LOW';
+    if(canAsk){
+      needsClarification=true;
+      if(!question)question='Quel est le principal résultat que tu voudrais obtenir avec ce projet ?';
+    }else{
+      needsClarification=false;
+      question='';
+    }
+  }
+
   return {
     contract_version:CONTRACT_VERSION,
-    one_liner:cleanText(payload.one_liner,320),
-    problem:cleanText(payload.problem,900),
-    target_users:safeArray(payload.target_users).slice(0,4).map((item)=>({label:cleanText(item?.label,180),basis:normalizeBasis(item?.basis)})).filter((item)=>item.label),
-    main_flow:safeArray(payload.main_flow).slice(0,7).map((item)=>({step:cleanText(item?.step,240),basis:normalizeBasis(item?.basis)})).filter((item)=>item.step),
-    explicit_points:safeArray(payload.explicit_points).slice(0,7).map((item)=>cleanText(item,260)).filter(Boolean),
-    uncertainties:safeArray(payload.uncertainties).slice(0,6).map((item)=>cleanText(item,280)).filter(Boolean),
+    one_liner:oneLiner,
+    problem:problem,
+    target_users:targetUsers,
+    main_flow:mainFlow,
+    explicit_points:explicitPoints,
+    uncertainties,
     needs_clarification:Boolean(needsClarification&&question),
     clarifying_question:needsClarification&&question?question:null,
-    confidence:['HIGH','MEDIUM','LOW'].includes(payload.confidence)?payload.confidence:'LOW'
+    confidence
   };
 }
 
@@ -226,7 +258,7 @@ export async function handleLab2IdeaUnderstanding(request,env){
   }
 
   try{
-    const understanding=normalizeUnderstanding(parseAiPayload(raw),input.clarifications.length);
+    const understanding=normalizeUnderstanding(parseAiPayload(raw),input.clarifications.length,input);
     return json({
       ok:true,
       model:LAB2_MODEL,
