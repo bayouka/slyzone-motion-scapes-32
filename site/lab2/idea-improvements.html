@@ -12,37 +12,38 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <div><div class="eyebrow">4b4c2 · LAB isolé · Slice 4</div><h1>Améliorer l’idée sans la déformer</h1><p>Chaque proposition reste indépendante. Rien n’est ajouté à ton idée sans ton accord.</p></div>
-      <a class="ghost" href="./idea-research.html">← Revenir à la recherche</a>
+      <div><div class="eyebrow">Étape 3 · Améliorer</div><h1>Choisir ce qui peut vraiment améliorer l’idée</h1><p>L’IA propose. Tu décides. Rien n’est ajouté sans ton accord.</p></div>
+      <a class="ghost" href="./idea-research.html">← Revenir à l’analyse</a>
     </header>
 
     <section class="panel" id="contextPanel">
-      <span class="kicker">Idée comprise</span>
+      <span class="kicker">Idée comprise et confirmée</span>
       <h2 id="ideaName">Idée</h2>
       <p id="ideaSummary"></p>
+      <div class="research-notice" id="researchNotice" hidden></div>
     </section>
 
     <section class="panel" id="blockedPanel" hidden>
-      <h2>Il manque l’étape précédente</h2>
-      <p>Termine d’abord la compréhension de l’idée. La recherche concurrentielle est utile mais facultative.</p>
+      <h2>Il manque une validation</h2>
+      <p>Retourne d’abord à l’étape « Comprendre » et confirme que la reformulation correspond bien à ton idée.</p>
       <a class="primary-link" href="./idea-studio.html">Retourner à l’Atelier Idée</a>
     </section>
 
     <section class="panel action" id="actionPanel">
-      <div><span class="kicker">1 appel IA maximum</span><h2>Proposer quelques améliorations utiles</h2><p>Maximum 6 propositions, en privilégiant le cœur du MVP plutôt que l’accumulation de fonctionnalités.</p></div>
-      <button class="primary" id="generateButton" type="button">Générer les propositions</button>
+      <div><span class="kicker">Quelques propositions ciblées</span><h2>Voir les améliorations possibles</h2><p>Maximum 6 propositions indépendantes, en privilégiant l’essentiel plutôt que l’accumulation de fonctionnalités.</p></div>
+      <button class="primary" id="generateButton" type="button">Proposer des améliorations</button>
     </section>
 
     <div class="loading" id="loadingBox" hidden><strong>Analyse en cours…</strong><span>Aucune modification n’est appliquée automatiquement.</span></div>
     <div class="error" id="errorBox" hidden></div>
 
     <section id="reviewSection" hidden>
-      <div class="review-head"><div><span class="kicker">Décisions humaines</span><h2 id="progressTitle">Proposition</h2></div><span id="decisionCount"></span></div>
+      <div class="review-head"><div><span class="kicker">À toi de décider</span><h2 id="progressTitle">Proposition</h2></div><span id="decisionCount"></span></div>
       <article class="proposal" id="proposalCard">
         <div class="proposal-meta"><span id="proposalType"></span><span id="proposalPriority"></span></div>
         <h3 id="proposalTitle"></h3>
         <p class="proposal-copy" id="proposalText"></p>
-        <div class="why"><strong>Pourquoi l’IA le propose</strong><p id="proposalWhy"></p><small id="proposalBasis"></small></div>
+        <div class="why"><strong>Pourquoi cette proposition ?</strong><p id="proposalWhy"></p><small id="proposalBasis"></small></div>
         <div class="warning" id="changeWarning" hidden>Cette proposition modifie sensiblement l’idée originale. Elle mérite une décision consciente.</div>
         <div class="modify" id="modifyBox" hidden>
           <label for="modifyText">Ta version</label>
@@ -57,10 +58,10 @@
       </article>
 
       <section class="panel summary" id="summaryPanel" hidden>
-        <span class="kicker">Revue terminée</span><h2>Décisions enregistrées localement</h2>
+        <span class="kicker">Revue terminée</span><h2>Tu as gardé le contrôle de l’idée</h2>
         <div class="summary-grid"><div><strong id="acceptedCount">0</strong><span>acceptées</span></div><div><strong id="modifiedCount">0</strong><span>modifiées</span></div><div><strong id="rejectedCount">0</strong><span>refusées</span></div></div>
         <p>La prochaine étape consolidera uniquement les éléments acceptés ou modifiés dans une version claire de l’idée.</p>
-        <a class="primary-link" href="./idea-brief.html">Créer la version claire →</a>
+        <a class="primary-link next-link" href="./idea-brief.html">Créer la version claire →</a>
       </section>
     </section>
   </main>
