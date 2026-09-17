@@ -58,9 +58,9 @@
         : 'Quelques faits ont été vérifiés, mais la couverture reste limitée. Les propositions distingueront les faits observés du raisonnement produit.';
       return;
     }
-    state.textContent=unconfigured?'Recherche automatique non configurée':'Aucun fait public vérifié';
+    state.textContent=unconfigured?'Recherche Web non configurée':'Aucun fait public vérifié';
     state.dataset.state='limited';
-    if(title)title.textContent=unconfigured?'Continuer sans découverte concurrentielle':'Continuer sans faits concurrentiels';
+    if(title)title.textContent=unconfigured?'Continuer sans recherche concurrentielle':'Continuer sans faits concurrentiels';
     if(copy)copy.textContent=unconfigured
       ? 'Aucun moteur de découverte concurrentielle n’est configuré sur cette preview. Les références que tu fournis restent analysables séparément ; tu peux continuer sans que l’IA invente des concurrents.'
       : 'Aucun fait public suffisamment solide n’a été vérifié. Tu peux continuer sans que l’IA invente des pratiques concurrentes.';
