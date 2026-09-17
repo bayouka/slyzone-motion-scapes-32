@@ -31,6 +31,7 @@
     if(code==='UNDERSTANDING_REQUIRED')return 'La compréhension confirmée n’est pas compatible avec cette étape.';
     if(code==='RESEARCH_INCOMPATIBLE')return 'La recherche enregistrée est devenue obsolète. Reviens à Explorer.';
     if(code==='AI_CAPACITY')return 'La capacité IA est momentanément atteinte. Aucune relance automatique ne sera faite.';
+    if(code==='AI_OUTPUT_INVALID')return 'La réponse IA n’a pas respecté le format structuré attendu. Elle a été rejetée plutôt que d’enregistrer des propositions incertaines.';
     if(code==='AI_OUTPUT_INCOMPLETE')return 'L’IA n’a pas produit au moins trois propositions concrètes. Cette réponse est rejetée ; elle ne signifie pas que l’idée n’a rien à améliorer.';
     if(code==='LAB_IMPROVEMENTS_DISABLED')return 'Cette étape du Lab est désactivée.';
     return 'Impossible de produire des propositions exploitables pour le moment. Les décisions déjà enregistrées restent intactes.';
