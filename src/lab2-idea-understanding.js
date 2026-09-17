@@ -1,5 +1,5 @@
 const LAB2_MODEL='@cf/google/gemma-4-26b-a4b-it';
-const CONTRACT_VERSION='lab2-understanding-v1';
+const CONTRACT_VERSION='lab2-understanding-v2';
 const MAX_BODY_BYTES=14000;
 const MAX_DESCRIPTION_CHARS=6000;
 const MAX_REFERENCES=3;
@@ -59,7 +59,7 @@ async function authenticate(env,request){
 function normalizeReferences(value){
   return safeArray(value).slice(0,MAX_REFERENCES).map((reference)=>({
     url:cleanText(reference?.url,300),
-    reason:cleanText(reference?.reason,80),
+    reason:cleanText(reference?.reason,120),
     note:cleanText(reference?.note,500)
   })).filter((reference)=>reference.url||reference.note);
 }
@@ -90,28 +90,28 @@ function understandingSchema(clarificationCount){
     type:'object',
     additionalProperties:false,
     properties:{
-      one_liner:{type:'string',minLength:1,maxLength:320},
-      problem:{type:'string',minLength:1,maxLength:900},
+      one_liner:{type:'string',minLength:24,maxLength:320},
+      problem:{type:'string',minLength:24,maxLength:900},
       target_users:{
-        type:'array',maxItems:4,
+        type:'array',minItems:1,maxItems:4,
         items:{
           type:'object',additionalProperties:false,
-          properties:{label:{type:'string',minLength:1,maxLength:180},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
+          properties:{label:{type:'string',minLength:3,maxLength:180},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
           required:['label','basis']
         }
       },
       main_flow:{
-        type:'array',maxItems:7,
+        type:'array',minItems:2,maxItems:7,
         items:{
           type:'object',additionalProperties:false,
-          properties:{step:{type:'string',minLength:1,maxLength:240},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
+          properties:{step:{type:'string',minLength:8,maxLength:240},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
           required:['step','basis']
         }
       },
-      explicit_points:{type:'array',maxItems:7,items:{type:'string',minLength:1,maxLength:260}},
-      uncertainties:{type:'array',maxItems:6,items:{type:'string',minLength:1,maxLength:280}},
+      explicit_points:{type:'array',minItems:1,maxItems:7,items:{type:'string',minLength:3,maxLength:260}},
+      uncertainties:{type:'array',maxItems:6,items:{type:'string',minLength:3,maxLength:280}},
       needs_clarification:{type:'boolean',enum:canAsk?[true,false]:[false]},
-      clarifying_question:{anyOf:[{type:'null'},{type:'string',minLength:1,maxLength:320}]},
+      clarifying_question:{anyOf:[{type:'null'},{type:'string',minLength:8,maxLength:320}]},
       confidence:{type:'string',enum:['HIGH','MEDIUM','LOW']}
     },
     required:['one_liner','problem','target_users','main_flow','explicit_points','uncertainties','needs_clarification','clarifying_question','confidence']
@@ -120,17 +120,17 @@ function understandingSchema(clarificationCount){
 
 function systemPrompt(clarificationCount){
   const remaining=Math.max(0,MAX_CLARIFICATIONS-clarificationCount);
-  return `Tu es le facilitateur de compréhension de 4b4c2, un atelier destiné à des utilisateurs novices qui décrivent des idées de sites ou web apps.\n\nTa mission dans cette étape est UNIQUEMENT de comprendre et reformuler fidèlement l'idée.\n\nRègles absolues :\n- Réponds en français simple, précis et sans jargon produit inutile.\n- N'améliore pas l'idée et ne propose aucune fonctionnalité nouvelle.\n- N'analyse pas encore les concurrents et ne prétends pas avoir visité les références.\n- Ne transforme jamais une hypothèse en fait.\n- Pour target_users et main_flow, marque EXPLICIT si l'information vient clairement de l'utilisateur, INFERRED si tu dois faire une déduction raisonnable.\n- Place les éléments non certains dans uncertainties.\n- one_liner et problem ne doivent JAMAIS être vides.\n- Si l'idée est très vague, one_liner doit reformuler uniquement ce qui est réellement connu et problem doit dire clairement que le besoin précis reste à définir.\n- one_liner doit permettre à un ami de comprendre l'idée immédiatement.\n- problem doit décrire le problème ou besoin compris, sans inventer une étude de marché.\n- main_flow doit contenir seulement le fonctionnement déjà exprimé ou minimalement déduit pour relier les actions décrites.\n- Si le but principal, le problème ou le résultat attendu n'est pas suffisamment clair, needs_clarification doit être true et tu dois poser UNE question concrète qui débloque la compréhension.\n- Pose une seule question uniquement si une ambiguïté importante empêche de comprendre correctement le concept.\n- Il reste ${remaining} tour(s) de clarification autorisé(s). Si aucun tour ne reste, needs_clarification doit être false et les incertitudes restantes doivent rester dans uncertainties.\n- Si needs_clarification=false, clarifying_question doit être null.\n- Si needs_clarification=true, clarifying_question doit contenir une seule question courte et concrète.\n- confidence évalue uniquement ta confiance dans ta compréhension fidèle de l'idée, pas la qualité commerciale du projet.\n- Respecte strictement le schéma JSON demandé.`;
+  return `Tu es le facilitateur de compréhension de 4b4c2, un atelier destiné à des utilisateurs novices qui décrivent souvent une idée de site ou de web-app en une seule phrase.\n\nOBJECTIF : construire une compréhension pratique et fidèle qui permette ensuite de faire une vraie recherche, sans obliger l'utilisateur à rédiger lui-même un cahier des charges. Tu ne dois pas seulement recopier sa phrase.\n\nRÈGLES :\n- Réponds en français simple et concret.\n- N'ajoute pas encore de fonctionnalité optionnelle et ne juge pas la qualité commerciale du projet.\n- Tu PEUX et tu DOIS faire des déductions raisonnables à partir du type de projet exprimé, à condition de les marquer INFERRED. Éviter l'hallucination ne signifie pas refuser de raisonner.\n- EXPLICIT = information réellement donnée par l'utilisateur. INFERRED = hypothèse de travail raisonnable à confirmer plus tard.\n- Pour une idée très courte, identifie malgré tout le type de projet, le besoin vraisemblable, les publics plausibles et un parcours utilisateur minimal. Ne remplis pas les cadres par « inconnu », « reste à préciser » ou une paraphrase vide si une hypothèse utile peut être formulée.\n- one_liner doit expliquer le concept, pas recopier mot pour mot l'explication originale.\n- problem décrit le besoin auquel le projet doit répondre. Pour un site vitrine, cela peut être par exemple rendre une activité compréhensible, crédible, visible et faciliter l'action attendue ; ne prétends pas que cela a été explicitement dit si c'est déduit.\n- target_users contient au moins un public plausible. Si l'utilisateur ne l'a pas nommé, marque-le INFERRED.\n- main_flow contient au moins deux étapes qui décrivent ce que ferait réellement un visiteur/utilisateur. Les étapes déduites sont autorisées et marquées INFERRED.\n- explicit_points contient uniquement des faits réellement présents dans l'explication ou les références déclarées (nom, type de projet, métier, contraintes, etc.).\n- uncertainties contient seulement les décisions qui pourraient réellement changer la suite, pas des banalités génériques.\n- Les références indiquent ce que l'utilisateur aime mais tu ne prétends jamais les avoir visitées à cette étape.\n- Pose UNE question seulement si sa réponse changerait matériellement la recherche ou la structure à venir. Préfère une question concrète avec quelques choix compréhensibles à « quel est votre objectif ? ». Exemple pour un site vitrine : « Quelle action veux-tu surtout obtenir : prise de contact, demande de devis, rendez-vous, autre ? ».\n- Il reste ${remaining} tour(s) de clarification autorisé(s). Si aucun tour ne reste, needs_clarification=false et la décision non résolue reste dans uncertainties.\n- Si needs_clarification=false, clarifying_question=null. Si needs_clarification=true, une seule question courte.\n- confidence mesure ta confiance dans cette compréhension de travail, pas la valeur du projet. Une compréhension comportant des hypothèses utiles peut être MEDIUM sans être LOW.\n- Respecte strictement le schéma JSON demandé.`;
 }
 
 function userPrompt(input){
   const references=input.references.length
-    ? input.references.map((reference,index)=>`${index+1}. ${reference.url||'(sans URL)'} — intérêt déclaré: ${reference.reason||'non précisé'}${reference.note?` — précision: ${reference.note}`:''}`).join('\n')
+    ? input.references.map((reference,index)=>`${index+1}. ${reference.url||'(sans URL)'} — ce que l'utilisateur dit apprécier: ${reference.reason||'non précisé'}${reference.note?` — précision: ${reference.note}`:''}`).join('\n')
     : 'Aucune référence fournie.';
   const clarifications=input.clarifications.length
     ? input.clarifications.map((item,index)=>`Q${index+1}: ${item.question}\nR${index+1}: ${item.answer}`).join('\n\n')
     : 'Aucune clarification antérieure.';
-  return `Nom provisoire : ${input.name}\n\nExplication originale :\n${input.description}\n\nRéférences déclarées par l'utilisateur (à ne pas analyser à cette étape) :\n${references}\n\nClarifications déjà données :\n${clarifications}`;
+  return `Nom provisoire : ${input.name}\n\nExplication originale :\n${input.description}\n\nRéférences déclarées (ne pas prétendre les avoir visitées) :\n${references}\n\nClarifications déjà données :\n${clarifications}`;
 }
 
 function parseAiPayload(raw){
@@ -146,44 +146,33 @@ function normalizeBasis(value){return value==='EXPLICIT'?'EXPLICIT':'INFERRED';}
 
 function isMeaningfulCore(value){
   const normalized=cleanText(value,1000).toLowerCase();
-  if(normalized.length<8)return false;
+  if(normalized.length<20)return false;
   return !['non déterminé','non determine','à préciser','a preciser','inconnu','non précisé','non precise'].includes(normalized);
 }
 
-function normalizeUnderstanding(payload,clarificationCount,input){
+function normalizeUnderstanding(payload,clarificationCount){
   const canAsk=clarificationCount<MAX_CLARIFICATIONS;
-  let oneLiner=cleanText(payload.one_liner,320);
-  let problem=cleanText(payload.problem,900);
-  const rawCoreIncomplete=!isMeaningfulCore(oneLiner)||!isMeaningfulCore(problem);
+  const oneLiner=cleanText(payload.one_liner,320);
+  const problem=cleanText(payload.problem,900);
   const targetUsers=safeArray(payload.target_users).slice(0,4).map((item)=>({label:cleanText(item?.label,180),basis:normalizeBasis(item?.basis)})).filter((item)=>item.label);
   const mainFlow=safeArray(payload.main_flow).slice(0,7).map((item)=>({step:cleanText(item?.step,240),basis:normalizeBasis(item?.basis)})).filter((item)=>item.step);
   const explicitPoints=safeArray(payload.explicit_points).slice(0,7).map((item)=>cleanText(item,260)).filter(Boolean);
-  let uncertainties=safeArray(payload.uncertainties).slice(0,6).map((item)=>cleanText(item,280)).filter(Boolean);
+  const uncertainties=safeArray(payload.uncertainties).slice(0,6).map((item)=>cleanText(item,280)).filter(Boolean);
 
-  if(!isMeaningfulCore(oneLiner))oneLiner=cleanText(input.description,320);
-  if(!isMeaningfulCore(problem))problem='Le besoin ou résultat principal attendu de ce projet n’est pas encore suffisamment précisé.';
+  if(!isMeaningfulCore(oneLiner)||!isMeaningfulCore(problem)||!targetUsers.length||mainFlow.length<2||!explicitPoints.length){
+    throw new Lab2HttpError(502,'AI_OUTPUT_INCOMPLETE');
+  }
 
   let needsClarification=canAsk&&payload.needs_clarification===true;
   let question=needsClarification?cleanText(payload.clarifying_question,320):'';
-  let confidence=['HIGH','MEDIUM','LOW'].includes(payload.confidence)?payload.confidence:'LOW';
+  if(needsClarification&&!question)throw new Lab2HttpError(502,'AI_OUTPUT_INCOMPLETE');
+  if(!canAsk){needsClarification=false;question='';}
 
-  if(rawCoreIncomplete){
-    const missing='Le but, le problème ou le résultat principal attendu reste à préciser.';
-    if(!uncertainties.some((item)=>item.toLowerCase()===missing.toLowerCase()))uncertainties=[...uncertainties,missing].slice(0,6);
-    confidence='LOW';
-    if(canAsk){
-      needsClarification=true;
-      if(!question)question='Quel est le principal résultat que tu voudrais obtenir avec ce projet ?';
-    }else{
-      needsClarification=false;
-      question='';
-    }
-  }
-
+  const confidence=['HIGH','MEDIUM','LOW'].includes(payload.confidence)?payload.confidence:'MEDIUM';
   return {
     contract_version:CONTRACT_VERSION,
     one_liner:oneLiner,
-    problem:problem,
+    problem,
     target_users:targetUsers,
     main_flow:mainFlow,
     explicit_points:explicitPoints,
@@ -248,8 +237,8 @@ export async function handleLab2IdeaUnderstanding(request,env){
         {role:'user',content:userPrompt(input)}
       ],
       response_format:{type:'json_schema',json_schema:understandingSchema(input.clarifications.length)},
-      temperature:0,
-      max_completion_tokens:900,
+      temperature:0.15,
+      max_completion_tokens:1100,
       chat_template_kwargs:{enable_thinking:false}
     });
   }catch(error){
@@ -258,13 +247,14 @@ export async function handleLab2IdeaUnderstanding(request,env){
   }
 
   try{
-    const understanding=normalizeUnderstanding(parseAiPayload(raw),input.clarifications.length,input);
+    const understanding=normalizeUnderstanding(parseAiPayload(raw),input.clarifications.length);
     return json({
       ok:true,
       model:LAB2_MODEL,
       user_id:auth.id,
       understanding,
       usage:readUsage(raw),
+      quality:{usable:true,min_target_users:1,min_flow_steps:2,generic_empty_fallbacks:false},
       limits:{max_clarifications:MAX_CLARIFICATIONS,remaining_clarifications:Math.max(0,MAX_CLARIFICATIONS-input.clarifications.length)}
     });
   }catch(error){
