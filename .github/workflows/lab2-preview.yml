@@ -113,18 +113,18 @@ jobs:
           fs.writeFileSync('wrangler.lab2-preview.jsonc',JSON.stringify(config,null,2)+'\n');
           NODE
 
-      - name: Verify Cloudflare credentials
+      - name: Verify Cloudflare credentials and private allowlist
         shell: bash
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$LAB2_ALLOWED_USER_IDS"
 
       - name: Deploy isolated Lab Worker
         run: npx --yes wrangler@4.129.0 deploy --config wrangler.lab2-preview.jsonc
 
-      - name: Configure private Lab allowlist when available
-        if: ${{ env.LAB2_ALLOWED_USER_IDS != '' }}
+      - name: Configure private Lab allowlist
         shell: bash
         run: printf '%s' "$LAB2_ALLOWED_USER_IDS" | npx --yes wrangler@4.129.0 secret put LAB2_ALLOWED_USER_IDS --config wrangler.lab2-preview.jsonc
 
