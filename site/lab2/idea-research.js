@@ -3,6 +3,7 @@
 
   const DRAFT_KEY = '4b4c2.lab2.idea-studio.slice1.v1';
   const UNDERSTANDING_KEY = '4b4c2.lab2.idea-understanding.slice2.v1';
+  const CONFIRMATION_KEY = '4b4c2.lab2.idea-understanding-confirmed.slice2.v1';
   const RESEARCH_KEY = '4b4c2.lab2.idea-research.slice3.v1';
   const AUTH_SESSION_KEY = '4b4c.supabase.session.v2';
 
@@ -34,6 +35,11 @@
   };
 
   const text = (value) => String(value || '').trim();
+  const meaningfulCore = (value) => {
+    const normalized = text(value).toLowerCase();
+    if (normalized.length < 8) return false;
+    return !['non déterminé', 'non determine', 'à préciser', 'a preciser', 'inconnu', 'non précisé', 'non precise'].includes(normalized);
+  };
 
   const fingerprint = async (value) => {
     const data = new TextEncoder().encode(JSON.stringify(value));
@@ -43,25 +49,52 @@
 
   const accessToken = () => text(parse(localStorage.getItem(AUTH_SESSION_KEY))?.access_token);
 
+  const setInitialVisualState = () => {
+    loadingBox.hidden = true;
+    errorBox.hidden = true;
+    results.hidden = true;
+    actionPanel.hidden = true;
+    blockedPanel.hidden = true;
+  };
+
   const loadContext = async () => {
+    setInitialVisualState();
     draft = parse(localStorage.getItem(DRAFT_KEY));
     const understandingCache = parse(localStorage.getItem(UNDERSTANDING_KEY));
+    const confirmation = parse(localStorage.getItem(CONFIRMATION_KEY));
     understanding = understandingCache?.response?.understanding || null;
 
-    const ready = Boolean(draft?.name && understanding?.one_liner && understanding?.problem);
+    if (draft?.name) ideaName.textContent = draft.name;
+    if (meaningfulCore(understanding?.one_liner)) ideaOneLiner.textContent = understanding.one_liner;
+    if (meaningfulCore(understanding?.problem)) ideaProblem.textContent = understanding.problem;
+    const refs = Array.isArray(draft?.references) ? draft.references.filter((item) => text(item?.url)) : [];
+    referenceCount.textContent = refs.length ? `${refs.length} référence${refs.length > 1 ? 's' : ''}` : 'Aucune référence fournie';
+
+    const confirmationMatches = Boolean(
+      confirmation?.version === 1 &&
+      confirmation?.confirmed === true &&
+      confirmation?.baseFingerprint &&
+      confirmation.baseFingerprint === understandingCache?.baseFingerprint
+    );
+    const ready = Boolean(
+      draft?.name &&
+      meaningfulCore(understanding?.one_liner) &&
+      meaningfulCore(understanding?.problem) &&
+      understanding?.needs_clarification !== true &&
+      confirmationMatches
+    );
+
     blockedPanel.hidden = ready;
     actionPanel.hidden = !ready;
 
     if (!ready) {
-      researchState.textContent = 'Contexte manquant';
+      researchState.textContent = confirmationMatches ? 'Compréhension à compléter' : 'Compréhension à confirmer';
+      researchState.dataset.state = 'error';
       return false;
     }
 
-    ideaName.textContent = draft.name;
-    ideaOneLiner.textContent = understanding.one_liner;
-    ideaProblem.textContent = understanding.problem;
-    const refs = Array.isArray(draft.references) ? draft.references.filter((item) => text(item?.url)) : [];
-    referenceCount.textContent = refs.length ? `${refs.length} référence${refs.length > 1 ? 's' : ''}` : 'Aucune référence fournie';
+    researchState.textContent = 'Prêt';
+    researchState.dataset.state = 'ready';
 
     fingerprintValue = await fingerprint({
       name: draft.name,
@@ -69,13 +102,15 @@
       one_liner: understanding.one_liner,
       problem: understanding.problem,
       target_users: understanding.target_users,
-      main_flow: understanding.main_flow
+      main_flow: understanding.main_flow,
+      confirmed_base_fingerprint: confirmation.baseFingerprint
     });
 
     const cached = parse(localStorage.getItem(RESEARCH_KEY));
     if (cached?.version === 1 && cached?.fingerprint === fingerprintValue && cached?.response?.ok) {
       render(cached.response);
       researchState.textContent = 'Résultat local réutilisé';
+      researchState.dataset.state = 'ready';
     }
     return true;
   };
@@ -219,6 +254,7 @@
     errorBox.hidden = true;
     loadingBox.hidden = true;
     researchState.textContent = 'Analyse prête';
+    researchState.dataset.state = 'ready';
   };
 
   const saveResult = (payload) => {
@@ -254,10 +290,12 @@
   };
 
   startResearch.addEventListener('click', async () => {
+    if (actionPanel.hidden) return;
     startResearch.disabled = true;
     loadingBox.hidden = false;
     errorBox.hidden = true;
     researchState.textContent = 'Recherche…';
+    researchState.dataset.state = 'loading';
     try {
       const payload = await callResearch();
       saveResult(payload);
@@ -267,6 +305,7 @@
       errorBox.hidden = false;
       errorBox.textContent = errorLabel(error?.code, Number(error?.status || 0));
       researchState.textContent = 'Non disponible';
+      researchState.dataset.state = 'error';
     } finally {
       startResearch.disabled = false;
     }
