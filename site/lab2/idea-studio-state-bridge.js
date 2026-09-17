@@ -33,13 +33,15 @@
     const cache=parse(localStorage.getItem(AI_CACHE_KEY));
     const understanding=cache?.response?.understanding;
     if(!cache?.baseFingerprint||understanding?.contract_version!==EXPECTED_CONTRACT)throw new Error('LAB2_UNDERSTANDING_CONTRACT_MISMATCH');
-    const blockingOpen=(Array.isArray(understanding.open_decisions)?understanding.open_decisions:[]).some((item)=>item?.scope==='UNDERSTANDING'&&item?.blocking===true);
-    if(understanding.needs_clarification===true||blockingOpen)throw new Error('LAB2_UNDERSTANDING_NEEDS_INPUT');
+    // Only an ACTIVE clarification blocks confirmation. Decisions intentionally deferred
+    // to structure/feasibility/design/presentation remain open without blocking progress.
+    if(understanding.needs_clarification===true)throw new Error('LAB2_UNDERSTANDING_NEEDS_INPUT');
 
     await persistRawIdea();
     const provenance=[];
     for(const item of Array.isArray(understanding.explicit_points)?understanding.explicit_points:[])provenance.push({type:'USER_FACT',value:item});
     for(const item of Array.isArray(understanding.target_users)?understanding.target_users:[])provenance.push({type:item?.basis==='EXPLICIT'?'USER_FACT':'INFERRED',value:item?.label||''});
+    for(const item of Array.isArray(understanding.open_decisions)?understanding.open_decisions:[])provenance.push({type:'OPEN_DECISION',scope:item?.scope||'UNKNOWN',blocking:item?.blocking===true,value:item?.question||''});
 
     const artifact=await state.setArtifact('understanding',{
       status:'READY',
