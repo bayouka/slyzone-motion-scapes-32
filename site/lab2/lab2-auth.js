@@ -32,7 +32,7 @@
     if (redirecting || window.location.pathname.endsWith('/login.html')) return;
     redirecting = true;
     const next = encodeURIComponent(safeReturnTarget());
-    window.location.assign(`/lab2/login.html?next=${next}`);
+    window.location.replace(`/lab2/login.html?next=${next}`);
   };
 
   const refreshSession = async () => {
@@ -113,4 +113,12 @@
     if (retried.status === 401) goToLogin();
     return retried;
   };
+
+  // Important: idea-studio.js performs its own synchronous access-token check
+  // before calling fetch(). Ensure unauthenticated Lab screens never reach that
+  // code path. The login screen owns refresh/recovery and returns to `next`.
+  if (!window.location.pathname.endsWith('/login.html')) {
+    const session = readSession();
+    if (!session?.access_token) goToLogin();
+  }
 })();
