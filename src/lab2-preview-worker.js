@@ -19,6 +19,11 @@ const SECURITY_HEADERS=Object.freeze({
 function withSecurityHeaders(response){const headers=new Headers(response.headers);for(const [key,value] of Object.entries(SECURITY_HEADERS))headers.set(key,value);return new Response(response.body,{status:response.status,statusText:response.statusText,headers})}
 function json(data,status=200){return withSecurityHeaders(Response.json(data,{status,headers:{'cache-control':'no-store'}}))}
 function accessConfigured(env){return Boolean(String(env?.LAB2_ALLOWED_USER_IDS||'').trim())}
+function searchCapabilities(env){
+  const brave=Boolean(String(env?.LAB2_BRAVE_SEARCH_API_KEY||'').trim());
+  const tavily=Boolean(String(env?.LAB2_TAVILY_API_KEY||env?.TAVILY_API_KEY||'').trim());
+  return {brave,tavily,configured:brave||tavily,strategy:brave&&tavily?'BRAVE_THEN_TAVILY':brave?'BRAVE':tavily?'TAVILY':'NONE'};
+}
 
 const LAB_ROUTES=new Map([
   ['/api/lab2/understand',handleLab2IdeaUnderstanding],
@@ -36,6 +41,7 @@ export default {
   async fetch(request,env){
     const url=new URL(request.url);
     if(url.pathname==='/health'&&(request.method==='GET'||request.method==='HEAD')){
+      const search=searchCapabilities(env);
       return json({
         ok:true,
         app:'4b4c2-idea-lab-preview',
@@ -46,9 +52,11 @@ export default {
         ai_configured:Boolean(env?.AI),
         ai_json_adapter:LAB2_AI_JSON_ADAPTER_VERSION,
         source_fetch_configured:Boolean(env?.SOURCE_FETCH),
-        competitor_search_configured:true,
-        competitor_search_strategy:'BRAVE_THEN_TAVILY_THEN_TAVILY_KEYLESS',
-        tavily_key_configured:Boolean(env?.LAB2_TAVILY_API_KEY||env?.TAVILY_API_KEY),
+        browser_render_configured:Boolean(env?.BROWSER?.quickAction),
+        competitor_search_configured:search.configured,
+        competitor_search_strategy:search.strategy,
+        brave_key_configured:search.brave,
+        tavily_key_configured:search.tavily,
         adaptive_feasibility_enabled:true,
         presentation_planner_enabled:String(env?.LAB2_PRESENTATION_PLAN_ENABLED||'').toLowerCase()==='true',
         access_allowlist_configured:accessConfigured(env)
