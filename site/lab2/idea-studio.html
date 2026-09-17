@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./idea-studio.css" />
   <link rel="stylesheet" href="./idea-studio-slice2.css" />
+  <link rel="stylesheet" href="./idea-studio-ux.css" />
 </head>
 <body>
   <main class="studio-shell" data-step="capture">
@@ -19,8 +20,8 @@
         <h1>Atelier Idée</h1>
       </div>
       <div class="topbar-actions">
-        <span class="local-badge" title="Le brouillon et les résultats restent dans ce navigateur. L'IA n'est appelée qu'à la demande.">Données locales · IA mesurée</span>
-        <button class="ghost-button" type="button" id="resetDraft">Réinitialiser</button>
+        <span class="local-badge" title="Le brouillon et les résultats restent dans ce navigateur.">Brouillon privé</span>
+        <button class="ghost-button" type="button" id="resetDraft" title="Effacer le brouillon local et repartir de zéro">Effacer</button>
       </div>
     </header>
 
@@ -51,7 +52,7 @@
         <div>
           <span class="section-kicker">Étape 1</span>
           <h2 id="captureTitle">Raconte ton idée avec tes mots</h2>
-          <p>Pas besoin de savoir rédiger un cahier des charges. Explique simplement ce que tu imagines.</p>
+          <p>Pas besoin de savoir rédiger un cahier des charges. Explique simplement ce que tu imagines, même si c'est encore flou.</p>
         </div>
         <div class="autosave" id="saveState">Brouillon local</div>
       </div>
@@ -59,7 +60,7 @@
       <form id="ideaForm" novalidate>
         <div class="field-group">
           <label for="ideaName">Nom provisoire de l'idée</label>
-          <input id="ideaName" name="ideaName" type="text" maxlength="100" autocomplete="off" placeholder="Ex. TierceVue" />
+          <input id="ideaName" name="ideaName" type="text" maxlength="100" autocomplete="off" placeholder="Ex. Nom provisoire de mon projet" />
           <p class="field-help">Ce nom sert seulement à retrouver l'idée. Tu pourras le changer plus tard.</p>
         </div>
 
@@ -68,28 +69,29 @@
             <label for="ideaDescription">Explique ton idée</label>
             <span id="descriptionCount">0 caractère</span>
           </div>
-          <textarea id="ideaDescription" name="ideaDescription" rows="9" maxlength="6000" placeholder="Ex. J'aimerais créer un site qui permet à quelqu'un de faire vérifier une voiture située loin de chez lui avant de se déplacer..."></textarea>
-          <p class="field-help">Décris le problème, ce que ferait le site, ou simplement ce que tu as en tête. Même si c'est encore flou.</p>
+          <textarea id="ideaDescription" name="ideaDescription" rows="9" maxlength="6000" placeholder="Ex. Je voudrais créer un site pour... L'idée serait que... Je ne sais pas encore exactement comment, mais j'aimerais..."></textarea>
+          <p class="field-help">Décris le problème, ce que ferait le site, pour qui il serait utile, ou simplement ce que tu as en tête.</p>
         </div>
 
         <div class="references-block">
           <div class="references-heading">
             <div>
-              <h3>Sites qui t'aident à expliquer l'idée</h3>
-              <p>Un concurrent, un site au fonctionnement proche, ou simplement une référence de design. Facultatif.</p>
+              <h3>Des sites t'aident à montrer ce que tu imagines ?</h3>
+              <p>Ajoute un concurrent ou simplement un site dont tu apprécies une partie. Tu pourras préciser plusieurs choses qui t'intéressent dans chaque référence.</p>
             </div>
-            <button class="secondary-button" type="button" id="addReference">+ Ajouter une référence</button>
+            <button class="secondary-button" type="button" id="addReference">+ Ajouter un site</button>
           </div>
 
+          <p class="reference-empty-state" id="referenceEmptyState">Aucune référence pour l'instant. Ce n'est pas nécessaire pour continuer.</p>
           <div id="referencesList" class="references-list"></div>
-          <button class="text-button" type="button" id="noReference">Je n'ai pas de référence pour l'instant</button>
+          <button class="text-button" type="button" id="noReference">Je n'ai pas de site en tête</button>
         </div>
 
-        <div class="callout">
+        <div class="callout compact-callout">
           <div class="callout-icon" aria-hidden="true">i</div>
           <div>
-            <strong>Ce que fera l'IA maintenant</strong>
-            <p>Elle reformule uniquement ton idée pour vérifier qu'elle l'a bien comprise. Elle n'ajoute encore aucune fonctionnalité et n'analyse pas encore les concurrents.</p>
+            <strong>Première étape : vérifier que l'IA t'a bien compris</strong>
+            <p>Elle ne modifiera rien et n'ajoutera aucune fonctionnalité sans ton accord.</p>
           </div>
         </div>
 
@@ -103,9 +105,9 @@
     <section class="panel step-panel" id="understandingPanel" hidden aria-labelledby="understandingTitle">
       <div class="panel-heading">
         <div>
-          <span class="section-kicker">Étape 2 · IA réelle et bornée</span>
-          <h2 id="understandingTitle">Vérifier que l'IA a réellement compris</h2>
-          <p>Cette étape ne cherche pas encore à améliorer l'idée. Elle sépare ce que tu as explicitement dit de ce que l'IA a dû déduire.</p>
+          <span class="section-kicker">Étape 2</span>
+          <h2 id="understandingTitle">Vérifions que nous avons bien compris</h2>
+          <p>L'IA reformule ton idée sans l'améliorer. Elle distingue ce que tu as réellement dit de ce qu'elle a dû déduire.</p>
         </div>
         <span class="ai-state" id="aiState">Prêt</span>
       </div>
@@ -120,7 +122,7 @@
         <span class="spinner" aria-hidden="true"></span>
         <div>
           <strong>L'IA reformule ton idée…</strong>
-          <p>Un seul appel est effectué. Si le même brouillon a déjà été analysé, le résultat local est réutilisé.</p>
+          <p>Si ce même brouillon a déjà été analysé, le résultat enregistré dans ce navigateur est réutilisé.</p>
         </div>
       </div>
 
@@ -167,7 +169,7 @@
           </article>
 
           <article class="understanding-card usage-card" id="usageCard">
-            <span class="card-label">Coût IA de cette idée</span>
+            <span class="card-label">Consommation IA de cette idée</span>
             <div class="usage-metrics" id="usageMetrics"></div>
             <p class="field-help" id="usageHelp">Mesure cumulée des appels de compréhension réalisés pour ce brouillon.</p>
           </article>
@@ -175,7 +177,7 @@
 
         <section class="clarification-box" id="clarificationBox" hidden aria-labelledby="clarificationTitle">
           <span class="section-kicker">Une précision suffit</span>
-          <h3 id="clarificationTitle">L'IA a besoin d'une information pour éviter de mal comprendre</h3>
+          <h3 id="clarificationTitle">Une information manque pour être sûr de bien comprendre</h3>
           <p class="clarification-question" id="clarificationQuestion"></p>
           <div class="field-group compact">
             <label for="clarificationAnswer">Ta réponse</label>
@@ -189,9 +191,9 @@
 
         <div class="decision-box">
           <div>
-            <span class="section-kicker">Validation humaine</span>
+            <span class="section-kicker">À toi de confirmer</span>
             <h3>Est-ce bien ton idée ?</h3>
-            <p>Valider signifie seulement « l'IA m'a compris ». Les améliorations, concurrents, fonctionnalités et sitemap viendront après et resteront soumis à ton accord.</p>
+            <p>Tu valides seulement la compréhension. Les améliorations, concurrents, fonctionnalités et sitemap viendront ensuite et resteront soumis à ton accord.</p>
           </div>
           <div class="decision-actions">
             <button class="secondary-button" type="button" id="backToCapture">← Corriger mon explication</button>
@@ -200,9 +202,10 @@
         </div>
 
         <div class="future-preview" id="futurePreview" hidden>
-          <span class="section-kicker">Compréhension validée localement</span>
-          <h3>La base est prête pour l'étape suivante</h3>
-          <p>Le prochain incrément pourra rechercher les références et concurrents de manière bornée, en séparant ce qui est observé, déduit ou non vérifié. Rien n'est encore enregistré dans Supabase.</p>
+          <span class="section-kicker">Compréhension confirmée</span>
+          <h3>On peut maintenant confronter l'idée à ce qui existe</h3>
+          <p>Les références et concurrents seront analysés séparément en distinguant ce qui est observé, déduit ou non vérifié.</p>
+          <a class="primary-button next-step-link" href="./idea-research.html">Continuer vers les références et concurrents →</a>
         </div>
       </div>
     </section>
@@ -214,30 +217,38 @@
         <strong>Référence <span class="reference-number"></span></strong>
         <button type="button" class="remove-reference" aria-label="Supprimer cette référence">Supprimer</button>
       </div>
+
       <div class="reference-grid">
         <div class="field-group compact">
           <label>Site ou URL</label>
-          <input class="reference-url" type="text" maxlength="300" placeholder="Ex. airbnb.com" />
-        </div>
-        <div class="field-group compact">
-          <label>Ce qui t'intéresse</label>
-          <select class="reference-reason">
-            <option value="fonctionnement">Le fonctionnement</option>
-            <option value="fonctionnalites">Les fonctionnalités</option>
-            <option value="simplicite">La simplicité</option>
-            <option value="design">Le design</option>
-            <option value="organisation">L'organisation du site</option>
-            <option value="autre">Autre</option>
-          </select>
+          <input class="reference-url" type="text" maxlength="300" placeholder="Ex. airbnb.com, linear.app, leboncoin.fr…" />
         </div>
       </div>
+
+      <div class="reference-interest-block">
+        <span class="reference-interest-label">Qu'est-ce qui t'intéresse dans ce site ?</span>
+        <p class="reference-interest-help">Tu peux choisir plusieurs éléments, jusqu'à 4.</p>
+        <input class="reference-reason" type="hidden" value="" />
+        <div class="reference-interests" role="group" aria-label="Éléments intéressants dans cette référence">
+          <button class="reference-interest" type="button" data-interest="parcours" aria-pressed="false">Parcours / fonctionnement</button>
+          <button class="reference-interest" type="button" data-interest="fonctions" aria-pressed="false">Fonctionnalités / outils</button>
+          <button class="reference-interest" type="button" data-interest="simple" aria-pressed="false">Simplicité / clarté</button>
+          <button class="reference-interest" type="button" data-interest="design" aria-pressed="false">Design / ambiance</button>
+          <button class="reference-interest" type="button" data-interest="nav" aria-pressed="false">Navigation / organisation</button>
+          <button class="reference-interest" type="button" data-interest="contenu" aria-pressed="false">Contenu / ton</button>
+          <button class="reference-interest" type="button" data-interest="cta" aria-pressed="false">Conversion / CTA</button>
+          <button class="reference-interest" type="button" data-interest="autre" aria-pressed="false">Autre</button>
+        </div>
+      </div>
+
       <div class="field-group compact">
         <label>Précision facultative</label>
-        <input class="reference-note" type="text" maxlength="500" placeholder="Ex. J'aime surtout la manière dont la recherche est présentée dès l'accueil." />
+        <input class="reference-note" type="text" maxlength="500" placeholder="Ex. J'aime surtout la façon dont les projets sont présentés dès l'accueil." />
       </div>
     </article>
   </template>
 
   <script src="./idea-studio.js" defer></script>
+  <script src="./idea-studio-ux.js" defer></script>
 </body>
 </html>
