@@ -32,6 +32,7 @@ jobs:
       - name: Syntax checks
         run: |
           node --check site/lab2/idea-studio.js
+          node --check site/lab2/idea-studio-ux.js
           node --check site/lab2/idea-research.js
           node --check site/lab2/idea-improvements.js
           node --check site/lab2/idea-brief.js
