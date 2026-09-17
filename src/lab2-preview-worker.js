@@ -2,6 +2,7 @@ import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding.js';
 import { handleLab2IdeaResearch } from './lab2-idea-research.js';
 import { handleLab2IdeaImprovements } from './lab2-idea-improvements.js';
 import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
+import { handleLab2IdeaFeasibility } from './lab2-idea-feasibility.js';
 import { handleLab2IdeaStructure } from './lab2-idea-structure.js';
 import { handleLab2IdeaDesign } from './lab2-idea-design.js';
 import { handleLab2IdeaMockups } from './lab2-idea-mockups.js';
@@ -24,6 +25,7 @@ const LAB_ROUTES=new Map([
   ['/api/lab2/research',handleLab2IdeaResearch],
   ['/api/lab2/improvements',handleLab2IdeaImprovements],
   ['/api/lab2/brief',handleLab2IdeaBrief],
+  ['/api/lab2/feasibility',handleLab2IdeaFeasibility],
   ['/api/lab2/structure',handleLab2IdeaStructure],
   ['/api/lab2/design',handleLab2IdeaDesign],
   ['/api/lab2/mockups',handleLab2IdeaMockups],
@@ -47,6 +49,7 @@ export default {
         competitor_search_configured:true,
         competitor_search_strategy:'BRAVE_THEN_TAVILY_THEN_TAVILY_KEYLESS',
         tavily_key_configured:Boolean(env?.LAB2_TAVILY_API_KEY||env?.TAVILY_API_KEY),
+        adaptive_feasibility_enabled:true,
         presentation_planner_enabled:String(env?.LAB2_PRESENTATION_PLAN_ENABLED||'').toLowerCase()==='true',
         access_allowlist_configured:accessConfigured(env)
       });
