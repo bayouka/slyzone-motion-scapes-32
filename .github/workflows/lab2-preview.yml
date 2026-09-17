@@ -61,6 +61,8 @@ jobs:
           node --check scripts/run_lab2_real_e2e_v1.mjs
           for file in scripts/test_lab2_*.mjs scripts/lab2-isolation-check.mjs; do node --check "$file"; done
           node scripts/test_lab2_ai_compat_v1.mjs
+          node scripts/test_lab2_ai_json_v2.mjs
+          node scripts/test_lab2_web_provider_v2.mjs
           node scripts/test_lab2_public_fetch_fallback_v1.mjs
           node scripts/test_lab2_project_state_v1.mjs
           node scripts/test_lab2_understanding_v1.mjs
