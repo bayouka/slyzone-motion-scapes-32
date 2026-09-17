@@ -39,7 +39,7 @@ const aiPayload={
   model:'@cf/google/gemma-4-26b-a4b-it',
   choices:[{
     index:0,
-    message:{role:'assistant',content:JSON.stringify(structuredUnderstanding),refusal:null},
+    message:{role:'assistant',content:`\`\`\`json\n${JSON.stringify(structuredUnderstanding)}\n\`\`\``,refusal:null},
     finish_reason:'stop'
   }],
   usage:{prompt_tokens:1200,completion_tokens:320,total_tokens:1520}
@@ -50,12 +50,13 @@ if(normalizedFixture?.response?.one_liner!==structuredUnderstanding.one_liner)th
 const legacyFixture=normalizeLab2AiResponse({response:structuredUnderstanding,usage:{prompt_tokens:1,completion_tokens:1}});
 if(legacyFixture?.response!==structuredUnderstanding)throw new Error('LAB2_LEGACY_RESPONSE_COMPAT_FAILED');
 
+let capturedAiArgs=null;
 const env={
   LAB2_IDEA_STUDIO_ENABLED:'true',
   LAB2_ALLOWED_USER_IDS:'11111111-1111-4111-8111-111111111111',
   SUPABASE_URL:'https://example.supabase.co',
   SUPABASE_PUBLISHABLE_KEY:'pub',
-  AI:{run:async()=>aiPayload}
+  AI:{run:async(...args)=>{capturedAiArgs=args;return aiPayload;}}
 };
 
 function request(body,token='good-token'){
@@ -73,11 +74,14 @@ const body={
 const okResponse=await handleLab2IdeaUnderstanding(request(body),env);
 const ok=await okResponse.json();
 if(okResponse.status!==200||ok.ok!==true)throw new Error('LAB2_UNDERSTANDING_SUCCESS_EXPECTED');
-if(ok.understanding?.contract_version!=='lab2-understanding-v2')throw new Error('LAB2_CONTRACT_MISMATCH');
+if(ok.understanding?.contract_version!=='lab2-understanding-v3')throw new Error('LAB2_CONTRACT_MISMATCH');
 if(!(ok.usage?.estimated_neurons>0))throw new Error('LAB2_USAGE_MEASUREMENT_MISSING');
 if(ok.understanding?.needs_clarification!==true)throw new Error('LAB2_CLARIFICATION_EXPECTED');
 if(ok.understanding?.target_users?.length<1||ok.understanding?.main_flow?.length<2)throw new Error('LAB2_SEMANTIC_QUALITY_GUARD_FAILED');
-if(ok.quality?.usable!==true||ok.quality?.generic_empty_fallbacks!==false)throw new Error('LAB2_QUALITY_METADATA_MISSING');
+if(ok.quality?.usable!==true||ok.quality?.generic_empty_fallbacks!==false||ok.quality?.json_validation!=='server-side')throw new Error('LAB2_QUALITY_METADATA_MISSING');
+const aiOptions=capturedAiArgs?.[1]||{};
+if(Object.prototype.hasOwnProperty.call(aiOptions,'response_format'))throw new Error('LAB2_UNSUPPORTED_JSON_MODE_REINTRODUCED');
+if(!String(aiOptions?.messages?.[0]?.content||'').includes('Retourne UNIQUEMENT un objet JSON valide'))throw new Error('LAB2_JSON_PROMPT_CONTRACT_MISSING');
 
 const unauthorized=await handleLab2IdeaUnderstanding(request(body,'bad-token'),env);
 if(unauthorized.status!==401)throw new Error('LAB2_AUTH_GUARD_FAILED');
@@ -93,4 +97,4 @@ const cappedPayload=await capped.json();
 if(cappedPayload.understanding?.needs_clarification!==false)throw new Error('LAB2_CLARIFICATION_CAP_FAILED');
 
 globalThis.fetch=originalFetch;
-console.log(`lab2-understanding-v2: ok (${ok.usage.estimated_neurons} estimated neurons for fixture; chat-completions adapter verified)`);
+console.log(`lab2-understanding-v3: ok (${ok.usage.estimated_neurons} estimated neurons for fixture; server-side JSON validation verified)`);
