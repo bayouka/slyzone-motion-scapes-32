@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="./idea-feasibility.css" />
 </head>
 <body>
-  <main class="shell">
+  <main class="shell">">
     <header class="topbar">
       <div><div class="eyebrow">Étape · Faisabilité adaptative</div><h1>Vérifier ce que le projet implique vraiment</h1><p>Cette étape reste légère pour un projet simple et devient plus détaillée uniquement lorsque des capacités techniques le nécessitent.</p></div>
       <a class="ghost" href="./idea-brief.html">← Revenir à la version claire</a>
@@ -33,7 +33,12 @@
     <section id="results" hidden>
       <section class="hero-card"><div class="state-pill" id="levelBadge"></div><h2 id="summaryTitle"></h2><p id="summaryCopy"></p></section>
       <section class="panel" id="capabilitiesPanel"><span class="kicker">Capacités détectées</span><div class="capabilities" id="capabilities"></div></section>
-      <section class="panel" id="questionsPanel"><span class="kicker">Décisions de faisabilité encore ouvertes</span><ul id="questions"></ul></section>
+      <section class="panel" id="questionsPanel" hidden>
+        <span class="kicker">Décisions de faisabilité encore ouvertes</span>
+        <p class="muted">Réponds uniquement aux points réellement nécessaires avant la structure. Tu peux répondre simplement avec tes mots.</p>
+        <div id="questions"></div>
+        <div class="question-actions"><button class="primary" id="saveQuestions" type="button">Enregistrer ces décisions</button></div>
+      </section>
       <section class="next-card">
         <div><span class="kicker">Étape suivante</span><h2>Construire l’architecture d’expérience</h2><p>Les workflows et écrans seront proposés à partir de la Version 1 et de cette analyse de faisabilité.</p></div>
         <a class="primary-link" id="continueLink" href="./idea-structure.html">Continuer vers la structure →</a>
