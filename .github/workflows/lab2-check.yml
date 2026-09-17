@@ -60,6 +60,7 @@ jobs:
           node --check src/lab2-idea-mockups.js
           node --check src/lab2-presentation-plan.js
           node --check src/worker-entry.js
+          for file in scripts/test_lab2_*.mjs scripts/lab2-isolation-check.mjs; do node --check "$file"; done
       - name: Zero-credit contract tests
         run: |
           node scripts/test_lab2_ai_compat_v1.mjs
