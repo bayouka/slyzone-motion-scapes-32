@@ -2,6 +2,7 @@
   'use strict';
 
   const MAX_INTERESTS = 4;
+  const UNDERSTANDING_TIMEOUT_MS = 30000;
   const INTEREST_LABELS = Object.freeze({
     parcours: 'Parcours / fonctionnement',
     fonctions: 'Fonctionnalités / outils',
@@ -56,10 +57,6 @@
       if (interests.length) parts.push(interests.join(' · '));
       if (note) parts.push(note);
       const nextText = parts.join(' — ') || 'Référence ajoutée sans précision particulière';
-      // Important: assigning textContent always mutates the DOM, even if the visible
-      // value is unchanged. Because this function is called by a MutationObserver on
-      // referenceSummary, an unconditional assignment creates an infinite observer loop
-      // exactly when the step-1 submit renders the reference summary.
       if (detail.textContent !== nextText) detail.textContent = nextText;
     });
   };
@@ -70,8 +67,6 @@
     const buttons = [...row.querySelectorAll('.reference-interest')];
     if (!hidden || !buttons.length) return;
 
-    // The legacy Slice 1 engine used "fonctionnement" as a default on a new row.
-    // An untouched reference must not silently imply an interest.
     const url = row.querySelector('.reference-url');
     const note = row.querySelector('.reference-note');
     if (!String(url?.value || '').trim() && !String(note?.value || '').trim() && hidden.value === 'fonctionnement') {
@@ -143,52 +138,62 @@
   noReferenceButton?.addEventListener('click', () => window.setTimeout(updateEmptyState, 0));
   resetDraftButton?.addEventListener('click', () => window.setTimeout(cleanImplicitEmptyReference, 0));
 
-  // Capture the Lab error code without rewriting the already-tested Slice 2 engine.
-  const nativeFetch = window.fetch.bind(window);
-  let lastUnderstandingError = '';
-  window.fetch = async (...args) => {
-    const response = await nativeFetch(...args);
-    try {
-      const target = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
-      if (String(target).includes('/api/lab2/understand') && !response.ok) {
-        const payload = await response.clone().json().catch(() => ({}));
-        lastUnderstandingError = String(payload?.error || '');
-      }
-    } catch {}
-    return response;
-  };
-
   const friendlyError = (code) => ({
     LAB_ACCESS_UNCONFIGURED: "L’IA est prête, mais aucun compte de test n’est encore autorisé. Reviens à l’écran d’accès, copie ton identifiant technique puis ajoute-le à l’autorisation privée du Lab.",
     LAB_ACCESS_DENIED: "Ton compte est bien connecté, mais il n’est pas encore autorisé pour les appels IA du Lab. Reviens à l’écran d’accès pour copier ton identifiant technique.",
     UNAUTHORIZED: "Ta session de test a expiré. Reconnecte-toi depuis l’écran d’accès au Lab, puis réessaie.",
     AI_UNAVAILABLE: "Le moteur IA n’est pas disponible sur cette preview pour le moment.",
     AI_CAPACITY: "Le quota ou la capacité IA du moment est atteint. Aucun nouvel appel automatique ne sera tenté.",
-    AI_OUTPUT_INVALID: "L’IA a répondu dans un format inattendu. Ton idée n’a pas été modifiée."
+    AI_OUTPUT_INVALID: "L’IA a répondu dans un format inattendu. Ton idée n’a pas été modifiée.",
+    AI_TIMEOUT: "L’analyse IA a pris trop de temps et a été arrêtée proprement. Ton brouillon est intact ; tu peux réessayer."
   }[code] || '');
 
-  const normalizeErrorState = () => {
-    if (!understandingError || understandingError.hidden) return;
+  const applyFriendlyError = (code) => {
+    if (!code || !understandingError) return;
+    const message = friendlyError(code);
+    if (!message) return;
     if (understandingLoading) understandingLoading.hidden = true;
-    const message = friendlyError(lastUnderstandingError);
-    if (message) understandingError.textContent = message;
+    if (understandingError.textContent !== message) understandingError.textContent = message;
+    understandingError.hidden = false;
     if (aiState) {
-      aiState.textContent = ['LAB_ACCESS_UNCONFIGURED', 'LAB_ACCESS_DENIED'].includes(lastUnderstandingError)
+      const nextLabel = ['LAB_ACCESS_UNCONFIGURED', 'LAB_ACCESS_DENIED'].includes(code)
         ? 'Compte à autoriser'
         : 'À réessayer';
+      if (aiState.textContent !== nextLabel) aiState.textContent = nextLabel;
       aiState.dataset.state = 'error';
     }
   };
 
-  if (understandingError) {
-    new MutationObserver(normalizeErrorState).observe(understandingError, {
-      attributes: true,
-      attributeFilter: ['hidden'],
-      childList: true,
-      characterData: true,
-      subtree: true
-    });
-  }
+  // The enhancement layer only observes the network response. It does not observe or
+  // rewrite the error DOM anymore: that previous pattern could recursively trigger its
+  // own MutationObserver and freeze the browser as soon as an API error arrived.
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const target = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+    const isUnderstanding = String(target).includes('/api/lab2/understand');
+    if (!isUnderstanding) return nativeFetch(...args);
+
+    const controller = new AbortController();
+    const existingInit = args[1] || {};
+    const timer = window.setTimeout(() => controller.abort('LAB2_UNDERSTANDING_TIMEOUT'), UNDERSTANDING_TIMEOUT_MS);
+
+    try {
+      const response = await nativeFetch(args[0], { ...existingInit, signal: controller.signal });
+      if (!response.ok) {
+        const payload = await response.clone().json().catch(() => ({}));
+        const code = String(payload?.error || '');
+        if (code) window.setTimeout(() => applyFriendlyError(code), 0);
+      }
+      return response;
+    } catch (error) {
+      if (controller.signal.aborted || error?.name === 'AbortError') {
+        window.setTimeout(() => applyFriendlyError('AI_TIMEOUT'), 0);
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  };
 
   updateEmptyState();
 })();
