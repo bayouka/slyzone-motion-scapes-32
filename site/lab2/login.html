@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Accès au Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./login.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <div class="eyebrow">4b4c2 · Preview isolée</div>
+      <h1>Tester l’Atelier Idée</h1>
+      <p>Cette preview utilise Supabase uniquement pour vérifier ton identité. Elle n’expose aucune API métier de 4b4c et n’écrit aucune donnée Lab en base.</p>
+
+      <div class="status" id="statusBox">Vérification de la session…</div>
+
+      <form id="loginForm" hidden>
+        <label>Email<input id="email" type="email" autocomplete="email" required /></label>
+        <label>Mot de passe<input id="password" type="password" autocomplete="current-password" required /></label>
+        <button class="primary" type="submit">Se connecter</button>
+      </form>
+
+      <div class="actions" id="connectedActions" hidden>
+        <a class="primary link" href="./idea-studio.html">Ouvrir l’Atelier Idée</a>
+        <button class="secondary" id="logoutButton" type="button">Se déconnecter</button>
+      </div>
+
+      <section class="setup" id="setupPanel" hidden>
+        <strong>Autorisation IA du compte</strong>
+        <p>L’accès IA reste verrouillé tant que ce compte n’est pas ajouté à la liste privée du Lab. Copie ton identifiant technique puis colle-le toi-même dans le secret GitHub <code>LAB2_ALLOWED_USER_IDS</code>. Ne le publie pas dans une discussion.</p>
+        <button class="secondary" id="copyUserIdButton" type="button">Copier mon identifiant technique</button>
+        <span id="copyStatus" aria-live="polite"></span>
+
+        <div class="setup-divider" aria-hidden="true"></div>
+        <strong>Test E2E live temporaire</strong>
+        <p>Ce bouton renouvelle d’abord ta session puis copie uniquement son <strong>jeton d’accès court terme</strong>. Colle-le directement dans le secret GitHub <code>LAB2_E2E_BEARER_TOKEN</code>. Ne le colle jamais dans un chat, un fichier, une issue ou un commit. Le refresh token n’est jamais copié.</p>
+        <button class="secondary" id="copyE2eTokenButton" type="button">Copier un jeton E2E temporaire</button>
+        <span id="copyE2eStatus" aria-live="polite"></span>
+      </section>
+
+      <p class="error" id="errorBox" hidden></p>
+      <p class="note">Sans autorisation IA, tu peux déjà tester la capture et l’interface. Les appels IA restent bloqués. Le site 4b4c actuel n’est pas affecté.</p>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./lab2-auth.js"></script>
+  <script src="./login.js" defer></script>
+</body>
+</html>

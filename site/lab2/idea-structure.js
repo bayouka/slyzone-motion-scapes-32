@@ -1,0 +1,50 @@
+(() => {
+  'use strict';
+  const LEGACY_KEY='4b4c2.lab2.idea-structure.slice6.v1';
+  const AUTH_SESSION_KEY='4b4c.supabase.session.v2';
+  const EXPECTED_DEFINITION='lab2-definition-v1';
+  const EXPECTED_FEASIBILITY='lab2-feasibility-v1';
+  const EXPECTED_STRUCTURE='lab2-structure-v3';
+  const q=id=>document.getElementById(id);
+  const blockedPanel=q('blockedPanel'),actionPanel=q('actionPanel'),ideaName=q('ideaName'),ideaSummary=q('ideaSummary'),generateButton=q('generateButton');
+  const loadingBox=q('loadingBox'),errorBox=q('errorBox'),results=q('results'),workflowGrid=q('workflowGrid'),pageGrid=q('pageGrid'),pageCount=q('pageCount');
+  const publicNav=q('publicNav'),appNav=q('appNav'),questionList=q('questionList');
+  let definition=null,feasibility=null,responsePayload=null,pageDecisions={},inputFingerprint='';
+  const parse=v=>{try{return JSON.parse(v)}catch{return null}};
+  const text=v=>String(v||'').trim();
+  const token=()=>text(window.Lab2Auth?.getAccessToken?.()||parse(localStorage.getItem(AUTH_SESSION_KEY))?.access_token);
+  const state=()=>window.Lab2ProjectState;
+
+  async function save(){
+    if(!responsePayload)return;
+    try{localStorage.setItem(LEGACY_KEY,JSON.stringify({version:3,fingerprint:inputFingerprint,response:responsePayload,page_decisions:pageDecisions,savedAt:new Date().toISOString()}))}catch{}
+    const kept=(responsePayload.structure?.sitemap||[]).filter(page=>pageDecisions[page.id]!=='REMOVE');
+    await state().setArtifact('structure',{status:'CONFIRMED',contractVersion:responsePayload.contract_version,inputFingerprint,data:{...responsePayload.structure,page_decisions:{...pageDecisions},kept_pages:kept},provenance:[{type:'AI_PROPOSAL',scope:'EXPERIENCE_ARCHITECTURE',at:new Date().toISOString()},{type:'HUMAN_PAGE_REVIEW',at:new Date().toISOString()}]});
+  }
+  function renderList(node,values,empty){node.innerHTML='';const items=Array.isArray(values)?values.filter(Boolean):[];if(!items.length){const li=document.createElement('li');li.textContent=empty;node.appendChild(li);return}items.forEach(v=>{const li=document.createElement('li');li.textContent=v;node.appendChild(li)})}
+  function chipList(node,values){node.innerHTML='';const items=Array.isArray(values)?values.filter(Boolean):[];if(!items.length){node.textContent='Aucune entrée proposée';return}items.forEach(v=>{const s=document.createElement('span');s.textContent=v;node.appendChild(s)})}
+  function updatePageCount(){const pages=responsePayload?.structure?.sitemap||[],kept=pages.filter(p=>pageDecisions[p.id]!=='REMOVE').length;pageCount.textContent=`${kept}/${pages.length} page(s) ou écran(s) gardé(s)`}
+  function renderWorkflows(workflows){workflowGrid.innerHTML='';(workflows||[]).forEach((flow,index)=>{const card=document.createElement('article');card.className='workflow-card';const meta=document.createElement('div');meta.className='workflow-meta';const num=document.createElement('span');num.textContent=`Parcours ${index+1}`;const actor=document.createElement('span');actor.textContent=flow.actor||'Utilisateur';meta.append(num,actor);const h=document.createElement('h3');h.textContent=flow.name;const goal=document.createElement('p');goal.textContent=flow.goal;const ol=document.createElement('ol');(flow.steps||[]).forEach(step=>{const li=document.createElement('li');li.textContent=step;ol.appendChild(li)});card.append(meta,h,goal,ol);workflowGrid.appendChild(card)})}
+  function renderPages(pages){pageGrid.innerHTML='';(pages||[]).forEach(page=>{if(!pageDecisions[page.id])pageDecisions[page.id]='KEEP';const card=document.createElement('article');card.className='page-card';card.dataset.decision=pageDecisions[page.id];const meta=document.createElement('div');meta.className='page-meta';for(const value of [page.kind,page.path]){const s=document.createElement('span');s.textContent=value;meta.appendChild(s)}const h=document.createElement('h3');h.textContent=page.label;const purpose=document.createElement('p');purpose.textContent=page.purpose;card.append(meta,h,purpose);if(page.primary_action){const action=document.createElement('p');const strong=document.createElement('strong');strong.textContent='Action principale : ';action.append(strong,document.createTextNode(page.primary_action));card.appendChild(action)}const actions=document.createElement('div');actions.className='page-actions';const remove=document.createElement('button'),keep=document.createElement('button');remove.className='page-action remove';remove.type='button';remove.textContent='Retirer';keep.className='page-action keep';keep.type='button';keep.textContent='Garder';remove.addEventListener('click',()=>{pageDecisions[page.id]='REMOVE';void save();render(responsePayload)});keep.addEventListener('click',()=>{pageDecisions[page.id]='KEEP';void save();render(responsePayload)});actions.append(remove,keep);card.appendChild(actions);pageGrid.appendChild(card)});updatePageCount()}
+  function render(payload){responsePayload=payload;const structure=payload?.structure||{};renderWorkflows(structure.workflows);renderPages(structure.sitemap);chipList(publicNav,structure.public_navigation);chipList(appNav,structure.app_navigation);renderList(questionList,structure.structural_questions,'Aucune question structurelle supplémentaire.');results.hidden=false;loadingBox.hidden=true;errorBox.hidden=true;void save()}
+
+  async function loadContext(){
+    const api=state(),def=api?.getArtifact('definition'),feas=api?.getArtifact('feasibility');
+    definition=def?.data||null;feasibility=feas?.data||null;
+    const definitionReady=Boolean(def?.status==='CONFIRMED'&&def?.confirmed&&def?.contractVersion===EXPECTED_DEFINITION&&definition?.brief?.one_liner);
+    const feasibilityReady=Boolean(feas?.status==='CONFIRMED'&&feas?.confirmed&&feas?.contractVersion===EXPECTED_FEASIBILITY&&feasibility);
+    const ready=definitionReady&&feasibilityReady;
+    blockedPanel.hidden=ready;actionPanel.hidden=!ready;if(!ready)return;
+    ideaName.textContent=definition.project_name;ideaSummary.textContent=definition.brief.one_liner;
+    inputFingerprint=await api.hash({definition:def.outputFingerprint,feasibility:feas.outputFingerprint});
+    const current=api.getArtifact('structure');if(current?.status!=='STALE'&&current?.inputFingerprint===inputFingerprint&&current?.contractVersion===EXPECTED_STRUCTURE&&current?.data){pageDecisions=current.data.page_decisions||{};render({ok:true,contract_version:EXPECTED_STRUCTURE,structure:current.data})}
+  }
+  async function callApi(){
+    const access=token();if(!access)throw Object.assign(new Error('UNAUTHORIZED'),{code:'UNAUTHORIZED'});
+    const response=await fetch('/api/lab2/structure',{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${access}`},body:JSON.stringify({definition_contract:EXPECTED_DEFINITION,definition,feasibility_contract:EXPECTED_FEASIBILITY,feasibility})});
+    const payload=await response.json().catch(()=>({}));if(!response.ok||!payload?.ok)throw Object.assign(new Error(payload?.error||'STRUCTURE_ERROR'),{code:payload?.error||'STRUCTURE_ERROR'});if(payload.contract_version!==EXPECTED_STRUCTURE)throw Object.assign(new Error('STRUCTURE_INCOMPATIBLE'),{code:'STRUCTURE_INCOMPATIBLE'});return payload
+  }
+  function errorLabel(code){if(code==='LAB_STRUCTURE_DISABLED')return 'Cette étape du Lab est désactivée.';if(code==='DEFINITION_INCOMPATIBLE'||code==='DEFINITION_REQUIRED')return 'La définition canonique doit être reconstruite avant de continuer.';if(code==='FEASIBILITY_INCOMPATIBLE'||code==='FEASIBILITY_REQUIRED')return 'La faisabilité doit être recalculée et confirmée avant de continuer.';if(code==='FEASIBILITY_DECISIONS_INCOMPLETE')return 'Une décision de faisabilité obligatoire doit encore être confirmée.';if(code==='UNAUTHORIZED')return 'Ta session a expiré. Reconnecte-toi puis réessaie.';if(code==='AI_CAPACITY')return 'Le quota ou la capacité IA est momentanément atteint.';return 'Impossible de proposer l’architecture pour le moment.'}
+  generateButton.addEventListener('click',async()=>{generateButton.disabled=true;loadingBox.hidden=false;errorBox.hidden=true;state()?.markStatus('structure','RUNNING');try{const payload=await callApi();pageDecisions={};render(payload)}catch(e){state()?.markStatus('structure','ERROR',{reason:e?.code||'STRUCTURE_ERROR'});loadingBox.hidden=true;errorBox.hidden=false;errorBox.textContent=errorLabel(e?.code)}finally{generateButton.disabled=false}});
+  void loadContext();
+})();

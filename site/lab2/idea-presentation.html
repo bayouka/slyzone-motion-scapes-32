@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Présentation de l’idée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-presentation.css" />
+  <link rel="stylesheet" href="./idea-presentation-planner.css" />
+</head>
+<body>
+  <div class="toolbar no-print">
+    <a class="toolbar-link" href="./idea-mockups.html">← Maquettes</a>
+    <div class="toolbar-center"><span id="slideCounter">0 / 0</span></div>
+    <div class="toolbar-actions"><button id="prevButton" type="button">Précédente</button><button id="nextButton" type="button">Suivante</button><button id="fullscreenButton" type="button">Plein écran</button><button id="pptxButton" type="button" disabled>PowerPoint</button><button class="primary" id="printButton" type="button" disabled>PDF / Imprimer</button></div>
+  </div>
+
+  <main class="presentation-shell">
+    <section class="blocked" id="blockedPanel" hidden>
+      <h1>Les maquettes sont nécessaires</h1><p>Termine d’abord la direction visuelle et génère les maquettes principales.</p><a href="./idea-mockups.html">Ouvrir les maquettes</a>
+    </section>
+
+    <section class="planner no-print" id="plannerPanel" hidden>
+      <div class="planner-copy">
+        <span class="planner-kicker">Dernière préparation</span>
+        <h1>Adapter la présentation à son public</h1>
+        <p>L’IA choisit uniquement l’ordre et le rôle des slides. Elle ne peut pas inventer de faits, chiffres ou décisions absents du projet.</p>
+      </div>
+      <div class="planner-grid">
+        <label>À qui vas-tu la présenter ?
+          <select id="audienceSelect">
+            <option value="TEAM">Équipe / associés</option>
+            <option value="CLIENT">Client</option>
+            <option value="PARTNER">Partenaire</option>
+            <option value="INVESTOR">Investisseur</option>
+            <option value="GENERAL">Public général</option>
+          </select>
+        </label>
+        <label>Objectif principal
+          <select id="objectiveSelect">
+            <option value="VALIDATE">Faire comprendre et valider</option>
+            <option value="UNDERSTAND">Expliquer clairement</option>
+            <option value="CONVINCE">Convaincre</option>
+            <option value="DOCUMENT">Documenter le projet</option>
+          </select>
+        </label>
+        <label>Niveau de détail
+          <select id="detailSelect">
+            <option value="STANDARD">Standard</option>
+            <option value="SHORT">Court</option>
+            <option value="DETAILED">Détaillé</option>
+          </select>
+        </label>
+      </div>
+      <div class="planner-actions"><span id="plannerStatus">Aucun plan généré pour cette version.</span><button class="planner-primary" id="plannerButton" type="button">Préparer la présentation</button></div>
+    </section>
+
+    <div id="slides" class="slides" hidden></div>
+  </main>
+  <iframe id="mockupCaptureFrame" src="about:blank" title="Rendu technique des maquettes" aria-hidden="true" tabindex="-1"></iframe>
+  <script src="./runtime-config.js"></script>
+  <script src="./lab2-auth.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js" crossorigin="anonymous"></script>
+  <script src="./idea-presentation-planner.js" defer></script>
+  <script src="./idea-presentation.js" defer></script>
+  <script src="./idea-pptx.js" defer></script>
+</body>
+</html>

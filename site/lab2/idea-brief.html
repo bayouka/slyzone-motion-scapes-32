@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Version claire de l’idée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-brief.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><div class="eyebrow">4b4c2 · Définition canonique</div><h1>La version claire de ton idée</h1><p>Une synthèse fidèle construite uniquement avec ce que tu as expliqué, confirmé et choisi d’ajouter.</p></div>
+      <a class="ghost" href="./idea-improvements.html">← Revenir aux décisions</a>
+    </header>
+
+    <section class="panel" id="blockedPanel" hidden>
+      <h2>La revue des améliorations n’est pas terminée</h2>
+      <p>Chaque proposition doit d’abord être acceptée, refusée ou modifiée. Les éléments refusés ne seront jamais transmis à cette synthèse.</p>
+      <a class="primary-link" href="./idea-improvements.html">Terminer la revue</a>
+    </section>
+
+    <section class="panel context" id="actionPanel">
+      <div><span class="kicker">Version 1</span><h2 id="ideaName">Idée</h2><p id="ideaSummary"></p></div>
+      <div class="decision-summary" id="decisionSummary"></div>
+      <button class="primary" id="generateButton" type="button">Construire la Version 1</button>
+    </section>
+
+    <div class="loading" id="loadingBox" hidden><strong>Consolidation déterministe…</strong><span>Aucun nouvel élément n’est inventé et aucun crédit IA n’est consommé.</span></div>
+    <div class="error" id="errorBox" hidden></div>
+
+    <section id="briefSection" hidden>
+      <section class="hero-card">
+        <div class="version-pill">Version 1 · source canonique locale</div>
+        <h2 id="briefOneLiner"></h2>
+        <p id="briefPitch"></p>
+      </section>
+
+      <div class="grid">
+        <article class="panel"><span class="kicker">Le problème</span><p class="lead" id="briefProblem"></p></article>
+        <article class="panel"><span class="kicker">La solution</span><p class="lead" id="briefSolution"></p></article>
+        <article class="panel"><span class="kicker">Pour qui</span><ul id="briefUsers"></ul></article>
+        <article class="panel"><span class="kicker">Capacités retenues</span><ul id="briefFeatures"></ul></article>
+        <article class="panel span-two"><span class="kicker">Fonctionnement principal</span><ol id="briefFlow"></ol></article>
+        <article class="panel"><span class="kicker">Différences déjà établies</span><ul id="briefDifferentiators"></ul></article>
+        <article class="panel"><span class="kicker">Questions encore ouvertes</span><ul id="briefQuestions"></ul></article>
+      </div>
+
+      <section class="panel retained">
+        <div><span class="kicker">Traçabilité</span><h2>Améliorations réellement retenues</h2><p>Cette liste vient directement de tes décisions. Les propositions refusées ne sont pas réintroduites.</p></div>
+        <div id="retainedList"></div>
+      </section>
+
+      <section class="next-card">
+        <div><span class="kicker">Étape suivante</span><h2>Vérifier la faisabilité avant de structurer</h2><p>Les projets simples passeront presque immédiatement ; les projets plus complexes feront apparaître uniquement les dépendances techniques utiles.</p></div>
+        <a class="next-badge" href="./idea-feasibility.html">Vérifier la faisabilité →</a>
+      </section>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./lab2-auth.js" defer></script>
+  <script src="./project-state.js" defer></script>
+  <script src="./idea-brief.js" defer></script>
+</body>
+</html>

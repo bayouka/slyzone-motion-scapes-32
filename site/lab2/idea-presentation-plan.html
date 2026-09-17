@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Préparer la présentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-presentation-plan.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><div class="eyebrow">Étape finale · Préparer</div><h1>Construire la bonne présentation</h1><p>Le contenu du projet est déjà défini. Ici, l’IA choisit uniquement le meilleur ordre pour l’expliquer à ton public.</p></div>
+      <a class="ghost" href="./idea-mockups.html">← Revenir aux maquettes</a>
+    </header>
+
+    <section class="panel" id="blockedPanel" hidden>
+      <h2>Les maquettes sont nécessaires</h2><p>Termine d’abord les étapes précédentes pour construire une narration fiable.</p><a class="primary-link" href="./idea-mockups.html">Ouvrir les maquettes</a>
+    </section>
+
+    <section id="plannerFlow" hidden>
+      <section class="panel context-card">
+        <span class="kicker">Projet prêt à présenter</span>
+        <h2 id="ideaName">Projet</h2>
+        <p id="ideaSummary"></p>
+      </section>
+
+      <section class="panel preferences">
+        <div class="section-head"><div><span class="kicker">Trois choix seulement</span><h2>Dans quel contexte vas-tu présenter l’idée ?</h2></div></div>
+        <fieldset><legend>À qui ?</legend><div class="choices" data-group="audience"><button type="button" data-value="TEAM" aria-pressed="true">Équipe / proches</button><button type="button" data-value="CLIENT">Client / commanditaire</button><button type="button" data-value="PARTNER">Partenaire</button><button type="button" data-value="INVESTOR">Investisseur</button><button type="button" data-value="GENERAL">Public général</button></div></fieldset>
+        <fieldset><legend>Quel est le but principal ?</legend><div class="choices" data-group="objective"><button type="button" data-value="UNDERSTAND">Faire comprendre</button><button type="button" data-value="VALIDATE" aria-pressed="true">Faire valider</button><button type="button" data-value="CONVINCE">Convaincre</button><button type="button" data-value="DOCUMENT">Documenter</button></div></fieldset>
+        <fieldset><legend>Niveau de détail</legend><div class="choices" data-group="detail"><button type="button" data-value="SHORT">Court</button><button type="button" data-value="STANDARD" aria-pressed="true">Standard</button><button type="button" data-value="DETAILED">Détaillé</button></div></fieldset>
+        <div class="action-row"><p>Le Planner choisit l’ordre et l’importance des slides. Il n’invente aucun fait.</p><button class="primary" id="generateButton" type="button">Préparer la présentation</button></div>
+      </section>
+
+      <div class="loading" id="loadingBox" hidden><strong>Construction du récit…</strong><span>Un seul appel IA. Les contenus factuels restent issus des étapes validées.</span></div>
+      <div class="error" id="errorBox" hidden></div>
+
+      <section id="results" hidden>
+        <section class="panel plan-summary"><span class="kicker">Narration proposée</span><h2 id="archetype"></h2><p id="narrative"></p><div class="meta" id="planMeta"></div></section>
+        <section class="plan-list" id="planList"></section>
+        <section class="next-card"><div><span class="kicker">Présentation prête à générer</span><h2>Voir le résultat final</h2><p>Web, PDF et PowerPoint utiliseront désormais ce même plan narratif.</p></div><a class="primary-link" href="./idea-presentation.html">Ouvrir la présentation →</a></section>
+      </section>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./lab2-auth.js" defer></script>
+  <script src="./idea-presentation-plan.js" defer></script>
+</body>
+</html>

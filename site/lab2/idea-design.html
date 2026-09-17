@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Direction visuelle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-design.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">4b4c2 · LAB isolé · Slice 7</div>
+        <h1>Quel style doit donner envie d’utiliser ton site ?</h1>
+        <p>Choisis simplement l’impression que tu veux donner. 4b4c2 transforme ensuite cela en trois directions cohérentes et réellement utilisables pour les maquettes.</p>
+      </div>
+      <a class="ghost" href="./idea-structure.html">← Revenir au sitemap</a>
+    </header>
+
+    <section class="panel" id="blockedPanel" hidden>
+      <h2>Le sitemap provisoire est nécessaire</h2>
+      <p>Crée d’abord les workflows et choisis les pages à conserver.</p>
+      <a class="primary-link" href="./idea-structure.html">Ouvrir workflows & sitemap</a>
+    </section>
+
+    <section id="designFlow">
+      <section class="panel preferences" id="preferencesPanel">
+        <div class="section-head">
+          <div><span class="kicker">Tes préférences</span><h2>Comment veux-tu que le site soit perçu ?</h2><p>Choisis jusqu’à 3 mots. Tu peux aussi ne rien choisir et laisser 4b4c2 proposer.</p></div>
+          <span class="count" id="moodCount">0/3</span>
+        </div>
+        <div class="mood-grid" id="moodGrid">
+          <button type="button" data-mood="MODERN">Moderne</button>
+          <button type="button" data-mood="WARM">Chaleureux</button>
+          <button type="button" data-mood="PREMIUM">Premium</button>
+          <button type="button" data-mood="MINIMAL">Minimaliste</button>
+          <button type="button" data-mood="PLAYFUL">Ludique</button>
+          <button type="button" data-mood="PROFESSIONAL">Professionnel</button>
+          <button type="button" data-mood="TECH">Technologique</button>
+          <button type="button" data-mood="REASSURING">Rassurant</button>
+        </div>
+
+        <div class="form-grid">
+          <label><span>Couleur que tu aimerais</span><select id="colorPreference"><option value="AUTO">Aucune préférence — propose-moi</option><option value="BLUE">Bleu</option><option value="CYAN">Cyan / bleu-vert</option><option value="GREEN">Vert</option><option value="PURPLE">Violet</option><option value="WARM">Couleurs chaudes</option><option value="NEUTRAL">Neutre / noir & blanc</option></select></label>
+          <label><span>Couleur à éviter <small>(facultatif)</small></span><input id="avoidColors" maxlength="120" placeholder="Ex. rouge, rose…" /></label>
+        </div>
+        <label class="full-field"><span>Une référence ou une impression que tu veux retrouver ? <small>(facultatif)</small></span><textarea id="referenceNote" maxlength="360" rows="3" placeholder="Ex. J’aime les sites très aérés, avec de grandes photos et peu de texte. Pas besoin de connaître le vocabulaire design."></textarea><small>Ce texte sert uniquement à comprendre ta préférence. 4b4c2 ne copie pas l’identité d’un autre site.</small></label>
+        <div class="action-row"><button class="primary" id="generateButton" type="button">Me proposer 3 directions visuelles</button><span>1 appel IA maximum · tokens visuels issus d’un catalogue contrôlé</span></div>
+      </section>
+
+      <div class="loading" id="loadingBox" hidden><strong>Création des directions…</strong><span>Les couleurs, typos et espacements finaux sont résolus par 4b4c2, pas inventés librement par le modèle.</span></div>
+      <div class="error" id="errorBox" hidden></div>
+
+      <section id="results" hidden>
+        <div class="section-head results-head"><div><span class="kicker">Compare visuellement</span><h2>Trois directions possibles</h2><p>Ce ne sont pas encore les pages finales : ce sont les règles visuelles que le moteur de maquettes applique partout.</p></div></div>
+        <div class="direction-grid" id="directionGrid"></div>
+        <section class="selection-summary panel" id="selectionSummary" hidden>
+          <div><span class="kicker">Direction retenue</span><h2 id="selectedName"></h2><p id="selectedReason"></p></div>
+          <div class="selected-meta" id="selectedMeta"></div>
+        </section>
+        <section class="next-card" id="nextCard" hidden>
+          <div><span class="kicker">Étape suivante</span><h2>Construire de vraies maquettes</h2><p>Le moteur utilise la Version 1, les pages gardées et exactement cette direction visuelle.</p></div>
+          <a class="next-badge" href="./idea-mockups.html">Ouvrir les maquettes →</a>
+        </section>
+      </section>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./lab2-auth.js" defer></script>
+  <script src="./idea-design.js" defer></script>
+</body>
+</html>

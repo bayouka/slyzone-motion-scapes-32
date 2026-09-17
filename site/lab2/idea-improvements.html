@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Améliorer l’idée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-improvements.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><div class="eyebrow">Étape 3 · Améliorer</div><h1>Choisir ce qui peut vraiment améliorer l’idée</h1><p>L’IA propose. Tu décides. Rien n’est ajouté sans ton accord.</p></div>
+      <a class="ghost" href="./idea-research.html">← Revenir à l’analyse</a>
+    </header>
+
+    <section class="panel" id="contextPanel">
+      <span class="kicker">Idée comprise et confirmée</span>
+      <h2 id="ideaName">Idée</h2>
+      <p id="ideaSummary"></p>
+      <div class="research-notice" id="researchNotice" hidden></div>
+    </section>
+
+    <section class="panel" id="blockedPanel" hidden>
+      <h2>Il manque une validation</h2>
+      <p>Retourne d’abord à l’étape « Comprendre » et confirme que la reformulation correspond bien à ton idée.</p>
+      <a class="primary-link" href="./idea-studio.html">Retourner à l’Atelier Idée</a>
+    </section>
+
+    <section class="panel action" id="actionPanel">
+      <div><span class="kicker">Quelques propositions ciblées</span><h2>Voir les améliorations possibles</h2><p>Maximum 6 propositions indépendantes, en privilégiant l’essentiel plutôt que l’accumulation de fonctionnalités.</p></div>
+      <button class="primary" id="generateButton" type="button">Proposer des améliorations</button>
+    </section>
+
+    <div class="loading" id="loadingBox" hidden><strong>Analyse en cours…</strong><span>Aucune modification n’est appliquée automatiquement.</span></div>
+    <div class="error" id="errorBox" hidden></div>
+
+    <section id="reviewSection" hidden>
+      <div class="review-head"><div><span class="kicker">À toi de décider</span><h2 id="progressTitle">Proposition</h2></div><span id="decisionCount"></span></div>
+      <article class="proposal" id="proposalCard">
+        <div class="proposal-meta"><span id="proposalType"></span><span id="proposalPriority"></span></div>
+        <h3 id="proposalTitle"></h3>
+        <p class="proposal-copy" id="proposalText"></p>
+        <div class="why"><strong>Pourquoi cette proposition ?</strong><p id="proposalWhy"></p><small id="proposalBasis"></small></div>
+        <div class="warning" id="changeWarning" hidden>Cette proposition modifie sensiblement l’idée originale. Elle mérite une décision consciente.</div>
+        <div class="modify" id="modifyBox" hidden>
+          <label for="modifyText">Ta version</label>
+          <textarea id="modifyText" rows="4" maxlength="700"></textarea>
+          <div class="modify-actions"><button class="ghost-button" id="cancelModify" type="button">Annuler</button><button class="primary" id="saveModify" type="button">Garder ma version</button></div>
+        </div>
+        <div class="actions" id="decisionActions">
+          <button class="reject" id="rejectButton" type="button">Refuser</button>
+          <button class="secondary" id="modifyButton" type="button">Modifier</button>
+          <button class="accept" id="acceptButton" type="button">Ajouter à mon idée</button>
+        </div>
+      </article>
+
+      <section class="panel summary" id="summaryPanel" hidden>
+        <span class="kicker">Revue terminée</span><h2>Tu as gardé le contrôle de l’idée</h2>
+        <div class="summary-grid"><div><strong id="acceptedCount">0</strong><span>acceptées</span></div><div><strong id="modifiedCount">0</strong><span>modifiées</span></div><div><strong id="rejectedCount">0</strong><span>refusées</span></div></div>
+        <p>La prochaine étape consolidera uniquement les éléments acceptés ou modifiés dans une version claire de l’idée.</p>
+        <a class="primary-link next-link" href="./idea-brief.html">Créer la version claire →</a>
+      </section>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./lab2-auth.js" defer></script>
+  <script src="./project-state.js" defer></script>
+  <script src="./idea-improvements.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+name: Deploy 4b4c2 Idea Lab preview
+
+on:
+  push:
+    branches:
+      - feature/4b4c2-idea-lab
+    paths:
+      - 'src/lab2-*.js'
+      - 'site/lab2/**'
+      - 'scripts/test_lab2_*.mjs'
+      - 'scripts/run_lab2_real_e2e_v1.mjs'
+      - 'scripts/lab2-isolation-check.mjs'
+      - '.github/workflows/lab2-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 4b4c2-idea-lab-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LAB2_ALLOWED_USER_IDS: ${{ secrets.LAB2_ALLOWED_USER_IDS }}
+      LAB2_BRAVE_SEARCH_API_KEY: ${{ secrets.LAB2_BRAVE_SEARCH_API_KEY }}
+      LAB2_TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+      LAB2_E2E_BEARER_TOKEN: ${{ secrets.LAB2_E2E_BEARER_TOKEN }}
+      LAB2_PREVIEW_URL: https://4b4c2-idea-lab-preview.bayoukadesbois.workers.dev
+      LAB2_SUPABASE_URL: https://wexfzhegiewhldkugtow.supabase.co
+      LAB2_SUPABASE_PUBLISHABLE_KEY: sb_publishable_2XSXM2rNYsPQqJ0TzsOSgg_YDkNZwcM
+    steps:
+      - name: Checkout Lab branch
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate Lab contracts
+        run: |
+          node --check src/lab2-preview-worker.js
+          node --check src/lab2-ai-compat.js
+          node --check src/lab2-ai-json.js
+          node --check src/lab2-public-fetch-fallback.js
+          node --check src/lab2-web-provider.js
+          node --check src/lab2-presentation-plan.js
+          node --check site/lab2/login.js
+          node --check site/lab2/project-state.js
+          node --check site/lab2/idea-research-polish.js
+          node --check scripts/run_lab2_real_e2e_v1.mjs
+          for file in scripts/test_lab2_*.mjs scripts/lab2-isolation-check.mjs; do node --check "$file"; done
+          node scripts/test_lab2_ai_compat_v1.mjs
+          node scripts/test_lab2_ai_json_v2.mjs
+          node scripts/test_lab2_web_provider_v2.mjs
+          node scripts/test_lab2_public_fetch_fallback_v1.mjs
+          node scripts/test_lab2_project_state_v1.mjs
+          node scripts/test_lab2_understanding_v1.mjs
+          node scripts/test_lab2_research_profiles_v1.mjs
+          node scripts/test_lab2_research_v1.mjs
+          node scripts/test_lab2_improvements_v1.mjs
+          node scripts/test_lab2_brief_v1.mjs
+          node scripts/test_lab2_feasibility_v1.mjs
+          node scripts/test_lab2_structure_v1.mjs
+          node scripts/test_lab2_design_v1.mjs
+          node scripts/test_lab2_mockups_v1.mjs
+          node scripts/test_lab2_presentation_plan_v1.mjs
+          node scripts/test_lab2_presentation_v1.mjs
+          node scripts/test_lab2_flow_shell_v1.mjs
+          node scripts/test_lab2_worker_routes_v1.mjs
+          node scripts/lab2-isolation-check.mjs
+
+      - name: Build auth-only runtime config
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('node:fs');
+          const cfg={
+            mode:'lab2-preview',
+            supabaseUrl:process.env.LAB2_SUPABASE_URL,
+            supabasePublishableKey:process.env.LAB2_SUPABASE_PUBLISHABLE_KEY
+          };
+          fs.writeFileSync('site/lab2/runtime-config.js',`window.__4B4C2_PREVIEW_CONFIG__ = Object.freeze(${JSON.stringify(cfg,null,2)});\n`);
+          NODE
+
+      - name: Prepare Lab-only asset payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf lab2-preview-assets
+          mkdir -p lab2-preview-assets/lab2
+          cp -R site/lab2/. lab2-preview-assets/lab2/
+          test -s lab2-preview-assets/lab2/login.html
+          test -s lab2-preview-assets/lab2/idea-studio.html
+          test ! -e lab2-preview-assets/index.html
+          test ! -d lab2-preview-assets/assets
+          outside=$(find lab2-preview-assets -mindepth 1 -maxdepth 1 ! -name lab2 -print -quit)
+          test -z "$outside"
+
+      - name: Build isolated Wrangler config
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('node:fs');
+          const config={
+            $schema:'node_modules/wrangler/config-schema.json',
+            name:'4b4c2-idea-lab-preview',
+            main:'src/lab2-preview-worker.js',
+            compatibility_date:'2026-09-16',
+            assets:{directory:'./lab2-preview-assets',binding:'ASSETS',run_worker_first:true,html_handling:'none'},
+            ai:{binding:'AI'},
+            browser:{binding:'BROWSER'},
+            services:[{binding:'SOURCE_FETCH',service:'4b4c-source-fetch'}],
+            vars:{
+              SUPABASE_URL:process.env.LAB2_SUPABASE_URL,
+              SUPABASE_PUBLISHABLE_KEY:process.env.LAB2_SUPABASE_PUBLISHABLE_KEY,
+              LAB2_IDEA_STUDIO_ENABLED:'true',
+              LAB2_RESEARCH_ENABLED:'true',
+              LAB2_IMPROVEMENTS_ENABLED:'true',
+              LAB2_BRIEF_ENABLED:'true',
+              LAB2_STRUCTURE_ENABLED:'true',
+              LAB2_DESIGN_ENABLED:'true',
+              LAB2_MOCKUPS_ENABLED:'true',
+              LAB2_PRESENTATION_PLAN_ENABLED:'true'
+            }
+          };
+          fs.writeFileSync('wrangler.lab2-preview.jsonc',JSON.stringify(config,null,2)+'\n');
+          NODE
+
+      - name: Verify Cloudflare credentials and private allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$LAB2_ALLOWED_USER_IDS"
+
+      - name: Deploy isolated Lab Worker
+        run: npx --yes wrangler@4.129.0 deploy --config wrangler.lab2-preview.jsonc
+
+      - name: Configure private Lab allowlist
+        shell: bash
+        run: printf '%s' "$LAB2_ALLOWED_USER_IDS" | npx --yes wrangler@4.129.0 secret put LAB2_ALLOWED_USER_IDS --config wrangler.lab2-preview.jsonc
+
+      - name: Configure Brave search when available
+        if: ${{ env.LAB2_BRAVE_SEARCH_API_KEY != '' }}
+        shell: bash
+        run: printf '%s' "$LAB2_BRAVE_SEARCH_API_KEY" | npx --yes wrangler@4.129.0 secret put LAB2_BRAVE_SEARCH_API_KEY --config wrangler.lab2-preview.jsonc
+
+      - name: Configure Tavily search when available
+        if: ${{ env.LAB2_TAVILY_API_KEY != '' }}
+        shell: bash
+        run: printf '%s' "$LAB2_TAVILY_API_KEY" | npx --yes wrangler@4.129.0 secret put LAB2_TAVILY_API_KEY --config wrangler.lab2-preview.jsonc
+
+      - name: Smoke isolated preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 6); do
+            code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/lab2-health.json -w '%{http_code}' "$LAB2_PREVIEW_URL/health?sha=$GITHUB_SHA-$i" || true)
+            if [ "$code" = "200" ] && grep -Fq '"app":"4b4c2-idea-lab-preview"' /tmp/lab2-health.json; then break; fi
+            sleep 3
+          done
+          cat /tmp/lab2-health.json
+          grep -Fq '"isolated":true' /tmp/lab2-health.json
+          grep -Fq '"production_business_api_exposed":false' /tmp/lab2-health.json
+          grep -Fq '"database_write_surface":false' /tmp/lab2-health.json
+          grep -Fq '"browser_render_configured":true' /tmp/lab2-health.json
+          grep -Fq '"adaptive_feasibility_enabled":true' /tmp/lab2-health.json
+          grep -Fq '"presentation_planner_enabled":true' /tmp/lab2-health.json
+          curl -L -fsS "$LAB2_PREVIEW_URL/lab2/login.html?sha=$GITHUB_SHA" | grep -Fq 'Tester l’Atelier Idée'
+          code=$(curl -sS -o /tmp/blocked.out -w '%{http_code}' "$LAB2_PREVIEW_URL/index.html" || true)
+          test "$code" = "404"
+
+      - name: Real sparse service E2E
+        if: ${{ env.LAB2_E2E_BEARER_TOKEN != '' }}
+        env:
+          LAB2_E2E_SUMMARY_PATH: lab2-real-e2e-summary.json
+        run: node scripts/run_lab2_real_e2e_v1.mjs
+
+      - name: Report missing private E2E token
+        if: ${{ env.LAB2_E2E_BEARER_TOKEN == '' }}
+        run: echo 'LAB2_REAL_E2E_SKIPPED private bearer token not configured'

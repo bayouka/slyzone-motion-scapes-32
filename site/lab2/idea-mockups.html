@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4b4c2 — Maquettes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./idea-mockups.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><div class="eyebrow">4b4c2 · LAB isolé · Slice 8</div><h1>Voir concrètement à quoi le site pourrait ressembler</h1><p>Les maquettes sont rendues en HTML/CSS par 4b4c2. L’IA ne produit que la structure et le contenu des blocs autorisés.</p></div>
+      <a class="ghost" href="./idea-design.html">← Revenir à la direction visuelle</a>
+    </header>
+
+    <section class="panel" id="blockedPanel" hidden>
+      <h2>Choisis d’abord une direction visuelle</h2><p>Le moteur de maquettes a besoin de la Version 1, du sitemap gardé et de la direction choisie.</p><a class="primary-link" href="./idea-design.html">Choisir une direction</a>
+    </section>
+
+    <section id="mockupFlow">
+      <section class="panel action-panel">
+        <div><span class="kicker">1 appel IA maximum</span><h2 id="ideaName">Maquettes principales</h2><p id="ideaSummary"></p></div>
+        <div class="action-side"><div class="device-toggle" role="group" aria-label="Taille de prévisualisation"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div><button class="primary" id="generateButton" type="button">Générer les maquettes</button></div>
+      </section>
+      <div class="info-strip"><strong>Limite volontaire :</strong> jusqu’à 6 pages essentielles par génération. Les autres restent visibles dans le sitemap et pourront être ajoutées ultérieurement.</div>
+      <div class="loading" id="loadingBox" hidden><strong>Construction des spécifications…</strong><span>Aucune image IA, aucun code généré. Les blocs sont rendus ensuite par le moteur local.</span></div>
+      <div class="error" id="errorBox" hidden></div>
+
+      <section id="results" hidden>
+        <div class="section-head"><div><span class="kicker">Pages rendues</span><h2>Maquettes principales</h2></div><div class="page-tabs" id="pageTabs"></div></div>
+        <div id="mockupStage"></div>
+        <section class="panel omitted-panel" id="omittedPanel" hidden><span class="kicker">Pages non maquettées dans ce premier lot</span><div id="omittedList"></div></section>
+        <section class="next-card"><div><span class="kicker">Étape suivante</span><h2>Transformer tout cela en présentation</h2><p>La présentation Web/PDF réutilise directement le brief, le sitemap, la DA et les maquettes sans nouvel appel IA.</p></div><a class="next-badge" href="./idea-presentation.html">Ouvrir la présentation →</a></section>
+      </section>
+    </section>
+  </main>
+  <script src="./runtime-config.js"></script>
+  <script src="./lab2-auth.js" defer></script>
+  <script src="./idea-mockups.js" defer></script>
+</body>
+</html>

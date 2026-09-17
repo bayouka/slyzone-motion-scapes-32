@@ -1,0 +1,92 @@
+name: Lab2 isolated checks
+
+on:
+  push:
+    branches:
+      - feature/4b4c2-idea-lab
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/lab2-*.js'
+      - 'site/lab2/**'
+      - 'scripts/test_lab2_*.mjs'
+      - 'scripts/lab2-live-e2e.mjs'
+      - 'scripts/lab2-isolation-check.mjs'
+      - 'package.json'
+      - '.github/workflows/lab2-check.yml'
+      - '.github/workflows/lab2-live-e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lab2-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        run: |
+          node --check site/lab2/lab2-auth.js
+          node --check site/lab2/login.js
+          node --check site/lab2/project-state.js
+          node --check site/lab2/idea-studio.js
+          node --check site/lab2/idea-studio-state-bridge.js
+          node --check site/lab2/idea-studio-ux-v4.js
+          node --check site/lab2/idea-research.js
+          node --check site/lab2/idea-research-polish.js
+          node --check site/lab2/idea-improvements.js
+          node --check site/lab2/idea-brief.js
+          node --check site/lab2/idea-feasibility.js
+          node --check site/lab2/idea-structure.js
+          node --check site/lab2/idea-design.js
+          node --check site/lab2/idea-mockups.js
+          node --check site/lab2/lab2-mockup-renderer.js
+          node --check site/lab2/idea-presentation-planner.js
+          node --check site/lab2/idea-presentation.js
+          node --check site/lab2/idea-pptx.js
+          node --check src/lab2-ai-compat.js
+          node --check src/lab2-ai-json.js
+          node --check src/lab2-idea-understanding.js
+          node --check src/lab2-public-fetch-fallback.js
+          node --check src/lab2-web-provider.js
+          node --check src/lab2-idea-research.js
+          node --check src/lab2-idea-improvements.js
+          node --check src/lab2-idea-brief.js
+          node --check src/lab2-idea-feasibility.js
+          node --check src/lab2-idea-structure.js
+          node --check src/lab2-idea-design.js
+          node --check src/lab2-idea-mockups.js
+          node --check src/lab2-presentation-plan.js
+          node --check src/worker-entry.js
+          node --check scripts/lab2-live-e2e.mjs
+          for file in scripts/test_lab2_*.mjs scripts/lab2-isolation-check.mjs; do node --check "$file"; done
+      - name: Zero-credit contract tests
+        run: |
+          node scripts/test_lab2_ai_compat_v1.mjs
+          node scripts/test_lab2_ai_json_v2.mjs
+          node scripts/test_lab2_web_provider_v2.mjs
+          node scripts/test_lab2_public_fetch_fallback_v1.mjs
+          node scripts/test_lab2_project_state_v1.mjs
+          node scripts/test_lab2_understanding_v1.mjs
+          node scripts/test_lab2_research_profiles_v1.mjs
+          node scripts/test_lab2_research_v1.mjs
+          node scripts/test_lab2_improvements_v1.mjs
+          node scripts/test_lab2_brief_v1.mjs
+          node scripts/test_lab2_feasibility_v1.mjs
+          node scripts/test_lab2_structure_v1.mjs
+          node scripts/test_lab2_sparse_cross_archetypes_v1.mjs
+          node scripts/test_lab2_design_v1.mjs
+          node scripts/test_lab2_mockups_v1.mjs
+          node scripts/test_lab2_presentation_plan_v1.mjs
+          node scripts/test_lab2_presentation_v1.mjs
+          node scripts/test_lab2_flow_shell_v1.mjs
+          node scripts/test_lab2_worker_routes_v1.mjs
+      - name: Isolation boundary
+        run: node scripts/lab2-isolation-check.mjs
