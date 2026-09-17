@@ -7,6 +7,7 @@ on:
     paths:
       - 'src/lab2-*.js'
       - 'site/lab2/**'
+      - 'scripts/test_lab2_*.mjs'
       - '.github/workflows/lab2-preview.yml'
   workflow_dispatch:
 
@@ -46,6 +47,7 @@ jobs:
         run: |
           node --check src/lab2-preview-worker.js
           node --check site/lab2/login.js
+          node --check site/lab2/idea-research-polish.js
           node scripts/test_lab2_understanding_v1.mjs
           node scripts/test_lab2_research_v1.mjs
           node scripts/test_lab2_improvements_v1.mjs
@@ -54,6 +56,7 @@ jobs:
           node scripts/test_lab2_design_v1.mjs
           node scripts/test_lab2_mockups_v1.mjs
           node scripts/test_lab2_presentation_v1.mjs
+          node scripts/test_lab2_flow_shell_v1.mjs
           node scripts/lab2-isolation-check.mjs
 
       - name: Build auth-only runtime config
