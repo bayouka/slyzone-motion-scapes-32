@@ -9,6 +9,7 @@ function normalizeUrl(value){
   if(!/^https?:\/\//i.test(raw))raw=`https://${raw}`;
   try{const url=new URL(raw);if(!['http:','https:'].includes(url.protocol))return '';url.hash='';return url.toString().slice(0,1000)}catch{return ''}
 }
+function tavilyKey(env){return String(env?.LAB2_TAVILY_API_KEY||env?.TAVILY_API_KEY||'').trim()}
 
 async function braveSearch(env,query){
   if(!env?.LAB2_BRAVE_SEARCH_API_KEY)return {ok:false,provider:'BRAVE',error:'SEARCH_UNCONFIGURED',results:[]};
@@ -24,41 +25,60 @@ async function braveSearch(env,query){
 }
 
 async function tavilySearch(query,apiKey=''){
-  const headers={'content-type':'application/json','accept':'application/json'};
-  if(apiKey)headers.authorization=`Bearer ${apiKey}`;
+  if(!apiKey)return {ok:false,provider:'TAVILY',error:'SEARCH_UNCONFIGURED',results:[]};
+  const headers={'content-type':'application/json','accept':'application/json',authorization:`Bearer ${apiKey}`};
   let response;
   try{
     response=await fetch(TAVILY_SEARCH_URL,{method:'POST',headers,body:JSON.stringify({query:cleanText(query,1200),topic:'general',search_depth:'basic',max_results:MAX_RESULTS,include_answer:false,include_raw_content:false,include_images:false,include_usage:true})});
-  }catch{return {ok:false,provider:apiKey?'TAVILY':'TAVILY_KEYLESS',error:'SEARCH_NETWORK_ERROR',results:[]}}
-  if(!response.ok)return {ok:false,provider:apiKey?'TAVILY':'TAVILY_KEYLESS',error:response.status===429?'SEARCH_QUOTA':'SEARCH_ERROR',results:[]};
+  }catch{return {ok:false,provider:'TAVILY',error:'SEARCH_NETWORK_ERROR',results:[]}}
+  if(!response.ok)return {ok:false,provider:'TAVILY',error:response.status===429?'SEARCH_QUOTA':'SEARCH_ERROR',results:[]};
   const payload=await response.json().catch(()=>null);
   const results=safeArray(payload?.results).slice(0,MAX_RESULTS).map(item=>({title:cleanText(item?.title,220),url:normalizeUrl(item?.url),description:cleanText(item?.content,700)})).filter(item=>item.url);
-  return {ok:true,provider:apiKey?'TAVILY':'TAVILY_KEYLESS',error:null,results,provider_usage:payload?.usage||null};
+  return {ok:true,provider:'TAVILY',error:null,results,provider_usage:payload?.usage||null};
 }
 
 export async function searchLab2Web(env,query){
   const brave=await braveSearch(env,query);
   if(brave.ok&&brave.results.length)return brave;
-  const tavily=await tavilySearch(query,String(env?.LAB2_TAVILY_API_KEY||env?.TAVILY_API_KEY||'').trim());
+  const tavily=await tavilySearch(query,tavilyKey(env));
   if(tavily.ok)return tavily;
-  return brave.error!=='SEARCH_UNCONFIGURED'?brave:tavily;
+  if(brave.error!=='SEARCH_UNCONFIGURED')return brave;
+  if(tavily.error!=='SEARCH_UNCONFIGURED')return tavily;
+  return {ok:false,provider:'NONE',error:'SEARCH_UNCONFIGURED',results:[]};
+}
+
+async function browserMarkdown(target,env){
+  if(!env?.BROWSER?.quickAction)return {ok:false,provider:'BROWSER_MARKDOWN',error:'BROWSER_UNCONFIGURED',text:''};
+  try{
+    const raw=await env.BROWSER.quickAction('markdown',{url:target});
+    let payload=raw;
+    if(raw instanceof Response){
+      const contentType=String(raw.headers.get('content-type')||'');
+      payload=contentType.includes('application/json')?await raw.json().catch(()=>null):await raw.text().catch(()=>null);
+    }
+    const text=String(typeof payload==='string'?payload:(payload?.result??payload?.markdown??payload?.content??'')).trim();
+    if(!text)return {ok:false,provider:'BROWSER_MARKDOWN',error:'BROWSER_EMPTY',text:''};
+    return {ok:true,provider:'BROWSER_MARKDOWN',error:null,url:target,text};
+  }catch{return {ok:false,provider:'BROWSER_MARKDOWN',error:'BROWSER_ERROR',text:''}}
 }
 
 export async function extractLab2Web(url,env={}){
-  const target=normalizeUrl(url);if(!target)return {ok:false,provider:'TAVILY_EXTRACT',error:'EXTRACT_URL_INVALID',text:''};
-  const apiKey=String(env?.LAB2_TAVILY_API_KEY||env?.TAVILY_API_KEY||'').trim();
-  const headers={'content-type':'application/json','accept':'application/json'};
-  if(apiKey)headers.authorization=`Bearer ${apiKey}`;
+  const target=normalizeUrl(url);if(!target)return {ok:false,provider:'NONE',error:'EXTRACT_URL_INVALID',text:''};
+  const browser=await browserMarkdown(target,env);
+  if(browser.ok)return browser;
+  const apiKey=tavilyKey(env);
+  if(!apiKey)return {ok:false,provider:'NONE',error:browser.error==='BROWSER_UNCONFIGURED'?'EXTRACT_UNCONFIGURED':browser.error,text:''};
+  const headers={'content-type':'application/json','accept':'application/json',authorization:`Bearer ${apiKey}`};
   let response;
   try{
     response=await fetch(TAVILY_EXTRACT_URL,{method:'POST',headers,body:JSON.stringify({urls:[target],extract_depth:'basic',include_images:false,include_usage:true})});
-  }catch{return {ok:false,provider:apiKey?'TAVILY_EXTRACT':'TAVILY_EXTRACT_KEYLESS',error:'EXTRACT_NETWORK_ERROR',text:''}}
-  if(!response.ok)return {ok:false,provider:apiKey?'TAVILY_EXTRACT':'TAVILY_EXTRACT_KEYLESS',error:response.status===429?'EXTRACT_QUOTA':'EXTRACT_ERROR',text:''};
+  }catch{return {ok:false,provider:'TAVILY_EXTRACT',error:'EXTRACT_NETWORK_ERROR',text:''}}
+  if(!response.ok)return {ok:false,provider:'TAVILY_EXTRACT',error:response.status===429?'EXTRACT_QUOTA':'EXTRACT_ERROR',text:''};
   const payload=await response.json().catch(()=>null);
   const first=safeArray(payload?.results)[0];
   const text=String(first?.raw_content||first?.content||'').trim();
-  if(!text)return {ok:false,provider:apiKey?'TAVILY_EXTRACT':'TAVILY_EXTRACT_KEYLESS',error:'EXTRACT_EMPTY',text:''};
-  return {ok:true,provider:apiKey?'TAVILY_EXTRACT':'TAVILY_EXTRACT_KEYLESS',error:null,url:normalizeUrl(first?.url)||target,text,provider_usage:payload?.usage||null};
+  if(!text)return {ok:false,provider:'TAVILY_EXTRACT',error:'EXTRACT_EMPTY',text:''};
+  return {ok:true,provider:'TAVILY_EXTRACT',error:null,url:normalizeUrl(first?.url)||target,text,provider_usage:payload?.usage||null};
 }
 
-export const LAB2_WEB_PROVIDER_LIMITS=Object.freeze({max_results:MAX_RESULTS,search_order:['BRAVE','TAVILY','TAVILY_KEYLESS'],extract_fallback:'TAVILY_EXTRACT'});
+export const LAB2_WEB_PROVIDER_LIMITS=Object.freeze({max_results:MAX_RESULTS,search_order:['BRAVE','TAVILY'],extract_fallback_order:['BROWSER_MARKDOWN','TAVILY_EXTRACT']});
