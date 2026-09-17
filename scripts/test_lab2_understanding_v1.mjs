@@ -1,8 +1,11 @@
 import fs from 'node:fs/promises';
 
-const source=await fs.readFile(new URL('../src/lab2-idea-understanding.js',import.meta.url),'utf8');
-const moduleUrl=`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
-const {handleLab2IdeaUnderstanding}=await import(moduleUrl);
+const source=await fs.readFile(new URL('../src/lab2-idea-understanding-compat.js',import.meta.url),'utf8');
+const baseSource=await fs.readFile(new URL('../src/lab2-idea-understanding.js',import.meta.url),'utf8');
+const baseUrl=`data:text/javascript;base64,${Buffer.from(baseSource).toString('base64')}`;
+const rewritten=source.replace("'./lab2-idea-understanding.js'",JSON.stringify(baseUrl));
+const moduleUrl=`data:text/javascript;base64,${Buffer.from(rewritten).toString('base64')}`;
+const {handleLab2IdeaUnderstanding,normalizeLab2AiResponse}=await import(moduleUrl);
 
 const originalFetch=globalThis.fetch;
 globalThis.fetch=async(url,options={})=>{
@@ -15,23 +18,37 @@ globalThis.fetch=async(url,options={})=>{
   throw new Error('unexpected fetch');
 };
 
+const structuredUnderstanding={
+  one_liner:'Un site qui aide un acheteur à faire vérifier un véhicule éloigné avant de se déplacer.',
+  problem:'Éviter un déplacement inutile pour un véhicule qui ne correspond pas aux attentes.',
+  target_users:[{label:'Acheteurs de véhicules à distance',basis:'EXPLICIT'}],
+  main_flow:[
+    {step:'L’acheteur repère un véhicule éloigné.',basis:'EXPLICIT'},
+    {step:'Il demande à une personne de proximité de le vérifier.',basis:'EXPLICIT'}
+  ],
+  explicit_points:['Le véhicule peut être loin de l’acheteur.'],
+  uncertainties:['Le niveau exact de vérification attendu n’est pas précisé.'],
+  needs_clarification:true,
+  clarifying_question:'La personne doit-elle seulement prendre des photos ou aussi évaluer l’état du véhicule ?',
+  confidence:'MEDIUM'
+};
+
 const aiPayload={
-  response:{
-    one_liner:'Un site qui aide un acheteur à faire vérifier un véhicule éloigné avant de se déplacer.',
-    problem:'Éviter un déplacement inutile pour un véhicule qui ne correspond pas aux attentes.',
-    target_users:[{label:'Acheteurs de véhicules à distance',basis:'EXPLICIT'}],
-    main_flow:[
-      {step:'L’acheteur repère un véhicule éloigné.',basis:'EXPLICIT'},
-      {step:'Il demande à une personne de proximité de le vérifier.',basis:'EXPLICIT'}
-    ],
-    explicit_points:['Le véhicule peut être loin de l’acheteur.'],
-    uncertainties:['Le niveau exact de vérification attendu n’est pas précisé.'],
-    needs_clarification:true,
-    clarifying_question:'La personne doit-elle seulement prendre des photos ou aussi évaluer l’état du véhicule ?',
-    confidence:'MEDIUM'
-  },
+  id:'chatcmpl-lab2-fixture',
+  object:'chat.completion',
+  model:'@cf/google/gemma-4-26b-a4b-it',
+  choices:[{
+    index:0,
+    message:{role:'assistant',content:JSON.stringify(structuredUnderstanding),refusal:null},
+    finish_reason:'stop'
+  }],
   usage:{prompt_tokens:1200,completion_tokens:320,total_tokens:1520}
 };
+
+const normalizedFixture=normalizeLab2AiResponse(aiPayload);
+if(normalizedFixture?.response?.one_liner!==structuredUnderstanding.one_liner)throw new Error('LAB2_CHAT_COMPLETIONS_ADAPTER_FAILED');
+const legacyFixture=normalizeLab2AiResponse({response:structuredUnderstanding,usage:{prompt_tokens:1,completion_tokens:1}});
+if(legacyFixture?.response!==structuredUnderstanding)throw new Error('LAB2_LEGACY_RESPONSE_COMPAT_FAILED');
 
 const env={
   LAB2_IDEA_STUDIO_ENABLED:'true',
@@ -76,4 +93,4 @@ const cappedPayload=await capped.json();
 if(cappedPayload.understanding?.needs_clarification!==false)throw new Error('LAB2_CLARIFICATION_CAP_FAILED');
 
 globalThis.fetch=originalFetch;
-console.log(`lab2-understanding-v2: ok (${ok.usage.estimated_neurons} estimated neurons for fixture)`);
+console.log(`lab2-understanding-v2: ok (${ok.usage.estimated_neurons} estimated neurons for fixture; chat-completions adapter verified)`);
