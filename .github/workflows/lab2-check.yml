@@ -39,6 +39,7 @@ jobs:
           node --check site/lab2/idea-research-polish.js
           node --check site/lab2/idea-improvements.js
           node --check site/lab2/idea-brief.js
+          node --check site/lab2/idea-feasibility.js
           node --check site/lab2/idea-structure.js
           node --check site/lab2/idea-design.js
           node --check site/lab2/idea-mockups.js
@@ -53,6 +54,7 @@ jobs:
           node --check src/lab2-idea-research.js
           node --check src/lab2-idea-improvements.js
           node --check src/lab2-idea-brief.js
+          node --check src/lab2-idea-feasibility.js
           node --check src/lab2-idea-structure.js
           node --check src/lab2-idea-design.js
           node --check src/lab2-idea-mockups.js
@@ -67,11 +69,13 @@ jobs:
           node scripts/test_lab2_research_v1.mjs
           node scripts/test_lab2_improvements_v1.mjs
           node scripts/test_lab2_brief_v1.mjs
+          node scripts/test_lab2_feasibility_v1.mjs
           node scripts/test_lab2_structure_v1.mjs
           node scripts/test_lab2_design_v1.mjs
           node scripts/test_lab2_mockups_v1.mjs
           node scripts/test_lab2_presentation_plan_v1.mjs
           node scripts/test_lab2_presentation_v1.mjs
           node scripts/test_lab2_flow_shell_v1.mjs
+          node scripts/test_lab2_worker_routes_v1.mjs
       - name: Isolation boundary
         run: node scripts/lab2-isolation-check.mjs
