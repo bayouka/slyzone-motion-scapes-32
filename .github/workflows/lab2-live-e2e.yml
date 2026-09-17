@@ -43,25 +43,38 @@ jobs:
           esac
           echo "LAB2_E2E_ARCHETYPE=$archetype" >> "$GITHUB_ENV"
 
-      - name: Verify private E2E credential is configured
+      - name: Check private E2E credential
+        id: credential
         shell: bash
         run: |
-          set -euo pipefail
-          test -n "$LAB2_E2E_BEARER_TOKEN"
+          if [ -n "$LAB2_E2E_BEARER_TOKEN" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Syntax check live harness
         run: node --check scripts/lab2-live-e2e.mjs
 
       - name: Run one bounded live pipeline
+        if: steps.credential.outputs.configured == 'true'
         run: node scripts/lab2-live-e2e.mjs
 
       - name: Write sanitized run summary
         if: always()
         shell: bash
+        env:
+          E2E_CREDENTIAL_CONFIGURED: ${{ steps.credential.outputs.configured }}
         run: |
+          if [ "$E2E_CREDENTIAL_CONFIGURED" != 'true' ]; then
+            echo '### 4b4c2 live E2E' >> "$GITHUB_STEP_SUMMARY"
+            echo '- Status: **BLOCKED_CREDENTIAL**' >> "$GITHUB_STEP_SUMMARY"
+            echo '- `LAB2_E2E_BEARER_TOKEN` is not configured; no live AI/search endpoint was called.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           if [ ! -s "$LAB2_E2E_REPORT_PATH" ]; then
             echo '### 4b4c2 live E2E' >> "$GITHUB_STEP_SUMMARY"
-            echo 'No report was produced.' >> "$GITHUB_STEP_SUMMARY"
+            echo '- Status: **ERROR_NO_REPORT**' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           node <<'NODE' >> "$GITHUB_STEP_SUMMARY"
