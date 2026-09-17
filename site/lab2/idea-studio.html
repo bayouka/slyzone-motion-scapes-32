@@ -111,10 +111,10 @@
           <article class="understanding-block"><span class="section-kicker">Le problème compris</span><p id="aiProblem"></p></article>
           <article class="understanding-block"><span class="section-kicker">Pour qui</span><div id="aiTargetUsers" class="evidence-list"></div></article>
         </div>
-        <article class="understanding-block"><span class="section-kicker">Comment le site fonctionnerait</span><ol id="aiMainFlow" class="flow-list"></ol></article>
+        <article class="understanding-block"><span class="section-kicker">Comment le projet fonctionnerait</span><ol id="aiMainFlow" class="flow-list"></ol></article>
         <div class="understanding-grid two">
           <article class="understanding-block"><span class="section-kicker">Ce que tu as clairement exprimé</span><ul id="aiExplicitPoints" class="plain-list"></ul></article>
-          <article class="understanding-block"><span class="section-kicker">Ce qui reste incertain</span><ul id="aiUncertainties" class="plain-list"></ul></article>
+          <article class="understanding-block"><span class="section-kicker">Ce qui reste à décider plus tard</span><ul id="aiUncertainties" class="plain-list"></ul></article>
         </div>
         <div class="understanding-grid two">
           <article class="understanding-block" id="referenceSummaryMirror"><span class="section-kicker">Références données</span><div id="referenceSummaryMirrorBody"></div></article>
@@ -122,8 +122,8 @@
         </div>
 
         <div class="clarification-box" id="clarificationBox" hidden>
-          <span class="section-kicker">Une précision suffit</span>
-          <h3>Une information manque pour être sûr de bien comprendre</h3>
+          <span class="section-kicker">Une précision vraiment utile</span>
+          <h3>Cette réponse peut changer la compréhension du projet</h3>
           <p id="clarificationQuestion"></p>
           <label for="clarificationAnswer">Ta réponse</label>
           <textarea id="clarificationAnswer" maxlength="1200" rows="3" placeholder="Réponds simplement avec tes mots."></textarea>
@@ -131,15 +131,14 @@
         </div>
 
         <div class="confirm-box">
-          <div><span class="section-kicker">À toi de confirmer</span><h3>Est-ce bien ton idée ?</h3><p>Tu valides seulement la compréhension. Les améliorations, concurrents, fonctionnalités et sitemap viendront ensuite et resteront soumis à ton accord.</p></div>
+          <div><span class="section-kicker">À toi de confirmer</span><h3>Est-ce bien ton idée ?</h3><p>Tu valides seulement la compréhension. Les améliorations, recherches, fonctionnalités et structure viendront ensuite et resteront soumis à ton accord.</p></div>
           <div class="confirm-actions"><button type="button" class="secondary-button" id="backToCapture">← Corriger mon explication</button><button class="primary-button" type="button" id="confirmUnderstanding" disabled>Oui, c'est bien ça</button></div>
         </div>
 
         <div class="future-preview" id="futurePreview" hidden>
           <span class="section-kicker">Compréhension confirmée</span>
           <h3>On peut maintenant confronter l'idée à ce qui existe</h3>
-          <p>Les références et concurrents seront analysés séparément en distinguant ce qui est observé, déduit ou non vérifié.</p>
-          <a class="primary-button next-step-link" href="./idea-research.html">Continuer vers les références et concurrents →</a>
+          <p>Les références et solutions proches seront analysées séparément en distinguant ce qui est observé, déduit ou non vérifié.</p>
         </div>
       </section>
     </section>
@@ -171,6 +170,7 @@
   <script src="./runtime-config.js"></script>
   <script src="./lab2-auth.js" defer></script>
   <script src="./project-state.js" defer></script>
+  <script src="./idea-studio-state-bridge.js" defer></script>
   <script src="./idea-studio.js" defer></script>
   <script src="./idea-studio-ux.js" defer></script>
 </body>
