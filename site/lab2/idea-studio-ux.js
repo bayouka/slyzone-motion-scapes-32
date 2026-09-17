@@ -55,7 +55,12 @@
       const parts = [];
       if (interests.length) parts.push(interests.join(' · '));
       if (note) parts.push(note);
-      detail.textContent = parts.join(' — ') || 'Référence ajoutée sans précision particulière';
+      const nextText = parts.join(' — ') || 'Référence ajoutée sans précision particulière';
+      // Important: assigning textContent always mutates the DOM, even if the visible
+      // value is unchanged. Because this function is called by a MutationObserver on
+      // referenceSummary, an unconditional assignment creates an infinite observer loop
+      // exactly when the step-1 submit renders the reference summary.
+      if (detail.textContent !== nextText) detail.textContent = nextText;
     });
   };
 
