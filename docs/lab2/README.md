@@ -84,15 +84,13 @@ Contract tests cover understanding, adaptive research profiles, research, improv
 
 Manual live E2E harness: `scripts/lab2-live-e2e.mjs`.
 
-Manual workflow: `.github/workflows/lab2-live-e2e.yml`.
+Branch-isolated live workflow: `.github/workflows/lab2-live-e2e.yml`.
 
-The live workflow is intentionally never triggered on push or pull request. It requires:
-- an explicit `workflow_dispatch` run;
-- one selected archetype (`service`, `saas` or `marketplace`);
-- explicit confirmation that live Workers AI/search calls will occur;
-- a private GitHub Actions secret `LAB2_E2E_BEARER_TOKEN` containing the Supabase session token of an already allowlisted test account.
+Because this Lab workflow must remain outside `main`, live runs are not based on `workflow_dispatch`. They are deliberately triggered only by a commit that changes `.lab2/e2e-trigger.txt` on `feature/4b4c2-idea-lab`. The trigger file declares exactly one archetype: `service`, `saas` or `marketplace`. Ordinary Lab commits do not launch the live E2E workflow.
 
-Each live run is bounded to one archetype, performs no automatic retry, never prints the bearer token, and produces a seven-day JSON artifact containing stage status, reported token usage and sanitized project-quality summaries. Human review and design selection inside this automation are labelled synthetic E2E fixtures; they are not presented as real user choices.
+A real live run additionally requires the private GitHub Actions secret `LAB2_E2E_BEARER_TOKEN`, containing the Supabase session token of an already allowlisted test account. If this secret is absent, the workflow reports `BLOCKED_CREDENTIAL` and skips the live pipeline without calling Workers AI or search endpoints.
+
+Each credentialed live run is bounded to one archetype, performs no automatic retry, never prints the bearer token, and produces a seven-day JSON artifact containing stage status, reported token usage and sanitized project-quality summaries. Human review and design selection inside this automation are labelled synthetic E2E fixtures; they are not presented as real user choices.
 
 The preview deployment workflow validates Lab contracts before deployment, uploads Lab-only assets, deploys a distinct Cloudflare Worker and smoke-tests the isolation contract.
 
@@ -102,7 +100,7 @@ The preview deployment workflow validates Lab contracts before deployment, uploa
 - no production navigation entry;
 - no connection to canonical 4b4c Ideas/Project Definition;
 - no collaboration/project workspace integration;
-- no claim that live multi-archetype E2E quality is validated until the three manual authenticated runs have actually completed and their reports have been reviewed;
+- no claim that live multi-archetype E2E quality is validated until the three authenticated runs have actually completed and their reports have been reviewed;
 - no automatic live E2E execution or automatic paid/capacity retry.
 
 ## Source of truth
