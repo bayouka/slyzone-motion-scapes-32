@@ -5,6 +5,7 @@
   const cfg = window.__4B4C2_PREVIEW_CONFIG__ || {};
   const nativeFetch = window.fetch.bind(window);
   let refreshPromise = null;
+  let redirecting = false;
 
   const parse = (value) => {
     try { return JSON.parse(value); }
@@ -21,6 +22,18 @@
   };
 
   const configured = () => Boolean(cfg.supabaseUrl && cfg.supabasePublishableKey);
+
+  const safeReturnTarget = () => {
+    const path = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    return path.startsWith('/lab2/') && !path.includes('/login.html') ? path : '/lab2/idea-studio.html';
+  };
+
+  const goToLogin = () => {
+    if (redirecting || window.location.pathname.endsWith('/login.html')) return;
+    redirecting = true;
+    const next = encodeURIComponent(safeReturnTarget());
+    window.location.assign(`/lab2/login.html?next=${next}`);
+  };
 
   const refreshSession = async () => {
     if (refreshPromise) return refreshPromise;
@@ -75,7 +88,8 @@
   window.Lab2Auth = Object.freeze({
     getSession: readSession,
     getAccessToken: () => String(readSession()?.access_token || '').trim(),
-    refreshSession
+    refreshSession,
+    goToLogin
   });
 
   window.fetch = async (input, init = {}) => {
@@ -85,13 +99,18 @@
     if (firstResponse.status !== 401) return firstResponse;
 
     const refreshed = await refreshSession();
-    if (!refreshed?.access_token) return firstResponse;
+    if (!refreshed?.access_token) {
+      goToLogin();
+      return firstResponse;
+    }
 
     const headers = new Headers(
       init.headers || (typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined)
     );
     headers.set('authorization', `Bearer ${refreshed.access_token}`);
 
-    return nativeFetch(input, { ...init, headers });
+    const retried = await nativeFetch(input, { ...init, headers });
+    if (retried.status === 401) goToLogin();
+    return retried;
   };
 })();
