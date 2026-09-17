@@ -8,6 +8,7 @@ on:
       - 'src/lab2-*.js'
       - 'site/lab2/**'
       - 'scripts/test_lab2_*.mjs'
+      - 'scripts/run_lab2_real_e2e_v1.mjs'
       - 'scripts/lab2-isolation-check.mjs'
       - '.github/workflows/lab2-preview.yml'
   workflow_dispatch:
@@ -29,6 +30,7 @@ jobs:
       LAB2_ALLOWED_USER_IDS: ${{ secrets.LAB2_ALLOWED_USER_IDS }}
       LAB2_BRAVE_SEARCH_API_KEY: ${{ secrets.LAB2_BRAVE_SEARCH_API_KEY }}
       LAB2_TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+      LAB2_E2E_BEARER_TOKEN: ${{ secrets.LAB2_E2E_BEARER_TOKEN }}
       LAB2_PREVIEW_URL: https://4b4c2-idea-lab-preview.bayoukadesbois.workers.dev
       LAB2_SUPABASE_URL: https://wexfzhegiewhldkugtow.supabase.co
       LAB2_SUPABASE_PUBLISHABLE_KEY: sb_publishable_2XSXM2rNYsPQqJ0TzsOSgg_YDkNZwcM
@@ -55,6 +57,7 @@ jobs:
           node --check site/lab2/login.js
           node --check site/lab2/project-state.js
           node --check site/lab2/idea-research-polish.js
+          node --check scripts/run_lab2_real_e2e_v1.mjs
           for file in scripts/test_lab2_*.mjs scripts/lab2-isolation-check.mjs; do node --check "$file"; done
           node scripts/test_lab2_ai_compat_v1.mjs
           node scripts/test_lab2_public_fetch_fallback_v1.mjs
@@ -175,3 +178,13 @@ jobs:
           curl -L -fsS "$LAB2_PREVIEW_URL/lab2/login.html?sha=$GITHUB_SHA" | grep -Fq 'Tester l’Atelier Idée'
           code=$(curl -sS -o /tmp/blocked.out -w '%{http_code}' "$LAB2_PREVIEW_URL/index.html" || true)
           test "$code" = "404"
+
+      - name: Real sparse service E2E
+        if: ${{ env.LAB2_E2E_BEARER_TOKEN != '' }}
+        env:
+          LAB2_E2E_SUMMARY_PATH: lab2-real-e2e-summary.json
+        run: node scripts/run_lab2_real_e2e_v1.mjs
+
+      - name: Report missing private E2E token
+        if: ${{ env.LAB2_E2E_BEARER_TOKEN == '' }}
+        run: echo 'LAB2_REAL_E2E_SKIPPED private bearer token not configured'
