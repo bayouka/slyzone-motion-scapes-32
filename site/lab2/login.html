@@ -34,6 +34,12 @@
         <p>L’accès IA reste verrouillé tant que ce compte n’est pas ajouté à la liste privée du Lab. Copie ton identifiant technique puis colle-le toi-même dans le secret GitHub <code>LAB2_ALLOWED_USER_IDS</code>. Ne le publie pas dans une discussion.</p>
         <button class="secondary" id="copyUserIdButton" type="button">Copier mon identifiant technique</button>
         <span id="copyStatus" aria-live="polite"></span>
+
+        <div class="setup-divider" aria-hidden="true"></div>
+        <strong>Test E2E live temporaire</strong>
+        <p>Ce bouton renouvelle d’abord ta session puis copie uniquement son <strong>jeton d’accès court terme</strong>. Colle-le directement dans le secret GitHub <code>LAB2_E2E_BEARER_TOKEN</code>. Ne le colle jamais dans un chat, un fichier, une issue ou un commit. Le refresh token n’est jamais copié.</p>
+        <button class="secondary" id="copyE2eTokenButton" type="button">Copier un jeton E2E temporaire</button>
+        <span id="copyE2eStatus" aria-live="polite"></span>
       </section>
 
       <p class="error" id="errorBox" hidden></p>
