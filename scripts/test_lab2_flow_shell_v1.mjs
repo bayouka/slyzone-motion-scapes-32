@@ -3,6 +3,16 @@ import fs from 'node:fs';
 const read=(path)=>fs.readFileSync(path,'utf8');
 const assert=(condition,message)=>{if(!condition)throw new Error(message)};
 
+const loginHtml=read('site/lab2/login.html');
+const loginJs=read('site/lab2/login.js');
+assert(loginHtml.includes('copyE2eTokenButton'),'Login must expose the explicit temporary E2E token helper');
+assert(loginHtml.includes('LAB2_E2E_BEARER_TOKEN'),'Login must name the private GitHub E2E secret destination');
+assert(loginHtml.includes('Le refresh token n’est jamais copié.'),'Login must warn that the refresh token stays private');
+assert(loginJs.includes('window.Lab2Auth?.refreshSession?.()'),'E2E helper must refresh the session before copying a token');
+assert(loginJs.includes("const token=String(refreshed?.access_token||window.Lab2Auth?.getAccessToken?.()||'').trim();"),'E2E helper must select only the short-lived access token');
+assert(loginJs.includes('navigator.clipboard.writeText(token)'),'E2E helper must copy only the selected access-token variable');
+assert(!/clipboard\.writeText\([^)]*refresh_token/i.test(loginJs),'E2E helper must never copy a refresh token');
+
 const authenticatedPages=[
   ['site/lab2/idea-research.html','idea-research.js'],
   ['site/lab2/idea-improvements.html','idea-improvements.js'],
@@ -80,4 +90,4 @@ const projectState=read('site/lab2/project-state.js');
 assert(projectState.includes("'definition','feasibility','structure','design','mockups','presentation'"),'ProjectState must preserve definition → feasibility → structure → design → mockups → presentation ordering');
 assert(projectState.includes("feasibility:['structure','design','mockups','presentation']"),'Feasibility changes must invalidate every downstream experience artifact');
 
-console.log('lab2 flow shell checks: OK (canonical V4 → research V3 → improvements V3 → definition → feasibility V1 → structure V3 → design → mockups → presentation)');
+console.log('lab2 flow shell checks: OK (auth helper + canonical V4 → research V3 → improvements V3 → definition → feasibility V1 → structure V3 → design → mockups → presentation)');
