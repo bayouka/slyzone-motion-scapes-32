@@ -1,0 +1,88 @@
+name: Lab2 live E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      archetype:
+        description: Sparse idea archetype to test
+        required: true
+        type: choice
+        default: service
+        options:
+          - service
+          - saas
+          - marketplace
+      confirm_live_ai_calls:
+        description: I confirm this run will call live Workers AI/search endpoints
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab2-live-e2e-${{ inputs.archetype }}
+  cancel-in-progress: false
+
+jobs:
+  live-e2e:
+    if: ${{ inputs.confirm_live_ai_calls == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      LAB2_E2E_BASE_URL: https://4b4c2-idea-lab-preview.bayoukadesbois.workers.dev
+      LAB2_E2E_ARCHETYPE: ${{ inputs.archetype }}
+      LAB2_E2E_BEARER_TOKEN: ${{ secrets.LAB2_E2E_BEARER_TOKEN }}
+      LAB2_E2E_REPORT_PATH: lab2-live-e2e-report.json
+    steps:
+      - name: Checkout isolated Lab branch
+        uses: actions/checkout@v5
+
+      - name: Use Node 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Verify private E2E credential is configured
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$LAB2_E2E_BEARER_TOKEN"
+
+      - name: Syntax check live harness
+        run: node --check scripts/lab2-live-e2e.mjs
+
+      - name: Run one bounded live pipeline
+        run: node scripts/lab2-live-e2e.mjs
+
+      - name: Write sanitized run summary
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -s "$LAB2_E2E_REPORT_PATH" ]; then
+            echo '### 4b4c2 live E2E' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No report was produced.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          node <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs=require('node:fs');
+          const r=JSON.parse(fs.readFileSync(process.env.LAB2_E2E_REPORT_PATH,'utf8'));
+          const failed=(r.checks||[]).filter(x=>!x.pass);
+          console.log('### 4b4c2 live E2E');
+          console.log(`- Archetype: **${r.archetype}**`);
+          console.log(`- Status: **${r.status}**`);
+          console.log(`- HTTP stages: **${(r.stages||[]).length}**`);
+          console.log(`- Total model tokens reported: **${r.usage?.total_tokens||0}**`);
+          console.log(`- Failed quality checks: **${failed.length}**`);
+          if(r.error)console.log(`- Error: \`${String(r.error).slice(0,240)}\``);
+          NODE
+
+      - name: Upload sanitized E2E report
+        if: always() && hashFiles('lab2-live-e2e-report.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab2-live-e2e-${{ inputs.archetype }}-${{ github.run_id }}
+          path: lab2-live-e2e-report.json
+          retention-days: 7
+          if-no-files-found: error
