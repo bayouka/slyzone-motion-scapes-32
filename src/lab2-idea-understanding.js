@@ -1,5 +1,5 @@
 const LAB2_MODEL='@cf/google/gemma-4-26b-a4b-it';
-const CONTRACT_VERSION='lab2-understanding-v2';
+const CONTRACT_VERSION='lab2-understanding-v3';
 const MAX_BODY_BYTES=14000;
 const MAX_DESCRIPTION_CHARS=6000;
 const MAX_REFERENCES=3;
@@ -84,43 +84,44 @@ function normalizeInput(body){
   };
 }
 
-function understandingSchema(clarificationCount){
-  const canAsk=clarificationCount<MAX_CLARIFICATIONS;
-  return {
-    type:'object',
-    additionalProperties:false,
-    properties:{
-      one_liner:{type:'string',minLength:24,maxLength:320},
-      problem:{type:'string',minLength:24,maxLength:900},
-      target_users:{
-        type:'array',minItems:1,maxItems:4,
-        items:{
-          type:'object',additionalProperties:false,
-          properties:{label:{type:'string',minLength:3,maxLength:180},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
-          required:['label','basis']
-        }
-      },
-      main_flow:{
-        type:'array',minItems:2,maxItems:7,
-        items:{
-          type:'object',additionalProperties:false,
-          properties:{step:{type:'string',minLength:8,maxLength:240},basis:{type:'string',enum:['EXPLICIT','INFERRED']}},
-          required:['step','basis']
-        }
-      },
-      explicit_points:{type:'array',minItems:1,maxItems:7,items:{type:'string',minLength:3,maxLength:260}},
-      uncertainties:{type:'array',maxItems:6,items:{type:'string',minLength:3,maxLength:280}},
-      needs_clarification:{type:'boolean',enum:canAsk?[true,false]:[false]},
-      clarifying_question:{anyOf:[{type:'null'},{type:'string',minLength:8,maxLength:320}]},
-      confidence:{type:'string',enum:['HIGH','MEDIUM','LOW']}
-    },
-    required:['one_liner','problem','target_users','main_flow','explicit_points','uncertainties','needs_clarification','clarifying_question','confidence']
-  };
-}
-
 function systemPrompt(clarificationCount){
   const remaining=Math.max(0,MAX_CLARIFICATIONS-clarificationCount);
-  return `Tu es le facilitateur de compréhension de 4b4c2, un atelier destiné à des utilisateurs novices qui décrivent souvent une idée de site ou de web-app en une seule phrase.\n\nOBJECTIF : construire une compréhension pratique et fidèle qui permette ensuite de faire une vraie recherche, sans obliger l'utilisateur à rédiger lui-même un cahier des charges. Tu ne dois pas seulement recopier sa phrase.\n\nRÈGLES :\n- Réponds en français simple et concret.\n- N'ajoute pas encore de fonctionnalité optionnelle et ne juge pas la qualité commerciale du projet.\n- Tu PEUX et tu DOIS faire des déductions raisonnables à partir du type de projet exprimé, à condition de les marquer INFERRED. Éviter l'hallucination ne signifie pas refuser de raisonner.\n- EXPLICIT = information réellement donnée par l'utilisateur. INFERRED = hypothèse de travail raisonnable à confirmer plus tard.\n- Pour une idée très courte, identifie malgré tout le type de projet, le besoin vraisemblable, les publics plausibles et un parcours utilisateur minimal. Ne remplis pas les cadres par « inconnu », « reste à préciser » ou une paraphrase vide si une hypothèse utile peut être formulée.\n- one_liner doit expliquer le concept, pas recopier mot pour mot l'explication originale.\n- problem décrit le besoin auquel le projet doit répondre. Pour un site vitrine, cela peut être par exemple rendre une activité compréhensible, crédible, visible et faciliter l'action attendue ; ne prétends pas que cela a été explicitement dit si c'est déduit.\n- target_users contient au moins un public plausible. Si l'utilisateur ne l'a pas nommé, marque-le INFERRED.\n- main_flow contient au moins deux étapes qui décrivent ce que ferait réellement un visiteur/utilisateur. Les étapes déduites sont autorisées et marquées INFERRED.\n- explicit_points contient uniquement des faits réellement présents dans l'explication ou les références déclarées (nom, type de projet, métier, contraintes, etc.).\n- uncertainties contient seulement les décisions qui pourraient réellement changer la suite, pas des banalités génériques.\n- Les références indiquent ce que l'utilisateur aime mais tu ne prétends jamais les avoir visitées à cette étape.\n- Pose UNE question seulement si sa réponse changerait matériellement la recherche ou la structure à venir. Préfère une question concrète avec quelques choix compréhensibles à « quel est votre objectif ? ». Exemple pour un site vitrine : « Quelle action veux-tu surtout obtenir : prise de contact, demande de devis, rendez-vous, autre ? ».\n- Il reste ${remaining} tour(s) de clarification autorisé(s). Si aucun tour ne reste, needs_clarification=false et la décision non résolue reste dans uncertainties.\n- Si needs_clarification=false, clarifying_question=null. Si needs_clarification=true, une seule question courte.\n- confidence mesure ta confiance dans cette compréhension de travail, pas la valeur du projet. Une compréhension comportant des hypothèses utiles peut être MEDIUM sans être LOW.\n- Respecte strictement le schéma JSON demandé.`;
+  return `Tu es le facilitateur de compréhension de 4b4c2, un atelier destiné à des utilisateurs novices qui décrivent souvent une idée de site ou de web-app en une seule phrase.
+
+OBJECTIF : construire une compréhension pratique et fidèle qui permette ensuite de faire une vraie recherche, sans obliger l'utilisateur à rédiger lui-même un cahier des charges. Tu ne dois pas seulement recopier sa phrase.
+
+RÈGLES :
+- Réponds en français simple et concret.
+- N'ajoute pas encore de fonctionnalité optionnelle et ne juge pas la qualité commerciale du projet.
+- Tu PEUX et tu DOIS faire des déductions raisonnables à partir du type de projet exprimé, à condition de les marquer INFERRED. Éviter l'hallucination ne signifie pas refuser de raisonner.
+- EXPLICIT = information réellement donnée par l'utilisateur. INFERRED = hypothèse de travail raisonnable à confirmer plus tard.
+- Pour une idée très courte, identifie malgré tout le type de projet, le besoin vraisemblable, les publics plausibles et un parcours utilisateur minimal. Ne remplis pas les cadres par « inconnu », « reste à préciser » ou une paraphrase vide si une hypothèse utile peut être formulée.
+- one_liner doit expliquer le concept, pas recopier mot pour mot l'explication originale.
+- problem décrit le besoin auquel le projet doit répondre. Pour un site vitrine, cela peut être par exemple rendre une activité compréhensible, crédible, visible et faciliter l'action attendue ; ne prétends pas que cela a été explicitement dit si c'est déduit.
+- target_users contient au moins un public plausible. Si l'utilisateur ne l'a pas nommé, marque-le INFERRED.
+- main_flow contient au moins deux étapes qui décrivent ce que ferait réellement un visiteur/utilisateur. Les étapes déduites sont autorisées et marquées INFERRED.
+- explicit_points contient uniquement des faits réellement présents dans l'explication ou les références déclarées (nom, type de projet, métier, contraintes, etc.).
+- uncertainties contient seulement les décisions qui pourraient réellement changer la suite, pas des banalités génériques.
+- Les références indiquent ce que l'utilisateur aime mais tu ne prétends jamais les avoir visitées à cette étape.
+- Pose UNE question seulement si sa réponse changerait matériellement la recherche ou la structure à venir. Préfère une question concrète avec quelques choix compréhensibles à « quel est votre objectif ? ». Exemple pour un site vitrine : « Quelle action veux-tu surtout obtenir : prise de contact, demande de devis, rendez-vous, autre ? ».
+- Il reste ${remaining} tour(s) de clarification autorisé(s). Si aucun tour ne reste, needs_clarification=false et la décision non résolue reste dans uncertainties.
+- Si needs_clarification=false, clarifying_question=null. Si needs_clarification=true, une seule question courte.
+- confidence mesure ta confiance dans cette compréhension de travail, pas la valeur du projet. Une compréhension comportant des hypothèses utiles peut être MEDIUM sans être LOW.
+
+FORMAT DE SORTIE OBLIGATOIRE :
+Retourne UNIQUEMENT un objet JSON valide, sans markdown, sans bloc de code, sans commentaire avant ou après, avec exactement ces clés :
+{
+  "one_liner": "string",
+  "problem": "string",
+  "target_users": [{"label":"string","basis":"EXPLICIT|INFERRED"}],
+  "main_flow": [{"step":"string","basis":"EXPLICIT|INFERRED"}],
+  "explicit_points": ["string"],
+  "uncertainties": ["string"],
+  "needs_clarification": true,
+  "clarifying_question": "string ou null",
+  "confidence": "HIGH|MEDIUM|LOW"
+}
+Respecte exactement ce contrat JSON.`;
 }
 
 function userPrompt(input){
@@ -133,10 +134,20 @@ function userPrompt(input){
   return `Nom provisoire : ${input.name}\n\nExplication originale :\n${input.description}\n\nRéférences déclarées (ne pas prétendre les avoir visitées) :\n${references}\n\nClarifications déjà données :\n${clarifications}`;
 }
 
+function extractJsonText(value){
+  let text=String(value??'').trim();
+  if(!text)return '';
+  text=text.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+  const first=text.indexOf('{');
+  const last=text.lastIndexOf('}');
+  if(first>=0&&last>first)text=text.slice(first,last+1);
+  return text;
+}
+
 function parseAiPayload(raw){
-  let payload=raw?.response??raw;
+  let payload=raw?.response??raw?.result?.response??raw;
   if(typeof payload==='string'){
-    try{payload=JSON.parse(payload);}catch{throw new Lab2HttpError(502,'AI_OUTPUT_INVALID');}
+    try{payload=JSON.parse(extractJsonText(payload));}catch{throw new Lab2HttpError(502,'AI_OUTPUT_INVALID');}
   }
   if(!payload||typeof payload!=='object'||Array.isArray(payload))throw new Lab2HttpError(502,'AI_OUTPUT_INVALID');
   return payload;
@@ -236,7 +247,6 @@ export async function handleLab2IdeaUnderstanding(request,env){
         {role:'system',content:systemPrompt(input.clarifications.length)},
         {role:'user',content:userPrompt(input)}
       ],
-      response_format:{type:'json_schema',json_schema:understandingSchema(input.clarifications.length)},
       temperature:0.15,
       max_completion_tokens:1100,
       chat_template_kwargs:{enable_thinking:false}
@@ -254,7 +264,7 @@ export async function handleLab2IdeaUnderstanding(request,env){
       user_id:auth.id,
       understanding,
       usage:readUsage(raw),
-      quality:{usable:true,min_target_users:1,min_flow_steps:2,generic_empty_fallbacks:false},
+      quality:{usable:true,min_target_users:1,min_flow_steps:2,generic_empty_fallbacks:false,json_validation:'server-side'},
       limits:{max_clarifications:MAX_CLARIFICATIONS,remaining_clarifications:Math.max(0,MAX_CLARIFICATIONS-input.clarifications.length)}
     });
   }catch(error){
