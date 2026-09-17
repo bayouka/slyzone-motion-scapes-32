@@ -23,6 +23,16 @@ if (!research.includes('./idea-improvements.html')) throw new Error('Slice 3 mus
 if (!research.includes('./idea-research-polish.js')) throw new Error('Slice 3 transparency polish must be loaded');
 
 const polish = fs.readFileSync('site/lab2/idea-research-polish.js', 'utf8');
-if (!polish.includes('Analyse limitée')) throw new Error('Slice 3 must distinguish limited research from complete research');
+if (!polish.includes("level==='PARTIAL'")) throw new Error('Slice 3 must distinguish partial research from complete research');
+if (!polish.includes('Recherche Web non configurée')) throw new Error('Slice 3 must expose unconfigured Web research');
+if (!polish.includes('Continuer sans recherche concurrentielle')) throw new Error('Slice 3 must not disguise unavailable research as a completed analysis');
+
+const understandingUx = fs.readFileSync('site/lab2/idea-studio-ux.js', 'utf8');
+if (!understandingUx.includes("EXPECTED_CONTRACT = 'lab2-understanding-v2'")) throw new Error('Slice 2 must require the semantic understanding v2 contract');
+if (!understandingUx.includes("window.location.assign(`./idea-research.html?idea=")) throw new Error('Confirming understanding must transition directly to research');
+
+const improvements = fs.readFileSync('site/lab2/idea-improvements.js', 'utf8');
+if (!improvements.includes("EXPECTED_IMPROVEMENTS_CONTRACT='lab2-improvements-v2'")) throw new Error('Slice 4 must reject stale improvement outputs');
+if (!improvements.includes('MIN_PROPOSALS=3')) throw new Error('Slice 4 must require a minimum useful proposal set');
 
 console.log('lab2 flow shell checks: OK');
