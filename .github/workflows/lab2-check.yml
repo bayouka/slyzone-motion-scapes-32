@@ -11,9 +11,11 @@ on:
       - 'src/lab2-*.js'
       - 'site/lab2/**'
       - 'scripts/test_lab2_*.mjs'
+      - 'scripts/lab2-live-e2e.mjs'
       - 'scripts/lab2-isolation-check.mjs'
       - 'package.json'
       - '.github/workflows/lab2-check.yml'
+      - '.github/workflows/lab2-live-e2e.yml'
 
 permissions:
   contents: read
@@ -60,6 +62,7 @@ jobs:
           node --check src/lab2-idea-mockups.js
           node --check src/lab2-presentation-plan.js
           node --check src/worker-entry.js
+          node --check scripts/lab2-live-e2e.mjs
           for file in scripts/test_lab2_*.mjs scripts/lab2-isolation-check.mjs; do node --check "$file"; done
       - name: Zero-credit contract tests
         run: |
