@@ -5,6 +5,7 @@
   const q=(id)=>document.getElementById(id);
   const statusBox=q('statusBox'),loginForm=q('loginForm'),connectedActions=q('connectedActions'),errorBox=q('errorBox'),logoutButton=q('logoutButton');
   const setupPanel=q('setupPanel'),copyUserIdButton=q('copyUserIdButton'),copyStatus=q('copyStatus');
+  const copyE2eTokenButton=q('copyE2eTokenButton'),copyE2eStatus=q('copyE2eStatus');
   const email=q('email'),password=q('password');
   let currentUserId='';
   const parse=(value)=>{try{return JSON.parse(value)}catch{return null}};
@@ -19,7 +20,7 @@
   function clearError(){errorBox.hidden=true;errorBox.textContent=''}
   function returnToLab(){window.location.replace(nextTarget)}
   function renderConnected(user){currentUserId=String(user?.id||'');statusBox.textContent=`Connecté${user?.email?` · ${user.email}`:''}.`;loginForm.hidden=true;connectedActions.hidden=false;setupPanel.hidden=!currentUserId;clearError();if(redirected)setTimeout(returnToLab,50)}
-  function renderDisconnected(message='Connecte-toi pour reprendre ton Atelier Idée.'){currentUserId='';statusBox.textContent=message;loginForm.hidden=false;connectedActions.hidden=true;setupPanel.hidden=true;copyStatus.textContent=''}
+  function renderDisconnected(message='Connecte-toi pour reprendre ton Atelier Idée.'){currentUserId='';statusBox.textContent=message;loginForm.hidden=false;connectedActions.hidden=true;setupPanel.hidden=true;copyStatus.textContent='';copyE2eStatus.textContent=''}
   async function request(path,init={}){
     const response=await fetch(`${String(cfg.supabaseUrl).replace(/\/$/,'')}${path}`,{...init,headers:{apikey:cfg.supabasePublishableKey,'content-type':'application/json',...(init.headers||{})}});
     const payload=await response.json().catch(()=>({}));
@@ -73,6 +74,18 @@
     if(!currentUserId)return;
     try{await navigator.clipboard.writeText(currentUserId);copyStatus.textContent='Identifiant copié.'}
     catch{copyStatus.textContent='Copie impossible automatiquement sur ce navigateur.'}
+  });
+  copyE2eTokenButton.addEventListener('click',async()=>{
+    copyE2eTokenButton.disabled=true;copyE2eStatus.textContent='Renouvellement de la session…';clearError();
+    try{
+      const refreshed=await window.Lab2Auth?.refreshSession?.();
+      const token=String(refreshed?.access_token||window.Lab2Auth?.getAccessToken?.()||'').trim();
+      if(!token)throw new Error('E2E_ACCESS_TOKEN_UNAVAILABLE');
+      await navigator.clipboard.writeText(token);
+      copyE2eStatus.textContent='Jeton temporaire copié. Colle-le uniquement dans le secret GitHub prévu.';
+    }catch{
+      copyE2eStatus.textContent='Copie impossible. Reconnecte-toi puis réessaie.';
+    }finally{copyE2eTokenButton.disabled=false}
   });
   logoutButton.addEventListener('click',()=>{save(null);renderDisconnected();});
   void verify();
