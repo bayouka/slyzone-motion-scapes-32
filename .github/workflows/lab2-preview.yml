@@ -51,6 +51,7 @@ jobs:
         run: |
           node --check src/lab2-preview-worker.js
           node --check src/lab2-ai-compat.js
+          node --check src/lab2-ai-json.js
           node --check src/lab2-public-fetch-fallback.js
           node --check src/lab2-web-provider.js
           node --check src/lab2-presentation-plan.js
@@ -118,6 +119,7 @@ jobs:
             compatibility_date:'2026-09-16',
             assets:{directory:'./lab2-preview-assets',binding:'ASSETS',run_worker_first:true,html_handling:'none'},
             ai:{binding:'AI'},
+            browser:{binding:'BROWSER'},
             services:[{binding:'SOURCE_FETCH',service:'4b4c-source-fetch'}],
             vars:{
               SUPABASE_URL:process.env.LAB2_SUPABASE_URL,
@@ -173,6 +175,7 @@ jobs:
           grep -Fq '"isolated":true' /tmp/lab2-health.json
           grep -Fq '"production_business_api_exposed":false' /tmp/lab2-health.json
           grep -Fq '"database_write_surface":false' /tmp/lab2-health.json
+          grep -Fq '"browser_render_configured":true' /tmp/lab2-health.json
           grep -Fq '"adaptive_feasibility_enabled":true' /tmp/lab2-health.json
           grep -Fq '"presentation_planner_enabled":true' /tmp/lab2-health.json
           curl -L -fsS "$LAB2_PREVIEW_URL/lab2/login.html?sha=$GITHUB_SHA" | grep -Fq 'Tester l’Atelier Idée'
