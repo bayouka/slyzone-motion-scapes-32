@@ -64,6 +64,7 @@ jobs:
       - name: Zero-credit contract tests
         run: |
           node scripts/test_lab2_ai_compat_v1.mjs
+          node scripts/test_lab2_public_fetch_fallback_v1.mjs
           node scripts/test_lab2_project_state_v1.mjs
           node scripts/test_lab2_understanding_v1.mjs
           node scripts/test_lab2_research_profiles_v1.mjs
