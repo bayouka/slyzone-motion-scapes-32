@@ -1,38 +1,25 @@
 name: Lab2 live E2E
 
 on:
-  workflow_dispatch:
-    inputs:
-      archetype:
-        description: Sparse idea archetype to test
-        required: true
-        type: choice
-        default: service
-        options:
-          - service
-          - saas
-          - marketplace
-      confirm_live_ai_calls:
-        description: I confirm this run will call live Workers AI/search endpoints
-        required: true
-        type: boolean
-        default: false
+  push:
+    branches:
+      - feature/4b4c2-idea-lab
+    paths:
+      - '.lab2/e2e-trigger.txt'
 
 permissions:
   contents: read
 
 concurrency:
-  group: lab2-live-e2e-${{ inputs.archetype }}
+  group: lab2-live-e2e
   cancel-in-progress: false
 
 jobs:
   live-e2e:
-    if: ${{ inputs.confirm_live_ai_calls == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
       LAB2_E2E_BASE_URL: https://4b4c2-idea-lab-preview.bayoukadesbois.workers.dev
-      LAB2_E2E_ARCHETYPE: ${{ inputs.archetype }}
       LAB2_E2E_BEARER_TOKEN: ${{ secrets.LAB2_E2E_BEARER_TOKEN }}
       LAB2_E2E_REPORT_PATH: lab2-live-e2e-report.json
     steps:
@@ -43,6 +30,18 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+
+      - name: Read explicit isolated trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .lab2/e2e-trigger.txt
+          archetype=$(sed -n 's/^archetype=//p' .lab2/e2e-trigger.txt | head -n 1 | tr -d '\r\n')
+          case "$archetype" in
+            service|saas|marketplace) ;;
+            *) echo "Invalid or missing archetype in .lab2/e2e-trigger.txt" >&2; exit 1 ;;
+          esac
+          echo "LAB2_E2E_ARCHETYPE=$archetype" >> "$GITHUB_ENV"
 
       - name: Verify private E2E credential is configured
         shell: bash
@@ -82,7 +81,7 @@ jobs:
         if: always() && hashFiles('lab2-live-e2e-report.json') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: lab2-live-e2e-${{ inputs.archetype }}-${{ github.run_id }}
+          name: lab2-live-e2e-${{ github.run_id }}
           path: lab2-live-e2e-report.json
           retention-days: 7
           if-no-files-found: error
