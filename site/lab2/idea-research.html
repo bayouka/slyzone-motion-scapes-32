@@ -16,7 +16,7 @@
   <main class="research-shell">
     <header class="research-topbar">
       <div>
-        <div class="eyebrow">4b4c2 · LAB isolé · Slice 3</div>
+        <div class="eyebrow">4b4c2 · LAB isolé · Explorer</div>
         <h1>Observer ce qui existe déjà</h1>
         <p>Analyser les références données et rechercher quelques solutions réellement proches, sans encore modifier ton idée.</p>
       </div>
@@ -26,86 +26,58 @@
     <section class="panel" id="contextPanel">
       <div class="panel-heading">
         <div>
-          <span class="section-kicker">Compréhension validée localement</span>
+          <span class="section-kicker">Compréhension confirmée</span>
           <h2 id="ideaName">Idée</h2>
           <p id="ideaOneLiner"></p>
         </div>
         <span class="state-badge" id="researchState">Prêt</span>
       </div>
       <div class="context-grid">
-        <article>
-          <strong>Problème compris</strong>
-          <p id="ideaProblem"></p>
-        </article>
-        <article>
-          <strong>Références fournies</strong>
-          <p id="referenceCount"></p>
-        </article>
+        <article><strong>Problème compris</strong><p id="ideaProblem"></p></article>
+        <article><strong>Références fournies</strong><p id="referenceCount"></p></article>
       </div>
     </section>
 
     <section class="panel action-panel" id="actionPanel">
       <div>
-        <span class="section-kicker">Budget borné</span>
+        <span class="section-kicker">Recherche bornée</span>
         <h2>Analyser sans gaspiller les crédits</h2>
-        <p>Au maximum : 2 recherches Web, 3 concurrents sélectionnés, 6 pages publiques lues et 2 appels IA. Un résultat inchangé est conservé localement.</p>
+        <p>Le plan de recherche s’adapte au type de projet. Maximum : 2 recherches Web, 3 solutions retenues, 6 pages publiques lues et 2 appels IA.</p>
       </div>
-      <button class="primary-button" id="startResearch" type="button">Analyser mes références et chercher des concurrents</button>
+      <button class="primary-button" id="startResearch" type="button">Analyser mes références et explorer ce qui existe</button>
     </section>
 
     <section class="panel blocked-panel" id="blockedPanel" hidden>
-      <h2>La compréhension de l’idée est nécessaire</h2>
-      <p>Retourne dans l’Atelier Idée et termine d’abord l’étape « Comprendre ».</p>
+      <h2>La compréhension de l’idée doit être confirmée</h2>
+      <p>Retourne dans l’Atelier Idée et confirme d’abord l’étape « Comprendre ».</p>
       <a class="primary-link" href="./idea-studio.html">Ouvrir l’Atelier Idée</a>
     </section>
 
-    <div class="loading-box" id="loadingBox" hidden role="status">
-      <span class="spinner" aria-hidden="true"></span>
-      <div><strong>Recherche en cours…</strong><p>Aucune relance automatique ne sera effectuée en cas de quota ou d’erreur.</p></div>
-    </div>
+    <div class="loading-box" id="loadingBox" hidden role="status"><span class="spinner" aria-hidden="true"></span><div><strong>Recherche en cours…</strong><p>Aucune relance automatique ne sera effectuée en cas de quota ou d’erreur.</p></div></div>
     <div class="error-box" id="errorBox" hidden role="alert"></div>
 
     <section id="results" hidden>
-      <div class="section-heading">
-        <div><span class="section-kicker">Sources choisies par toi</span><h2>Références analysées</h2></div>
-      </div>
+      <div class="section-heading"><div><span class="section-kicker">Sources choisies par toi</span><h2>Références analysées</h2></div></div>
       <div class="cards-grid" id="referencesGrid"></div>
 
       <div class="section-heading section-gap">
-        <div><span class="section-kicker">Recherche automatique bornée</span><h2>Solutions potentiellement concurrentes</h2></div>
+        <div><span class="section-kicker">Exploration automatique bornée</span><h2>Solutions proches, concurrentes ou alternatives</h2></div>
         <span class="small-meta" id="discoveryMeta"></span>
       </div>
       <div class="cards-grid" id="competitorsGrid"></div>
 
-      <section class="panel section-gap">
-        <span class="section-kicker">Interprétation IA à partir des faits observés</span>
-        <h2>Points communs repérés</h2>
-        <ul class="pattern-list" id="patternsList"></ul>
-      </section>
-
-      <section class="panel limitations-panel section-gap">
-        <span class="section-kicker">Transparence</span>
-        <h2>Ce que cette analyse ne permet pas d’affirmer</h2>
-        <ul class="pattern-list" id="limitationsList"></ul>
-      </section>
-
-      <section class="panel metrics-panel section-gap">
-        <div><span class="section-kicker">Consommation de cette étape</span><h2>Mesure réelle de l’usage</h2></div>
-        <div class="metrics-grid" id="metricsGrid"></div>
-      </section>
-
+      <section class="panel section-gap"><span class="section-kicker">Interprétation IA à partir des faits observés</span><h2>Points communs repérés</h2><ul class="pattern-list" id="patternsList"></ul></section>
+      <section class="panel limitations-panel section-gap"><span class="section-kicker">Transparence</span><h2>Ce que cette analyse ne permet pas d’affirmer</h2><ul class="pattern-list" id="limitationsList"></ul></section>
+      <section class="panel metrics-panel section-gap"><div><span class="section-kicker">Consommation de cette étape</span><h2>Mesure réelle de l’usage</h2></div><div class="metrics-grid" id="metricsGrid"></div></section>
       <section class="panel continue-panel section-gap" id="continuePanel">
-        <div>
-          <span class="section-kicker">Étape suivante</span>
-          <h2 id="continueTitle">Passer aux propositions d’amélioration</h2>
-          <p id="continueCopy">Les propositions distingueront ce qui vient de ton idée, ce qui est réellement observé et ce qui relève du raisonnement produit.</p>
-        </div>
+        <div><span class="section-kicker">Étape suivante</span><h2 id="continueTitle">Passer aux propositions d’amélioration</h2><p id="continueCopy">Les propositions distingueront ce qui vient de ton idée, ce qui est réellement observé et ce qui relève du raisonnement produit.</p></div>
         <a class="primary-link" href="./idea-improvements.html" id="continueResearch">Continuer vers les améliorations →</a>
       </section>
     </section>
   </main>
   <script src="./runtime-config.js"></script>
   <script src="./lab2-auth.js" defer></script>
+  <script src="./project-state.js" defer></script>
   <script src="./idea-research.js" defer></script>
   <script src="./idea-research-polish.js" defer></script>
   <script src="./idea-research-flow.js" defer></script>
