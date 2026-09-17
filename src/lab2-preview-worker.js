@@ -1,4 +1,4 @@
-import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding-compat.js';
+import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding.js';
 import { handleLab2IdeaResearch } from './lab2-idea-research.js';
 import { handleLab2IdeaImprovements } from './lab2-idea-improvements.js';
 import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
@@ -6,6 +6,7 @@ import { handleLab2IdeaStructure } from './lab2-idea-structure.js';
 import { handleLab2IdeaDesign } from './lab2-idea-design.js';
 import { handleLab2IdeaMockups } from './lab2-idea-mockups.js';
 import { handleLab2PresentationPlan } from './lab2-presentation-plan.js';
+import { createLab2AiEnv, LAB2_AI_JSON_ADAPTER_VERSION } from './lab2-ai-json.js';
 
 const SECURITY_HEADERS=Object.freeze({
   'x-content-type-options':'nosniff',
@@ -41,6 +42,7 @@ export default {
         database_write_surface:false,
         auth_provider:'supabase-auth-only',
         ai_configured:Boolean(env?.AI),
+        ai_json_adapter:LAB2_AI_JSON_ADAPTER_VERSION,
         source_fetch_configured:Boolean(env?.SOURCE_FETCH),
         competitor_search_configured:true,
         competitor_search_strategy:'BRAVE_THEN_TAVILY_THEN_TAVILY_KEYLESS',
@@ -50,7 +52,7 @@ export default {
       });
     }
     const handler=LAB_ROUTES.get(url.pathname);
-    if(handler)return withSecurityHeaders(await handler(request,env));
+    if(handler){const labEnv=createLab2AiEnv(env);return withSecurityHeaders(await handler(request,labEnv));}
     if(request.method!=='GET'&&request.method!=='HEAD')return json({ok:false,error:'NOT_FOUND'},404);
     if(url.pathname==='/'||url.pathname==='/lab2')return Response.redirect(new URL('/lab2/login.html',url.origin),302);
     if(!url.pathname.startsWith('/lab2/'))return json({ok:false,error:'NOT_FOUND'},404);
