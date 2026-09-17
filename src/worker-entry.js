@@ -2,7 +2,7 @@ import worker from './worker.js';
 import { handleEvidenceAdvance } from './idea-evidence-endpoint.js';
 import { handleCanonicalIdeaCommand } from './idea-canonical-adapter.js';
 import { handleProjectDefinitionCommand } from './project-definition-adapter.js';
-import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding.js';
+import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding-compat.js';
 import { handleLab2IdeaResearch } from './lab2-idea-research.js';
 import { handleLab2IdeaImprovements } from './lab2-idea-improvements.js';
 import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
