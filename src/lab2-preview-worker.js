@@ -5,6 +5,7 @@ import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
 import { handleLab2IdeaStructure } from './lab2-idea-structure.js';
 import { handleLab2IdeaDesign } from './lab2-idea-design.js';
 import { handleLab2IdeaMockups } from './lab2-idea-mockups.js';
+import { handleLab2PresentationPlan } from './lab2-presentation-plan.js';
 
 const SECURITY_HEADERS=Object.freeze({
   'x-content-type-options':'nosniff',
@@ -28,7 +29,8 @@ const LAB_ROUTES=new Map([
   ['/api/lab2/brief',handleLab2IdeaBrief],
   ['/api/lab2/structure',handleLab2IdeaStructure],
   ['/api/lab2/design',handleLab2IdeaDesign],
-  ['/api/lab2/mockups',handleLab2IdeaMockups]
+  ['/api/lab2/mockups',handleLab2IdeaMockups],
+  ['/api/lab2/presentation-plan',handleLab2PresentationPlan]
 ]);
 
 export default {
@@ -45,6 +47,7 @@ export default {
         ai_configured:Boolean(env?.AI),
         source_fetch_configured:Boolean(env?.SOURCE_FETCH),
         competitor_search_configured:Boolean(env?.LAB2_BRAVE_SEARCH_API_KEY),
+        presentation_planner_enabled:String(env?.LAB2_PRESENTATION_PLAN_ENABLED||'').toLowerCase()==='true',
         access_allowlist_configured:accessConfigured(env)
       });
     }
