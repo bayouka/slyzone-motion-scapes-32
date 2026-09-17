@@ -6,6 +6,7 @@ import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding.js';
 import { handleLab2IdeaResearch } from './lab2-idea-research.js';
 import { handleLab2IdeaImprovements } from './lab2-idea-improvements.js';
 import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
+import { handleLab2IdeaFeasibility } from './lab2-idea-feasibility.js';
 import { handleLab2IdeaStructure } from './lab2-idea-structure.js';
 import { handleLab2IdeaDesign } from './lab2-idea-design.js';
 import { handleLab2IdeaMockups } from './lab2-idea-mockups.js';
@@ -138,6 +139,7 @@ export default {
     if(url.pathname==='/api/lab2/research')return withSecurityHeaders(await handleLab2IdeaResearch(request,lab2Env));
     if(url.pathname==='/api/lab2/improvements')return withSecurityHeaders(await handleLab2IdeaImprovements(request,lab2Env));
     if(url.pathname==='/api/lab2/brief')return withSecurityHeaders(await handleLab2IdeaBrief(request,lab2Env));
+    if(url.pathname==='/api/lab2/feasibility')return withSecurityHeaders(await handleLab2IdeaFeasibility(request,lab2Env));
     if(url.pathname==='/api/lab2/structure')return withSecurityHeaders(await handleLab2IdeaStructure(request,lab2Env));
     if(url.pathname==='/api/lab2/design')return withSecurityHeaders(await handleLab2IdeaDesign(request,lab2Env));
     if(url.pathname==='/api/lab2/mockups')return withSecurityHeaders(await handleLab2IdeaMockups(request,lab2Env));
