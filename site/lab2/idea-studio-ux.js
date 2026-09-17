@@ -3,6 +3,7 @@
 
   const MAX_INTERESTS = 4;
   const UNDERSTANDING_TIMEOUT_MS = 30000;
+  const EXPECTED_CONTRACT = 'lab2-understanding-v2';
   const AI_CACHE_KEY = '4b4c2.lab2.idea-understanding.slice2.v1';
   const CONFIRMATION_KEY = '4b4c2.lab2.idea-understanding-confirmed.slice2.v1';
   const INTEREST_LABELS = Object.freeze({
@@ -41,15 +42,20 @@
 
   const meaningfulCore = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
-    if (normalized.length < 8) return false;
+    if (normalized.length < 20) return false;
     return !['non déterminé', 'non determine', 'à préciser', 'a preciser', 'inconnu', 'non précisé', 'non precise'].includes(normalized);
   };
 
-  // An older cached response could contain empty core fields while still being marked successful.
-  // Never reuse such a response: the backend now forces a clarification instead.
+  // V2 refuses the old "safe but empty" understanding. Never reuse a V1 result.
   const cachedUnderstanding = parseJson(localStorage.getItem(AI_CACHE_KEY));
   const cachedCore = cachedUnderstanding?.response?.understanding;
-  if (cachedCore && (!meaningfulCore(cachedCore.one_liner) || !meaningfulCore(cachedCore.problem))) {
+  if (cachedCore && (
+    cachedCore.contract_version !== EXPECTED_CONTRACT ||
+    !meaningfulCore(cachedCore.one_liner) ||
+    !meaningfulCore(cachedCore.problem) ||
+    !Array.isArray(cachedCore.target_users) || cachedCore.target_users.length < 1 ||
+    !Array.isArray(cachedCore.main_flow) || cachedCore.main_flow.length < 2
+  )) {
     localStorage.removeItem(AI_CACHE_KEY);
     localStorage.removeItem(CONFIRMATION_KEY);
   }
@@ -167,7 +173,10 @@
   confirmUnderstanding?.addEventListener('click', () => {
     const cache = parseJson(localStorage.getItem(AI_CACHE_KEY));
     const understanding = cache?.response?.understanding;
-    const coreReady = meaningfulCore(understanding?.one_liner) && meaningfulCore(understanding?.problem);
+    const coreReady = understanding?.contract_version === EXPECTED_CONTRACT &&
+      meaningfulCore(understanding?.one_liner) && meaningfulCore(understanding?.problem) &&
+      Array.isArray(understanding?.target_users) && understanding.target_users.length >= 1 &&
+      Array.isArray(understanding?.main_flow) && understanding.main_flow.length >= 2;
     if (!cache?.baseFingerprint || !coreReady || understanding?.needs_clarification) {
       localStorage.removeItem(CONFIRMATION_KEY);
       return;
@@ -175,9 +184,12 @@
     localStorage.setItem(CONFIRMATION_KEY, JSON.stringify({
       version: 1,
       confirmed: true,
+      understandingContract: EXPECTED_CONTRACT,
       baseFingerprint: cache.baseFingerprint,
       confirmedAt: new Date().toISOString()
     }));
+    // Confirmation is a transition, not an extra screen state.
+    window.location.assign(`./idea-research.html?idea=${encodeURIComponent(cache.baseFingerprint)}`);
   });
 
   const friendlyError = (code) => ({
@@ -187,6 +199,7 @@
     AI_UNAVAILABLE: "Le moteur IA n’est pas disponible sur cette preview pour le moment.",
     AI_CAPACITY: "Le quota ou la capacité IA du moment est atteint. Aucun nouvel appel automatique ne sera tenté.",
     AI_OUTPUT_INVALID: "L’IA a répondu dans un format inattendu. Ton idée n’a pas été modifiée.",
+    AI_OUTPUT_INCOMPLETE: "La réponse IA n’était pas assez utile pour continuer (résumé, public ou parcours incomplet). Elle n’est pas considérée comme validée ; tu peux réessayer sans perdre ton brouillon.",
     AI_TIMEOUT: "L’analyse IA a pris trop de temps et a été arrêtée proprement. Ton brouillon est intact ; tu peux réessayer."
   }[code] || '');
 
