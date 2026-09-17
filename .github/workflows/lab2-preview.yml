@@ -8,6 +8,7 @@ on:
       - 'src/lab2-*.js'
       - 'site/lab2/**'
       - 'scripts/test_lab2_*.mjs'
+      - 'scripts/lab2-isolation-check.mjs'
       - '.github/workflows/lab2-preview.yml'
   workflow_dispatch:
 
@@ -47,20 +48,30 @@ jobs:
       - name: Validate Lab contracts
         run: |
           node --check src/lab2-preview-worker.js
+          node --check src/lab2-ai-compat.js
+          node --check src/lab2-public-fetch-fallback.js
           node --check src/lab2-web-provider.js
           node --check src/lab2-presentation-plan.js
           node --check site/lab2/login.js
+          node --check site/lab2/project-state.js
           node --check site/lab2/idea-research-polish.js
+          for file in scripts/test_lab2_*.mjs scripts/lab2-isolation-check.mjs; do node --check "$file"; done
+          node scripts/test_lab2_ai_compat_v1.mjs
+          node scripts/test_lab2_public_fetch_fallback_v1.mjs
+          node scripts/test_lab2_project_state_v1.mjs
           node scripts/test_lab2_understanding_v1.mjs
+          node scripts/test_lab2_research_profiles_v1.mjs
           node scripts/test_lab2_research_v1.mjs
           node scripts/test_lab2_improvements_v1.mjs
           node scripts/test_lab2_brief_v1.mjs
+          node scripts/test_lab2_feasibility_v1.mjs
           node scripts/test_lab2_structure_v1.mjs
           node scripts/test_lab2_design_v1.mjs
           node scripts/test_lab2_mockups_v1.mjs
           node scripts/test_lab2_presentation_plan_v1.mjs
           node scripts/test_lab2_presentation_v1.mjs
           node scripts/test_lab2_flow_shell_v1.mjs
+          node scripts/test_lab2_worker_routes_v1.mjs
           node scripts/lab2-isolation-check.mjs
 
       - name: Build auth-only runtime config
@@ -159,6 +170,7 @@ jobs:
           grep -Fq '"isolated":true' /tmp/lab2-health.json
           grep -Fq '"production_business_api_exposed":false' /tmp/lab2-health.json
           grep -Fq '"database_write_surface":false' /tmp/lab2-health.json
+          grep -Fq '"adaptive_feasibility_enabled":true' /tmp/lab2-health.json
           grep -Fq '"presentation_planner_enabled":true' /tmp/lab2-health.json
           curl -L -fsS "$LAB2_PREVIEW_URL/lab2/login.html?sha=$GITHUB_SHA" | grep -Fq 'Tester l’Atelier Idée'
           code=$(curl -sS -o /tmp/blocked.out -w '%{http_code}' "$LAB2_PREVIEW_URL/index.html" || true)
