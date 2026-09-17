@@ -11,24 +11,43 @@
   const save=(session)=>{try{if(session)localStorage.setItem(SESSION_KEY,JSON.stringify(session));else localStorage.removeItem(SESSION_KEY)}catch{}};
   const current=()=>parse(localStorage.getItem(SESSION_KEY));
   const configured=()=>Boolean(cfg.supabaseUrl&&cfg.supabasePublishableKey);
+  const params=new URLSearchParams(window.location.search);
+  const rawNext=String(params.get('next')||'').trim();
+  const nextTarget=rawNext.startsWith('/lab2/')&&!rawNext.includes('/login.html')?rawNext:'/lab2/idea-studio.html';
+  const redirected=Boolean(rawNext);
   function showError(message){errorBox.hidden=false;errorBox.textContent=message}
   function clearError(){errorBox.hidden=true;errorBox.textContent=''}
-  function renderConnected(user){currentUserId=String(user?.id||'');statusBox.textContent=`Connecté${user?.email?` · ${user.email}`:''}.`;loginForm.hidden=true;connectedActions.hidden=false;setupPanel.hidden=!currentUserId;clearError()}
-  function renderDisconnected(message='Connecte-toi avec ton compte 4b4c.'){currentUserId='';statusBox.textContent=message;loginForm.hidden=false;connectedActions.hidden=true;setupPanel.hidden=true;copyStatus.textContent=''}
+  function returnToLab(){window.location.replace(nextTarget)}
+  function renderConnected(user){currentUserId=String(user?.id||'');statusBox.textContent=`Connecté${user?.email?` · ${user.email}`:''}.`;loginForm.hidden=true;connectedActions.hidden=false;setupPanel.hidden=!currentUserId;clearError();if(redirected)setTimeout(returnToLab,50)}
+  function renderDisconnected(message='Connecte-toi pour reprendre ton Atelier Idée.'){currentUserId='';statusBox.textContent=message;loginForm.hidden=false;connectedActions.hidden=true;setupPanel.hidden=true;copyStatus.textContent=''}
   async function request(path,init={}){
     const response=await fetch(`${String(cfg.supabaseUrl).replace(/\/$/,'')}${path}`,{...init,headers:{apikey:cfg.supabasePublishableKey,'content-type':'application/json',...(init.headers||{})}});
     const payload=await response.json().catch(()=>({}));
     if(!response.ok)throw Object.assign(new Error(payload?.msg||payload?.message||payload?.error_description||'AUTH_ERROR'),{status:response.status});
     return payload;
   }
+  async function verifyWithAccessToken(accessToken){
+    return request('/auth/v1/user',{headers:{Authorization:`Bearer ${accessToken}`}});
+  }
   async function verify(){
     if(!configured()){renderDisconnected('Preview non configurée.');loginForm.hidden=true;showError('La configuration publique Supabase manque sur cette preview.');return}
-    const session=current();
+    let session=current();
     if(!session?.access_token){renderDisconnected();return}
     try{
-      const user=await request('/auth/v1/user',{headers:{Authorization:`Bearer ${session.access_token}`}});
+      const user=await verifyWithAccessToken(session.access_token);
       renderConnected(user);
-    }catch{save(null);renderDisconnected('La session a expiré. Reconnecte-toi.')}
+      return;
+    }catch{}
+    const refreshed=await window.Lab2Auth?.refreshSession?.();
+    if(refreshed?.access_token){
+      try{
+        const user=await verifyWithAccessToken(refreshed.access_token);
+        renderConnected(user);
+        return;
+      }catch{}
+    }
+    save(null);
+    renderDisconnected('Ta session doit être renouvelée. Reconnecte-toi une fois pour reprendre exactement où tu étais.');
   }
   loginForm.addEventListener('submit',async(event)=>{
     event.preventDefault();clearError();const button=loginForm.querySelector('button');button.disabled=true;
