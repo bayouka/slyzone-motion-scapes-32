@@ -43,44 +43,37 @@ const env={
 
 function request(body,token='good-token'){
   return new Request('https://app.example/api/lab2/understand',{
-    method:'POST',
-    headers:{'content-type':'application/json',authorization:`Bearer ${token}`},
-    body:JSON.stringify(body)
+    method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify(body)
   });
 }
 
 const body={
   name:'TierceVue',
   description:'Je veux un site pour demander à quelqu’un proche d’une voiture éloignée de la regarder avant que l’acheteur se déplace.',
-  references:[{url:'example.com',reason:'fonctionnement',note:'logique de mise en relation'}],
-  clarifications:[]
+  references:[{url:'example.com',reason:'fonctionnement',note:'logique de mise en relation'}],clarifications:[]
 };
 
 const okResponse=await handleLab2IdeaUnderstanding(request(body),env);
 const ok=await okResponse.json();
 if(okResponse.status!==200||ok.ok!==true)throw new Error('LAB2_UNDERSTANDING_SUCCESS_EXPECTED');
-if(ok.understanding?.contract_version!=='lab2-understanding-v1')throw new Error('LAB2_CONTRACT_MISMATCH');
+if(ok.understanding?.contract_version!=='lab2-understanding-v2')throw new Error('LAB2_CONTRACT_MISMATCH');
 if(!(ok.usage?.estimated_neurons>0))throw new Error('LAB2_USAGE_MEASUREMENT_MISSING');
 if(ok.understanding?.needs_clarification!==true)throw new Error('LAB2_CLARIFICATION_EXPECTED');
+if(ok.understanding?.target_users?.length<1||ok.understanding?.main_flow?.length<2)throw new Error('LAB2_SEMANTIC_QUALITY_GUARD_FAILED');
+if(ok.quality?.usable!==true||ok.quality?.generic_empty_fallbacks!==false)throw new Error('LAB2_QUALITY_METADATA_MISSING');
 
 const unauthorized=await handleLab2IdeaUnderstanding(request(body,'bad-token'),env);
 if(unauthorized.status!==401)throw new Error('LAB2_AUTH_GUARD_FAILED');
-
 const forbidden=await handleLab2IdeaUnderstanding(request(body,'other-token'),env);
 if(forbidden.status!==403)throw new Error('LAB2_ALLOWLIST_GUARD_FAILED');
-
 const accessUnconfigured=await handleLab2IdeaUnderstanding(request(body),{...env,LAB2_ALLOWED_USER_IDS:''});
 if(accessUnconfigured.status!==503)throw new Error('LAB2_ALLOWLIST_CONFIGURATION_GUARD_FAILED');
-
 const disabled=await handleLab2IdeaUnderstanding(request(body),{...env,LAB2_IDEA_STUDIO_ENABLED:'false'});
 if(disabled.status!==404)throw new Error('LAB2_FEATURE_FLAG_GUARD_FAILED');
 
-const capped=await handleLab2IdeaUnderstanding(request({...body,clarifications:[
-  {question:'Q1 ?',answer:'A1'},
-  {question:'Q2 ?',answer:'A2'}
-]}),env);
+const capped=await handleLab2IdeaUnderstanding(request({...body,clarifications:[{question:'Q1 ?',answer:'A1'},{question:'Q2 ?',answer:'A2'}]}),env);
 const cappedPayload=await capped.json();
 if(cappedPayload.understanding?.needs_clarification!==false)throw new Error('LAB2_CLARIFICATION_CAP_FAILED');
 
 globalThis.fetch=originalFetch;
-console.log(`lab2-understanding-v1: ok (${ok.usage.estimated_neurons} estimated neurons for fixture)`);
+console.log(`lab2-understanding-v2: ok (${ok.usage.estimated_neurons} estimated neurons for fixture)`);
