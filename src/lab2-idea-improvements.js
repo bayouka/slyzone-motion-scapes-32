@@ -1,7 +1,9 @@
 const LAB2_MODEL='@cf/google/gemma-4-26b-a4b-it';
-const CONTRACT_VERSION='lab2-improvements-v1';
-const MAX_BODY_BYTES=28000;
+const CONTRACT_VERSION='lab2-improvements-v2';
+const MAX_BODY_BYTES=30000;
+const MIN_PROPOSALS=3;
 const MAX_PROPOSALS=6;
+const TYPES=['FUNCTIONALITY','WORKFLOW','NAVIGATION','TRUST','SIMPLIFICATION','DIFFERENTIATION','CONTENT','CONVERSION'];
 
 class Lab2ImproveError extends Error{constructor(status,code){super(code);this.status=status;this.code=code}}
 function json(data,status=200){return Response.json(data,{status,headers:{'cache-control':'no-store','content-type':'application/json; charset=utf-8'}})}
@@ -18,27 +20,28 @@ async function authenticate(env,request){
 function normalizeInput(body){
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Lab2ImproveError(400,'INVALID_REQUEST');
   const name=cleanText(body.name,100);
+  const original_description=cleanText(body.original_description,6000);
   const understanding=body.understanding&&typeof body.understanding==='object'?{
+    contract_version:cleanText(body.understanding.contract_version,60),
     one_liner:cleanText(body.understanding.one_liner,320),problem:cleanText(body.understanding.problem,900),
     target_users:safeArray(body.understanding.target_users).slice(0,4).map(x=>cleanText(x?.label||x,180)).filter(Boolean),
     main_flow:safeArray(body.understanding.main_flow).slice(0,7).map(x=>cleanText(x?.step||x,240)).filter(Boolean),
     explicit_points:safeArray(body.understanding.explicit_points).slice(0,7).map(x=>cleanText(x,260)).filter(Boolean),
     uncertainties:safeArray(body.understanding.uncertainties).slice(0,6).map(x=>cleanText(x,280)).filter(Boolean)
   }:null;
-  if(!name||!understanding?.one_liner||!understanding?.problem)throw new Lab2ImproveError(400,'UNDERSTANDING_REQUIRED');
+  if(!name||understanding?.contract_version!=='lab2-understanding-v2'||!understanding?.one_liner||!understanding?.problem||!understanding.target_users.length||understanding.main_flow.length<2)throw new Lab2ImproveError(400,'UNDERSTANDING_REQUIRED');
   const research=body.research&&typeof body.research==='object'?{
+    contract_version:cleanText(body.research.contract_version,60),quality:body.research.quality&&typeof body.research.quality==='object'?body.research.quality:{},
     references:safeArray(body.research.references).slice(0,3),competitors:safeArray(body.research.competitors).slice(0,3),
     cross_patterns:safeArray(body.research.cross_patterns).slice(0,6),limitations:safeArray(body.research.limitations).slice(0,8)
-  }:{references:[],competitors:[],cross_patterns:[],limitations:[]};
-  return {name,understanding,research};
+  }:{contract_version:'',quality:{},references:[],competitors:[],cross_patterns:[],limitations:[]};
+  return {name,original_description,understanding,research};
 }
-function schema(){return {type:'object',additionalProperties:false,properties:{proposals:{type:'array',maxItems:MAX_PROPOSALS,items:{type:'object',additionalProperties:false,properties:{title:{type:'string',maxLength:140},type:{type:'string',enum:['FUNCTIONALITY','WORKFLOW','NAVIGATION','TRUST','SIMPLIFICATION','DIFFERENTIATION']},proposal:{type:'string',maxLength:420},why:{type:'string',maxLength:420},priority:{type:'string',enum:['CORE','USEFUL','OPTIONAL']},source_basis:{type:'string',enum:['USER_IDEA','OBSERVED_PATTERN','PRODUCT_REASONING']},evidence_note:{anyOf:[{type:'null'},{type:'string',maxLength:320}]},changes_original_idea:{type:'boolean'}},required:['title','type','proposal','why','priority','source_basis','evidence_note','changes_original_idea']}}},required:['proposals']}}
+function schema(){return {type:'object',additionalProperties:false,properties:{proposals:{type:'array',minItems:MIN_PROPOSALS,maxItems:MAX_PROPOSALS,items:{type:'object',additionalProperties:false,properties:{title:{type:'string',minLength:6,maxLength:140},type:{type:'string',enum:TYPES},proposal:{type:'string',minLength:24,maxLength:420},why:{type:'string',minLength:24,maxLength:420},priority:{type:'string',enum:['CORE','USEFUL','OPTIONAL']},source_basis:{type:'string',enum:['USER_IDEA','OBSERVED_PATTERN','PRODUCT_REASONING']},evidence_note:{anyOf:[{type:'null'},{type:'string',maxLength:320}]},changes_original_idea:{type:'boolean'}},required:['title','type','proposal','why','priority','source_basis','evidence_note','changes_original_idea']}}},required:['proposals']}}
 function parseAi(raw){let payload=raw?.response??raw;if(typeof payload==='string'){try{payload=JSON.parse(payload)}catch{throw new Lab2ImproveError(502,'AI_OUTPUT_INVALID')}}if(!payload||typeof payload!=='object'||Array.isArray(payload))throw new Lab2ImproveError(502,'AI_OUTPUT_INVALID');return payload}
-function readUsage(raw){const u=raw?.usage||raw?.meta?.usage||null;const input=Number(u?.prompt_tokens??u?.input_tokens??0),output=Number(u?.completion_tokens??u?.output_tokens??0);if(!Number.isFinite(input)||!Number.isFinite(output)||(!input&&!output))return null;return {prompt_tokens:Math.round(input),completion_tokens:Math.round(output),total_tokens:Math.round(input+output)}}
+function readUsage(raw){const u=raw?.usage||raw?.meta?.usage||raw?.result?.usage||null;const input=Number(u?.prompt_tokens??u?.input_tokens??0),output=Number(u?.completion_tokens??u?.output_tokens??0);if(!Number.isFinite(input)||!Number.isFinite(output)||(!input&&!output))return null;return {prompt_tokens:Math.round(input),completion_tokens:Math.round(output),total_tokens:Math.round(input+output)}}
 function hasObservedEvidence(research){
-  return [...research.references,...research.competitors].some(source=>
-    source?.fetch_status==='OBSERVED_PUBLIC'&&safeArray(source?.findings).some(finding=>cleanText(finding?.statement,20))
-  );
+  return [...research.references,...research.competitors].some(source=>source?.fetch_status==='OBSERVED_PUBLIC'&&safeArray(source?.findings).some(finding=>cleanText(finding?.statement,20)));
 }
 function researchText(research){
   const items=[];
@@ -47,8 +50,9 @@ function researchText(research){
     for(const finding of safeArray(source?.findings))items.push(`- ${cleanText(finding?.statement,320)} [${cleanText(finding?.category,40)}]`);
   }
   const patterns=research.cross_patterns.map(p=>`- ${cleanText(p?.statement||p,340)}`);
-  return `Constats publics validés:\n${items.join('\n')||'Aucun'}\n\nSynthèses interprétatives:\n${patterns.join('\n')||'Aucune'}\n\nLimites connues:\n${research.limitations.map(x=>`- ${cleanText(x,320)}`).join('\n')||'Aucune'}`;
+  return `Qualité de recherche: ${cleanText(research.quality?.level,30)||'UNAVAILABLE'}\nConstats publics validés:\n${items.join('\n')||'Aucun'}\n\nSynthèses interprétatives:\n${patterns.join('\n')||'Aucune'}\n\nLimites connues:\n${research.limitations.map(x=>`- ${cleanText(x,320)}`).join('\n')||'Aucune'}`;
 }
+
 export async function handleLab2IdeaImprovements(request,env){
   if(!enabled(env?.LAB2_IDEA_STUDIO_ENABLED)||!enabled(env?.LAB2_IMPROVEMENTS_ENABLED))return json({ok:false,error:'LAB_IMPROVEMENTS_DISABLED'},404);
   if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
@@ -63,9 +67,9 @@ export async function handleLab2IdeaImprovements(request,env){
   let raw;
   try{
     raw=await env.AI.run(LAB2_MODEL,{messages:[
-      {role:'system',content:'Tu aides un utilisateur novice à améliorer une idée de site/web-app déjà comprise. Tu ne décides jamais à sa place. Propose au maximum 6 améliorations distinctes, concrètes et simples à comprendre. Ne copie pas de texte, marque, design ou implémentation d’un concurrent. Utilise les constats concurrents seulement pour identifier des standards, bonnes pratiques ou manques. Chaque proposition doit pouvoir être acceptée ou refusée indépendamment. Évite les fonctionnalités inutiles au MVP. Si une proposition modifie sensiblement l’idée originale, changes_original_idea=true. OBSERVED_PATTERN uniquement si la justification vient réellement des constats publics fournis; sinon PRODUCT_REASONING ou USER_IDEA. Si aucun constat public validé n’est fourni, ne prétends jamais qu’une pratique concurrente a été observée. Réponds strictement selon le schéma JSON.'},
-      {role:'user',content:`Projet: ${input.name}\nIdée: ${input.understanding.one_liner}\nProblème: ${input.understanding.problem}\nUtilisateurs: ${input.understanding.target_users.join(', ')||'non précisés'}\nWorkflow compris: ${input.understanding.main_flow.join(' > ')||'non précisé'}\nPoints explicites: ${input.understanding.explicit_points.join(' | ')||'aucun'}\nIncertitudes: ${input.understanding.uncertainties.join(' | ')||'aucune'}\n\n${researchText(input.research)}`}
-    ],response_format:{type:'json_schema',json_schema:schema()},temperature:0.2,max_completion_tokens:1800,chat_template_kwargs:{enable_thinking:false}});
+      {role:'system',content:`Tu es un facilitateur produit pour un utilisateur novice. L'idée est déjà comprise : ton travail est maintenant de proposer ENTRE ${MIN_PROPOSALS} ET ${MAX_PROPOSALS} améliorations réellement utiles et indépendantes. Une réponse vide n'est jamais acceptable lorsqu'un projet peut encore être clarifié ou renforcé.\n\nRègles :\n- Ne change jamais automatiquement l'idée : chaque proposition sera acceptée, refusée ou modifiée par l'humain.\n- Commence par ce qui rend le projet compréhensible et efficace : objectif principal, parcours, contenu nécessaire, conversion, confiance, simplification. N'empile pas des fonctionnalités.\n- Pour un site vitrine, pense notamment au parcours de découverte, à la présentation des réalisations/services, aux preuves de confiance et à l'action principale attendue, mais seulement si cela est pertinent pour le contexte.\n- Une proposition doit expliquer QUOI changer et POURQUOI cela aide précisément ce projet. Évite les conseils vagues du type « améliorer l'UX » ou « rendre le site moderne ».\n- USER_IDEA si la proposition formalise directement quelque chose déjà exprimé. PRODUCT_REASONING si elle vient d'une logique produit raisonnable. OBSERVED_PATTERN uniquement si un fait public vérifié fourni ci-dessous l'étaye réellement.\n- Si la recherche Web est absente ou inutilisable, continue avec USER_IDEA et PRODUCT_REASONING ; ne prétends jamais qu'un concurrent a été observé.\n- Ne copie aucun texte, marque, design ou implémentation d'un concurrent.\n- changes_original_idea=true seulement si la proposition élargit ou modifie sensiblement le concept, pas si elle le rend simplement plus clair.\n- Réponds strictement selon le schéma JSON.`},
+      {role:'user',content:`Projet: ${input.name}\nExplication originale: ${input.original_description||'non fournie'}\nIdée comprise: ${input.understanding.one_liner}\nBesoin compris: ${input.understanding.problem}\nUtilisateurs: ${input.understanding.target_users.join(', ')}\nParcours compris: ${input.understanding.main_flow.join(' > ')}\nPoints explicites: ${input.understanding.explicit_points.join(' | ')||'aucun'}\nDécisions encore ouvertes: ${input.understanding.uncertainties.join(' | ')||'aucune'}\n\n${researchText(input.research)}`}
+    ],response_format:{type:'json_schema',json_schema:schema()},temperature:0.25,max_completion_tokens:2100,chat_template_kwargs:{enable_thinking:false}});
   }catch(error){const msg=String(error?.message||error||'');return json({ok:false,error:/quota|limit|capacity|neuron|rate/i.test(msg)?'AI_CAPACITY':'AI_ERROR'},/quota|limit|capacity|neuron|rate/i.test(msg)?429:502)}
   let payload;try{payload=parseAi(raw)}catch(error){return json({ok:false,error:error.code||'AI_OUTPUT_INVALID'},error.status||502)}
   const proposals=safeArray(payload.proposals).slice(0,MAX_PROPOSALS).map((p,index)=>{
@@ -73,10 +77,16 @@ export async function handleLab2IdeaImprovements(request,env){
     let evidenceNote=p?.evidence_note?cleanText(p.evidence_note,320):null;
     if(sourceBasis==='OBSERVED_PATTERN'&&!observedEvidence){sourceBasis='PRODUCT_REASONING';evidenceNote=null}
     return {
-      id:`p${index+1}`,title:cleanText(p?.title,140),type:['FUNCTIONALITY','WORKFLOW','NAVIGATION','TRUST','SIMPLIFICATION','DIFFERENTIATION'].includes(p?.type)?p.type:'FUNCTIONALITY',
+      id:`p${index+1}`,title:cleanText(p?.title,140),type:TYPES.includes(p?.type)?p.type:'FUNCTIONALITY',
       proposal:cleanText(p?.proposal,420),why:cleanText(p?.why,420),priority:['CORE','USEFUL','OPTIONAL'].includes(p?.priority)?p.priority:'USEFUL',
       source_basis:sourceBasis,evidence_note:evidenceNote,changes_original_idea:p?.changes_original_idea===true
     };
-  }).filter(p=>p.title&&p.proposal&&p.why);
-  return json({ok:true,contract_version:CONTRACT_VERSION,model:LAB2_MODEL,user_id:auth.id,proposals,usage:readUsage(raw),guarantees:{max_proposals:MAX_PROPOSALS,human_decision_required:true,automatic_idea_mutation:false,observed_basis_requires_public_evidence:true}});
+  }).filter(p=>p.title.length>=6&&p.proposal.length>=24&&p.why.length>=24);
+
+  if(proposals.length<MIN_PROPOSALS)return json({ok:false,error:'AI_OUTPUT_INCOMPLETE',received_proposals:proposals.length,required_proposals:MIN_PROPOSALS},502);
+  return json({
+    ok:true,contract_version:CONTRACT_VERSION,model:LAB2_MODEL,user_id:auth.id,proposals,usage:readUsage(raw),
+    quality:{usable:true,proposal_count:proposals.length,minimum_required:MIN_PROPOSALS,observed_evidence_available:observedEvidence},
+    guarantees:{min_proposals:MIN_PROPOSALS,max_proposals:MAX_PROPOSALS,human_decision_required:true,automatic_idea_mutation:false,observed_basis_requires_public_evidence:true,empty_output_is_not_success:true}
+  });
 }
