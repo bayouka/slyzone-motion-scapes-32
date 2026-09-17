@@ -11,8 +11,8 @@
     research:['improvements','definition','feasibility','structure','design','mockups','presentation'],
     improvements:['definition','feasibility','structure','design','mockups','presentation'],
     definition:['feasibility','structure','design','mockups','presentation'],
-    feasibility:['structure','mockups','presentation'],
-    structure:['mockups','presentation'],
+    feasibility:['structure','design','mockups','presentation'],
+    structure:['design','mockups','presentation'],
     design:['mockups','presentation'],
     mockups:['presentation'],
     presentation:[]
@@ -81,9 +81,15 @@
     artifact.provenance=[...artifact.provenance,{type:'HUMAN_CONFIRMATION',at:artifact.confirmedAt}].slice(-50);
     state.artifacts[stage]=artifact;write(state);return artifact;
   };
+  const canonicalRawIdea=(draft)=>({
+    name:String(draft?.name||'').trim(),
+    description:String(draft?.description||'').trim(),
+    references:Array.isArray(draft?.references)?draft.references.map(item=>({url:String(item?.url||'').trim(),reason:String(item?.reason||'').trim(),note:String(item?.note||'').trim()})).filter(item=>item.url||item.note):[]
+  });
   const setRawIdea=async(draft,inputFingerprint=null)=>{
-    const fp=inputFingerprint||await hash(draft);
-    return setArtifact('rawIdea',{status:'CONFIRMED',contractVersion:'lab2-raw-idea-v1',inputFingerprint:fp,data:draft,provenance:[{type:'USER_FACT',at:now()}]});
+    const data=canonicalRawIdea(draft);
+    const fp=inputFingerprint||await hash(data);
+    return setArtifact('rawIdea',{status:'CONFIRMED',contractVersion:'lab2-raw-idea-v1',inputFingerprint:fp,data,provenance:[{type:'USER_FACT',at:now()}]});
   };
   const markStatus=(stage,status,{reason=null}={})=>{
     if(!STAGES.includes(stage)||!VALID_STATUS.has(status))return null;
