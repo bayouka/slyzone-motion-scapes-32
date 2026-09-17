@@ -27,6 +27,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       LAB2_ALLOWED_USER_IDS: ${{ secrets.LAB2_ALLOWED_USER_IDS }}
       LAB2_BRAVE_SEARCH_API_KEY: ${{ secrets.LAB2_BRAVE_SEARCH_API_KEY }}
+      LAB2_TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       LAB2_PREVIEW_URL: https://4b4c2-idea-lab-preview.bayoukadesbois.workers.dev
       LAB2_SUPABASE_URL: https://wexfzhegiewhldkugtow.supabase.co
       LAB2_SUPABASE_PUBLISHABLE_KEY: sb_publishable_2XSXM2rNYsPQqJ0TzsOSgg_YDkNZwcM
@@ -46,6 +47,8 @@ jobs:
       - name: Validate Lab contracts
         run: |
           node --check src/lab2-preview-worker.js
+          node --check src/lab2-web-provider.js
+          node --check src/lab2-presentation-plan.js
           node --check site/lab2/login.js
           node --check site/lab2/idea-research-polish.js
           node scripts/test_lab2_understanding_v1.mjs
@@ -55,6 +58,7 @@ jobs:
           node scripts/test_lab2_structure_v1.mjs
           node scripts/test_lab2_design_v1.mjs
           node scripts/test_lab2_mockups_v1.mjs
+          node scripts/test_lab2_presentation_plan_v1.mjs
           node scripts/test_lab2_presentation_v1.mjs
           node scripts/test_lab2_flow_shell_v1.mjs
           node scripts/lab2-isolation-check.mjs
@@ -110,7 +114,8 @@ jobs:
               LAB2_BRIEF_ENABLED:'true',
               LAB2_STRUCTURE_ENABLED:'true',
               LAB2_DESIGN_ENABLED:'true',
-              LAB2_MOCKUPS_ENABLED:'true'
+              LAB2_MOCKUPS_ENABLED:'true',
+              LAB2_PRESENTATION_PLAN_ENABLED:'true'
             }
           };
           fs.writeFileSync('wrangler.lab2-preview.jsonc',JSON.stringify(config,null,2)+'\n');
@@ -136,6 +141,11 @@ jobs:
         shell: bash
         run: printf '%s' "$LAB2_BRAVE_SEARCH_API_KEY" | npx --yes wrangler@4.129.0 secret put LAB2_BRAVE_SEARCH_API_KEY --config wrangler.lab2-preview.jsonc
 
+      - name: Configure Tavily search when available
+        if: ${{ env.LAB2_TAVILY_API_KEY != '' }}
+        shell: bash
+        run: printf '%s' "$LAB2_TAVILY_API_KEY" | npx --yes wrangler@4.129.0 secret put LAB2_TAVILY_API_KEY --config wrangler.lab2-preview.jsonc
+
       - name: Smoke isolated preview
         shell: bash
         run: |
@@ -149,6 +159,7 @@ jobs:
           grep -Fq '"isolated":true' /tmp/lab2-health.json
           grep -Fq '"production_business_api_exposed":false' /tmp/lab2-health.json
           grep -Fq '"database_write_surface":false' /tmp/lab2-health.json
+          grep -Fq '"presentation_planner_enabled":true' /tmp/lab2-health.json
           curl -L -fsS "$LAB2_PREVIEW_URL/lab2/login.html?sha=$GITHUB_SHA" | grep -Fq 'Tester l’Atelier Idée'
           code=$(curl -sS -o /tmp/blocked.out -w '%{http_code}' "$LAB2_PREVIEW_URL/index.html" || true)
           test "$code" = "404"
