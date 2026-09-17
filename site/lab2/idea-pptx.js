@@ -33,11 +33,30 @@
   function addBulletList(slide,ctx,items,y=1.7){const c=colors(ctx),f=font(ctx);(items||[]).slice(0,8).forEach((item,index)=>{slide.addText('•',{x:.85,y:y+index*.52,w:.25,h:.28,fontFace:f,fontSize:15,bold:true,color:c.primary,margin:0});slide.addText(clean(item),{x:1.15,y:y+index*.52,w:10.8,h:.36,fontFace:f,fontSize:15,color:c.fg,margin:0,breakLine:false})})}
   function addTwoCards(slide,ctx,leftTitle,leftBody,rightTitle,rightBody){const c=colors(ctx),f=font(ctx);[[.75,leftTitle,leftBody],[6.8,rightTitle,rightBody]].forEach(([x,title,body])=>{slide.addText(title,{x,y:2,w:5.55,h:.35,fontFace:f,fontSize:15,bold:true,color:c.fg,margin:0});slide.addText(body,{x,y:2.52,w:5.55,h:2,fontFace:f,fontSize:15,color:c.fg,fill:{color:c.surface},line:{color:c.border,width:1},margin:.18,breakLine:false})})}
   function keptPages(ctx){const decisions=ctx.structureCache?.page_decisions||{};return (ctx.structure.sitemap||[]).filter(p=>decisions[p.id]!=='REMOVE')}
+  function hostOf(source){try{return new URL(source?.url).hostname.replace(/^www\./,'')}catch{return 'Source'}}
 
   function cover(pptx,ctx){const slide=pptx.addSlide();const c=colors(ctx),f=font(ctx);slide.background={color:c.bg};slide.addText('PRÉSENTATION DE L’IDÉE',{x:.75,y:.75,w:4,h:.3,fontFace:f,fontSize:11,bold:true,color:c.primary,charSpacing:1.4,margin:0});slide.addText(ctx.draft.name,{x:.75,y:1.35,w:7.1,h:1.05,fontFace:f,fontSize:32,bold:true,color:c.fg,margin:0});slide.addText(ctx.brief.short_pitch||ctx.brief.one_liner,{x:.75,y:2.6,w:7.1,h:1.1,fontFace:f,fontSize:19,color:c.fg,margin:0});slide.addShape(pptx.ShapeType.roundRect,{x:8.6,y:1.35,w:3.7,h:3.7,rectRadius:.1,fill:{color:c.surface},line:{color:c.border,width:1.2}});slide.addShape(pptx.ShapeType.rect,{x:9.05,y:1.85,w:2.8,h:.28,fill:{color:c.primary},line:{color:c.primary}});slide.addShape(pptx.ShapeType.rect,{x:9.05,y:2.55,w:2.2,h:.16,fill:{color:c.muted},line:{color:c.muted}});slide.addShape(pptx.ShapeType.rect,{x:9.05,y:2.95,w:2.55,h:.16,fill:{color:c.muted},line:{color:c.muted}});slide.addShape(pptx.ShapeType.rect,{x:9.05,y:3.35,w:1.9,h:.16,fill:{color:c.muted},line:{color:c.muted}})}
+  function addResearchSlide(pptx,ctx){
+    const data=ctx.research;if(!data?.ok)return;
+    const refs=Array.isArray(data.references)?data.references:[];
+    const competitors=Array.isArray(data.competitors)?data.competitors:[];
+    const all=[...refs,...competitors];
+    const verified=all.filter(source=>source?.fetch_status==='OBSERVED_PUBLIC'&&Array.isArray(source?.findings)&&source.findings.length>0).slice(0,3);
+    const declaredOnly=refs.filter(source=>!verified.includes(source)).slice(0,2);
+    const limitations=(data.limitations||[]).filter(Boolean);
+    if(!verified.length&&!declaredOnly.length&&!limitations.length)return;
+    const s=pptx.addSlide();addHeader(s,ctx,'RÉFÉRENCES ET CONCURRENCE',verified.length?'Ce que nous avons pu vérifier':'Ce que la recherche permet d’affirmer');
+    const lines=[];
+    verified.forEach(source=>lines.push(`${hostOf(source)} — ${source.findings[0].statement} [fait public vérifié]`));
+    declaredOnly.forEach(source=>lines.push(`${hostOf(source)} — référence fournie par l’utilisateur, non vérifiée automatiquement.`));
+    if(!verified.length&&limitations[0])lines.push(`Limite : ${limitations[0]}`);
+    if(verified.length&&data.cross_patterns?.length)lines.push(...data.cross_patterns.slice(0,2).map(x=>`Synthèse : ${x.statement||x}`));
+    addBulletList(s,ctx,lines,1.65);
+  }
   function standardSlides(pptx,ctx){
     let s=pptx.addSlide();addHeader(s,ctx,'POURQUOI CE PROJET ?','Le problème à résoudre');addTwoCards(s,ctx,'Le problème',ctx.brief.problem,'Pour qui',(ctx.brief.target_users||[]).join(', ')||'Public à préciser');
     s=pptx.addSlide();addHeader(s,ctx,'SOLUTION RETENUE','Ce que le site doit permettre');addBulletList(s,ctx,ctx.brief.core_features||[]);
+    addResearchSlide(pptx,ctx);
     const retained=ctx.briefCache?.response?.retained_improvements||[];if(retained.length){s=pptx.addSlide();addHeader(s,ctx,'DÉCISIONS HUMAINES','Améliorations retenues');addBulletList(s,ctx,retained.map(x=>x.text||x.title));}
     const flow=ctx.structure.workflows?.[0];if(flow){s=pptx.addSlide();addHeader(s,ctx,'PARCOURS PRINCIPAL',flow.name||'Comment cela fonctionne');addBulletList(s,ctx,flow.steps||[]);}
     const pages=keptPages(ctx);if(pages.length){s=pptx.addSlide();addHeader(s,ctx,'ARCHITECTURE PROVISOIRE','Sitemap retenu');const c=colors(ctx),f=font(ctx);pages.slice(0,12).forEach((p,i)=>{const col=i%3,row=Math.floor(i/3);s.addText(p.label,{x:.75+col*4.08,y:1.65+row*1.05,w:3.6,h:.35,fontFace:f,fontSize:14,bold:true,color:c.fg,margin:0});s.addText(p.path,{x:.75+col*4.08,y:2.02+row*1.05,w:3.6,h:.24,fontFace:f,fontSize:9,color:c.primary,margin:0})});}
