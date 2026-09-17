@@ -3,6 +3,8 @@
 
   const MAX_INTERESTS = 4;
   const UNDERSTANDING_TIMEOUT_MS = 30000;
+  const AI_CACHE_KEY = '4b4c2.lab2.idea-understanding.slice2.v1';
+  const CONFIRMATION_KEY = '4b4c2.lab2.idea-understanding-confirmed.slice2.v1';
   const INTEREST_LABELS = Object.freeze({
     parcours: 'Parcours / fonctionnement',
     fonctions: 'Fonctionnalités / outils',
@@ -30,6 +32,27 @@
   const aiState = document.getElementById('aiState');
   const resetDraftButton = document.getElementById('resetDraft');
   const noReferenceButton = document.getElementById('noReference');
+  const confirmUnderstanding = document.getElementById('confirmUnderstanding');
+
+  const parseJson = (value) => {
+    try { return JSON.parse(value); }
+    catch { return null; }
+  };
+
+  const meaningfulCore = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized.length < 8) return false;
+    return !['non déterminé', 'non determine', 'à préciser', 'a preciser', 'inconnu', 'non précisé', 'non precise'].includes(normalized);
+  };
+
+  // An older cached response could contain empty core fields while still being marked successful.
+  // Never reuse such a response: the backend now forces a clarification instead.
+  const cachedUnderstanding = parseJson(localStorage.getItem(AI_CACHE_KEY));
+  const cachedCore = cachedUnderstanding?.response?.understanding;
+  if (cachedCore && (!meaningfulCore(cachedCore.one_liner) || !meaningfulCore(cachedCore.problem))) {
+    localStorage.removeItem(AI_CACHE_KEY);
+    localStorage.removeItem(CONFIRMATION_KEY);
+  }
 
   const parseInterests = (value) => {
     const raw = String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
@@ -136,7 +159,26 @@
   }
 
   noReferenceButton?.addEventListener('click', () => window.setTimeout(updateEmptyState, 0));
-  resetDraftButton?.addEventListener('click', () => window.setTimeout(cleanImplicitEmptyReference, 0));
+  resetDraftButton?.addEventListener('click', () => {
+    localStorage.removeItem(CONFIRMATION_KEY);
+    window.setTimeout(cleanImplicitEmptyReference, 0);
+  });
+
+  confirmUnderstanding?.addEventListener('click', () => {
+    const cache = parseJson(localStorage.getItem(AI_CACHE_KEY));
+    const understanding = cache?.response?.understanding;
+    const coreReady = meaningfulCore(understanding?.one_liner) && meaningfulCore(understanding?.problem);
+    if (!cache?.baseFingerprint || !coreReady || understanding?.needs_clarification) {
+      localStorage.removeItem(CONFIRMATION_KEY);
+      return;
+    }
+    localStorage.setItem(CONFIRMATION_KEY, JSON.stringify({
+      version: 1,
+      confirmed: true,
+      baseFingerprint: cache.baseFingerprint,
+      confirmedAt: new Date().toISOString()
+    }));
+  });
 
   const friendlyError = (code) => ({
     LAB_ACCESS_UNCONFIGURED: "L’IA est prête, mais aucun compte de test n’est encore autorisé. Reviens à l’écran d’accès, copie ton identifiant technique puis ajoute-le à l’autorisation privée du Lab.",
@@ -164,9 +206,6 @@
     }
   };
 
-  // The enhancement layer only observes the network response. It does not observe or
-  // rewrite the error DOM anymore: that previous pattern could recursively trigger its
-  // own MutationObserver and freeze the browser as soon as an API error arrived.
   const nativeFetch = window.fetch.bind(window);
   window.fetch = async (...args) => {
     const target = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
