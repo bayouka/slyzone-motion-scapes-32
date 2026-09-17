@@ -1,5 +1,5 @@
 import { handleLab2IdeaUnderstanding } from './lab2-idea-understanding-compat.js';
-import { handleLab2IdeaResearch } from './lab2-idea-research.js';
+import { handleLab2IdeaResearch } from './lab2-idea-research-compat.js';
 import { handleLab2IdeaImprovements } from './lab2-idea-improvements.js';
 import { handleLab2IdeaBrief } from './lab2-idea-brief.js';
 import { handleLab2IdeaStructure } from './lab2-idea-structure.js';
@@ -43,6 +43,7 @@ export default {
         auth_provider:'supabase-auth-only',
         ai_configured:Boolean(env?.AI),
         ai_json_contract_strategy:'PROMPT_JSON_PLUS_SERVER_VALIDATION',
+        project_state_strategy:'CANONICAL_ARTIFACT_GRAPH_WITH_FINGERPRINT_INVALIDATION',
         source_fetch_configured:Boolean(env?.SOURCE_FETCH),
         competitor_search_configured:true,
         competitor_search_strategy:'BRAVE_THEN_TAVILY_THEN_TAVILY_KEYLESS',
@@ -57,7 +58,6 @@ export default {
     if(url.pathname==='/'||url.pathname==='/lab2')return Response.redirect(new URL('/lab2/login.html',url.origin),302);
     if(!url.pathname.startsWith('/lab2/'))return json({ok:false,error:'NOT_FOUND'},404);
     if(!env?.ASSETS)return json({ok:false,error:'ASSETS_UNAVAILABLE'},503);
-    const response=await env.ASSETS.fetch(request);
-    return withSecurityHeaders(response);
+    return withSecurityHeaders(await env.ASSETS.fetch(request));
   }
 };
