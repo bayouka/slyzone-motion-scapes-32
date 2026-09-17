@@ -52,6 +52,7 @@ jobs:
           node --check site/lab2/idea-presentation.js
           node --check site/lab2/idea-pptx.js
           node --check src/lab2-ai-compat.js
+          node --check src/lab2-ai-json.js
           node --check src/lab2-idea-understanding.js
           node --check src/lab2-public-fetch-fallback.js
           node --check src/lab2-web-provider.js
@@ -69,6 +70,8 @@ jobs:
       - name: Zero-credit contract tests
         run: |
           node scripts/test_lab2_ai_compat_v1.mjs
+          node scripts/test_lab2_ai_json_v2.mjs
+          node scripts/test_lab2_web_provider_v2.mjs
           node scripts/test_lab2_public_fetch_fallback_v1.mjs
           node scripts/test_lab2_project_state_v1.mjs
           node scripts/test_lab2_understanding_v1.mjs
