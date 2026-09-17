@@ -1,4 +1,5 @@
 const MAX_SCHEMA_PROMPT_CHARS=12000;
+const NATIVE_JSON_MODELS=new Set(['@cf/meta/llama-3.3-70b-instruct-fp8-fast']);
 
 function extractJsonText(value){
   let text=String(value??'').trim();
@@ -49,14 +50,27 @@ function injectSchemaInstruction(messages,responseFormat){
   return next;
 }
 
+function nativeJsonOptions(options){
+  const next={...(options||{})};
+  if(next.max_completion_tokens!=null&&next.max_tokens==null)next.max_tokens=next.max_completion_tokens;
+  delete next.max_completion_tokens;
+  delete next.chat_template_kwargs;
+  return next;
+}
+
+function compatJsonOptions(options){
+  const responseFormat=options?.response_format;
+  const next={...(options||{}),messages:injectSchemaInstruction(options?.messages,responseFormat)};
+  delete next.response_format;
+  return next;
+}
+
 export function createLab2AiEnv(env){
   const originalAi=env?.AI;
   if(!originalAi?.run)return env;
   const wrappedAi={
     run:async(model,options={})=>{
-      const responseFormat=options?.response_format;
-      const safeOptions={...options,messages:injectSchemaInstruction(options?.messages,responseFormat)};
-      delete safeOptions.response_format;
+      const safeOptions=NATIVE_JSON_MODELS.has(String(model))&&options?.response_format?.type==='json_schema'?nativeJsonOptions(options):compatJsonOptions(options);
       const raw=await originalAi.run(model,safeOptions);
       return normalizeLab2AiResponse(raw);
     }
@@ -66,4 +80,5 @@ export function createLab2AiEnv(env){
   return next;
 }
 
-export const LAB2_AI_JSON_ADAPTER_VERSION='lab2-ai-json-v1';
+export const LAB2_AI_JSON_ADAPTER_VERSION='lab2-ai-json-v2';
+export const __lab2AiJsonTest={extractJsonText,parseJsonContent,nativeJsonOptions,compatJsonOptions,NATIVE_JSON_MODELS};
