@@ -81,12 +81,25 @@ requireMatch(presentationPlan,/verified_research_only:true/,'LAB2_PRESENTATION_P
 requireMatch(presentationPlan,/available_mockups_only:true/,'LAB2_PRESENTATION_PLAN_AVAILABLE_MOCKUPS_ONLY_REQUIRED');
 requireMatch(presentationPlan,/no_invented_business_metrics:true/,'LAB2_PRESENTATION_PLAN_NO_FAKE_METRICS_REQUIRED');
 
-for(const [path,handler,code] of [['/api/lab2/understand','handleLab2IdeaUnderstanding','UNDERSTANDING'],['/api/lab2/research','handleLab2IdeaResearch','RESEARCH'],['/api/lab2/improvements','handleLab2IdeaImprovements','IMPROVEMENTS'],['/api/lab2/brief','handleLab2IdeaBrief','BRIEF'],['/api/lab2/feasibility','handleLab2IdeaFeasibility','FEASIBILITY'],['/api/lab2/structure','handleLab2IdeaStructure','STRUCTURE'],['/api/lab2/design','handleLab2IdeaDesign','DESIGN'],['/api/lab2/mockups','handleLab2IdeaMockups','MOCKUPS']]){
+const coreRoutes=[
+  ['/api/lab2/understand','handleLab2IdeaUnderstanding','UNDERSTANDING'],
+  ['/api/lab2/research','handleLab2IdeaResearch','RESEARCH'],
+  ['/api/lab2/improvements','handleLab2IdeaImprovements','IMPROVEMENTS'],
+  ['/api/lab2/brief','handleLab2IdeaBrief','BRIEF'],
+  ['/api/lab2/feasibility','handleLab2IdeaFeasibility','FEASIBILITY'],
+  ['/api/lab2/structure','handleLab2IdeaStructure','STRUCTURE'],
+  ['/api/lab2/design','handleLab2IdeaDesign','DESIGN'],
+  ['/api/lab2/mockups','handleLab2IdeaMockups','MOCKUPS']
+];
+for(const [path,handler,code] of coreRoutes){
   requireMatch(workerEntry,new RegExp(path.replaceAll('/','\\/')),`LAB2_${code}_ROUTE_MISSING`);
   requireMatch(workerEntry,new RegExp(handler),`LAB2_${code}_HANDLER_WIRING_MISSING`);
+  requireMatch(previewWorker,new RegExp(path.replaceAll('/','\\/')),`LAB2_${code}_PREVIEW_ROUTE_MISSING`);
+  requireMatch(previewWorker,new RegExp(handler),`LAB2_${code}_PREVIEW_HANDLER_MISSING`);
 }
 requireMatch(previewWorker,/\/api\/lab2\/presentation-plan/,'LAB2_PRESENTATION_PLAN_PREVIEW_ROUTE_MISSING');
 requireMatch(previewWorker,/handleLab2PresentationPlan/,'LAB2_PRESENTATION_PLAN_PREVIEW_HANDLER_MISSING');
+requireMatch(previewWorker,/adaptive_feasibility_enabled:true/,'LAB2_PREVIEW_FEASIBILITY_HEALTH_REQUIRED');
 requireMatch(previewWorker,/production_business_api_exposed:false/,'LAB2_PREVIEW_PRODUCTION_API_ISOLATION_REQUIRED');
 requireMatch(previewWorker,/database_write_surface:false/,'LAB2_PREVIEW_DB_WRITE_ISOLATION_REQUIRED');
 
@@ -113,4 +126,4 @@ requireMatch(pptxJs,/Lab2MockupRenderer\.renderMockup/,'LAB2_PPTX_SHARED_RENDERE
 requireMatch(presentationHtml,/pptxgenjs@4\.0\.1\/dist\/pptxgen\.bundle\.js/,'LAB2_PPTX_VERSION_PIN_REQUIRED');
 requireMatch(presentationHtml,/html2canvas@1\.4\.1\/dist\/html2canvas\.min\.js/,'LAB2_HTML2CANVAS_VERSION_PIN_REQUIRED');
 
-console.log('lab2-isolation-check: ok (research + feasibility + adaptive presentation remain isolated)');
+console.log('lab2-isolation-check: ok (main + preview routes, research, feasibility and adaptive presentation remain isolated)');
