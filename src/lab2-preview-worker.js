@@ -14,11 +14,7 @@ const SECURITY_HEADERS=Object.freeze({
   'permissions-policy':'camera=(), microphone=(), display-capture=(), geolocation=()'
 });
 
-function withSecurityHeaders(response){
-  const headers=new Headers(response.headers);
-  for(const [key,value] of Object.entries(SECURITY_HEADERS))headers.set(key,value);
-  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
-}
+function withSecurityHeaders(response){const headers=new Headers(response.headers);for(const [key,value] of Object.entries(SECURITY_HEADERS))headers.set(key,value);return new Response(response.body,{status:response.status,statusText:response.statusText,headers})}
 function json(data,status=200){return withSecurityHeaders(Response.json(data,{status,headers:{'cache-control':'no-store'}}))}
 function accessConfigured(env){return Boolean(String(env?.LAB2_ALLOWED_USER_IDS||'').trim())}
 
@@ -46,7 +42,9 @@ export default {
         auth_provider:'supabase-auth-only',
         ai_configured:Boolean(env?.AI),
         source_fetch_configured:Boolean(env?.SOURCE_FETCH),
-        competitor_search_configured:Boolean(env?.LAB2_BRAVE_SEARCH_API_KEY),
+        competitor_search_configured:true,
+        competitor_search_strategy:'BRAVE_THEN_TAVILY_THEN_TAVILY_KEYLESS',
+        tavily_key_configured:Boolean(env?.LAB2_TAVILY_API_KEY||env?.TAVILY_API_KEY),
         presentation_planner_enabled:String(env?.LAB2_PRESENTATION_PLAN_ENABLED||'').toLowerCase()==='true',
         access_allowlist_configured:accessConfigured(env)
       });
