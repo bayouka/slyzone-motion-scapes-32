@@ -32,8 +32,7 @@ const ai={run:async()=>{
     response:{selected:[
       {candidate_index:0,relation:'DIRECT',reason:'Le service semble répondre au même besoin de vérification à distance.',confidence:'HIGH'},
       {candidate_index:1,relation:'NEAR',reason:'Le workflow de tiers et compte rendu paraît proche.',confidence:'MEDIUM'}
-    ]},
-    usage:{prompt_tokens:500,completion_tokens:120}
+    ]},usage:{prompt_tokens:500,completion_tokens:120}
   };
   return {
     response:{
@@ -42,17 +41,12 @@ const ai={run:async()=>{
           {category:'WORKFLOW',statement:'La référence permet de créer une demande puis de recevoir un rapport.',support_text:'crée une demande et reçoit un rapport'},
           {category:'FUNCTIONALITY',statement:'Ce constat doit être supprimé car il n’est pas sourcé.',support_text:'texte absent de la source'}
         ]},
-        {source_index:1,findings:[
-          {category:'POSITIONING',statement:'Le concurrent se présente comme une inspection avant déplacement.',support_text:'inspecter un véhicule à distance avant déplacement'}
-        ]},
-        {source_index:2,findings:[
-          {category:'WORKFLOW',statement:'Le tiers transmet un compte rendu.',support_text:'transmet un compte rendu à l’acheteur'}
-        ]}
+        {source_index:1,findings:[{category:'POSITIONING',statement:'Le concurrent se présente comme une inspection avant déplacement.',support_text:'inspecter un véhicule à distance avant déplacement'}]},
+        {source_index:2,findings:[{category:'WORKFLOW',statement:'Le tiers transmet un compte rendu.',support_text:'transmet un compte rendu à l’acheteur'}]}
       ],
       cross_patterns:[{statement:'Les solutions observées mettent en avant une vérification à distance suivie d’un retour structuré.',source_indices:[0,1,2]}],
       limitations:['Les pages publiques ne permettent pas de confirmer les étapes après connexion.']
-    },
-    usage:{prompt_tokens:1600,completion_tokens:430}
+    },usage:{prompt_tokens:1600,completion_tokens:430}
   };
 }};
 
@@ -64,26 +58,21 @@ const sourceTexts=new Map([
 const sourceFetch={fetchEvidenceSource:async(locator)=>({final_url:locator,extracted_text:sourceTexts.get(locator)||'',content_hash:'a'.repeat(64),fetched_at:new Date().toISOString(),redirect_count:0})};
 
 const env={
-  LAB2_IDEA_STUDIO_ENABLED:'true',
-  LAB2_RESEARCH_ENABLED:'true',
-  LAB2_ALLOWED_USER_IDS:'11111111-1111-4111-8111-111111111111',
-  LAB2_BRAVE_SEARCH_API_KEY:'test-key',
-  SUPABASE_URL:'https://example.supabase.co',
-  SUPABASE_PUBLISHABLE_KEY:'pub',
-  AI:ai,
-  SOURCE_FETCH:sourceFetch
+  LAB2_IDEA_STUDIO_ENABLED:'true',LAB2_RESEARCH_ENABLED:'true',LAB2_ALLOWED_USER_IDS:'11111111-1111-4111-8111-111111111111',
+  LAB2_BRAVE_SEARCH_API_KEY:'test-key',SUPABASE_URL:'https://example.supabase.co',SUPABASE_PUBLISHABLE_KEY:'pub',AI:ai,SOURCE_FETCH:sourceFetch
 };
 
 const body={
   name:'TierceVue',
   understanding:{
+    contract_version:'lab2-understanding-v2',
     one_liner:'Un site pour faire vérifier une voiture éloignée avant de se déplacer.',
     problem:'Éviter un déplacement inutile quand un véhicule est loin.',
     target_users:[{label:'Acheteurs de véhicules à distance'}],
-    main_flow:[{step:'Repérer une voiture'},{step:'Demander une vérification'}]
+    main_flow:[{step:'Repérer une voiture'},{step:'Demander une vérification'}],
+    uncertainties:[]
   },
-  references:[{url:'ref.example',reason:'fonctionnement',note:'J’aime la logique de demande et rapport.'}],
-  discover_competitors:true
+  references:[{url:'ref.example',reason:'fonctionnement',note:'J’aime la logique de demande et rapport.'}],discover_competitors:true
 };
 
 function request(payload=body,token='good-token'){
@@ -93,11 +82,13 @@ function request(payload=body,token='good-token'){
 const response=await handleLab2IdeaResearch(request(),env);
 const result=await response.json();
 if(response.status!==200||result.ok!==true)throw new Error('LAB2_RESEARCH_SUCCESS_EXPECTED');
-if(result.contract_version!=='lab2-research-v1')throw new Error('LAB2_RESEARCH_CONTRACT_MISMATCH');
+if(result.contract_version!=='lab2-research-v2')throw new Error('LAB2_RESEARCH_CONTRACT_MISMATCH');
 if(result.discovery?.search_requests!==2||searchCalls!==2)throw new Error('LAB2_SEARCH_BUDGET_MISMATCH');
 if(result.competitors?.length!==2)throw new Error('LAB2_COMPETITOR_SELECTION_MISMATCH');
 if(result.references?.[0]?.findings?.length!==1)throw new Error('LAB2_OBSERVED_SUPPORT_VALIDATION_FAILED');
 if(result.cross_patterns?.length!==1)throw new Error('LAB2_CROSS_PATTERN_EXPECTED');
+if(result.source_fetch_count!==3||result.source_fetch_attempt_count!==3)throw new Error('LAB2_SOURCE_READ_METRIC_MISMATCH');
+if(result.quality?.level!=='FULL'||result.quality?.observed_finding_count!==3)throw new Error('LAB2_RESEARCH_QUALITY_MISMATCH');
 if(aiCalls!==2)throw new Error('LAB2_AI_CALL_BUDGET_MISMATCH');
 
 const disabled=await handleLab2IdeaResearch(request(),{...env,LAB2_RESEARCH_ENABLED:'false'});
@@ -108,4 +99,4 @@ const unconfigured=await handleLab2IdeaResearch(request(),{...env,LAB2_ALLOWED_U
 if(unconfigured.status!==503)throw new Error('LAB2_RESEARCH_ALLOWLIST_CONFIG_GUARD_FAILED');
 
 globalThis.fetch=originalFetch;
-console.log(`lab2-research-v1: ok (${searchCalls} searches, ${aiCalls} AI calls in fixture)`);
+console.log(`lab2-research-v2: ok (${searchCalls} searches, ${aiCalls} AI calls in fixture)`);
