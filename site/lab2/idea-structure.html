@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>4b4c2 — Workflows & sitemap</title>
+  <title>4b4c2 — Architecture d’expérience</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -12,50 +12,51 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <div><div class="eyebrow">4b4c2 · LAB isolé · Slice 6</div><h1>Comment le futur site pourrait fonctionner</h1><p>Des parcours simples puis un sitemap provisoire. Tu gardes ou retires les pages ; aucune décision ne déclenche un nouvel appel IA.</p></div>
-      <a class="ghost" href="./idea-brief.html">← Revenir à la Version 1</a>
+      <div><div class="eyebrow">Architecture d’expérience</div><h1>Comment le futur produit pourrait fonctionner</h1><p>Des parcours humains simples puis les pages ou écrans nécessaires. Un site vitrine reste un sitemap ; une web-app peut inclure authentification, app, réglages ou administration.</p></div>
+      <a class="ghost" href="./idea-feasibility.html">← Revenir à la faisabilité</a>
     </header>
 
     <section class="panel" id="blockedPanel" hidden>
-      <h2>La Version 1 de l’idée est nécessaire</h2>
-      <p>Crée d’abord la version claire de l’idée ; elle sert de source unique à cette étape.</p>
-      <a class="primary-link" href="./idea-brief.html">Créer la Version 1</a>
+      <h2>La faisabilité doit être vérifiée</h2>
+      <p>Crée la Version 1 puis termine les éventuelles décisions techniques nécessaires avant de structurer l’expérience.</p>
+      <a class="primary-link" href="./idea-feasibility.html">Vérifier la faisabilité</a>
     </section>
 
     <section class="panel action" id="actionPanel">
-      <div><span class="kicker">1 appel IA maximum</span><h2 id="ideaName">Structure proposée</h2><p id="ideaSummary"></p></div>
-      <button class="primary" id="generateButton" type="button">Proposer workflows et sitemap</button>
+      <div><span class="kicker">1 appel IA maximum</span><h2 id="ideaName">Architecture proposée</h2><p id="ideaSummary"></p></div>
+      <button class="primary" id="generateButton" type="button">Proposer parcours et écrans</button>
     </section>
 
-    <div class="loading" id="loadingBox" hidden><strong>Structuration en cours…</strong><span>Le modèle reçoit uniquement la Version 1 validée.</span></div>
+    <div class="loading" id="loadingBox" hidden><strong>Structuration en cours…</strong><span>Le modèle reçoit uniquement la définition canonique et la faisabilité confirmée.</span></div>
     <div class="error" id="errorBox" hidden></div>
 
     <section id="results" hidden>
       <div class="section-head"><div><span class="kicker">Parcours principaux</span><h2>Workflows utilisateur</h2></div></div>
       <div class="workflow-grid" id="workflowGrid"></div>
 
-      <div class="section-head gap"><div><span class="kicker">Architecture provisoire</span><h2>Sitemap proposé</h2><p>Garde uniquement les pages qui te semblent nécessaires.</p></div><span class="count-badge" id="pageCount"></span></div>
+      <div class="section-head gap"><div><span class="kicker">Architecture provisoire</span><h2>Pages et écrans proposés</h2><p>Garde uniquement ce qui est nécessaire au fonctionnement compris.</p></div><span class="count-badge" id="pageCount"></span></div>
       <div class="page-grid" id="pageGrid"></div>
 
       <section class="panel gap">
         <span class="kicker">Navigation suggérée</span>
-        <div class="nav-grid"><div><strong>Public</strong><div id="publicNav"></div></div><div><strong>Après connexion</strong><div id="appNav"></div></div></div>
+        <div class="nav-grid"><div><strong>Public</strong><div id="publicNav"></div></div><div><strong>Produit / après connexion</strong><div id="appNav"></div></div></div>
       </section>
 
       <section class="panel gap">
-        <span class="kicker">À décider plus tard</span>
+        <span class="kicker">À décider à cette étape</span>
         <h2>Questions structurelles</h2>
         <ul id="questionList"></ul>
       </section>
 
       <section class="next-card gap">
-        <div><span class="kicker">Étape suivante</span><h2>Choisir une direction visuelle</h2><p>La DA utilise seulement la Version 1 et les pages que tu as gardées.</p></div>
+        <div><span class="kicker">Étape suivante</span><h2>Choisir une direction visuelle</h2><p>La DA utilise la définition confirmée et les pages ou écrans que tu as gardés.</p></div>
         <a class="next-badge" href="./idea-design.html">Ouvrir la direction visuelle →</a>
       </section>
     </section>
   </main>
   <script src="./runtime-config.js"></script>
   <script src="./lab2-auth.js" defer></script>
+  <script src="./project-state.js" defer></script>
   <script src="./idea-structure.js" defer></script>
 </body>
 </html>
