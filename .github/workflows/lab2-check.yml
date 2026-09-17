@@ -73,6 +73,7 @@ jobs:
           node scripts/test_lab2_brief_v1.mjs
           node scripts/test_lab2_feasibility_v1.mjs
           node scripts/test_lab2_structure_v1.mjs
+          node scripts/test_lab2_sparse_cross_archetypes_v1.mjs
           node scripts/test_lab2_design_v1.mjs
           node scripts/test_lab2_mockups_v1.mjs
           node scripts/test_lab2_presentation_plan_v1.mjs
